@@ -29,8 +29,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Normalize version input
+        id: normalize_version
+        shell: pwsh
+        run: |
+          $raw = "${{ inputs.version }}".Trim()
+          if ($raw.StartsWith("v")) {
+            $raw = $raw.Substring(1)
+          }
+
+          if ($raw -match "^\d+\.\d+\.\d+$") {
+            $semver = $raw
+          } elseif ($raw -match "^\d+\.\d+$") {
+            $semver = "$raw.0"
+          } elseif ($raw -match "^\d+$") {
+            $semver = "$raw.0.0"
+          } else {
+            throw "Invalid version '$raw'. Use x, x.y or x.y.z."
+          }
+
+          "semver=$semver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Set app version
-        run: npm version "${{ inputs.version }}" --no-git-tag-version
+        run: npm version "${{ steps.normalize_version.outputs.semver }}" --no-git-tag-version
 
       - name: Build Windows EXE
         run: npm run build:win
@@ -40,17 +61,17 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TypeFast-Windows-${{ inputs.version }}
-          path: release/${{ inputs.version }}/**
+          name: TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}
+          path: release/${{ steps.normalize_version.outputs.semver }}/**
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
+          tag_name: v${{ steps.normalize_version.outputs.semver }}
           target_commitish: ${{ github.sha }}
-          name: TypeF@st v${{ inputs.version }}
+          name: TypeF@st v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
           files: |
-            release/${{ inputs.version }}/**/*.exe
-            release/${{ inputs.version }}/**/*.yml
-            release/${{ inputs.version }}/**/*.blockmap
+            release/${{ steps.normalize_version.outputs.semver }}/**/*.exe
+            release/${{ steps.normalize_version.outputs.semver }}/**/*.yml
+            release/${{ steps.normalize_version.outputs.semver }}/**/*.blockmap
