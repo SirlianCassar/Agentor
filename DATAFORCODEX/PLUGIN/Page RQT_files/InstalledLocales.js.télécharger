@@ -1,6 +1,0 @@
-﻿//TODO: this file should be generated as part of build process
-
-// AFTER EVERY UPDATE:
-// bump up version number in script tag with latest value of window.top.VERSION_STAMP for: msdyn_/PersonalWall.htm , msdyn_/RecordWall.htm , msdyn_/FollowDialog.1033.htm
-
-window._installedLocales = [1033, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1035, 1036, 1037, 1038, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1048, 1049, 1050, 1051, 1053, 1054, 1055, 1057, 1058, 1060, 1061, 1062, 1063, 1066, 1069, 1081, 1086, 1087, 1110, 2052, 2070, 2074, 3076, 3082, 3098];
