@@ -54,7 +54,7 @@ jobs:
         run: npm version "${{ steps.normalize_version.outputs.semver }}" --no-git-tag-version
 
       - name: Build Windows EXE
-        run: npm run build:win
+        run: npm run build:win -- --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
