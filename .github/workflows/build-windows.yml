@@ -58,11 +58,32 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
+      - name: Create single ZIP release bundle
+        shell: pwsh
+        run: |
+          $version = "${{ steps.normalize_version.outputs.semver }}"
+          $releaseDir = "release/$version"
+          $zipPath = "release/TypeFast-Windows-$version.zip"
+
+          $files = Get-ChildItem -Path $releaseDir -File | Where-Object {
+            $_.Extension -in @(".exe", ".yml", ".blockmap")
+          }
+
+          if ($files.Count -eq 0) {
+            throw "No installer files found in $releaseDir"
+          }
+
+          if (Test-Path $zipPath) {
+            Remove-Item $zipPath -Force
+          }
+
+          Compress-Archive -Path $files.FullName -DestinationPath $zipPath -Force
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}
-          path: release/${{ steps.normalize_version.outputs.semver }}/**
+          path: release/TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}.zip
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -71,7 +92,6 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: TypeF@st v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
+          overwrite_files: true
           files: |
-            release/${{ steps.normalize_version.outputs.semver }}/**/*.exe
-            release/${{ steps.normalize_version.outputs.semver }}/**/*.yml
-            release/${{ steps.normalize_version.outputs.semver }}/**/*.blockmap
+            release/TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}.zip
