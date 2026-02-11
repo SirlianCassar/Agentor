@@ -1,0 +1,43 @@
+// @see - https://www.electron.build/configuration/configuration
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.typefast.app",
+  "asar": true,
+  "productName": "TypeF@st",
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron"
+  ],
+  "mac": {
+    "target": [
+      "dmg"
+    ],
+    "icon": "build/icons/icon.icns",
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false,
+    "identity": null,
+    "artifactName": "${productName}-Mac-${buildVersion}-Installer.${ext}"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "build/icons/icon.ico",
+    "artifactName": "${productName}-Windows-${version}.${ext}"
+  },
+  "linux": {
+    "target": [
+      "AppImage"
+    ],
+    "icon": "build/icons/icon.png",
+    "artifactName": "${productName}-Linux-${buildVersion}.${ext}"
+}
+}

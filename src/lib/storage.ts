@@ -1,0 +1,85 @@
+import type { AppData } from './types'
+import { defaultData } from './defaults'
+import { normalizeData } from './utils'
+
+export async function loadData(): Promise<AppData> {
+  const raw = (await window.typefast.loadData()) as Partial<AppData>
+  return normalizeData(raw, defaultData)
+}
+
+export async function saveData(data: AppData) {
+  return window.typefast.saveData(data)
+}
+
+export async function exportJson(data: AppData) {
+  return window.typefast.exportJson(data)
+}
+
+export async function exportHistory(text: string) {
+  return window.typefast.exportHistory(text)
+}
+
+export async function importJson() {
+  return window.typefast.importJson()
+}
+
+export async function copyText(text: string, html?: string) {
+  if (window.typefast?.copyText) {
+    try {
+      return window.typefast.copyText(text, html)
+    } catch {
+      // Fall through to browser clipboard fallback.
+    }
+  }
+
+  if (html && navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+    try {
+      const item = new ClipboardItem({
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+        'text/html': new Blob([html], { type: 'text/html' }),
+      })
+      await navigator.clipboard.write([item])
+      return true
+    } catch {
+      // Fall through to plain text copy fallback.
+    }
+  }
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      // Fall through to legacy copy fallback.
+    }
+  }
+
+  try {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', 'true')
+    textarea.style.position = 'fixed'
+    textarea.style.top = '-9999px'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const result = document.execCommand('copy')
+    document.body.removeChild(textarea)
+    return result
+  } catch {
+    return false
+  }
+}
+
+export function openExternal(url: string) {
+  return window.typefast.openExternal(url)
+}
+
+export function openProcedure() {
+  if (window.typefast?.openProcedure) {
+    return window.typefast.openProcedure()
+  }
+  const popup = window.open(`${window.location.pathname}#procedure`, '_blank', 'width=980,height=720')
+  if (!popup) return false
+  return true
+}

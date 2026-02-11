@@ -1,0 +1,1873 @@
+.editorContainer {
+    width: 100%;
+}
+
+.designer, .previewView, .htmlContentEditor, .htmlEditor {
+    height: 100%;
+}
+
+.editorContainer .designerContentEditor .designerTabView .toolboxTabContent {
+    height: 0;
+}
+
+.htmlTabButtonView, .previewTabButtonView {
+    height: 10px;
+}
+
+.editorContainer .designerContentEditor,
+.htmlEditor, .htmlPreview,
+.editorContainer table,
+.contentEditor.ui-tabs,
+.htmlContentEditorFrame, .designerContentEditorFrame, .fullPageContentEditorFrame,
+.previewView.ui-tabs-panel,
+.htmlContentEditor.ui-tabs-panel, .previewView.ui-tabs-panel,
+.previewView .ui-tabs-panel.browserPreview,
+.browserPreviewFrame,
+.fullPageContentEditor {
+    height: 100%;
+}
+
+.iosScroll {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.designer .designerIosContainer {
+    position: absolute;
+    overflow: auto;
+}
+
+.designer .designerIosContainer .designerContentEditorFrameWrapper,
+.designer .designerIosContainer .designerContentEditorFrameWrapper .designerContentEditorFrame {
+    position: relative;
+}
+
+.browserPreviewContent {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.browserPreviewContentTitle {
+    padding-top: 25px;
+    padding-bottom: 25px;
+    display: block;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 14px;
+}
+
+.editorContainer .editorReadonlyTitle,
+.editorContainer .htmlEditorNotSupportedMessage {
+    font-weight: bolder;
+    font-size: 16px;
+    margin: auto;
+    text-align: center;
+    padding-top: 10px;
+}
+
+
+.editorContainer table tbody {
+    vertical-align: top;
+}
+
+.designerTabView {
+    height: calc(100% - 35px);
+    overflow-y: auto;
+}
+
+.toolboxTabContent,
+.detailsTabContent,
+.contentEditor,
+.tabView {
+    border: 1px solid lightgrey;
+}
+
+.editorContainer .contentEditor td.designer {
+    width: 100%;
+    text-align: center;
+    border: 1px solid darkgray;
+    background: white;
+}
+
+.editorContainer .contentEditor td.designer .designerContentEditorFrameWrapper {
+    height: 100%;
+    display: flex;
+}
+
+.toolboxTabContent img {
+    padding: 0;
+    margin: 2px;
+    width: 24px;
+}
+
+.designerTabView,
+.previewPropertiesTabView {
+    width: auto;
+    vertical-align: top;
+    background: #efefef;
+    display: block;
+    width: 100%;
+    overflow-y: auto;
+}
+
+.htmlContentEditor,
+.browserPreview {
+    width: auto;
+}
+
+.htmlContentEditor {
+    box-sizing: border-box;
+}
+
+.browserPreview {
+    background-color: #F5F5F5 !important;
+}
+
+.htmlEditor,
+.htmlPreview {
+    padding: 0 !important;
+}
+
+.stylesTabContent {
+    padding: 1em 1.2em;
+}
+
+.stylesTabContent .empty-watermark {
+    position: relative;
+    text-align: center;
+    top: 30%;
+    font-size: 13px;
+}
+
+.htmlContentEditorFrame,
+.designerContentEditorFrame,
+.fullPageContentEditorFrame {
+    display: block;
+    border: none;
+    width: 100%;
+}
+
+.editorContainer .ui-tabs .ui-state-disabled {
+    display: none;
+}
+
+.htmlContentEditor.ui-tabs-panel,
+.previewView.ui-tabs-panel {
+    outline: 1px solid darkgray !important;
+    background: white;
+}
+
+.htmlContentEditor .htmlEditorContentTextArea {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.previewView.ui-tabs .ui-tabs-panel {
+    margin: 0;
+    padding: 0;
+}
+
+.editorContainer .menuBar .ms-Button {
+    height: 22px;
+    font-size: 12px;
+}
+
+.editorContainer .menuBar .ui-widget-header .ms-Button:not(:last-child) {
+    border-right: 1px solid darkgray;
+    margin-right: 0px;
+}
+
+.editorContainer .menuBar .ui-widget-header .ms-Button .ms-Pivot-text {
+    padding-bottom: 5px;
+}
+
+.previewView.ui-tabs {
+    margin: 0;
+    padding: 0;
+}
+
+.htmlContentEditor .htmlTabButtonView,
+.previewView .previewTabButtonView {
+    padding-bottom: 1em;
+}
+
+.editorContainer .contentEditor.ui-widget-content,
+.editorContainer .contentEditor.ui-widget-content.ui-tabs {
+    width: auto;
+    border-color: transparent;
+    background: transparent;
+}
+
+.contentEditor .designerTabButtonView,
+.contentEditor .designerTabView,
+.previewPropertiesTabButtonView,
+.previewPropertiesTabView {
+    display: block;
+    position: relative;
+    left: 0.3em;
+}
+
+.contentEditor .designerTabView {
+    display: block !important;
+}
+
+.menuBar {
+    display: inline-flex;
+    width: 100%;
+    cursor: auto;
+    margin-bottom: 10px;
+}
+
+.menuBar .menuBarItems {
+    display: flex;
+    justify-content: center;
+    cursor: auto;
+}
+
+.menuBar .menuBarItems .toolbarButton {
+    display: inline-block;
+    text-align: center;
+    margin-left: 1em;
+    margin-right: 1em;
+    cursor: pointer;
+    margin-bottom: 0px;
+    margin-top: 10px;
+}
+
+.toolbarButton {
+    background: none;
+    border-color: transparent;
+    cursor: pointer;
+    min-width: 40px;
+    width: auto;
+    margin-bottom: 0px;
+    padding: 0;
+}
+
+.toolsList, .selectedToolsDropdown {
+    background-color: #efefef;
+}
+
+.CCFSymbolFont {
+    font-family: 'CRMMDL2' !important;
+}
+
+.menuBar .menuBarItems .accessibilityCheckerButtonImage
+.menuBar .menuBarItems .undoButtonImage,
+.menuBar .menuBarItems .warningButtonImage,
+.menuBar .menuBarItems .redoButtonImage,
+.menuBar .menuBarItems .saveButtonImage,
+.menuBar .menuBarItems .maximizeButtonImage,
+.menuBar .menuBarItems .addButtonImage {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    background-repeat: no-repeat;
+    margin-bottom: 0px;
+}
+
+.menuBar .menuBarItems .undoButtonImage::before {
+    content: '\E7A7';
+}
+
+.menuBar .menuBarItems .saveButtonImage::before {
+    content: '\E74E';
+}
+
+.menuBar .menuBarItems .addButtonImage::before {
+    content: '\E710';
+}
+
+.menuBar .menuBarItems .maximizeButton .maximizeButtonImage::before {
+    content: '\E740';
+}
+
+.menuBar .menuBarItems .maximizeButton.maximizeButton-active .maximizeButtonImage::before {
+    content: '\E73F';
+}
+
+.menuBar .menuBarItems .warningButtonLabel,
+.menuBar .menuBarItems .undoButtonLabel,
+.menuBar .menuBarItems .saveButtonLabel,
+.menuBar .menuBarItems .redoButtonLabel,
+.menuBar .menuBarItems .addButtonLabel,
+.menuBar .menuBarItems .maximizeButtonLabel {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin-bottom: 0;
+}
+
+.toolsDropdown {
+    display: inline-block;
+}
+
+.contentEditor.ui-tabs {
+    position: inherit;
+}
+
+.toolsList {
+    z-index: 1;
+    margin: 5px 0 0 1em;
+    display: block;
+    position: absolute;
+    border: #CCC solid 1px;
+    min-width: 150px;
+    background-color: white;
+    box-shadow: 3px 3px 5px #333;
+    max-height: 350px;
+    overflow: auto;
+}
+
+.toolsListTitle {
+    padding: 15px 10px 15px 10px;
+    font-size: 12pt;
+    font-weight: bold;
+    font-family: Segoe UI Semibold;
+    width: auto;
+    color: #505050;
+    outline-color: transparent;
+    display: block;
+}
+
+.toolsListItem {
+    list-style-type: none;
+    font-family: Segoe UI Regular;
+    font-size: 12pt;
+    color: #505050;
+    padding: 0px 0px 15px 20px;
+    height: 25px;
+}
+
+.focusedToolsListItem {
+    background-color: rgba(38, 124, 215, 0.3);
+}
+
+.editorContainer .focusedToolsListItem button:focus {
+    outline: none !important;
+    border-style: solid;
+}
+
+.toolsListItem button {
+    padding-top: 12px;
+    text-align: left;
+    color: #666;
+    background: none;
+    border-color: transparent;
+    border-style: none;
+    cursor: pointer;
+    width: 100%;
+}
+
+.menuBar .menuBarItems .redoButtonImage::before {
+    content: '\E7A6';
+}
+
+.menuBar .menuBarItems .warningButtonImage {
+    font-size: 20px;
+    color: red;
+}
+
+.menuBarDivider {
+    border-left: 1px solid darkgray;
+    vertical-align: middle;
+    display: inline-block;
+    margin-right: 1.5em;
+    margin-left: 1.5em;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 0px;
+}
+
+.editorContainer .designerContentEditor.ui-tabs-panel {
+    margin: 0;
+    padding: 0;
+}
+
+.editorContainer .fullPageContentEditor.ui-tabs-panel {
+    margin: 0;
+    padding: 0;
+}
+
+#sharedSpacesContainer {
+    position: absolute;
+    display: none;
+    margin: auto;
+}
+
+/*
+ * General look-and-feel
+ */
+.editorContainer p,
+.editorContainer form,
+.editorContainer table,
+.editorContainer tr,
+.editorContainer td,
+.editorContainer div,
+.editorContainer tbody,
+.editorContainer thead,
+.editorContainer a,
+.editorContainer input,
+.editorContainer select,
+.editorContainer textarea,
+.editorContainer a:link,
+.editorContainer a:visited,
+.editorContainer a:hover,
+.editorContainer a:active,
+.detailsViewProperties,
+.extrasToggle {
+    font-family: "Segoe UI Web Regular", "Segoe UI", "Tahoma", "Helvetica", Arial, "sans-serif";
+    font-weight: 400;
+    font-size: 12px;
+    color: #666;
+    outline: none;
+}
+
+.detailsViewProperties .sectionHeader {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.detailsViewProperties .sectionHeader .NotificationIcon-symbol {
+    color: #fff;
+}
+
+/* Default Chrome styles set transform: translateY(25%); */
+.detailsViewProperties .sectionHeader > div > div {
+    transform: none !important;
+}
+
+.emptyDetailsView {
+    font-family: Segoe UI;
+    font-size: 12px;
+    line-height: 14px;
+    color: #323130;
+}
+
+.editorContainer td {
+    background-clip: padding-box;
+}
+
+.editorContainer table {
+    width: calc(100% - 2px);
+    border-collapse: separate;
+}
+
+/*
+ * General jQuery UI tabs
+ */
+.editorContainer .ui-tabs .ui-tabs-nav {
+    border-color: transparent;
+    border-radius: 0;
+    background: transparent;
+    padding-left: 0.3em;
+    padding-top: 0;
+    margin-top: -0.1em;
+    position: relative;
+}
+
+.editorContainer .ui-tabs .ui-tabs-nav .ui-tabs-anchor {
+    padding: 0;
+}
+
+.editorContainer .ui-tabs-nav .ui-state-active .designerTabContainer {
+    font-weight: 600;
+}
+
+.editorContainer .ui-widget-content.ui-tabs {
+    border: 1px solid darkgray;
+    border-radius: 0;
+}
+
+.editorContainer .ui-widget-header,
+.editorPopupCssClass .ui-widget-header {
+    border-color: transparent;
+    background: transparent;
+    display: flex;
+    align-self: center;
+    cursor: auto;
+}
+
+.editorContainer .ui-tabs .ui-tabs-nav {
+    padding: 0;
+}
+
+/*
+ * jQuery UI tabs in the editor
+ */
+.menuBar .ui-widget-header {
+    margin-left: 0px;
+    margin-bottom: 0px;
+}
+
+.contentEditor.ui-tabs,
+.contentEditor .ui-tabs-nav .ui-state-default,
+.menuBar .ui-tabs-nav .ui-state-default,
+.htmlContentEditor.ui-corner-all,
+.previewView.ui-corner-all,
+.previewPropertiesTabView.ui-corner-all {
+    border-radius: 0;
+}
+
+.contentEditor .ui-tabs-nav .ui-state-default,
+.menuBar .ui-tabs-nav .ui-state-default {
+    background: transparent;
+    color: darkgray;
+    border-color: transparent;
+    margin-left: 0.8em;
+}
+
+.contentEditor .ui-tabs-nav .ui-state-default .designerTabContainer,
+.menuBar .ui-tabs-nav .ui-state-default .designerTabContainer {
+    border-right: 1px solid darkgray;
+    padding-right: 1em;
+}
+
+.contentEditor .ui-tabs-nav .ui-state-default:last-child .designerTabContainer,
+.menuBar .ui-tabs-nav .ui-state-default:last-child .designerTabContainer {
+    border-color: transparent;
+}
+
+.menuBar .ui-tabs-nav .ui-state-active span,
+.browserPreviewTitle.active {
+    border-bottom: 2px solid #267cd7;
+    padding-bottom: 3px;
+}
+
+.menuBar .ui-tabs-nav .ui-state-hover span {
+    font-weight: bold;
+}
+
+/*
+ * jQuery UI tabs inside the designer
+ */
+.designerContentEditor .ui-tabs-nav .ui-tabs-anchor,
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-tabs-anchor {
+    padding: 0.5em 1em;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-default .designerTabContainer,
+.designerContentEditor .ui-tabs-nav .ui-state-active span,
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-state-default .designerTabContainer,
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-state-active span {
+    border-color: transparent;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-active,
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-state-active {
+    background: #efefef;
+}
+
+.designerTabView .ui-tabs-nav .ui-state-active {
+    border-bottom: 1px solid #efefef;
+}
+
+/*
+ * Monaco editor styles
+ */
+.monaco-editor .view-overlays {
+    border-left: 1px dashed #ddd;
+}
+
+/*
+ * Tree view styles
+ */
+.contentViewBlocks .contentBlockSection {
+    padding: 15px 0px 0px 0px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.contentViewBlocks .contentBlockSection:first-child {
+    padding: 0;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.contentViewBlocks .treeView,
+.detailsViewProperties .treeView {
+    display: table;
+    width: 100%;
+    padding-top: 3px;
+}
+
+.contentViewBlocks .extrasToggle,
+.detailsViewProperties .extrasToggle {
+    width: 11px;
+    height: 11px;
+    display: inline-block;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+}
+
+.detailsTabContent .detailsViewProperties .extrasToggle {
+    vertical-align: middle;
+}
+
+.detailsTabContent .detailsViewProperties .extrasToggle:focus {
+    outline: 1px dotted #ffffff;
+}
+
+.contentViewBlocks .extrasToggle::before,
+.stylesTabContent .detailsViewProperties .extrasToggle::before,
+.previewView .detailsViewProperties .extrasToggle::before {
+    content: '\EE62';
+}
+
+.detailsTabContent .detailsViewProperties .extrasToggle::before {
+    content: '\E818';
+    font-size: 9px;
+    color: #ffffff;
+    vertical-align: top;
+}
+
+.contentViewBlocks :hover.extrasToggle,
+.detailsViewProperties :hover.extrasToggle {
+    background-position: 0 -11px;
+}
+
+.contentViewBlocks .extrasToggle.collapsed,
+.detailsViewProperties .extrasToggle.collapsed {
+    background-position: 0 0;
+}
+
+.contentViewBlocks :hover.extrasToggle.collapsed,
+.detailsViewProperties :hover.extrasToggle.collapsed {
+    background-position: 0 -22px;
+}
+
+.contentViewBlocks .extrasToggle.collapsed::before,
+.stylesTabContent .extrasToggle.collapsed::before,
+.previewView .detailsViewProperties .extrasToggle.collapsed::before {
+    content: '\F06B';
+}
+
+.detailsTabContent .detailsViewProperties .extrasToggle.collapsed::before {
+    content: '\F08F';
+    font-size: 8px;
+}
+
+.contentViewBlocks .propertiesTitle,
+.detailsViewProperties .propertiesTitle {
+    font-size: 14px;
+    font-weight: 500;
+    color: #165ec4;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.detailsViewProperties .propertiesTitle {
+    padding-left: 5px;
+}
+
+.propertiesTitleButton {
+    background: none;
+    border-color: transparent;
+    cursor: pointer;
+    display: inline-block;
+    width: auto;
+    padding: 2px 2px;
+}
+
+/*
+ * Details tab styles
+ */
+
+.detailsViewProperties .treeViewItem:first-child .treeViewItemField {
+    padding-top: 0;
+}
+
+.detailsViewProperties .treeViewItem:last-child .treeViewItemField {
+    padding-bottom: 0;
+}
+
+.detailsViewProperties .textareaTreeViewItem {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+}
+
+.detailsViewProperties .textareaTreeViewItem label {
+    margin: 10px 0 10px 0;
+}
+
+.detailsViewProperties .treeViewItemField {
+    display: table-cell;
+    white-space: nowrap;
+    padding: 0.5em;
+    padding-left: 0;
+    width: 100px;
+}
+
+.detailsViewProperties .treeViewItemField:first-child {
+    padding-left: 0.2em;
+}
+
+.detailsViewProperties .treeViewItemField:last-child {
+    padding-right: 0;
+}
+
+.detailsViewProperties .textareatreeViewItemField {
+    width: 100%;
+}
+
+.detailsViewProperties .rangetreeViewItemField {
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.detailsViewProperties .rangetreeViewItemField .rangetreeViewItemValueField {
+    margin: 0 0 0 10px;
+    width: 20px;
+}
+
+/* Begin range input */
+
+.detailsViewProperties .rangetreeViewItemField input[type=range] {
+    height: 23px;
+    -webkit-appearance: none;
+    margin: 0;
+    width: calc(100% - 30px);
+    background: transparent;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]:focus {
+    outline: none;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    animate: 0.2s;
+    box-shadow: 0px 0px 0px #002200;
+    background: #005A9E;
+    border-radius: 0px;
+    border: 0px solid #FFFFFF;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-webkit-slider-thumb {
+    box-shadow: 0px 0px 0px #FFFFFF;
+    border: 1px solid #005A9E;
+    height: 16px;
+    width: 16px;
+    border-radius: 50px;
+    background: #FFFAFA;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -6.5px;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]:focus::-webkit-slider-runnable-track {
+    background: #005A9E;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    animate: 0.2s;
+    box-shadow: 0px 0px 0px #002200;
+    background: #005A9E;
+    border-radius: 0px;
+    border: 0px solid #FFFFFF;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-moz-range-thumb {
+    box-shadow: 0px 0px 0px #FFFFFF;
+    border: 1px solid #005A9E;
+    height: 16px;
+    width: 16px;
+    border-radius: 50px;
+    background: #FFFAFA;
+    cursor: pointer;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-ms-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    animate: 0.2s;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-ms-fill-lower {
+    background: #005A9E;
+    border: 0px solid #FFFFFF;
+    border-radius: 0px;
+    box-shadow: 0px 0px 0px #002200;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-ms-fill-upper {
+    background: #005A9E;
+    border: 0px solid #FFFFFF;
+    border-radius: 0px;
+    box-shadow: 0px 0px 0px #002200;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]::-ms-thumb {
+    margin-top: 1px;
+    box-shadow: 0px 0px 0px #FFFFFF;
+    border: 1px solid #005A9E;
+    height: 16px;
+    width: 16px;
+    border-radius: 50px;
+    background: #FFFAFA;
+    cursor: pointer;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]:focus::-ms-fill-lower {
+    background: #005A9E;
+}
+
+.detailsViewProperties .rangetreeViewItemField input[type=range]:focus::-ms-fill-upper {
+    background: #005A9E;
+}
+
+.detailsViewProperties .rangetreeViewItemField .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+}
+/* End range input */
+
+.detailsViewProperties .treeViewItemColumn {
+    display: table-column;
+}
+
+.detailsViewProperties .propertyNameColumn {
+    white-space: nowrap;
+}
+
+.detailsViewProperties .propertyName {
+    padding-right: 1em;
+    font-weight: 600;
+}
+
+.detailsViewProperties .attributeInput {
+    border-width: 1px;
+    border-style: solid;
+    border-color: darkgray;
+    box-sizing: content-box;
+    height: 30px;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+.detailsViewProperties .attributeInput.inputImage,
+.detailsViewProperties .attributeInput.inputColor {
+    /*leaving space for the color-filled rectangle*/
+    width: calc(100% - 20px);
+    vertical-align: middle;
+    box-sizing: content-box;
+}
+
+.detailsViewProperties .attributeTextArea {
+    border-width: 1px;
+    border-style: solid;
+    border-color: darkgray;
+    box-sizing: content-box;
+    height: 100%;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+.detailsViewProperties .treeViewItemField .inputCheckbox {
+    width: 1.2em;
+    height: 1.2em;
+    margin: 0 5px 0 0;
+}
+
+.detailsViewProperties .treeViewItemField.checkboxField {
+    display: flex !important;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.detailsViewProperties .treeViewItemField .inputRadioButton {
+    margin-right: 5px;
+}
+
+.detailsViewProperties .treeViewItemField .inputRadioButton:nth-last-child(2) {
+    margin-left: 5px;
+}
+
+.detailsViewProperties .srcInput {
+    /* leaving enough space on the line for the gallery button */
+    width: calc(100% - 18px - 2px);
+    vertical-align: middle;
+    box-sizing: content-box;
+    display: inline-block;
+}
+
+.detailsViewButton {
+    background-color: white;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-style: solid;
+    border-width: 1px;
+    border-color: darkgray;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: top;
+    box-sizing: content-box;
+}
+
+/*
+ * Toolbox tab styles
+ */
+.toolboxTabContent .contentViewBlocks.ltr .contentBlockSection {
+    text-align: left;
+}
+
+.toolboxTabContent .contentViewBlocks.rtl .contentBlockSection {
+    text-align: right;
+}
+
+.toolboxTabContent .contentViewBlocks.ltr .propertiesTitle {
+    padding-left: 5px;
+    margin: 0px;
+}
+
+.toolboxTabContent .contentViewBlocks.rtl .propertiesTitle {
+    padding-right: 5px;
+    margin: 0px;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems {
+    width: 100%;
+    display: table;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemRow {
+    display: table-row;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemRow:first-child .toolItemCell .tool-card .tool-card-button {
+    /* remove margin on top of the top cells */
+    margin-top: 0;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemRow:last-child .toolItemCell .tool-card .tool-card-button {
+    /* remove margin on the bottom of the bottom cells */
+    margin-bottom: 0;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell {
+    display: table-cell;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card {
+    width: 150px;
+    height: 40px;
+    margin: 5px 0px 5px 0px;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card .tool-card-button {
+    border: 1px solid #a8a8a8;
+    background-image: none;
+    padding: 7px;
+    white-space: nowrap;
+    background-color: white;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    width: 100%;
+    height: 40px;
+    pointer-events: none;
+}
+
+.editorContainer:focus,
+.toolsListItem:hover,
+.warningButton:hover
+.selectedToolsDropdown,
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card .tool-card-button:focus,
+.detailsViewProperties .attributeInput:focus,
+.detailsViewButton:focus,
+.editorPopupCssClass.ms-Dialog .ms-Dialog-header .ms-Dialog-button--close:focus {
+    outline: #3961C6 1px solid !important;
+}
+
+.tool-card-button:focus {
+    outline-offset: -2px;
+}
+
+.undoButton:hover,
+.saveButton:hover,
+.redoButton:hover,
+.addButton:hover,
+.maximizeButton:hover {
+    outline: none;
+    background-color: #D8D8D8;
+}
+
+.editorContainer .propertiesTitleButton:focus {
+    outline: #FFFFFF 1px solid !important;
+}
+
+.detailsViewProperties .treeViewItemField .siblingFocused {
+    outline: #3961C6 1px dashed !important;
+}
+
+.toolboxTabContent .contentViewBlocks.rtl .contentBlockItems .toolItemCell .tool-card {
+    box-shadow: -2px 2px 0 #dddddd;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card:hover > .tool-card-button,
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card.selectedToolItem .tool-card-button {
+    background-color: #777777;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card:hover .tool-card-button .toolItemLabel,
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .tool-card.selectedToolItem .tool-card-button .toolItemLabel {
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .toolItemLabel {
+    vertical-align: middle;
+    white-space: nowrap;
+    display: inline-block;
+    text-align: left;
+    width: calc(100% - 26px);
+    /* tool-card width - icon width */
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .toolItemLabel.rtl {
+    text-align: right;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockItems .toolItemCell .toolItemIcon {
+    vertical-align: middle;
+}
+
+.fontIconSize {
+    color: white;
+    font-size: 16px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    margin: 2px 2px 0 0;
+    display: -ms-flexbox;
+    -ms-flex-pack: center;
+    height: 24px;
+    width: 25px;
+    margin: 0 0 0 0;
+    padding: 0px 0px 0px 1px;
+}
+
+.iconContainer {
+    display: inline-block;
+    margin: 0 8px 0 2px;
+    vertical-align: middle;
+    padding: 0;
+    width: auto;
+    height: auto;
+    float: none;
+    border-radius: 2px;
+}
+
+.customRadioInput {
+    display: none;
+}
+
+.customRadioTileButton {
+    display: flex;
+}
+
+.customRadioTileButton .customRadioOptionContainer {
+    width: 45px;
+    height: 45px;
+    margin: 4px;
+    color: #666;
+    background-color: white;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
+    border: solid #777777;
+    border-width: 1px;
+}
+
+.customRadioTileButton .customRadioOptionSelected {
+    background-color: #777777;
+    border: solid #FFFFFF;
+    border-width: 1px;
+}
+
+.customRadioTileButton .customRadioOptionContainer:hover {
+    background-color: #777777;
+    border: solid #FFFFFF;
+    border-width: 1px;
+}
+
+.customRadioTileButton .customRadioOptionContainer:hover .fontIconSize {
+    color: whitesmoke;
+}
+
+.customRadioTileButton .iconContainer {
+    padding-left: 1px;
+    padding-top: 1px;
+    margin: 0;
+}
+
+.customRadioTileButton .iconContainer .fontIconSize {
+    color: #666;
+    width: 43px;
+    height: 43px;
+}
+
+.customRadioTileButton .customRadioOptionSelected .fontIconSize {
+    color: whitesmoke;
+}
+
+.customRadioOptionContainer:focus {
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: #3961C6;
+}
+
+/*normal state*/
+.customRadioTileButton .iconContainer .oneColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTciIHZpZXdCb3g9IjAgMCAyNCAxNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDBWMTYuNUgwVjBIMjRaTTIyLjUgMS41SDEuNVYxNUgyMi41VjEuNVoiIGZpbGw9IiM3Nzc3NzciLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .iconContainer .twoColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyMyAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMThWMEgxMC41VjE4SDBaTTEuNSAxLjVWMTYuNUg5VjEuNUgxLjVaTTEyIDBIMjIuNVYxOEgxMlYwWk0yMSAxNi41VjEuNUgxMy41VjE2LjVIMjFaIiBmaWxsPSIjNzc3Nzc3Ii8+Cjwvc3ZnPgo=');
+}
+
+.customRadioTileButton .iconContainer .twoOneColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMThWMEgxNVYxOEgwWk0xLjUgMS41VjE2LjVIMTMuNVYxLjVIMS41Wk0xNi41IDBIMjRWMThIMTYuNVYwWk0yMi41IDE2LjVWMS41SDE4VjE2LjVIMjIuNVoiIGZpbGw9IiM3Nzc3NzciLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .iconContainer .oneTwoColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMEgyNFYxOEg5VjBaTTIyLjUgMTYuNVYxLjVIMTAuNVYxNi41SDIyLjVaTTAgMThWMEg3LjVWMThIMFpNMS41IDEuNVYxNi41SDZWMS41SDEuNVoiIGZpbGw9IiM3Nzc3NzciLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .iconContainer .threeColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyMiAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAuNSAxOFYwSDYuNVYxOEgwLjVaTTIgMS41VjE2LjVINVYxLjVIMlpNOCAxOFYwSDE0VjE4SDhaTTkuNSAxLjVWMTYuNUgxMi41VjEuNUg5LjVaTTE1LjUgMEgyMS41VjE4SDE1LjVWMFpNMjAgMTYuNVYxLjVIMTdWMTYuNUgyMFoiIGZpbGw9IiM3Nzc3NzciLz4KPC9zdmc+Cg==');
+}
+
+/*hover*/
+.customRadioTileButton .customRadioOptionContainer:hover .iconContainer .oneColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTciIHZpZXdCb3g9IjAgMCAyNCAxNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDBWMTYuNUgwVjBIMjRaTTIyLjUgMS41SDEuNVYxNUgyMi41VjEuNVoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .customRadioOptionContainer:hover .iconContainer .twoColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyMyAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMThWMEgxMC41VjE4SDBaTTEuNSAxLjVWMTYuNUg5VjEuNUgxLjVaTTEyIDBIMjIuNVYxOEgxMlYwWk0yMSAxNi41VjEuNUgxMy41VjE2LjVIMjFaIiBmaWxsPSIjRkZGRkZGIi8+Cjwvc3ZnPgo=');
+}
+
+.customRadioTileButton .customRadioOptionContainer:hover .iconContainer .twoOneColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMThWMEgxNVYxOEgwWk0xLjUgMS41VjE2LjVIMTMuNVYxLjVIMS41Wk0xNi41IDBIMjRWMThIMTYuNVYwWk0yMi41IDE2LjVWMS41SDE4VjE2LjVIMjIuNVoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .customRadioOptionContainer:hover .iconContainer .oneTwoColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMEgyNFYxOEg5VjBaTTIyLjUgMTYuNVYxLjVIMTAuNVYxNi41SDIyLjVaTTAgMThWMEg3LjVWMThIMFpNMS41IDEuNVYxNi41SDZWMS41SDEuNVoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .customRadioOptionContainer:hover .iconContainer .threeColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyMiAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAuNSAxOFYwSDYuNVYxOEgwLjVaTTIgMS41VjE2LjVINVYxLjVIMlpNOCAxOFYwSDE0VjE4SDhaTTkuNSAxLjVWMTYuNUgxMi41VjEuNUg5LjVaTTE1LjUgMEgyMS41VjE4SDE1LjVWMFpNMjAgMTYuNVYxLjVIMTdWMTYuNUgyMFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+/*selected*/
+.customRadioTileButton .customRadioOptionSelected .iconContainer .oneColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTciIHZpZXdCb3g9IjAgMCAyNCAxNyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDBWMTYuNUgwVjBIMjRaTTIyLjUgMS41SDEuNVYxNUgyMi41VjEuNVoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .customRadioOptionSelected .iconContainer .twoColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjMiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyMyAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMThWMEgxMC41VjE4SDBaTTEuNSAxLjVWMTYuNUg5VjEuNUgxLjVaTTEyIDBIMjIuNVYxOEgxMlYwWk0yMSAxNi41VjEuNUgxMy41VjE2LjVIMjFaIiBmaWxsPSIjRkZGRkZGIi8+Cjwvc3ZnPgo=');
+}
+
+.customRadioTileButton .customRadioOptionSelected .iconContainer .twoOneColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMThWMEgxNVYxOEgwWk0xLjUgMS41VjE2LjVIMTMuNVYxLjVIMS41Wk0xNi41IDBIMjRWMThIMTYuNVYwWk0yMi41IDE2LjVWMS41SDE4VjE2LjVIMjIuNVoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .customRadioOptionSelected .iconContainer .oneTwoColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyNCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMEgyNFYxOEg5VjBaTTIyLjUgMTYuNVYxLjVIMTAuNVYxNi41SDIyLjVaTTAgMThWMEg3LjVWMThIMFpNMS41IDEuNVYxNi41SDZWMS41SDEuNVoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.customRadioTileButton .customRadioOptionSelected .iconContainer .threeColumnOption::before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAyMiAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAuNSAxOFYwSDYuNVYxOEgwLjVaTTIgMS41VjE2LjVINVYxLjVIMlpNOCAxOFYwSDE0VjE4SDhaTTkuNSAxLjVWMTYuNUgxMi41VjEuNUg5LjVaTTE1LjUgMEgyMS41VjE4SDE1LjVWMFpNMjAgMTYuNVYxLjVIMTdWMTYuNUgyMFoiIGZpbGw9IiNGRkZGRkYiLz4KPC9zdmc+Cg==');
+}
+
+.toolItemCell .toolItemIcon {
+    background-color: #315fa2;
+}
+
+.toolItemCell .toolItemIcon .oneColumnTool,
+.toolItemCell .toolItemIcon .twoColumnTool,
+.toolItemCell .toolItemIcon .threeColumnTool,
+.toolItemCell .toolItemIcon .twoOneColumnTool,
+.toolItemCell .toolItemIcon .oneTwoColumnTool,
+.toolItemCell .toolItemIcon .customColumnTool {
+    background-color: #F2C624;
+}
+
+.toolItemCell .toolItemIcon .oneColumnTool::before {
+    content: '\F1D3';
+}
+
+.toolItemCell .toolItemIcon .twoColumnTool::before {
+    content: '\F1D4';
+}
+
+.toolItemCell .toolItemIcon .threeColumnTool::before {
+    content: '\F1D5';
+}
+
+.toolItemCell .toolItemIcon .twoOneColumnTool::before {
+    content: '\F1D6';
+}
+
+.toolItemCell .toolItemIcon .oneTwoColumnTool::before {
+    content: '\F1D7';
+}
+
+.toolItemCell .toolItemIcon .customColumnTool::before {
+    content: '\F1D8';
+}
+
+.toolItemCell .toolItemIcon .imageTool::before {
+    content: '\EB9F';
+}
+
+.toolItemCell .toolItemIcon .dividerTool::before {
+    content: '\E949';
+}
+
+.toolItemCell .toolItemIcon .contentBlockTool::before {
+    content: '\ECEE';
+}
+
+.toolItemCell .toolItemIcon .videoTool::before {
+    content: '\E714';
+}
+
+.toolItemCell .toolItemIcon .buttonTool::before {
+    content: '\EBFC';
+}
+
+.toolItemCell .toolItemIcon .textTool::before {
+    content: '\EBC7';
+}
+
+.toolboxTabContent .contentViewBlocks.ltr .contentBlockItems .toolItemCell:nth-child(1) .tool-card .tool-card-button {
+    /* remove margin on the left of the leftmost cells */
+    margin-left: 0;
+}
+
+.toolboxTabContent .contentViewBlocks.rtl .contentBlockItems .toolItemCell:nth-child(1) .tool-card .tool-card-button {
+    /* remove margin on the left of the leftmost cells */
+    margin-right: 0;
+}
+
+.toolboxTabContent .contentViewBlocks.ltr .contentBlockItems .toolItemCell:nth-child(2) .tool-card .tool-card-button {
+    /* remove margin on the left of the rightmost cells */
+    margin-right: 0;
+}
+
+.toolboxTabContent .contentViewBlocks.rtl .contentBlockItems .toolItemCell:nth-child(2) .tool-card .tool-card-button {
+    /* remove margin on the left of the rightmost cells */
+    margin-left: 0;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockSection.contentBlockSection-loading .contentBlockSection-loading-message,
+.toolboxTabContent .contentViewBlocks .contentBlockSection.contentBlockSection-empty .contentBlockSection-empty-message,
+.toolboxTabContent .contentViewBlocks .contentBlockSection .contentBlockSection-subtitle {
+    color: #165ec4;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0 4px 20px 4px;
+    padding: 14px 10px;
+    font-size: 13px;
+    background: #FFF;
+    outline: none;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockSection .contentBlockSection-subtitle .fontIconSize,
+.editorContainer #htmlWarningMessage .fontIconSize {
+    color: #ffcb7a;
+    font-family: 'CRMMDL2';
+    padding-right: 10px;
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockSection .contentBlockSection-subtitle .fontIconSize::before,
+.editorContainer #htmlWarningMessage .fontIconSize::before {
+    content: '\E7BA';
+}
+
+.toolboxTabContent .contentViewBlocks .contentBlockSection.contentBlockSection-loading.contentBlockSection-empty .contentBlockSection-empty-message {
+    display: none;
+}
+
+/*
+*  Browser Preview Header Styles
+*/
+.browserPreviewHeader {
+    vertical-align: top;
+    background-color: white;
+    text-align: center;
+    height: 100%;
+    display: inline-table;
+    border-right: 1px solid #aaaaaa;
+}
+
+.browserPreviewTitle {
+    display: inline-block;
+    padding-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 95px;
+}
+
+.browserPreviewTitle:first-child {
+    margin-top: 20px;
+}
+
+.browserPreviewHeaderIconButtonsGroup {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.browserPreviewIcon {
+    vertical-align: middle;
+    opacity: 0.5;
+    font-size: 35px;
+}
+
+.browserPreviewIcon.active {
+    opacity: 1;
+}
+
+.browserPreviewIcon:hover {
+    cursor: pointer;
+}
+
+.browserPreviewDivider {
+    margin: 15px auto;
+    width: 50px;
+    background-color: #aaaaaa;
+    height: 1px;
+}
+
+.previewButtonContainer {
+    background: none;
+    border-color: transparent;
+    cursor: pointer;
+    width: auto;
+    height: auto;
+    margin-bottom: 15px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+}
+
+.previewButtonContainer:last-child {
+    margin-bottom: 0;
+}
+
+.browserPreviewIcon.desktopPreviewIcon::before {
+    content: '\E7F4';
+}
+
+.browserPreviewIcon.tabletPortraitPreviewIcon::before {
+    content: '\F227';
+}
+
+.browserPreviewIcon.tabletLandscapePreviewIcon::before {
+    content: '\E70A';
+}
+
+.browserPreviewIcon.mobilePortraitPreviewIcon::before {
+    content: '\E8EA';
+}
+
+.browserPreviewIcon.mobileLandscapePreviewIcon::before {
+    content: '\F226';
+}
+
+/* Styles for the Loading screen */
+.loadingModal {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.containerLoading {
+    overflow: hidden;
+}
+
+.containerLoading .loadingModal {
+    display: block;
+}
+
+/* Styles for Preview Properties screen */
+.previewPropertiesTabButtonView .ui-tabs-nav.ui-widget-header {
+    top: 2px;
+}
+
+.previewPropertiesTabButtonView,
+.previewPropertiesTabView {
+    display: table-cell;
+}
+
+.previewPropertiesTabView .propertiesView.ui-tabs-panel {
+    padding: 0;
+    width: 100%;
+}
+
+.previewPropertiesTabView .detailsViewProperties {
+    margin: 0;
+    padding: 10px;
+}
+
+/* Styles for PopupRenderer */
+.editorPopupCssClass.ms-Dialog {
+    box-shadow: 3px 3px 5px #888;
+    border: 1px solid #CCC;
+    border-radius: 0;
+    padding: 0;
+    border-color: transparent;
+    z-index: 1000 !important;
+}
+
+.editorPopupCssClass.ms-Dialog .ms-Dialog-header .ms-Dialog-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #505050;
+    margin: 0;
+}
+
+.editorPopupCssClass.ms-Dialog .ms-Dialog-inner  {
+    padding: 0px 20px 20px;
+}
+
+.editorPopupCssClass.ui-widget input,
+.editorPopupCssClass.ui-widget select,
+.editorPopupCssClass.ui-widget textarea,
+.editorPopupCssClass.ui-widget label,
+.editorPopupCssClass.ui-widget button {
+    font-family: Segoe\000020UI;
+    font-size: 13px;
+}
+
+.rteAttachmentDialogCssClass .previewContainer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-bottom-style: groove;
+    border-bottom-width: 1px;
+}
+
+.rteAttachmentDialogCssClass .iframeContainer {
+    display: flex;
+    align-items: center;
+    height: 45vh;
+}
+
+.rteAttachmentDialogCssClass .fileNameTitle {
+    text-align: center;
+    color: rgb(51, 51, 51);
+}
+
+.rteAttachmentDialogCssClass .ms-Button--default:hover {
+    background-color: #0078d4;
+    color: white;
+}
+
+
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-state-default .designerTabPaneLabel,
+.designerContentEditor .ui-tabs-nav .ui-state-default .designerTabPaneLabel {
+    font-weight: 400;
+    color: #444;
+    font-size: 14px;
+}
+
+.designerTabContainer .designerTabPaneLabel::after {
+    display: block;
+    content: attr(title);
+    font-weight: bold;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+.designerTabAnchor {
+    display: none;
+}
+
+.designerTabContainer {
+    cursor: pointer;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-default {
+    background-color: #e2e2e2;
+    border-top: 2px solid #e2e2e2;
+    height: 33px;
+    width: 33.33%;
+    margin: 0;
+    padding-bottom: 0;
+}
+
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-state-default {
+    height: 33px;
+    min-width: 33.33%;
+    margin: 0;
+    padding-bottom: 0;
+    background-color: #EFEFEF;
+    border-color: #EFEFEF;
+    border-top: 2px solid #267CD7;
+}
+
+.designerContentEditor li.ui-state-default.ui-corner-top:after {
+    content: '';
+    position: absolute;
+    bottom: calc((100% - 25px) / 2);
+    top: calc((100% - 25px) / 2);
+    right: 0px;
+    height: 25px;
+    border-right: 1px solid #666;
+}
+
+.designerContentEditor li.ui-state-default.ui-corner-top.ui-tabs-active.ui-state-active:after {
+    height: 0 !important;
+}
+
+.designerContentEditor li.ui-state-default.ui-corner-top:last-child:after {
+    height: 0 !important;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-default:last-child:not(.ui-state-active) {
+    border-right-color: #DDD;
+}
+
+.editorContainer .previewPropertiesTabButtonView .ui-tabs-nav,
+.editorContainer .designerContentEditor .ui-tabs-nav {
+    padding: 0;
+    border-left: 1px solid #EFEFEF;
+    border-bottom: 1px solid #EFEFEF;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-default .designerTabContainer,
+.previewPropertiesTabButtonView .ui-tabs-nav .ui-state-default .designerTabContainer {
+    padding: 6px 0;
+    width: 100%;
+    text-align: center;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-active {
+    background-color: #EFEFEF;
+    border-color: #EFEFEF;
+    border-top-color: #3B79B7;
+}
+
+.designerContentEditor .ui-tabs-nav .ui-state-active:focus {
+    outline-offset: -2px;
+}
+
+.editorContainer .previewPropertiesTabView.ui-tabs,
+.editorContainer .designerContentEditor .designerTabView.ui-tabs {
+    border-color: #EFEFEF;
+    background: #EFEFEF;
+    overflow-x: hidden;
+    width: 340px;
+}
+
+.previewPropertiesTabView .detailsViewProperties {
+    margin: 0;
+    padding: 15px;
+}
+
+.contentViewBlocks .extrasToggle, .detailsViewProperties .extrasToggle {
+    background-position: 0px -11px;
+    margin-left: 3px;
+}
+
+.contentViewBlocks .extrasToggle.collapsed, .detailsViewProperties .extrasToggle.collapsed {
+    background-position: 0px -0px;
+}
+
+.contentViewBlocks .extrasToggle.collapsed:hover, .detailsViewProperties .extrasToggle.collapsed:hover {
+    background-position: 0 0px;
+}
+
+.contentViewBlocks .propertiesTitle, .detailsViewProperties .propertiesTitle {
+    color: #666;
+    font-size: 14px;
+}
+
+.rtl {
+    text-align: right !important;
+}
+
+.toolboxTabContent {
+    width: auto;
+}
+
+.detailsViewProperties:not(:last-child) {
+    margin-bottom: 15px;
+}
+
+.designerTabView.ui-tabs .detailsTabContent .detailsViewProperties .propertiesTitle {
+    color: #fff;
+    padding: 5px 0px;
+    font-weight: normal;
+}
+
+.designerTabView.ui-tabs .detailsTabContent .detailsViewProperties .treeView {
+    background: #CCC;
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+.designerTabView.ui-tabs .detailsTabContent .detailsViewProperties {
+    background-color: #666;
+}
+
+.detailsViewProperties input[type="text"] {
+    color: #505050;
+    font-size: 12px;
+    height: 30px;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+input[type="text"].linkInput {
+    color: #26A0DA;
+}
+
+.designerTabView.ui-tabs .stylesTabContent .detailsViewProperties .treeViewItemField {
+    padding: 0;
+    padding-right: 8px;
+    width: 50%;
+    box-sizing: border-box;
+    font-size: 13px;
+    font-weight: normal;
+    color: #505050;
+}
+
+.designerTabView.ui-tabs .detailsTabContent .detailsViewProperties .propertyName {
+    display: block;
+}
+
+.designerTabView.ui-tabs .detailsTabContent .detailsViewProperties .treeViewItemField {
+    display: block;
+    font-size: 14px;
+    font-weight: 400;
+    color: #444;
+    margin-bottom: 10px;
+    padding: 0;
+    width: 100%;
+}
+
+.detailsViewProperties .treeViewItemField.propertyName {
+    padding: 0;
+}
+
+.detailsViewProperties .treeView input:disabled,
+.detailsViewProperties .treeView select:disabled,
+.detailsViewProperties .treeView .richEditDisabled,
+.detailsViewProperties .treeView button:disabled {
+    background-color: #DDD !important;
+    border: 2px solid #BBB;
+    color: #222222;
+    cursor: not-allowed;
+}
+
+.editorContainer td:first-child,
+.editorContainer td {
+    padding: 0 !important;
+}
+
+.editorContainer tr {
+    height: auto !important;
+    height: initial !important;
+}
+
+.editorContainer .previewView tr:last-of-type {
+    height: 100% !important;
+}
+
+.detailsViewButton,
+.detailsViewProperties .treeViewItemField .colorFilledRectangle,
+.detailsViewProperties .treeViewItemField .colorFilledRectangle-internal{
+    height: 30px;
+    width: 30px;
+}
+
+.detailsViewProperties .attributeInput.inputImage,
+.detailsViewProperties .attributeInput.inputColor {
+    width: calc(100% - 53px);
+}
+
+.designerTabView.ui-tabs .stylesTabContent .detailsViewProperties .treeViewItem {
+    display: table-row;
+    height: 45px;
+}
+
+.toolboxTabContent .contentViewBlocks.ltr .contentBlockItems .toolItemCell .tool-card .tool-card-button {
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+}
+
+.designerTabView.ui-tabs .ui-tabs-panel {
+    padding: 20px 15px 0px 15px;
+    height: calc(100% - 30px);
+}
+
+.dontShowAgainCheckboxContainer {
+    margin-top: 20px;
+}
+
+.dontShowAgainCheckboxContainer INPUT {
+    width: auto;
+}
+
+.accessibilityPopup .accessibilityLegend {
+    padding-right: 5px;
+    padding-left: 5px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.accessibilityPopup .accessibilityLegend:focus {
+    outline: 2px solid #139ff7 !important;
+}
+
+.accessibilityPopup .accessibilityLegend .accessibilityLegendSectionLabel {
+    font-size: 20px;
+    border-bottom: 1px solid #AAA;
+    margin: 5px 0px 15px;
+}
+
+.accessibilityPopup .accessibilityLegend .accessibilityLegendSection {
+    margin-left: 5px;
+}
+
+.accessibilityPopup .accessibilityLegend .accessibilityLegendSectionElementCaption {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.accessibilityPopup .accessibilityLegend .accessibilityLegendSectionElement {
+    margin: 10px;
+}
+
+.designerContentEditor .contentViewBlocks.ltr {
+    width: 310px;
+}
+
+.designerContentEditor div.toolItemRow > div:last-child .tool-card {
+    float: right;
+}
+
+.designerContentEditor div.toolItemRow > div:first-child .tool-card {
+    float: left !important;
+}
+
+.editorContainer #htmlWarningMessage {
+    color: #165ec4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px;
+    font-size: 13px;
+    background: #FFF;
+    outline: none;
+}
+
+.previewTabButtonView ul {
+    padding: 6px 0px 16px !important;
+}
+
+.editorLookupControl {
+    max-width: 280px;
+}
+
+.previewView.ui-tabs-panel .previewLayoutColumn1 {
+    width: 80%;
+}
+
+.ui-helper-clearfix:before, .ui-helper-clearfix:after {
+    display: inline;
+}
+
+select:focus::-ms-value {
+    background-color: #3A77B3;
+}
+
+input.inlineValidation:focus:invalid {
+    border: 2px solid rgb(234, 6, 0);
+    outline: none !important;
+}
+
+input.inlineValidation ~ label.errorMessage {
+    display: none;
+}
+
+input.inlineValidation:invalid ~ label.errorMessage {
+    display: block;
+    color: rgb(234, 6, 0);
+}
+
+.custom-color-picker {
+    padding: 0 5px;
+}
+
+.swatch-color-picker {
+    padding: 13px 15px 25px 14px;
+}
+
+.swatch-color-picker .color-title,
+.marketing-color-picker {
+    padding-top: 5px;
+}
+
+.color-picker-pivots .ms-Pivot {
+    padding-left: 5px;
+    padding-top: 5px;
+}
+
+@media only screen and (min-width: 768px) and (max-width: 1280px) {
+    .htmlContentEditorFrame,
+    .designerContentEditorFrame,
+    .fullPageContentEditorFrame {
+        min-width: 0;
+    }
+
+    .editorContainer {
+        max-width: 100%;
+    }
+}
+
+@font-face {
+    font-family: 'CRMMDL2';
+    src: url("/uclient/resources/styles/CRMMDL2.woff") format("woff");
+}

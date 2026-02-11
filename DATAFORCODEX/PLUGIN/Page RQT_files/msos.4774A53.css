@@ -1,0 +1,1022 @@
+/* UC updates */
+.noShadow {
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+}
+.flexCenter {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+}
+.buttonReset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+  outline: none;
+}
+.buttonReset::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+.afterBorder {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-glyph {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+.msos-glyph:after {
+  font-family: "CRM MDL2";
+  font-size: 16px;
+}
+.msos-no-overflow {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.msos-hidden {
+  display: none !important;
+}
+.msos-invisible {
+  visibility: hidden !important;
+}
+.msos-visible {
+  visibility: visible !important;
+}
+.msos-a11y {
+  position: absolute !important;
+  clip: rect(1px, 1px, 1px, 1px);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0.01;
+}
+#tdAreas .msos-selection-container {
+  position: fixed;
+}
+.msos-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-orient: vertical;
+  /* Older Safari - previous flex-box model */
+  min-width: 50px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  border: 1px solid transparent;
+  min-height: 42px;
+  padding: 0 0 6px;
+  font: normal 14px/1.4 "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #333333;
+  outline: none;
+}
+.msos-container:not(.msos-disabled).msos-active {
+  border-color: #666666;
+}
+.msos-disabled {
+  background-color: #efefef;
+  color: #333333;
+  border: 1px solid #efefef;
+  padding: 0 0 0 13px;
+}
+.msos-current-selection-expanded {
+  max-height: 136px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+  -ms-flex-direction: row;
+  -webkit-flex-direction: row;
+  -moz-flex-direction: row;
+  flex-direction: row;
+  -webkit-box-orient: horizontal;
+  /* Older Safari - previous flex-box model */
+  -ms-flex-wrap: wrap;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  padding: 0 0 0 13px;
+}
+.msos-active .msos-current-selection-expanded {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+}
+.msos-disabled .msos-current-selection-expanded {
+  display: none;
+}
+.msos-current-selection-normal {
+  max-height: 34px;
+  overflow: hidden;
+  display: none;
+  -ms-flex-direction: row;
+  -webkit-flex-direction: row;
+  -moz-flex-direction: row;
+  flex-direction: row;
+  -webkit-box-orient: horizontal;
+  /* Older Safari - previous flex-box model */
+  -ms-flex-wrap: wrap;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  padding: 0 0 0 13px;
+}
+.msos-active .msos-current-selection-normal {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+}
+.msos-disabled .msos-current-selection-normal {
+  display: none;
+}
+.msos-current-selection-normal:empty {
+  display: none;
+}
+.msos-selecteditems-expanded .msos-current-selection-normal {
+  max-height: 136px;
+  overflow-y: auto;
+}
+.msos-current-selection {
+  display: none;
+  -ms-flex-direction: row;
+  -webkit-flex-direction: row;
+  -moz-flex-direction: row;
+  flex-direction: row;
+  -webkit-box-orient: horizontal;
+  /* Older Safari - previous flex-box model */
+  -ms-flex-wrap: wrap;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  padding: 0 0 0 13px;
+}
+.msos-active .msos-current-selection {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+}
+.msos-disabled .msos-current-selection {
+  display: none;
+}
+.msos-selected-display-item {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  border: 0;
+  background: #efefef;
+  max-width: 100%;
+  height: 28px;
+  margin: 6px 7px 0 0;
+  line-height: 28px;
+  cursor: default;
+  outline: none;
+  position: relative;
+}
+.msos-selected-display-item:last-child {
+  margin-right: 0;
+}
+.msos-selected-display-item:focus {
+  outline: none;
+}
+.msos-disabled .msos-selected-display-item {
+  display: none;
+}
+.msos-selecteditems:focus .msos-selected-display-item.msos-selecteditem-active:after {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-quick-delete {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+  outline: none;
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  padding: 0 7px 0 3.5px;
+  cursor: pointer;
+  position: relative;
+}
+.msos-quick-delete::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+.msos-quick-delete:focus {
+  color: #000000;
+}
+.msos-quick-delete:focus:after {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-quick-delete:hover {
+  background: #b3b3b3;
+  color: #000000;
+}
+.msos-quick-delete .msos-glyph:after {
+  content: "\e711";
+}
+.msos-selected-display-item-text {
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: 0 3.5px 0 7px;
+}
+.msos-selected-display-item-text:last-child {
+  padding-right: 7px;
+}
+.msos-quick-delete + .msos-selected-display-item-text {
+  padding-left: 0;
+}
+.msos-viewmode-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  -ms-flex-item-align: center;
+  -webkit-align-items: center;
+  /* keep all items centered in the axis perpendicular to the flex direction */
+  -moz-align-items: center;
+  align-items: center;
+  -ms-flex-align: center;
+  /* IE10 - previous flex box model */
+  -webkit-box-align: center;
+  /* Older Safari - previous flex box model */
+}
+.msos-active:not(.msos-disabled) .msos-viewmode-container {
+  display: none;
+}
+.msos-viewmode-container.msos-viewmode-expanded {
+  padding-bottom: 6px;
+}
+.msos-disabled .msos-viewmode-container {
+  position: relative;
+}
+.msos-viewmode-content {
+  -ms-flex: 1 1 auto;
+  -moz-box-flex: 1 1 auto;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+.msos-disabled .msos-viewmode-content {
+  padding-left: 0;
+}
+.msos-viewmode-text {
+  line-height: 28px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-family: SegoeUI, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.msos-viewmode-expanded .msos-viewmode-text {
+  white-space: normal;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.msos-viewmode-button-container {
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: stretch;
+  -moz-align-items: stretch;
+  -ms-align-items: stretch;
+  align-items: stretch;
+  -webkit-align-content: center;
+  -moz-align-content: center;
+  -ms-align-content: center;
+  align-content: center;
+  -ms-flex: 0 0 auto;
+  -moz-box-flex: 0 0 auto;
+  -webkit-box-flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+  flex: 0 0 auto;
+  height: 100%;
+  margin: auto 0;
+  display: none;
+}
+.msos-disabled .msos-viewmode-button-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+}
+.msos-viewmode-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+  outline: none;
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  padding: 7px 6px 7px 7px;
+  cursor: pointer;
+}
+.msos-viewmode-button::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+.msos-viewmode-button .msos-glyph:after {
+  content: "\e70d";
+}
+.msos-viewmode-expanded .msos-viewmode-button .msos-glyph:after {
+  content: "\e70e";
+}
+.msos-viewmode-button:focus {
+  outline: 1px solid #000000;
+  outline-offset: -2px;
+}
+.msos-selecteditems-container {
+  display: none;
+}
+.msos-active:not(.msos-none-selected):not(.msos-disabled) .msos-selecteditems-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+}
+.msos-selecteditems {
+  outline: none;
+  list-style: none;
+  margin: 0;
+}
+.msos-selecteditems:focus {
+  outline: none;
+}
+.msos-selecteditems-toggle-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  width: min-content;
+  padding: 6px 0 0;
+}
+.msos-selecteditems-expanded .msos-selecteditems-toggle-container {
+  padding-bottom: 0;
+}
+.msos-selecteditems-toggle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+  outline: none;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 0 7px;
+  height: 28px;
+  line-height: 28px;
+  color: #2975b2;
+}
+.msos-selecteditems-toggle::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+.msos-selecteditems-toggle:hover {
+  color: #6199d1;
+}
+.msos-selecteditems-toggle:focus {
+  outline: 1px solid #000000;
+  outline-offset: -2px;
+}
+.msos-selecteditems-toggle {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+}
+.msos-selecteditems-expanded .msos-selecteditems-toggle {
+  margin-top: auto;
+}
+.msos-inner-container {
+  opacity: 0;
+  position: relative;
+  padding: 6px 0 0 0;
+}
+.msos-active:not(.msos-disabled) .msos-inner-container:not(.msos-fullscreen),
+.msos-disabled .msos-inner-container {
+  display: none;
+}
+.msos-active.msos-none-selected:not(.msos-disabled) .msos-inner-container:not(.msos-fullscreen),
+.msos-focused:not(.msos-disabled) .msos-inner-container:not(.msos-fullscreen) {
+  opacity: 1;
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+}
+.msos-none-selected .msos-inner-container:not(.msos-fullscreen) {
+  padding-top: 4px;
+}
+.msos-inner-container.msos-fullscreen {
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
+  display: -ms-flex;
+  display: flex;
+  -ms-justify-content: flex-start;
+  -webkit-justify-content: flex-start;
+  -moz-justify-content: flex-start;
+  justify-content: flex-start;
+  -ms-flex-pack: start;
+  /* IE10 - previous flex box model */
+  -webkit-box-pack: start;
+  /* Older Safari - previous flex box model */
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-orient: vertical;
+  /* Older Safari - previous flex-box model */
+  position: fixed;
+  opacity: 1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: #ffffff;
+  z-index: 99999;
+}
+.msos-filter-container {
+  display: flex;
+  width: 100%;
+}
+.msos-fullscreen .msos-filter-container {
+  -ms-flex: 0 0 auto;
+  -moz-box-flex: 0 0 auto;
+  -webkit-box-flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+  flex: 0 0 auto;
+}
+.msos-input-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  -ms-flex: 1 1 auto;
+  -moz-box-flex: 1 1 auto;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  padding: 0 0 0 13px;
+  min-height: 28px;
+}
+.msos-input-container > input {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+}
+.msos-input-container > input::-webkit-input-placeholder,
+.msos-input-container > input::-moz-placeholder,
+.msos-input-container > input:-ms-input-placeholder,
+.msos-input-container > input:-moz-placeholder {
+  color: #666666;
+}
+.msos-input-container > input:focus {
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  outline: none;
+  border: none !important;
+}
+.msos-caret-container {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  -ms-flex: 0 0 auto;
+  -moz-box-flex: 0 0 auto;
+  -webkit-box-flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+  flex: 0 0 auto;
+  padding: 0;
+  min-height: 28px;
+}
+.msos-caret-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+  outline: none;
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
+  -ms-justify-content: center;
+  justify-content: center;
+  padding: 7px 6px 7px 7px;
+  cursor: pointer;
+}
+.msos-caret-button::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+.msos-caret-button .msos-glyph:after {
+  content: "\e70d";
+}
+.msos-open .msos-caret-button .msos-glyph:after {
+  content: "\e70e";
+}
+.msos-caret-button:focus {
+  outline: 1px solid #000000;
+  outline-offset: -2px;
+}
+.msos-selection-container {
+  display: none;
+  width: 100%;
+  top: 100%;
+  background: #ffffff;
+  z-index: 10000;
+  background-clip: padding-box;
+  border: 1px solid #666666;
+  margin-top: 6px;
+  padding-top: 13px;
+}
+.msos-open .msos-selection-container {
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
+  display: -ms-flex;
+  display: flex;
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-orient: vertical;
+  /* Older Safari - previous flex-box model */
+}
+.msos-open .msos-inner-container:not(.msos-fullscreen) .msos-selection-container {
+  position: absolute;
+  left: -1px;
+  z-index: 9999;
+}
+.msos-open .msos-inner-container.msos-fullscreen .msos-selection-container {
+  border-right: none;
+  border-bottom: none;
+  border-left: none;
+}
+.msos-selection-container-reduced-height {
+  max-height: 118px;
+}
+.msos-action-buttons {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  position: relative;
+}
+.msos-action-buttons:hover {
+  background: #efefef;
+  color: #000000;
+}
+.msos-action-buttons:focus:after {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-fullscreen .msos-action-buttons {
+  display: block;
+}
+.msos-label {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -ms-flex: 1 1 auto;
+  -moz-box-flex: 1 1 auto;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-height: 35px;
+  position: relative;
+  overflow: hidden;
+}
+.msos-label:not(.msos-disabled) {
+  cursor: pointer;
+}
+.msos-label .msos-checkbox {
+  position: absolute !important;
+  clip: rect(1px, 1px, 1px, 1px);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0.01;
+  height: 100%;
+  margin: 0;
+}
+.msos-label .msos-label-text {
+  padding: 8px 0px 7px 35px;
+  word-break: break-word;
+}
+.msos-action-buttons .msos-label .msos-label-text {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  -ms-flex: 1 1 auto;
+  -moz-box-flex: 1 1 auto;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+}
+.msos-label .msos-label-text .msos-optionitem-text {
+  -ms-flex: 1 1 auto;
+  -moz-box-flex: 1 1 auto;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+}
+.msos-label .msos-label-text .msos-itemcount-text {
+  -ms-flex: 0 0 auto;
+  -moz-box-flex: 0 0 auto;
+  -webkit-box-flex: 0 0 auto;
+  -webkit-flex: 0 0 auto;
+  flex: 0 0 auto;
+  color: #666666;
+  padding: 0 14px;
+}
+.msos-label .msos-checkbox + .msos-label-text:before {
+  font-family: "CRM MDL2";
+  font-size: 12px;
+  display: inline-block;
+  content: "\e739";
+  padding: 0 11px 0 14px;
+  position: absolute;
+  left: 0;
+  top: 10px;
+}
+.msos-label .msos-checkbox:checked + .msos-label-text:before {
+  content: "\e73a";
+}
+.msos-selection {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  max-height: 140px;
+  margin: 0;
+  padding: 0;
+}
+.msos-selection:focus {
+  outline: none;
+}
+.msos-fullscreen .msos-selection {
+  max-height: none;
+}
+.msos-compact .msos-selection {
+  max-height: 70px;
+}
+.msos-selection-reduced-height {
+  max-height: 70px;
+}
+.msos-selection div:first-child.msos-optiongroup > .msos-optiongroup-label {
+  border-top: none;
+}
+.msos-selection-hidden {
+  display: none;
+}
+.msos-option {
+  display: -ms-flexbox;
+  /* Internet Explorer 10 */
+  display: -moz-box;
+  /* FireFox */
+  display: -webkit-box;
+  /* Safari */
+  display: -webkit-flex;
+  /* -flex is the current specification for Safari */
+  display: flex;
+  /* W3C */
+  position: relative;
+}
+.msos-option:hover {
+  background: #efefef;
+  color: #000000;
+}
+.msos-option:focus:after {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-fullscreen .msos-option {
+  display: block;
+}
+.msos-option-focused:after {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-option-selected {
+  background: #d8d8d8;
+}
+.msos-option-selected:hover {
+  background: #b3b3b3;
+}
+.msos-option-selected:focus:after {
+  content: "";
+  border: 1px solid #000000;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+.msos-no-results {
+  cursor: default;
+  padding-left: 13px;
+  max-height: 35px;
+  height: 35px;
+  line-height: 35px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.msos-no-results:not(.msos-disabled) {
+  cursor: default;
+}
+.msos-filtered-search {
+  display: none !important;
+}
+.msos-alert-text {
+  position: absolute !important;
+  clip: rect(1px, 1px, 1px, 1px);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0.01;
+}
+body.msos-fullscreen {
+  overflow: hidden;
+}

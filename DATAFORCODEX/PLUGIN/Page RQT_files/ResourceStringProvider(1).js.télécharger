@@ -1,0 +1,24 @@
+/**
+ * DO NOT REFERENCE THE .ts FILE DIRECTLY
+ * To consume this
+ * 1. reference the generated .d.ts file in ../../../../../TypeDefinitions/Service/Localization/Script/ResourceStringProvider.d.ts.
+ * 2. add Service/Localization/ResourceStringProvider.js as a web resource dependency on the js file that is consuming this.
+ */
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var ResourceStringProvider = (function () {
+        function ResourceStringProvider() {
+        }
+        ResourceStringProvider.getResourceString = function (key) {
+            var value = Xrm.Utility.getResourceString(ResourceStringProvider.WebResourceName, key);
+            if (value === undefined || value === null) {
+                value = key;
+            }
+            return value;
+        };
+        return ResourceStringProvider;
+    }());
+    ResourceStringProvider.WebResourceName = "Service/Localization/Service";
+    CrmService.ResourceStringProvider = ResourceStringProvider;
+})(CrmService || (CrmService = {}));

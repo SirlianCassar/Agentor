@@ -1,0 +1,36 @@
+/// <reference types="vite-plugin-electron/electron-env" />
+
+declare namespace NodeJS {
+  interface ProcessEnv {
+    /**
+     * The built directory structure
+     *
+     * ```tree
+     * ├─┬─┬ dist
+     * │ │ └── index.html
+     * │ │
+     * │ ├─┬ dist-electron
+     * │ │ ├── main.js
+     * │ │ └── preload.js
+     * │
+     * ```
+     */
+    APP_ROOT: string
+    /** /dist/ or /public/ */
+    VITE_PUBLIC: string
+  }
+}
+
+// Used in Renderer process, expose in `preload.ts`
+interface Window {
+  typefast: {
+    loadData: () => Promise<unknown>
+    saveData: (data: unknown) => Promise<boolean>
+    exportJson: (data: unknown) => Promise<{ canceled: boolean }>
+    exportHistory: (text: string) => Promise<{ canceled: boolean }>
+    importJson: () => Promise<{ canceled: boolean; data?: unknown }>
+    copyText: (text: string, html?: string) => boolean
+    openExternal: (url: string) => Promise<boolean>
+    openProcedure: () => Promise<boolean>
+  }
+}

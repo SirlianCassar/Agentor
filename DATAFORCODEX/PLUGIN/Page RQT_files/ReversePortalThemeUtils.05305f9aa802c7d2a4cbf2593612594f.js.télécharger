@@ -1,0 +1,4 @@
+/**
+ * @license Copyright (c) Microsoft Corporation. All rights reserved.
+ */
+(window.bundleExecutionMarkers=window.bundleExecutionMarkers||{})["scripts/ReversePortalThemeUtils.05305f9aa802c7d2a4cbf2593612594f.js"]={begin:performance.now()},(window.__wpJsonpUci=window.__wpJsonpUci||[]).push([[235],{juDn:function(e,r,n){"use strict";n.r(r),n.d(r,"ReversePortalThemeWrapperHelper",(function(){return c}));var o=n("mMyr"),t=n("nGM5"),i=n("TQb+");function c(e){const r=o.useMemo(()=>{const e=Object(t.c)();return{inPortal:r=>o.createElement(t.a,{node:e},r),outPortal:()=>o.createElement(t.b,{node:e})}},[]);return o.createElement(i.ThemeWrapperHelper,Object.assign({},e,{reversePortalProvider:r}))}}}]),window.bundleExecutionMarkers["scripts/ReversePortalThemeUtils.05305f9aa802c7d2a4cbf2593612594f.js"].end=window.performance.now(),window.reportBundleExecutionTimes&&window.reportBundleExecutionTimes();

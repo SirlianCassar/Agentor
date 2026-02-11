@@ -1,0 +1,368 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var Collaboration;
+(function (Collaboration) {
+    var WebStorage = (function () {
+        function WebStorage() {
+        }
+        WebStorage.getItem = function (key) {
+            return window.sessionStorage.getItem(key);
+        };
+        WebStorage.setItem = function (key, value) {
+            window.sessionStorage.setItem(key, value);
+        };
+        WebStorage.removeItem = function (key) {
+            window.sessionStorage.removeItem(key);
+        };
+        return WebStorage;
+    }());
+    Collaboration.WebStorage = WebStorage;
+})(Collaboration || (Collaboration = {}));
+var Collaboration;
+(function (Collaboration) {
+    Collaboration.GetCurrAppId = 'Get current AppId';
+    Collaboration.ErrorAppProperties = 'Unable to fetch app properties';
+    Collaboration.EmbedCollabShowIcon = 'Embed collab setting - hide/unhide icon';
+    Collaboration.ErrorEmbedCollabShowIcon = 'Something went wrong while checking for embed-collab hide/unhide conditions';
+    Collaboration.EmbedCollabGetValue = 'Embed collab setting - Retrieve value';
+    Collaboration.ErrorEmbedCollabGetValue = 'Unable to fetch embed-collab setting value';
+    Collaboration.FCB_EmbedCollab = 'EmbeddedCollaboration';
+    Collaboration.EmbedCollabAttributeName = 'isembedteamscollabenabled';
+    Collaboration.teamsSettingsEntityLogicalName = 'msdyn_msteamssettingsv2';
+    Collaboration.embedcollabSettingAttributeLogicalName = 'msdyn_embedcollabteamsintegrationenabled';
+    Collaboration.collabPanel = "collab-panel";
+    Collaboration.mobileClient = "Mobile";
+    Collaboration.SalesTrialAppLogicalName = 'msdynce_salestrialhub';
+    Collaboration.ErrorInRetrievingAppName = 'Failed to retrieve app name';
+    Collaboration.GetAppName = 'Get App Name';
+    Collaboration.FCB_EmbedCollabBeethovenDemoMode = 'EmbeddedCollabBeethovenDemoExperience';
+    Collaboration.FCS_ShowCollabTabInSidePane = 'ShowCollabTabInSidePane';
+    Collaboration.FCS_CollabNameSpace = 'DynamicsTeamsIntegration.TeamsEmbedCollaboration';
+    Collaboration.EmbeddedCollabEnabledForIframe = 'embeddedCollabEnabledForIframe';
+    Collaboration.DefaultOnFcsNamespace = "DynamicsTeamsIntegration.TeamsEmbedOP";
+    Collaboration.DefaultOnFcsSettingName = "TeamsEmbedAppLevelConfig";
+    Collaboration.EmbedAppSettingUniqueName = "msdyn_IsTeamsDynamicsIntegrationEnabled";
+    Collaboration.Oct2023FCBName = "October2023Update";
+})(Collaboration || (Collaboration = {}));
+var Collaboration;
+(function (Collaboration) {
+    Collaboration.getFeatureControlSetting = function (nameSpace, settingKey, defaultValue) {
+        var fcsValue = (Xrm.Utility.getGlobalContext()).getFeatureControlSetting(nameSpace, settingKey);
+        if (fcsValue !== null || fcsValue !== undefined) {
+            return fcsValue;
+        }
+        return defaultValue;
+    };
+})(Collaboration || (Collaboration = {}));
+var Collaboration;
+(function (Collaboration) {
+    var AdminSettingsWebResource = (function () {
+        function AdminSettingsWebResource() {
+            var _this = this;
+            this.isSalesTrialApp = function () { return __awaiter(_this, void 0, void 0, function () {
+                var currentAppProps, error_1;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            return [4, Xrm.Utility.getGlobalContext().getCurrentAppProperties()];
+                        case 1:
+                            currentAppProps = _a.sent();
+                            if (currentAppProps && currentAppProps.uniqueName && (currentAppProps.uniqueName.localeCompare(Collaboration.SalesTrialAppLogicalName) == 0)) {
+                                return [2, true];
+                            }
+                            return [3, 3];
+                        case 2:
+                            error_1 = _a.sent();
+                            Xrm.Reporting.reportFailure(Collaboration.GetAppName, Error(Collaboration.ErrorInRetrievingAppName));
+                            return [3, 3];
+                        case 3: return [2, false];
+                    }
+                });
+            }); };
+            this.shouldOpenInDemoMode = function () { return __awaiter(_this, void 0, void 0, function () {
+                var isSalesTrialApp, isTrialOrg;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4, this.isSalesTrialApp()];
+                        case 1:
+                            isSalesTrialApp = _a.sent();
+                            isTrialOrg = this.isTrialOrg();
+                            return [2, (this.isEmbedCollabBeethovenDemoEnabled() && (isSalesTrialApp || isTrialOrg))];
+                    }
+                });
+            }); };
+            this.isDomainBlocked = function () {
+                return Xrm.Utility.getGlobalContext().organizationSettings.isSovereignCloud;
+            };
+            this.isAcceptableAppContext = function () { return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, Xrm.Page.context.getCurrentAppProperties()
+                            .then(function (response) {
+                            if (response.uniqueName === "AppforOutlookModule") {
+                                return false;
+                            }
+                            return Boolean(response.appId);
+                        }, function (error) {
+                            Xrm.Reporting.reportFailure(Collaboration.GetCurrAppId, Error(Collaboration.ErrorAppProperties + ("" + error.Message)));
+                            return false;
+                        })];
+                });
+            }); };
+            this.isEmbeddedCollaborationCommandVisible = function () { return __awaiter(_this, void 0, void 0, function () {
+                var isAcceptableAppContext_1, isembedCollabEnabled_1, inDemoMode_1, isDefaultOnFCSOn_1, isOct2023FCBOn_1, isEmbedAppSettingOn_1, appLevelFeatureOn, isEmbeddedCollaborationEnabled, error_2;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 3, , 4]);
+                            if (!((this.isHostFromSameOrigin() || this.isEmbeddedCollabEnabledForIframe()) && !this.isMobileClient() && this.EmbedCollabFcbEnabled() && !this.isDomainBlocked())) return [3, 2];
+                            return [4, Promise.all([
+                                    this.isAcceptableAppContext(),
+                                    this.getEmbedCollaborationSettings(),
+                                    this.shouldOpenInDemoMode(),
+                                    this.isDefaultOnFCSOn(),
+                                    this.isOct2023FCBOn(),
+                                    this.isEmbedAppSettingOn()
+                                ]).then(function (values) {
+                                    isAcceptableAppContext_1 = values[0],
+                                        isembedCollabEnabled_1 = values[1],
+                                        inDemoMode_1 = values[2],
+                                        isDefaultOnFCSOn_1 = values[3],
+                                        isOct2023FCBOn_1 = values[4],
+                                        isEmbedAppSettingOn_1 = values[5];
+                                })];
+                        case 1:
+                            _a.sent();
+                            appLevelFeatureOn = isOct2023FCBOn_1 && isDefaultOnFCSOn_1;
+                            isEmbeddedCollaborationEnabled = void 0;
+                            if (appLevelFeatureOn) {
+                                isEmbeddedCollaborationEnabled = isAcceptableAppContext_1 && !Xrm.App.sessions && (isEmbedAppSettingOn_1 || inDemoMode_1);
+                            }
+                            else {
+                                isEmbeddedCollaborationEnabled = isAcceptableAppContext_1 && !Xrm.App.sessions && (isembedCollabEnabled_1 || inDemoMode_1);
+                            }
+                            if (isEmbeddedCollaborationEnabled) {
+                                this.LoadWidgetIfNotLoaded();
+                            }
+                            else if (!isEmbeddedCollaborationEnabled && inDemoMode_1) {
+                                AdminSettingsWebResource.openEmbedCollabInDemoMode = true;
+                            }
+                            return [2, isEmbeddedCollaborationEnabled];
+                        case 2: return [2, false];
+                        case 3:
+                            error_2 = _a.sent();
+                            Xrm.Reporting.reportFailure(Collaboration.EmbedCollabShowIcon, Error(Collaboration.ErrorEmbedCollabShowIcon + ("" + error_2.Message)));
+                            return [2, false];
+                        case 4: return [2];
+                    }
+                });
+            }); };
+        }
+        AdminSettingsWebResource.prototype.isEmbedCollabBeethovenDemoEnabled = function () {
+            return Xrm.Internal.isFeatureEnabled(Collaboration.FCB_EmbedCollabBeethovenDemoMode);
+        };
+        AdminSettingsWebResource.prototype.isTrialOrg = function () {
+            var isTrialOrg = typeof Xrm.Utility.getGlobalContext().organizationSettings.isTrialOrganization !== "undefined"
+                && Xrm.Utility.getGlobalContext().organizationSettings.isTrialOrganization !== null
+                ? Xrm.Utility.getGlobalContext().organizationSettings.isTrialOrganization
+                : false;
+            return isTrialOrg;
+        };
+        AdminSettingsWebResource.prototype.EmbedCollabFcbEnabled = function () {
+            return Xrm.Internal.isFeatureEnabled(Collaboration.FCB_EmbedCollab);
+        };
+        AdminSettingsWebResource.prototype.getEmbedCollaborationSettings = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var isEmbedCollabEnabled, embedCollabSessionStorageValue, msteamsSettingsRecord, error_3;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            isEmbedCollabEnabled = false;
+                            embedCollabSessionStorageValue = sessionStorage.getItem(Collaboration.embedcollabSettingAttributeLogicalName);
+                            if (!embedCollabSessionStorageValue) return [3, 1];
+                            isEmbedCollabEnabled = embedCollabSessionStorageValue.toLowerCase() === 'true';
+                            return [3, 4];
+                        case 1:
+                            _a.trys.push([1, 3, , 4]);
+                            return [4, window.Xrm.WebApi.retrieveMultipleRecords(Collaboration.teamsSettingsEntityLogicalName, "?$select=" + Collaboration.embedcollabSettingAttributeLogicalName)];
+                        case 2:
+                            msteamsSettingsRecord = _a.sent();
+                            if (msteamsSettingsRecord && msteamsSettingsRecord.entities && msteamsSettingsRecord.entities.length > 0) {
+                                isEmbedCollabEnabled = msteamsSettingsRecord.entities[0].msdyn_embedcollabteamsintegrationenabled;
+                                sessionStorage.setItem(Collaboration.embedcollabSettingAttributeLogicalName, isEmbedCollabEnabled.toString());
+                            }
+                            return [3, 4];
+                        case 3:
+                            error_3 = _a.sent();
+                            Xrm.Reporting.reportFailure(Collaboration.EmbedCollabGetValue, Error(Collaboration.ErrorEmbedCollabGetValue + ("" + error_3.Message)));
+                            return [3, 4];
+                        case 4: return [2, isEmbedCollabEnabled];
+                    }
+                });
+            });
+        };
+        AdminSettingsWebResource.prototype.isDefaultOnFCSOn = function () {
+            return Collaboration.getFeatureControlSetting(Collaboration.DefaultOnFcsNamespace, Collaboration.DefaultOnFcsSettingName, false);
+        };
+        AdminSettingsWebResource.prototype.isOct2023FCBOn = function () {
+            return Xrm.Internal.isFeatureEnabled(Collaboration.Oct2023FCBName);
+        };
+        AdminSettingsWebResource.prototype.isEmbedAppSettingOn = function () {
+            return Xrm.Utility.getGlobalContext().getCurrentAppSetting(Collaboration.EmbedAppSettingUniqueName);
+        };
+        AdminSettingsWebResource.prototype.LoadWidgetIfNotLoaded = function () {
+            var collabPanelId = Collaboration.WebStorage.getItem(Collaboration.collabPanel);
+            var sidePanel = null;
+            if (collabPanelId) {
+                sidePanel = Xrm.App.sidePanes.getPane(collabPanelId);
+            }
+            if (!collabPanelId || !sidePanel) {
+                Collaboration.LoadWidget();
+            }
+        };
+        AdminSettingsWebResource.prototype.isHostFromSameOrigin = function () {
+            try {
+                window.top.location.href;
+                return true;
+            }
+            catch (err) {
+                return false;
+            }
+        };
+        AdminSettingsWebResource.prototype.isEmbeddedCollabEnabledForIframe = function () {
+            try {
+                var urlParams = new URLSearchParams(window.parent.location.search);
+                return urlParams.get(Collaboration.EmbeddedCollabEnabledForIframe) === 'true';
+            }
+            catch (err) {
+                return false;
+            }
+        };
+        AdminSettingsWebResource.prototype.isMobileClient = function () {
+            try {
+                return Xrm.Page.context.client.getClient() == Collaboration.mobileClient;
+            }
+            catch (err) {
+                return false;
+            }
+        };
+        AdminSettingsWebResource.openEmbedCollabInDemoMode = false;
+        return AdminSettingsWebResource;
+    }());
+    Collaboration.AdminSettingsWebResource = AdminSettingsWebResource;
+})(Collaboration || (Collaboration = {}));
+var Collaboration;
+(function (Collaboration) {
+    var SIDE_PANE_TITLE_STRING_KEY = "SidePaneTitle";
+    var pageType = "control";
+    var imageSrc = "/WebResources/msdyn_/img/OfficeChat.svg";
+    var webResource = "msdyn_/Collaboration/Resources/Collaboration";
+    var isSelected = false;
+    var canClose = false;
+    var alwaysRender = true;
+    var hideHeader = true;
+    var getString = function (key) {
+        return new Promise(function (resolve, reject) {
+            try {
+                var value = Xrm.Utility.getResourceString(webResource, key);
+                resolve(value);
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    };
+    Collaboration.LoadWidget = function () {
+        var showDemo = Collaboration.AdminSettingsWebResource.openEmbedCollabInDemoMode;
+        var controlName = showDemo ? "MscrmControls.DemoCollabcontrol.DemoCollabcontrol" : "MscrmControls.OfficeProductivity.CollabControl";
+        var paneId = showDemo ? "MscrmControls.DemoCollabcontrol.DemoCollabcontrol" : "MscrmControls.OfficeProductivity.CollabControl";
+        var collabPanelid = Collaboration.WebStorage.getItem(Collaboration.collabPanel);
+        var sidePanel = null;
+        var telemetryEventParamArray = new Array();
+        if (collabPanelid) {
+            sidePanel = Xrm.App.sidePanes.getPane(collabPanelid);
+        }
+        if (sidePanel) {
+            if (sidePanel.hidden === true) {
+                sidePanel.hidden = false;
+            }
+            sidePanel.select();
+            if (Xrm.App.sidePanes.state ===
+                0) {
+                Xrm.App.sidePanes.state =
+                    1;
+            }
+        }
+        else {
+            var isHidden = !Collaboration.getFeatureControlSetting(Collaboration.FCS_CollabNameSpace, Collaboration.FCS_ShowCollabTabInSidePane, true);
+            Xrm.App.sidePanes
+                .createPane({
+                imageSrc: imageSrc,
+                isSelected: isSelected,
+                canClose: canClose,
+                alwaysRender: alwaysRender,
+                hideHeader: hideHeader,
+                paneId: paneId,
+                hidden: isHidden
+            })
+                .then(function (pane) {
+                Collaboration.WebStorage.setItem(Collaboration.collabPanel, pane.paneId);
+                pane.navigate({
+                    pageType: pageType,
+                    controlName: controlName,
+                });
+                getString(SIDE_PANE_TITLE_STRING_KEY).then(function (sidePaneTitle) {
+                    pane.title = sidePaneTitle;
+                });
+            });
+        }
+        telemetryEventParamArray.push({ name: 'EventName', value: "Load Teams chat side panel" });
+        telemetryEventParamArray.push({ name: 'Side panel state', value: Xrm.App.sidePanes.state });
+        telemetryEventParamArray.push({ name: 'PaneId', value: paneId });
+        Xrm.Reporting.reportSuccess("LoadTeamsChatPanel", telemetryEventParamArray);
+    };
+})(Collaboration || (Collaboration = {}));
+var Collaboration;
+(function (Collaboration) {
+    var CommandBarActions = (function () {
+        function CommandBarActions() {
+        }
+        CommandBarActions.LoadCollabControl = Collaboration.LoadWidget;
+        CommandBarActions.AdminSettings = new Collaboration.AdminSettingsWebResource();
+        return CommandBarActions;
+    }());
+    Collaboration.CommandBarActions = CommandBarActions;
+})(Collaboration || (Collaboration = {}));

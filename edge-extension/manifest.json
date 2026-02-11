@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "TypeFast CRM Export",
+  "version": "1.0.0",
+  "description": "Export CRM data to TypeFast via a local endpoint.",
+  "action": {
+    "default_title": "Send CRM to TypeFast"
+  },
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "https://guillemot.crm4.dynamics.com/*",
+    "http://127.0.0.1:32100/*",
+    "http://localhost:32100/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://guillemot.crm4.dynamics.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

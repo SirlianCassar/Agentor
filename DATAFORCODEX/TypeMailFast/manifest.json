@@ -1,0 +1,29 @@
+{
+  "name": "TypeF@st",
+  "short_name": "TypeF@st",
+  "description": "Outil de rédaction rapide d'emails - Fait par Sirlian avec ❤️",
+  "version": "1.0.0",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#10b981",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./Assets/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./Assets/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "fr"
+}
+

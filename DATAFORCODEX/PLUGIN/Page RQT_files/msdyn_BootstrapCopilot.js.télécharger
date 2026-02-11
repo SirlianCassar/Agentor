@@ -1,0 +1,814 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var Mscrm;
+(function (Mscrm) {
+    var CSIntelligence;
+    (function (CSIntelligence) {
+        var BootstrapCopilot;
+        (function (BootstrapCopilot) {
+            BootstrapCopilot.RecordIds = {
+                CopilotSetting: "c619dd93-b4fb-4f8b-8ab3-2c6ca53ca48a"
+            };
+            BootstrapCopilot.EntityNames = {
+                CopilotSetting: "msdyn_agentcopilotsetting",
+                CopilotSettings: "msdyn_agentcopilotsettings",
+                PaneToolConfiguration: "msdyn_panetoolconfiguration",
+                PaneToolConfigurations: "msdyn_panetoolconfigurations",
+                CopilotAgentPreference: "msdyn_copilotagentpreference",
+                CopilotAgentPreferences: "msdyn_copilotagentpreferences"
+            };
+            BootstrapCopilot.CopilotSettingAttributes = {
+                Id: "msdyn_agentcopilotsettingid",
+                KbEnabled: "msdyn_kbenabled",
+                CopilotEnabled: "msdyn_copilotenabled",
+                CopilotEmailEnabledMode: "msdyn_copilotemailenabledmode"
+            };
+            BootstrapCopilot.PaneToolConfigurationAttributes = {
+                Name: "msdyn_name",
+                UniqueName: "msdyn_uniquename"
+            };
+            BootstrapCopilot.CopilotAgentPreferenceAttributes = {
+                OwnerIdValue: "_ownerid_value",
+                CreatedOn: "createdon",
+                EnabledSkills: "msdyn_enabledskills"
+            };
+            BootstrapCopilot.FCSNamespaces = {
+                CSIntelligence: "ServiceIntelligence.CustomerService",
+                CSProductivityTools: "CS.ProductivityTools"
+            };
+            BootstrapCopilot.FCSSettings = {
+                AgentAssist: "AgentAssist",
+                CopilotEmailAssistDefaultOn: "CopilotEmailAssistDefaultOn",
+                CopilotEmailAssistMultiturnEnabled: "CopilotEmailAssistMultiturnEnabled",
+                CopilotEmailAssistStreamingEnabled: "CopilotEmailAssistStreamingEnabled",
+                EnableCustomProdPaneSize: "EnableCustomProdPaneSize",
+                CopilotAgentAssistSkillEnabled: "CopilotAgentAssistSkillEnabled"
+            };
+            BootstrapCopilot.PaneIds = {
+                CopilotPane: "AppSidePane_MscrmControls.CSIntelligence.AICopilotControl"
+            };
+            BootstrapCopilot.ControlNames = {
+                AICopilot: "MscrmControls.CSIntelligence.AICopilotControl"
+            };
+            BootstrapCopilot.TelemetryEvents = {
+                SessionName: "Mscrm.CSIntelligence.BootstrapCopilot",
+                CheckCopilotEnabledEvent: "CheckCopilotEnabled",
+                LoadCopilotEvent: "LoadCopilot",
+                GetCopilotToolConfigEvent: "GetCopilotToolConfig",
+                GetUserSkillsEvent: "GetUserSkills",
+                GetFilteredUserSkillsEvent: "GetFilteredUserSkills",
+                GetCopilotAgentPreferenceEvent: "GetCopilotAgentPreference"
+            };
+            BootstrapCopilot.ProductivityPaneConfig = {
+                PaneDefaultSize: 340
+            };
+            var AppSettings;
+            (function (AppSettings) {
+                AppSettings["CopilotEnabledForApp"] = "msdyn_customerservicecopilotenabled";
+                AppSettings["ProductivityPaneSizeAppSetting"] = "msdyn_ProductivityPanedefaultsize";
+            })(AppSettings = BootstrapCopilot.AppSettings || (BootstrapCopilot.AppSettings = {}));
+            BootstrapCopilot.ProductivityPaneToolNames = {
+                Copilot: "msdyn_agentcopilot_tool_config"
+            };
+            BootstrapCopilot.AppUniqueNames = {
+                CustomerServiceWorkspace: "msdyn_CustomerServiceWorkspace"
+            };
+            var EmailEnabledMode;
+            (function (EmailEnabledMode) {
+                EmailEnabledMode[EmailEnabledMode["Manual"] = 133230001] = "Manual";
+                EmailEnabledMode[EmailEnabledMode["Default"] = 133230002] = "Default";
+            })(EmailEnabledMode = BootstrapCopilot.EmailEnabledMode || (BootstrapCopilot.EmailEnabledMode = {}));
+            var MonthlyChannel;
+            (function (MonthlyChannel) {
+                MonthlyChannel[MonthlyChannel["September2024"] = 2409] = "September2024";
+            })(MonthlyChannel = BootstrapCopilot.MonthlyChannel || (BootstrapCopilot.MonthlyChannel = {}));
+            var ReleaseWave;
+            (function (ReleaseWave) {
+                ReleaseWave["October2024"] = "FCB.October2024Update";
+            })(ReleaseWave = BootstrapCopilot.ReleaseWave || (BootstrapCopilot.ReleaseWave = {}));
+            BootstrapCopilot.AppModules = {
+                CSAdminCenter: "msdyn_CSAdminCenter"
+            };
+        })(BootstrapCopilot = CSIntelligence.BootstrapCopilot || (CSIntelligence.BootstrapCopilot = {}));
+    })(CSIntelligence = Mscrm.CSIntelligence || (Mscrm.CSIntelligence = {}));
+})(Mscrm || (Mscrm = {}));
+var Mscrm;
+(function (Mscrm) {
+    var CSIntelligence;
+    (function (CSIntelligence) {
+        var BootstrapCopilot;
+        (function (BootstrapCopilot) {
+            var SkillUtility = /** @class */ (function () {
+                function SkillUtility() {
+                }
+                /**
+                 * Checks if the given skill is the default skill.
+                 * @param skill The skill unique name
+                 * @returns true if the skill is the default skill, false otherwise
+                 */
+                SkillUtility.isDefaultSkill = function (skill) {
+                    return skill === SkillUtility.DEFAULT_SKILL;
+                };
+                /**
+                 * Fetches the current user's skill configurations from CDS and filters them based on user roles and agent preferences.
+                 * @return Promise<boolean> - true if initialization is successful, false otherwise
+                 * @throws Error if initialization fails
+                 */
+                SkillUtility.getCurrentUserSkills = function () {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var isFeatureEnabled, timer, userId, supportedSkills, fetchXml, result, skillMap_1, error_1;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    isFeatureEnabled = this.isSkillFeatureEnabled();
+                                    timer = BootstrapCopilot.Telemetry.measureStartStop(BootstrapCopilot.TelemetryEvents.GetUserSkillsEvent, { isFeatureEnabled: isFeatureEnabled });
+                                    _a.label = 1;
+                                case 1:
+                                    _a.trys.push([1, 5, , 6]);
+                                    supportedSkills = [];
+                                    if (!isFeatureEnabled) return [3 /*break*/, 4];
+                                    // fetch skills from CDS
+                                    userId = BootstrapCopilot.Utils.parseGuid(Xrm.Utility.getGlobalContext().userSettings.userId);
+                                    fetchXml = this.getCopilotSkillsFetchXml(userId);
+                                    return [4 /*yield*/, Xrm.WebApi.retrieveMultipleRecords("msdyn_copilotskill", "?fetchXml=".concat(fetchXml))];
+                                case 2:
+                                    result = _a.sent();
+                                    skillMap_1 = new Map();
+                                    if (result.entities.length > 0) {
+                                        // multiple rows can be returned for the same skill if it has multiple roles
+                                        result.entities.forEach(function (value) {
+                                            var _a;
+                                            // if skill not already in map, add it
+                                            if (!skillMap_1.has(value.msdyn_uniquename)) {
+                                                var featureConfiguration = JSON.parse(value.msdyn_featureconfiguration || "{}");
+                                                skillMap_1.set(value.msdyn_uniquename, {
+                                                    id: value.msdyn_copilotskillid,
+                                                    uniqueName: value.msdyn_uniquename,
+                                                    displayName: value.msdyn_name,
+                                                    checkRoleAccess: (_a = featureConfiguration.checkRoleAccess) !== null && _a !== void 0 ? _a : false,
+                                                    roles: value["skillroles.roleid"] ? [value["skillroles.roleid"]] : []
+                                                });
+                                            }
+                                            else {
+                                                // if skill already exists in map, append roles if present
+                                                var existingSkill = skillMap_1.get(value.msdyn_uniquename);
+                                                if (existingSkill && !!value["skillroles.roleid"]) {
+                                                    existingSkill.roles.push(value["skillroles.roleid"]);
+                                                }
+                                            }
+                                        });
+                                    }
+                                    return [4 /*yield*/, this.getFilteredSkills(skillMap_1, userId)];
+                                case 3:
+                                    supportedSkills = _a.sent();
+                                    _a.label = 4;
+                                case 4:
+                                    timer({
+                                        success: true,
+                                        userId: userId,
+                                        numOfSkills: supportedSkills.length,
+                                        skillList: supportedSkills.map(function (skill) { return skill.id; }).join(",")
+                                    });
+                                    return [2 /*return*/, supportedSkills];
+                                case 5:
+                                    error_1 = _a.sent();
+                                    // fail silently
+                                    timer({ success: false, error: error_1, userId: userId });
+                                    return [2 /*return*/, []];
+                                case 6: return [2 /*return*/];
+                            }
+                        });
+                    });
+                };
+                /**
+                 * Get the filtered skills for the user based on user roles and agent preference
+                 * @param skillMap - A map of skill configurations
+                 * @param userId - The user's GUID
+                 * @returns The list of applicable skills for the user
+                 */
+                SkillUtility.getFilteredSkills = function (skillMap, userId) {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var timer, skills, filteredSkills, skillOptions, error_2;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    timer = BootstrapCopilot.Telemetry.measureStartStop(BootstrapCopilot.TelemetryEvents.GetFilteredUserSkillsEvent);
+                                    _a.label = 1;
+                                case 1:
+                                    _a.trys.push([1, 3, , 4]);
+                                    skills = Array.from(skillMap.values());
+                                    return [4 /*yield*/, this.getApplicableSkillsForUser(skills, userId)];
+                                case 2:
+                                    filteredSkills = _a.sent();
+                                    skillOptions = filteredSkills.map(function (skill) { return ({
+                                        id: skill.uniqueName,
+                                        displayName: skill.displayName
+                                    }); });
+                                    timer({
+                                        success: true,
+                                        numOfTotalSkills: skills.length,
+                                        numOfFilteredSkills: filteredSkills.length
+                                    });
+                                    return [2 /*return*/, skillOptions];
+                                case 3:
+                                    error_2 = _a.sent();
+                                    // fail silently and return empty list
+                                    timer({ success: false, error: error_2 });
+                                    return [2 /*return*/, []];
+                                case 4: return [2 /*return*/];
+                            }
+                        });
+                    });
+                };
+                /**
+                 * Get applicable skills for user based on user roles and enabled skills in agent preference
+                 * @param skills all skills
+                 * @param userId user id
+                 * @returns filtered skills
+                 */
+                SkillUtility.getApplicableSkillsForUser = function (skills, userId) {
+                    return __awaiter(this, void 0, void 0, function () {
+                        var agentPreference, enabledSkills, applicableSkills;
+                        var _this = this;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4 /*yield*/, this.getCopilotAgentPreference(userId)];
+                                case 1:
+                                    agentPreference = _a.sent();
+                                    enabledSkills = JSON.parse((agentPreference === null || agentPreference === void 0 ? void 0 : agentPreference.msdyn_enabledskills) || "[]");
+                                    applicableSkills = skills.filter(function (skill) {
+                                        return (_this.isDefaultSkill(skill.uniqueName) ||
+                                            _this.skillEnabledForUserRole(skill) ||
+                                            _this.skillEnabledForUser(skill, enabledSkills));
+                                    });
+                                    return [2 /*return*/, applicableSkills];
+                            }
+                        });
+                    });
+                };
+                /**
+                 * Check if user has access to skill based on roles
+                 * @param skill skill configuration
+                 * @returns true if user has access to skill
+                 */
+                SkillUtility.skillEnabledForUserRole = function (skill) {
+                    //  check if checkRoleAccess is true and if user has any of the roles
+                    return !!skill.checkRoleAccess && skill.roles.length > 0;
+                };
+                /**
+                 * Check if user has access to skill based on enabled skills in agent preference
+                 * @param skill skill configuration
+                 * @param enabledSkills list of enabled skills in agent preference
+                 * @returns true if user has access to skill
+                 */
+                SkillUtility.skillEnabledForUser = function (skill, enabledSkills) {
+                    // filter skill based on enabled skills in agent preference
+                    return enabledSkills.indexOf(skill.uniqueName) !== -1;
+                };
+                /**
+                 * Retrieves the Copilot Agent Preference record for a user. If the record could not be retrieved, undefined is returned.
+                 * @param userId The user's GUID.
+                 * @returns ICopilotAgentPreference object, or undefined if it could not be retrieved.
+                 */
+                SkillUtility.getCopilotAgentPreference = function (userId) {
+                    var _a, _b;
+                    return __awaiter(this, void 0, void 0, function () {
+                        var timer, result, copilotPreferenceRecord, copilotAgentPreference, error_3;
+                        return __generator(this, function (_c) {
+                            switch (_c.label) {
+                                case 0:
+                                    timer = BootstrapCopilot.Telemetry.measureStartStop(BootstrapCopilot.TelemetryEvents.GetCopilotAgentPreferenceEvent, { userId: userId });
+                                    _c.label = 1;
+                                case 1:
+                                    _c.trys.push([1, 3, , 4]);
+                                    return [4 /*yield*/, Xrm.WebApi.retrieveMultipleRecords(BootstrapCopilot.EntityNames.CopilotAgentPreference, "?$filter=".concat(BootstrapCopilot.CopilotAgentPreferenceAttributes.OwnerIdValue, " eq '").concat(userId, "'&$orderby=").concat(BootstrapCopilot.CopilotAgentPreferenceAttributes.CreatedOn, " desc"))];
+                                case 2:
+                                    result = _c.sent();
+                                    copilotPreferenceRecord = (_a = result === null || result === void 0 ? void 0 : result.entities) === null || _a === void 0 ? void 0 : _a[0];
+                                    copilotAgentPreference = undefined;
+                                    if (copilotPreferenceRecord) {
+                                        copilotAgentPreference = {
+                                            msdyn_enabledskills: (_b = copilotPreferenceRecord[BootstrapCopilot.CopilotAgentPreferenceAttributes.EnabledSkills]) !== null && _b !== void 0 ? _b : undefined
+                                        };
+                                    }
+                                    timer({ success: true, recordExists: !!copilotAgentPreference });
+                                    return [2 /*return*/, copilotAgentPreference];
+                                case 3:
+                                    error_3 = _c.sent();
+                                    timer({ success: false, message: "Failed to get Copilot agent preference record for user.", error: error_3, userId: userId });
+                                    return [3 /*break*/, 4];
+                                case 4: return [2 /*return*/];
+                            }
+                        });
+                    });
+                };
+                /**
+                 * Checks if the skill management feature is enabled.
+                 * @returns true if skill management feature is enabled, false otherwise
+                 */
+                SkillUtility.isSkillFeatureEnabled = function () {
+                    var value = BootstrapCopilot.Utils.getFeatureControlSetting(BootstrapCopilot.FCSNamespaces.CSIntelligence, BootstrapCopilot.FCSSettings.CopilotAgentAssistSkillEnabled, false);
+                    return value;
+                };
+                /**
+                 * Generates the fetch XML to retrieve copilot skills for a specific user.
+                 * @param userId The ID of the user
+                 * @returns The fetch XML string
+                 */
+                SkillUtility.getCopilotSkillsFetchXml = function (userId) {
+                    return "\n      <fetch version=\"1.0\" output-format=\"xml-platform\" mapping=\"logical\" no-lock=\"false\" distinct=\"true\">\n        <entity name=\"msdyn_copilotskill\">\n          <attribute name=\"msdyn_copilotskillid\" />\n          <attribute name=\"msdyn_uniquename\" />\n          <attribute name=\"msdyn_featureconfiguration\" />\n          <attribute name=\"msdyn_name\" />\n          <filter type=\"and\">\n            <condition attribute=\"statecode\" operator=\"eq\" value=\"0\" />\n          </filter>\n          <link-entity name=\"msdyn_copilotskillrole\" from=\"msdyn_copilotskillid\" to=\"msdyn_copilotskillid\" link-type=\"outer\">\n            <link-entity name=\"systemuserroles\" from=\"roleid\" to=\"msdyn_roleid\" link-type=\"outer\" alias=\"skillroles\">\n              <attribute name=\"roleid\" />\n              <filter type=\"and\">\n                <condition attribute=\"systemuserid\" operator=\"eq\" value=\"".concat(userId, "\" />\n              </filter>\n            </link-entity>\n          </link-entity>\n        </entity>\n      </fetch>");
+                };
+                SkillUtility.DEFAULT_SKILL = "msdyn_cs_copilot_agent_assist"; // Default skill unique name for AAQ
+                return SkillUtility;
+            }());
+            BootstrapCopilot.SkillUtility = SkillUtility;
+        })(BootstrapCopilot = CSIntelligence.BootstrapCopilot || (CSIntelligence.BootstrapCopilot = {}));
+    })(CSIntelligence = Mscrm.CSIntelligence || (Mscrm.CSIntelligence = {}));
+})(Mscrm || (Mscrm = {}));
+/// <reference path="Constants.ts" />
+var Mscrm;
+(function (Mscrm) {
+    var CSIntelligence;
+    (function (CSIntelligence) {
+        var BootstrapCopilot;
+        (function (BootstrapCopilot) {
+            var CommonParameters;
+            (function (CommonParameters) {
+                CommonParameters["Error"] = "Error";
+                CommonParameters["Info"] = "Info";
+                CommonParameters["Marker"] = "Marker";
+                CommonParameters["Warning"] = "Warning";
+                CommonParameters["Source"] = "Source";
+                CommonParameters["Parameters"] = "Parameters";
+            })(CommonParameters = BootstrapCopilot.CommonParameters || (BootstrapCopilot.CommonParameters = {}));
+            var Telemetry = /** @class */ (function () {
+                function Telemetry() {
+                }
+                /**
+                 * Log an error event
+                 * @param source Telemetry source
+                 * @param error Telemetry error
+                 * @param params Telemetry params
+                 */
+                Telemetry.logError = function (source, error, params) {
+                    var _a;
+                    var errorParam;
+                    if (error instanceof Error) {
+                        var message = error.message, stack = error.stack;
+                        errorParam = { message: message, stack: stack };
+                    }
+                    else if (typeof error === "string") {
+                        errorParam = error;
+                    }
+                    else {
+                        errorParam = __assign({}, error);
+                    }
+                    var errorMarker = (_a = {},
+                        _a[CommonParameters.Source] = source,
+                        _a[CommonParameters.Error] = errorParam,
+                        _a[CommonParameters.Parameters] = params,
+                        _a);
+                    Telemetry.logInternal(CommonParameters.Error, errorMarker)();
+                };
+                /**
+                 * Log a warning event
+                 * @param source Telemetry source
+                 * @param warning Telemetry warning
+                 * @param params Telemetry params
+                 */
+                Telemetry.logWarning = function (source, warning, params) {
+                    var _a;
+                    var warningParam;
+                    if (typeof warning === "string") {
+                        warningParam = warning;
+                    }
+                    else {
+                        warningParam = __assign({}, warning);
+                    }
+                    var warningMarker = (_a = {},
+                        _a[CommonParameters.Source] = source,
+                        _a[CommonParameters.Warning] = warningParam,
+                        _a[CommonParameters.Parameters] = params,
+                        _a);
+                    Telemetry.logInternal(CommonParameters.Warning, warningMarker)();
+                };
+                /**
+                 * Log an informational event
+                 * @param source Telemetry source
+                 * @param info Telemetry informational
+                 * @param params Telemetry params
+                 */
+                Telemetry.logInfo = function (source, info, params) {
+                    var _a;
+                    var infoParam;
+                    if (typeof info === "string") {
+                        infoParam = info;
+                    }
+                    else {
+                        infoParam = __assign({}, info);
+                    }
+                    var infoMarker = (_a = {},
+                        _a[CommonParameters.Source] = source,
+                        _a[CommonParameters.Info] = infoParam,
+                        _a[CommonParameters.Parameters] = params,
+                        _a);
+                    Telemetry.logInternal(CommonParameters.Info, infoMarker)();
+                };
+                /**
+                 * Logs duration marker
+                 * @param source
+                 * @param params
+                 */
+                Telemetry.measureStartStop = function (source, params) {
+                    var _a;
+                    var marker = (_a = {},
+                        _a[CommonParameters.Source] = source,
+                        _a[CommonParameters.Parameters] = params,
+                        _a);
+                    return Telemetry.logInternal(CommonParameters.Marker, marker);
+                };
+                /**
+                 * Internal method to log the event to UCI
+                 * @param name Event name
+                 * @param parameters Event params
+                 */
+                Telemetry.logInternal = function (name, parameters) {
+                    var fullName = "".concat(BootstrapCopilot.TelemetryEvents.SessionName, ".").concat(name);
+                    // Safety in case the UCI context doesn't contain telemetry
+                    // infrastructure.
+                    var xrm = window.Xrm || parent.Xrm;
+                    if (!xrm || !xrm.Internal || !xrm.Internal.createPerformanceStopwatch) {
+                        return function () { };
+                    }
+                    var stop = xrm.Internal.createPerformanceStopwatch(fullName, parameters);
+                    if (!xrm || !xrm.Reporting) {
+                        return function () { };
+                    }
+                    var reporting = xrm.Reporting;
+                    var params = parameters;
+                    var reportingParams = Object.keys(params).map(function (key) {
+                        return { name: key, value: params[key] };
+                    });
+                    //Markers will be logged at call back when the call finishes
+                    if (!fullName.includes(CommonParameters.Marker)) {
+                        if (name == CommonParameters.Error)
+                            reporting.reportFailure(fullName, params === null || params === void 0 ? void 0 : params.Error, "", reportingParams);
+                        else
+                            reporting.reportSuccess(fullName, reportingParams);
+                    }
+                    return function (endParameters) {
+                        stop(endParameters);
+                        var unionedParams = __assign(__assign({}, parameters), endParameters);
+                        var endReportingParams = Object.keys(unionedParams).map(function (key) {
+                            return { name: key, value: unionedParams[key] };
+                        });
+                        reporting.reportSuccess(fullName, endReportingParams);
+                    };
+                };
+                return Telemetry;
+            }());
+            BootstrapCopilot.Telemetry = Telemetry;
+        })(BootstrapCopilot = CSIntelligence.BootstrapCopilot || (CSIntelligence.BootstrapCopilot = {}));
+    })(CSIntelligence = Mscrm.CSIntelligence || (Mscrm.CSIntelligence = {}));
+})(Mscrm || (Mscrm = {}));
+/// <reference path="Constants.ts" />
+var Mscrm;
+(function (Mscrm) {
+    var CSIntelligence;
+    (function (CSIntelligence) {
+        var BootstrapCopilot;
+        (function (BootstrapCopilot) {
+            var Utils = /** @class */ (function () {
+                function Utils() {
+                }
+                Utils.isAgentAssistFCSEnabled = function () {
+                    var value = Utils.getFeatureControlSetting(BootstrapCopilot.FCSNamespaces.CSIntelligence, BootstrapCopilot.FCSSettings.AgentAssist, false);
+                    return value;
+                };
+                Utils.isCustomProdPaneSizeFCSEnabled = function () {
+                    var value = Utils.getFeatureControlSetting(BootstrapCopilot.FCSNamespaces.CSProductivityTools, BootstrapCopilot.FCSSettings.EnableCustomProdPaneSize, false);
+                    return value;
+                };
+                Utils.isMultiSession = function () {
+                    var _a;
+                    return !!((_a = Xrm === null || Xrm === void 0 ? void 0 : Xrm.App) === null || _a === void 0 ? void 0 : _a.sessions);
+                };
+                Utils.getAppSetting = function (setting, defaultValue) {
+                    var _a;
+                    var value = ((_a = Xrm === null || Xrm === void 0 ? void 0 : Xrm.Utility) === null || _a === void 0 ? void 0 : _a.getGlobalContext()).getCurrentAppSetting(setting);
+                    return value !== null && value !== undefined ? value : defaultValue;
+                };
+                Utils.isCopilotEmailEnableSupported = function (emailAssistSetting) {
+                    /* 2024- 3.3 train - email default enablement check
+                     * ServiceExtended PD steps set copilot and email enabled to true on all orgs across geos
+                     * Honor the copilotEnabled flag only in the following cases:
+                     * i) if the org does not need cross geo consent i.e (DefaultOnFCS = true) OR
+                     * ii)if the org needs cross geo consent, accepts consent & changes copilotEmailEnabledMode to manual OR
+                     * iii)existing org with copilot setup, copilotEmailEnabledMode = null
+                     * if neither condition holds, don't show copilotPane even if copilotEnabled = true */
+                    var isFCSDefaultOnEnabled = Utils.getFeatureControlSetting(BootstrapCopilot.FCSNamespaces.CSIntelligence, BootstrapCopilot.FCSSettings.CopilotEmailAssistDefaultOn, false);
+                    var isEmailEnableModeManual = emailAssistSetting[BootstrapCopilot.CopilotSettingAttributes.CopilotEmailEnabledMode] === null ||
+                        emailAssistSetting[BootstrapCopilot.CopilotSettingAttributes.CopilotEmailEnabledMode] === BootstrapCopilot.EmailEnabledMode.Manual;
+                    return isFCSDefaultOnEnabled || isEmailEnableModeManual;
+                };
+                Utils.isMultiTurnEnabled = function () {
+                    var isMultiturnFCSEnabled = Utils.getFeatureControlSetting(BootstrapCopilot.FCSNamespaces.CSIntelligence, BootstrapCopilot.FCSSettings.CopilotEmailAssistMultiturnEnabled, false);
+                    var isStreamPPApiEnabled = Utils.getFeatureControlSetting(BootstrapCopilot.FCSNamespaces.CSIntelligence, BootstrapCopilot.FCSSettings.CopilotEmailAssistStreamingEnabled, false);
+                    return isMultiturnFCSEnabled && isStreamPPApiEnabled;
+                };
+                /**
+                 * Returns the feature control settings value. If the feature control setting is not found, returns the default value passed
+                 * @param namespace namespace
+                 * @param settingKey setting key
+                 * @param defaultValue the default value
+                 * @returns the setting value
+                 */
+                Utils.getFeatureControlSetting = function (namespace, settingKey, defaultValue) {
+                    try {
+                        var value = window.Xrm.Utility.getGlobalContext().getFeatureControlSetting(namespace, settingKey);
+                        if (value !== undefined && value !== null) {
+                            // Found the feature
+                            return value;
+                        }
+                        return defaultValue;
+                    }
+                    catch (exception) {
+                        return defaultValue;
+                    }
+                };
+                Utils.isChannelReleased = function (monthlyRelease, semiannualRelease) {
+                    var _a, _b;
+                    var isEnabled = (_b = (_a = Xrm === null || Xrm === void 0 ? void 0 : Xrm.Internal) === null || _a === void 0 ? void 0 : _a.isChannelReleaseEnabled) === null || _b === void 0 ? void 0 : _b.call(_a, monthlyRelease, semiannualRelease);
+                    return isEnabled !== null && isEnabled !== undefined ? isEnabled : false;
+                };
+                /**
+                 * Given a string, returns a lowercase GUID (without {} brackets) if the string represents a GUID.
+                 * @param guid the GUID string to parse.
+                 * @returns a string containing a lowercase GUID if found, undefined otherwise.
+                 */
+                Utils.parseGuid = function (guid) {
+                    var _a;
+                    var match = (_a = (guid || "")) === null || _a === void 0 ? void 0 : _a.match(/^[{]?([0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12})[}]?$/);
+                    // The only capture group contains only the alpha-numeric characters and hyphens. If it
+                    // doesn't exist, then no GUID was matched.
+                    if ((match === null || match === void 0 ? void 0 : match[1]) == null)
+                        return undefined;
+                    return match[1].toLowerCase();
+                };
+                return Utils;
+            }());
+            BootstrapCopilot.Utils = Utils;
+        })(BootstrapCopilot = CSIntelligence.BootstrapCopilot || (CSIntelligence.BootstrapCopilot = {}));
+    })(CSIntelligence = Mscrm.CSIntelligence || (Mscrm.CSIntelligence = {}));
+})(Mscrm || (Mscrm = {}));
+/// <reference path="Constants.ts" />
+/// <reference path="SkillUtility.ts" />
+/// <reference path="Telemetry.ts" />
+/// <reference path="Utils.ts" />
+var Mscrm;
+(function (Mscrm) {
+    var CSIntelligence;
+    (function (CSIntelligence) {
+        var BootstrapCopilot;
+        (function (BootstrapCopilot) {
+            function checkCopilotEnabledStatus() {
+                return __awaiter(this, void 0, void 0, function () {
+                    var agentAssistFCSEnabled, appProperties, appSettingEnabled, isCSACApp, agentCopilotSettings, settings, copilotEnabled, kbEnabled, featureEnabled, applicableSkills, userSkills, error_4;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 5, , 6]);
+                                if (!Xrm) {
+                                    BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Xrm not found.");
+                                    return [2 /*return*/, false];
+                                }
+                                agentAssistFCSEnabled = BootstrapCopilot.Utils.isAgentAssistFCSEnabled();
+                                if (!agentAssistFCSEnabled) {
+                                    BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Agent assist FCS is disabled.", {
+                                        agentAssistFCSEnabled: agentAssistFCSEnabled
+                                    });
+                                    return [2 /*return*/, false];
+                                }
+                                return [4 /*yield*/, Xrm.Utility.getGlobalContext().getCurrentAppProperties()];
+                            case 1:
+                                appProperties = _a.sent();
+                                // check if current app is CSW or not (CSW uses APM to load Copilot and hence return false)
+                                if ((appProperties === null || appProperties === void 0 ? void 0 : appProperties.uniqueName) === BootstrapCopilot.AppUniqueNames.CustomerServiceWorkspace) {
+                                    BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Skipped loading Copilot pane via bootstrap for CSW app.", { appUniqueName: appProperties === null || appProperties === void 0 ? void 0 : appProperties.uniqueName });
+                                    return [2 /*return*/, false];
+                                }
+                                appSettingEnabled = BootstrapCopilot.Utils.getAppSetting(BootstrapCopilot.AppSettings.CopilotEnabledForApp, false);
+                                isCSACApp = (appProperties === null || appProperties === void 0 ? void 0 : appProperties.uniqueName) === BootstrapCopilot.AppModules.CSAdminCenter;
+                                if (!isCSACApp && !appSettingEnabled) {
+                                    BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Copilot appsetting not enabled for App.", {
+                                        appUniqueName: appProperties === null || appProperties === void 0 ? void 0 : appProperties.uniqueName
+                                    });
+                                    return [2 /*return*/, false];
+                                }
+                                return [4 /*yield*/, Xrm.WebApi.retrieveMultipleRecords(BootstrapCopilot.EntityNames.CopilotSetting, "?$filter=".concat(BootstrapCopilot.CopilotSettingAttributes.Id, " eq '").concat(BootstrapCopilot.RecordIds.CopilotSetting, "'"))];
+                            case 2:
+                                agentCopilotSettings = _a.sent();
+                                // check if settings record is present
+                                if (!(agentCopilotSettings === null || agentCopilotSettings === void 0 ? void 0 : agentCopilotSettings.entities) || agentCopilotSettings.entities.length === 0) {
+                                    BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Agent copilot settings entity not found.", {
+                                        agentAssistFCSEnabled: agentAssistFCSEnabled
+                                    });
+                                    return [2 /*return*/, false];
+                                }
+                                settings = agentCopilotSettings.entities[0];
+                                copilotEnabled = !!settings[BootstrapCopilot.CopilotSettingAttributes.CopilotEnabled];
+                                kbEnabled = !!settings[BootstrapCopilot.CopilotSettingAttributes.KbEnabled];
+                                featureEnabled = copilotEnabled || kbEnabled;
+                                /* if multiturn FCS is enabled, additionally check default enablement conditions
+                                 * Honor the copilotEnabled || kbEnabled flag only in the following cases:
+                                 * i) if the org does not need cross geo consent i.e (DefaultOnFCS = true) OR
+                                 * ii)if the org needs cross geo consent, accepts consent & changes copilotEmailEnabledMode to manual OR
+                                 * iii) existing org with copilot setup, copilotEmailEnabledMode = null
+                                 * if neither condition holds, don't show copilotPane
+                                 */
+                                if (BootstrapCopilot.Utils.isMultiTurnEnabled()) {
+                                    featureEnabled = featureEnabled && BootstrapCopilot.Utils.isCopilotEmailEnableSupported(settings);
+                                }
+                                applicableSkills = [];
+                                if (!(featureEnabled && isCSACApp && !appSettingEnabled)) return [3 /*break*/, 4];
+                                return [4 /*yield*/, BootstrapCopilot.SkillUtility.getCurrentUserSkills()];
+                            case 3:
+                                userSkills = _a.sent();
+                                applicableSkills = userSkills.filter(function (skill) { return !BootstrapCopilot.SkillUtility.isDefaultSkill(skill.id); });
+                                featureEnabled = featureEnabled && applicableSkills.length > 0;
+                                _a.label = 4;
+                            case 4:
+                                BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Agent copilot feature check succeeded.", {
+                                    agentAssistFCSEnabled: agentAssistFCSEnabled,
+                                    copilotEnabled: copilotEnabled,
+                                    kbEnabled: kbEnabled,
+                                    featureEnabled: featureEnabled,
+                                    isCSACApp: isCSACApp,
+                                    appSettingEnabled: appSettingEnabled,
+                                    applicableSkillsCount: applicableSkills.length
+                                });
+                                return [2 /*return*/, featureEnabled];
+                            case 5:
+                                error_4 = _a.sent();
+                                console.error("Something went wrong while checking copilot enabled status: ", error_4);
+                                BootstrapCopilot.Telemetry.logError(BootstrapCopilot.TelemetryEvents.CheckCopilotEnabledEvent, "Something went wrong while checking copilot enabled status.", { error: error_4 });
+                                throw error_4;
+                            case 6: return [2 /*return*/];
+                        }
+                    });
+                });
+            }
+            function getCopilotToolName() {
+                var _a;
+                return __awaiter(this, void 0, void 0, function () {
+                    var copilotToolConfig, config, toolName, error_5;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                _b.trys.push([0, 2, , 3]);
+                                return [4 /*yield*/, Xrm.WebApi.retrieveMultipleRecords(BootstrapCopilot.EntityNames.PaneToolConfiguration, "?$filter=".concat(BootstrapCopilot.PaneToolConfigurationAttributes.UniqueName, " eq '").concat(BootstrapCopilot.ProductivityPaneToolNames.Copilot, "'"))];
+                            case 1:
+                                copilotToolConfig = _b.sent();
+                                // check if record is present
+                                if (!(copilotToolConfig === null || copilotToolConfig === void 0 ? void 0 : copilotToolConfig.entities) || copilotToolConfig.entities.length === 0) {
+                                    BootstrapCopilot.Telemetry.logInfo(BootstrapCopilot.TelemetryEvents.GetCopilotToolConfigEvent, "Agent copilot pane tool config entity not found.");
+                                    return [2 /*return*/, undefined];
+                                }
+                                config = copilotToolConfig.entities[0];
+                                toolName = (_a = config[BootstrapCopilot.PaneToolConfigurationAttributes.Name]) !== null && _a !== void 0 ? _a : undefined;
+                                return [2 /*return*/, toolName];
+                            case 2:
+                                error_5 = _b.sent();
+                                console.error("Something went wrong while getting copilot tool name: ", error_5);
+                                BootstrapCopilot.Telemetry.logError(BootstrapCopilot.TelemetryEvents.GetCopilotToolConfigEvent, "Something went wrong while getting copilot tool name.", { error: error_5 });
+                                return [2 /*return*/, undefined]; // fail silently
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                });
+            }
+            function getProductivityPaneSize() {
+                var isCustomProdPaneSizeFCSEnabled = BootstrapCopilot.Utils.isCustomProdPaneSizeFCSEnabled();
+                var isMonthlyChannelEnabled = BootstrapCopilot.Utils.isChannelReleased(BootstrapCopilot.MonthlyChannel.September2024, BootstrapCopilot.ReleaseWave.October2024);
+                if (isCustomProdPaneSizeFCSEnabled && isMonthlyChannelEnabled) {
+                    var productivityPaneCustomSize = BootstrapCopilot.Utils.getAppSetting(BootstrapCopilot.AppSettings.ProductivityPaneSizeAppSetting, BootstrapCopilot.ProductivityPaneConfig.PaneDefaultSize);
+                    return productivityPaneCustomSize;
+                }
+                return BootstrapCopilot.ProductivityPaneConfig.PaneDefaultSize;
+            }
+            function loadCopilot() {
+                return __awaiter(this, void 0, void 0, function () {
+                    var timer;
+                    var _this = this;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                timer = BootstrapCopilot.Telemetry.measureStartStop(BootstrapCopilot.TelemetryEvents.LoadCopilotEvent);
+                                return [4 /*yield*/, checkCopilotEnabledStatus()
+                                        .then(function (isCopilotEnabled) { return __awaiter(_this, void 0, void 0, function () {
+                                        var pane, toolName, prodPaneSize_1;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0:
+                                                    // return if copilot is not enabled
+                                                    if (!isCopilotEnabled) {
+                                                        timer({ success: true, status: "feature-disabled", isCopilotEnabled: isCopilotEnabled });
+                                                        return [2 /*return*/];
+                                                    }
+                                                    pane = Xrm.App.sidePanes.getPane(BootstrapCopilot.PaneIds.CopilotPane);
+                                                    if (!!pane) return [3 /*break*/, 2];
+                                                    return [4 /*yield*/, getCopilotToolName()];
+                                                case 1:
+                                                    toolName = _a.sent();
+                                                    prodPaneSize_1 = getProductivityPaneSize();
+                                                    Xrm.App.sidePanes
+                                                        .createPane({
+                                                        paneId: BootstrapCopilot.PaneIds.CopilotPane,
+                                                        canClose: false,
+                                                        isSelected: true,
+                                                        hideHeader: true,
+                                                        imageSrc: "/WebResources/msdyn_aicopiloticon",
+                                                        hidden: false,
+                                                        alwaysRender: true,
+                                                        keepBadgeOnSelect: false,
+                                                        title: toolName,
+                                                        width: prodPaneSize_1
+                                                    })
+                                                        .then(function (pane) {
+                                                        pane.navigate({
+                                                            pageType: "control",
+                                                            controlName: BootstrapCopilot.ControlNames.AICopilot
+                                                        });
+                                                        // open side pane once loaded
+                                                        Xrm.App.sidePanes.state = 1;
+                                                        timer({ success: true, status: "pane-loaded", isCopilotEnabled: isCopilotEnabled, prodPaneSize: prodPaneSize_1 });
+                                                    });
+                                                    return [3 /*break*/, 3];
+                                                case 2:
+                                                    timer({ success: true, status: "pane-present", isCopilotEnabled: isCopilotEnabled });
+                                                    _a.label = 3;
+                                                case 3: return [2 /*return*/];
+                                            }
+                                        });
+                                    }); })
+                                        .catch(function (error) {
+                                        console.error("Something went wrong while loading copilot pane: ", error);
+                                        timer({ success: false, error: error });
+                                    })];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, false];
+                        }
+                    });
+                });
+            }
+            BootstrapCopilot.loadCopilot = loadCopilot;
+        })(BootstrapCopilot = CSIntelligence.BootstrapCopilot || (CSIntelligence.BootstrapCopilot = {}));
+    })(CSIntelligence = Mscrm.CSIntelligence || (Mscrm.CSIntelligence = {}));
+})(Mscrm || (Mscrm = {}));
+//# sourceMappingURL=msdyn_BootstrapCopilot.js.map

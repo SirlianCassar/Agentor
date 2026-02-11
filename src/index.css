@@ -1,0 +1,171 @@
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/space-grotesk/700.css';
+
+:root {
+  --bg: #111318;
+  --bg-secondary: #181a22;
+  --panel: rgba(26, 28, 36, 0.96);
+  --panel-strong: rgba(32, 35, 44, 0.98);
+  --panel-hover: rgba(38, 41, 52, 0.98);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --border-active: rgba(122, 140, 255, 0.55);
+  --text: #f4f6ff;
+  --text-secondary: #dfe2ee;
+  --muted: #a4a9ba;
+  --muted-light: #7f8596;
+  --accent: #7a8cff;
+  --accent-light: #a6b6ff;
+  --accent-dark: #5b6fe0;
+  --accent-glow: rgba(122, 140, 255, 0.35);
+  --danger: #ff6b6b;
+  --danger-light: #ff8787;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --info: #4dabf7;
+  --tag: #ff6b6b;
+  --shadow-sm: 0 6px 16px rgba(8, 10, 18, 0.4);
+  --shadow-md: 0 16px 36px rgba(8, 10, 18, 0.5);
+  --shadow-lg: 0 26px 60px rgba(6, 8, 16, 0.58);
+  --shadow-xl: 0 34px 86px rgba(6, 8, 16, 0.62);
+  --shadow-glow: 0 0 30px rgba(122, 140, 255, 0.18);
+  --gradient-primary: linear-gradient(135deg, #8ea2ff 0%, #6f86ff 45%, #a6b6ff 100%);
+  --gradient-secondary: linear-gradient(135deg, #5b6fe0 0%, #7a8cff 100%);
+  --gradient-bg: radial-gradient(1200px 760px at 10% 6%, rgba(122, 140, 255, 0.12), transparent 60%),
+    radial-gradient(1000px 700px at 92% 0%, rgba(104, 170, 255, 0.08), transparent 60%),
+    linear-gradient(135deg, #111318 0%, #171a22 45%, #1e212a 100%);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --surface-soft: rgba(255, 255, 255, 0.04);
+  --surface-soft-hover: rgba(255, 255, 255, 0.07);
+  --surface-strong: rgba(255, 255, 255, 0.12);
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --text-scale: 1;
+  --editor-line-height: 1.6;
+  --app-zoom: 1;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Segoe UI Rounded', 'Segoe UI', system-ui, sans-serif;
+  background: var(--gradient-bg);
+  color: var(--text);
+  font-size: calc(16px * var(--text-scale));
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  font-kerning: normal;
+  overflow: hidden;
+}
+
+#root {
+  transform: scale(var(--app-zoom));
+  transform-origin: top left;
+  width: calc(100% / var(--app-zoom));
+  height: calc(100% / var(--app-zoom));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background var(--transition-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.32) rgba(255, 255, 255, 0.02);
+}
+
+input[type='checkbox'] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  display: inline-grid;
+  place-items: center;
+  margin: 0;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+input[type='checkbox']::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scale(0);
+  transition: transform var(--transition-fast);
+}
+
+input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background: rgba(122, 140, 255, 0.18);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+input[type='checkbox']:checked::after {
+  transform: scale(1);
+}
+
+input[type='checkbox']:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+input[type='checkbox']:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
