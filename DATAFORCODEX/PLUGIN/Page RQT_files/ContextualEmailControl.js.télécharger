@@ -1,0 +1,382 @@
+/**
+* @license Copyright (c) Microsoft Corporation.  All rights reserved.
+*/
+/// <reference path="PrivateReferences.ts" />
+var MscrmControls;
+(function (MscrmControls) {
+    var AppCommon;
+    (function (AppCommon) {
+        var ContextualEmail;
+        (function (ContextualEmail) {
+            'use strict';
+            var ControlConstant = (function () {
+                function ControlConstant() {
+                }
+                return ControlConstant;
+            }());
+            ControlConstant.MaximumPopupsAlert = "MaximumPopupsAlert";
+            ControlConstant.MaxPopupsToastNotification = "MaxPopupsToastNotification";
+            ControlConstant.ContextualEmailControlComponent = "ContextualEmailControl";
+            ControlConstant.NewPopUpEvent = "newpopupcreated";
+            ControlConstant.OpenPopUpEvent = "openpopup";
+            ControlConstant.ValueTrue = "true";
+            ContextualEmail.ControlConstant = ControlConstant;
+        })(ContextualEmail = AppCommon.ContextualEmail || (AppCommon.ContextualEmail = {}));
+    })(AppCommon = MscrmControls.AppCommon || (MscrmControls.AppCommon = {}));
+})(MscrmControls || (MscrmControls = {}));
+/**
+* @license Copyright (c) Microsoft Corporation.  All rights reserved.
+*/
+/// <reference path="../../../../TypeDefinitions/mscrm.d.ts" />
+/// <reference path="CommonReferences.ts" />
+/// <reference path="../ContextualEmailPopupManager/libs/PopupManager.d.ts" />
+/// <reference path="../ContextualEmailPopupManager/TypeDefinitions/jsPanel.d.ts" />
+/// <reference path="ControlConstants.ts" />
+/// <reference path="../../../../../references/external/TypeDefinitions/microsoft.ajax.d.ts" />
+/**
+* @license Copyright (c) Microsoft Corporation.  All rights reserved.
+*/
+/// <reference path="PrivateReferences.ts" />
+var MscrmControls;
+(function (MscrmControls) {
+    var AppCommon;
+    (function (AppCommon) {
+        var ContextualEmail;
+        (function (ContextualEmail) {
+            'use strict';
+            var isRefreshParentEventListener = false;
+            var ContextualEmailControl = (function () {
+                /**
+                 * constructor.
+                 */
+                function ContextualEmailControl() {
+                    this._context = null;
+                }
+                /**
+                 * This function should be used for any initial setup necessary for your control.
+                 * @params context The "Input Bag" containing the parameters and other control metadata.
+                 * @params notifyOutputchanged The method for this control to notify the framework that it has new outputs
+                 * @params state The user state for this control set from setState in the last session
+                 * @params container The div element to draw this control in
+                 */
+                ContextualEmailControl.prototype.init = function (context, notifyOutputChanged, state) {
+                    this._context = context;
+                    var resources = this.getResourcesForPopup();
+                    //TODO: change hardcoded 5 max popup with configured user settings for maxpopup 
+                    // If FCB is on, number of max popups should be as per configured in user setings else default is 3
+                    this._noOfMaxPopups = this.IsContextualEmailTimelineOpenRecordEnabled() ? 5 : ContextualEmail.Constants.MaxPopups;
+                    // read	the control parameter - maxPopups to set limit for maximum number of allowed popups
+                    if (!this._context.utils.isNullOrUndefined(context.parameters.maxPopups)) {
+                        this._noOfMaxPopups = context.parameters.maxPopups.raw;
+                    }
+                    // Event listener to refresh timeline on Save, SaveAndClose, Send, Reply, ReplyAll and Forward events from email popup. Also on Reply, ReplyAll and Forward events from timeline wall grid
+                    // Add refreshParentFromEmailPopup event for first time load contextual email to avoid adding multiple same listeners.  
+                    if (!isRefreshParentEventListener) {
+                        window.addEventListener("refreshParentFromEmailPopup", this.refreshParentFromEmailPopup.bind(this));
+                        window.addEventListener("setFormContextInContextualEmail", this.setFormContextInContextualEmail.bind(this));
+                        isRefreshParentEventListener = true;
+                    }
+                    ContextualEmail.PopupManager.init({
+                        rtl: context.client.isRTL,
+                        maxPopups: this._noOfMaxPopups,
+                        resourceStrings: resources
+                    });
+                };
+                ContextualEmailControl.prototype.setFormContextInContextualEmail = function (event) {
+                    if (event.detail.formContext && event.detail.containerPanelId) {
+                        var popupState = ContextualEmail.PopupManagerState.Instance.PopupsDictionary[event.detail.containerPanelId];
+                        if (popupState) {
+                            popupState.formContext = event.detail.formContext;
+                        }
+                    }
+                };
+                ContextualEmailControl.prototype.refreshParentFromEmailPopup = function (event) {
+                    var panelId = event.detail.containerPanelId;
+                    var popupState = ContextualEmail.PopupManagerState.Instance.PopupsDictionary[panelId];
+                    var timelinewallControl = Xrm.Page && Xrm.Page.getControl("Timeline");
+                    // Refresh timeline if we are on the page of the exact entity which opened the popup
+                    if (this.isRefreshTimeline(popupState, timelinewallControl)) {
+                        timelinewallControl.refresh();
+                    }
+                };
+                ContextualEmailControl.prototype.isRefreshTimeline = function (popupState, timelinewallControl) {
+                    var popupEntityDataParams = popupState && popupState.createParams && popupState.createParams.dataParams;
+                    var popupEntityId = popupEntityDataParams && popupEntityDataParams[ContextualEmail.Constants.ParentRecordId];
+                    var popupEntityType = popupEntityDataParams && popupEntityDataParams[ContextualEmail.Constants.ParentRecordType];
+                    var timelinEntityReference = timelinewallControl && timelinewallControl.formContext && timelinewallControl.formContext.entityReference;
+                    var timelineEntityId = timelinEntityReference && timelinEntityReference.id && timelinEntityReference.id.replace(/[{}]/g, '').toLowerCase();
+                    var timelineEntityType = timelinEntityReference && timelinEntityReference.entityType;
+                    // Refresh timelinewall : 
+                    // Parent entity id for email popup and timeline should be same
+                    // OR 
+                    // For newly saved parent entity(Lead, Contact), entityid is undefined so checking entitytype for email popup and timeline shoud be same.
+                    return (popupEntityId && timelinewallControl &&
+                        ((timelineEntityId && popupEntityId == timelineEntityId) ||
+                            (!timelineEntityId && popupEntityType == timelineEntityType)));
+                };
+                ContextualEmailControl.prototype.IsContextualEmailTimelineOpenRecordEnabled = function () {
+                    return Xrm.Internal.isFeatureEnabled('October2020Update') && Xrm.Internal.isFeatureEnabled('ContextualEmailTimelineOpenRecordExperience');
+                };
+                ContextualEmailControl.prototype.getResourcesForPopup = function () {
+                    var _this = this;
+                    var resources = {};
+                    ContextualEmailControl.ResourceKeysForPopupManager.forEach(function (resourceKey) { return resources[resourceKey] = _this._context.resources.getString(resourceKey); });
+                    return resources;
+                };
+                /**
+                 * This function will recieve an "Input Bag" containing the values currently assigned to the parameters in your manifest
+                 * It will send down the latest values (static or dynamic) that are assigned as defined by the manifest & customization experience
+                 * as well as resource, client, and theming info (see mscrm.d.ts)
+                 * @params context The "Input Bag" as described above
+                 */
+                ContextualEmailControl.prototype.updateView = function (context) {
+                    this._context = context;
+                    var _this = this;
+                    // Refresh timelinewall if Reply/Reply All/Forward button clicked from timelinewall.
+                    if (context.parameters.refreshTimelineWall && context.parameters.refreshTimelineWall.raw) {
+                        var timelinewallControl = Xrm.Page && Xrm.Page.getControl("Timeline");
+                        timelinewallControl && timelinewallControl.refresh();
+                    }
+                    if (context.parameters.createNewContextualEmail.raw) {
+                        if (ContextualEmail.PopupManager.canOpenExistingPopup(this.getActivityID())) {
+                            ContextualEmail.PopupManager.openPopup(this.createPopupParams());
+                            ContextualEmail.TelemetryReporter.ReportInfo(this._context, "updateView", ContextualEmail.ControlConstant.OpenPopUpEvent);
+                        }
+                        else if (ContextualEmail.PopupManager.canCreateNewPopup()) {
+                            ContextualEmail.PopupManager.createNewPopup(this.createPopupParams());
+                            if (ContextualEmail.PopupManager.canShowToastNotification() && this.IsContextualEmailTimelineOpenRecordEnabled()) {
+                                context.utils.addGlobalNotification(1 /* toast */, 4 /* information */, this.getMaxPopupLimitToastNotificationMessage(), "", null).then(function (response) {
+                                    ContextualEmail.TelemetryReporter.ReportInfo(_this._context, "updateView", ContextualEmail.ControlConstant.MaxPopupsToastNotification);
+                                }, function (error) {
+                                    ContextualEmail.TelemetryReporter.ReportError(_this._context, "updateView", JSON.stringify(Error("Error displaying toast notification : " + error)));
+                                });
+                            }
+                            ContextualEmail.TelemetryReporter.ReportComponentSuccess(this._context, "updateView", ContextualEmail.ControlConstant.NewPopUpEvent);
+                        }
+                        else {
+                            ContextualEmail.PopupManager.minimizeAllPopups();
+                            var maximumPopupsAlertDialog = ContextualEmail.ControlConstant.MaximumPopupsAlert;
+                            var dialogParams = {};
+                            dialogParams["param_maximumpopupsalert"] = this._noOfMaxPopups;
+                            context.navigation.openDialog(maximumPopupsAlertDialog, null, dialogParams);
+                            ContextualEmail.TelemetryReporter.ReportInfo(context, "updateView", maximumPopupsAlertDialog);
+                        }
+                    }
+                    return null;
+                };
+                ContextualEmailControl.prototype.getMaxPopupLimitToastNotificationMessage = function () {
+                    return String.format(this._context.resources.getString(ContextualEmail.ResourceKeys.MaxPopupLimitToastNotificationMessage), this._noOfMaxPopups);
+                };
+                ContextualEmailControl.prototype.getActivityID = function () {
+                    return this._context.parameters.entityParameters && this._context.parameters.entityParameters.raw && (ContextualEmail.Utils.parseJson(this._context.parameters.entityParameters.raw))[ContextualEmail.Constants.ActivityIdAttributeName];
+                };
+                ContextualEmailControl.prototype.createPopupParams = function () {
+                    var entityId = ContextualEmail.Utils.formatGuid(this._context.mode.contextInfo.entityId);
+                    var entityType = this._context.mode.contextInfo.entityTypeName;
+                    var recordName = this._context.mode.contextInfo.entityRecordName;
+                    var isBulkMode = this._context.parameters.isBulkMode && this._context.parameters.isBulkMode.raw;
+                    var dataParams = {};
+                    dataParams[ContextualEmail.Constants.IsBulkModeParameterName] = isBulkMode;
+                    // selectively populating regarding based on parameter passed to the control
+                    if (!(this._context.parameters.skipRegarding && this._context.parameters.skipRegarding.raw)) {
+                        // Regarding object id from context
+                        dataParams[ContextualEmail.Constants.ParentRecordId] = entityId;
+                        dataParams[ContextualEmail.Constants.ParentRecordType] = entityType;
+                        dataParams[ContextualEmail.Constants.ParentRecordName] = recordName;
+                        // added to support setting entityid, entitytype, recordname through control parameters
+                        if (!this._context.utils.isNullOrUndefined(this._context.parameters.createFromEntity)
+                            && !this._context.utils.isNullOrUndefined(this._context.parameters.createFromEntity.raw)) {
+                            var entityRef = ContextualEmail.Utils.parseJson(this._context.parameters.createFromEntity.raw);
+                            if (!this._context.utils.isNullOrUndefined(entityRef)) {
+                                // Regarding object id from control parameters
+                                dataParams[ContextualEmail.Constants.ParentRecordId] = entityRef.id ? entityRef.id : entityId;
+                                dataParams[ContextualEmail.Constants.ParentRecordType] = entityRef.entityType ? entityRef.entityType : entityType;
+                                dataParams[ContextualEmail.Constants.ParentRecordName] = entityRef.name ? entityRef.name : recordName;
+                            }
+                        }
+                    }
+                    // Generic parameters
+                    if (this._context.parameters.entityParameters) {
+                        var entityParams = ContextualEmail.Utils.parseJson(this._context.parameters.entityParameters.raw);
+                        if (entityParams) {
+                            var key = void 0;
+                            for (key in entityParams) {
+                                switch (key) {
+                                    case ContextualEmail.Constants.ToAttributeName:
+                                        dataParams[ContextualEmail.Constants.ToAttributeName] = entityParams[ContextualEmail.Constants.ToAttributeName];
+                                        break;
+                                    case ContextualEmail.Constants.TemplateIdAttributeName:
+                                        dataParams[ContextualEmail.Constants.TemplateIdAttributeName] = entityParams[ContextualEmail.Constants.TemplateIdAttributeName];
+                                        break;
+                                    case ContextualEmail.Constants.ActivityIdAttributeName:
+                                        dataParams[ContextualEmail.Constants.ActivityIdAttributeName] = entityParams[ContextualEmail.Constants.ActivityIdAttributeName];
+                                        break;
+                                    case ContextualEmail.Constants.SubjectAttributeName:
+                                        dataParams[ContextualEmail.Constants.SubjectAttributeName] = entityParams[ContextualEmail.Constants.SubjectAttributeName];
+                                        break;
+                                    case ContextualEmail.Constants.SelectedRecordsParameterName:
+                                        dataParams[ContextualEmail.Constants.SelectedRecordsParameterName] = entityParams[ContextualEmail.Constants.SelectedRecordsParameterName];
+                                        break;
+                                    case ContextualEmail.Constants.DescriptionAttributeName:
+                                        dataParams[ContextualEmail.Constants.DescriptionAttributeName] = entityParams[ContextualEmail.Constants.DescriptionAttributeName];
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                    return {
+                        appId: ContextualEmail.Utils.formatGuid(this._context.page.appId),
+                        emailFormId: ContextualEmail.Utils.formatGuid(ContextualEmail.Constants.EmailPopupFormId),
+                        dataParams: dataParams
+                    };
+                };
+                /**
+                 * This function will return an "Output Bag" to the Crm Infrastructure
+                 * The ouputs will contain a value for each property marked as "input-output"/"bound" in your manifest
+                 * i.e. if your manifest has a property "value" that is an "input-output", and you want to set that to the local variable "myvalue" you should return:
+                 * {
+                 *		value: myvalue
+                 * };
+                 * @returns The "Output Bag" containing values to pass to the infrastructure
+                 */
+                ContextualEmailControl.prototype.getOutputs = function () {
+                    // custom code goes here - remove the line below and return the correct output
+                    return null;
+                };
+                /**
+                 * This function will be called when the control is destroyed
+                 * It should be used for cleanup and releasing any memory the control is using
+                 */
+                ContextualEmailControl.prototype.destroy = function () {
+                };
+                return ContextualEmailControl;
+            }());
+            // Add any additional strings needed for PopupManager in this array
+            ContextualEmailControl.ResourceKeysForPopupManager = [
+                ContextualEmail.ResourceKeys.MaxPopupsLimitReached,
+                ContextualEmail.ResourceKeys.PopupTitleTemplate,
+                ContextualEmail.ResourceKeys.PopupNoSubjectTitleTemplate,
+                ContextualEmail.ResourceKeys.NavigateAwayDialogTitle,
+                ContextualEmail.ResourceKeys.NavigateAwayDialogDescription,
+                ContextualEmail.ResourceKeys.EnhancedEmailFormDescription,
+                ContextualEmail.ResourceKeys.ClosePanelAlertTitle,
+                ContextualEmail.ResourceKeys.ClosePanelAlertBeforeSaveDescription,
+                ContextualEmail.ResourceKeys.ClosePanelAlertAfterSaveDescription,
+                ContextualEmail.ResourceKeys.ClosePanelUnSavedAlertTitle,
+                ContextualEmail.ResourceKeys.ClosePanelAlertSaveDescription,
+                ContextualEmail.ResourceKeys.ClosePanelDiscardChangesButton,
+                ContextualEmail.ResourceKeys.ClosePanelSaveAndContinueButton,
+                ContextualEmail.ResourceKeys.DialogOkButton,
+                ContextualEmail.ResourceKeys.PopupCloseTitle,
+                ContextualEmail.ResourceKeys.PopupMaximizeTitle,
+                ContextualEmail.ResourceKeys.PopupMinimizeTitle,
+                ContextualEmail.ResourceKeys.PopupNormalizeTitle,
+                ContextualEmail.ResourceKeys.EmailPopupClosed,
+            ];
+            ContextualEmail.ContextualEmailControl = ContextualEmailControl;
+        })(ContextualEmail = AppCommon.ContextualEmail || (AppCommon.ContextualEmail = {}));
+    })(AppCommon = MscrmControls.AppCommon || (MscrmControls.AppCommon = {}));
+})(MscrmControls || (MscrmControls = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="inputsoutputs.g.ts" />
+/// <reference path="ContextualEmailControl.ts" /> 
+var MscrmControls;
+(function (MscrmControls) {
+    var AppCommon;
+    (function (AppCommon) {
+        var ContextualEmail;
+        (function (ContextualEmail) {
+            var TelemetryReporter = (function () {
+                function TelemetryReporter() {
+                }
+                TelemetryReporter.getDataParams = function (paramsArray) {
+                    var data = {};
+                    data["scenario"] = "Contextual Email";
+                    if (paramsArray) {
+                        paramsArray.forEach(function (param) {
+                            data[param.name] = param.value;
+                        });
+                    }
+                    return data;
+                };
+                TelemetryReporter.ReportComponentSuccess = function (context, methodName, action, actionOn, message, paramsArray) {
+                    try {
+                        // push data to SITraceCIEvent
+                        TelemetryReporter.SITelemetryLogger && TelemetryReporter.SITelemetryLogger.ReportUserAction({
+                            context: context,
+                            methodName: methodName,
+                            action: action,
+                            actionOn: actionOn,
+                            message: message,
+                            customControlId: TelemetryReporter.controlName,
+                            area: TelemetryReporter.Area,
+                            data: TelemetryReporter.getDataParams()
+                        });
+                    }
+                    catch (ex) {
+                        TelemetryReporter.reportUCIError(context, ex);
+                    }
+                };
+                TelemetryReporter.ReportInfo = function (context, methodName, action, actionOn, message, paramsArray) {
+                    try {
+                        // push data to SITraceBIEvent
+                        TelemetryReporter.SITelemetryLogger && TelemetryReporter.SITelemetryLogger.ReportInfo({
+                            context: context,
+                            methodName: methodName,
+                            action: action,
+                            actionOn: actionOn,
+                            message: message,
+                            customControlId: TelemetryReporter.controlName,
+                            area: TelemetryReporter.Area,
+                            data: TelemetryReporter.getDataParams(paramsArray)
+                        });
+                    }
+                    catch (ex) {
+                        TelemetryReporter.reportUCIError(context, ex);
+                    }
+                };
+                TelemetryReporter.ReportError = function (context, methodName, message, action, actionOn, paramsArray) {
+                    try {
+                        // push data to SITraceEvent
+                        TelemetryReporter.SITelemetryLogger && TelemetryReporter.SITelemetryLogger.ReportError({
+                            context: context,
+                            methodName: methodName,
+                            message: message,
+                            action: action,
+                            actionOn: actionOn,
+                            customControlId: TelemetryReporter.controlName,
+                            area: TelemetryReporter.Area,
+                            data: TelemetryReporter.getDataParams(paramsArray)
+                        });
+                    }
+                    catch (ex) {
+                        TelemetryReporter.reportUCIError(context, ex);
+                    }
+                };
+                TelemetryReporter.reportUCIError = function (context, error) {
+                    try {
+                        context.reporting.reportFailure(TelemetryReporter.controlName, Error(JSON.stringify(error)));
+                    }
+                    catch (ex) {
+                        console.error(ex);
+                    }
+                };
+                return TelemetryReporter;
+            }());
+            TelemetryReporter.Area = "Usability Improvements";
+            TelemetryReporter.controlName = "ContextualEmailControl";
+            TelemetryReporter.initialize = (function () {
+                try {
+                    TelemetryReporter.SITelemetryLogger = SIClientUtilityLogger && SIClientUtilityLogger.Telemetry ? SIClientUtilityLogger.Telemetry : null;
+                }
+                catch (ex) {
+                    console.error(ex);
+                }
+            })();
+            ContextualEmail.TelemetryReporter = TelemetryReporter;
+        })(ContextualEmail = AppCommon.ContextualEmail || (AppCommon.ContextualEmail = {}));
+    })(AppCommon = MscrmControls.AppCommon || (MscrmControls.AppCommon = {}));
+})(MscrmControls || (MscrmControls = {}));
+//# sourceMappingURL=ContextualEmailControl.js.map

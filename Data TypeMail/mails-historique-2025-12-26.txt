@@ -1,0 +1,313 @@
+Thank you for getting back to us.
+
+We are very happy to hear that the initially reported problem has been resolved and that now you are able to fully enjoy your Djuced Pro licence !
+
+If you ever encounter any other issues, or simply have any questions or doubts, do not hesitate to let us know.
+We're always happy to help.
+
+In the meantime, we wish you a pleasant day.
+
+------------------------------------------------------------
+
+Merci pour vos retours , 
+
+Nous vous remercions d'avoir effectué le payment ,aprèes confiration notre équipe logistique revienda vers vours dans les plus bref délai pour vous informer de l'epedition de votre comande.
+
+En attendant si vou avez d'autres queston n'hésitez pas je reste a votre disposition.
+
+
+------------------------------------------------------------
+
+Nous vous remercions pour ces précisions.
+
+Si vous le souhaitez , nous proposons un service de réparation au moyen d'un renvoi a nos ateliers de votre produit.
+
+Si cela vous intéresse nous aurions besoin d'une éventuelle prevue d'achat , afin de connaitre le status de garantie du produit .
+
+Cela nous permettra de vous proposer la solution la plus adaptée .
+
+Merci de bien vouloir déposer ce document sur notre cloud via le lien ci dessous et de nous indiquez si vous souhaitez procéder .
+
+Dans l'attente de votre retour .
+
+------------------------------------------------------------
+
+Nous vous remercions pour les tes effectuées ainsi que les documents apportées.
+
+Pourriez vous m'iniquer si la LED bleu au dos de votre T-LCM s'allume correctement lors de la connection a la base en RJ12 ?
+
+Si elle ne s'allume pas correctement , essayez de débranchez et rebrancher le cable j'usqua ce que la led s'allume.
+
+Une fois cette dernière vérification effectuée je serait en mesure de vous proposer une solution.
+
+Dans l'attente de votre retour.
+
+------------------------------------------------------------
+
+Nous vous remercions pour les tes effectuées ainsi que les documents apportées.
+
+Pourriez vous m'iniquer si la LED bleu au dos de votre T-LCM s'allume correctement lors de la connection a la base en RJ12 ?
+
+Si elle ne s'allume pas correctement , essayez de débranchez et rebrancher le cable j'usqua ce que la led s'allume.
+
+Une fois la led allumé , effectuez un test du pédalier et dites moi si le problème persiste.
+
+Une fois cette dernière vérification effectuée je serait en mesure de vous proposer une solution.
+
+Dans l'attente de votre retour.
+
+------------------------------------------------------------
+
+Nous vous remercions pour votre retour.
+
+c'était une excellent idée d'intervertir les connectiques des pédales afin d'en isoler la cause , si le dysfonctionnement est lié a la fonction Clutch et non a sa pédale physique alors il provient soit du cable RJ12 , soit de votre base TX .
+
+Afin d'isoler au mieux les causes possibles auriez vous une autre base ou un second pédalier afin de teser chaque produit séparément ?
+
+Nous souhaiteriosn également voir les connectiques RJ12 du pédalier et de la base .
+
+Merci de déposer ces photo sur notre cloud , je vous remet le liens ici :
+
+Dans l'attent de votre retour.
+
+
+------------------------------------------------------------
+
+Nous vous remercions pour votre retour.
+
+Nous sommes heurex d'apprendre que vous avez bien recu vos pièces et que l'instalation du composant s'esst faite sans encombre.
+
+Concernant le souci d'input non reconnu :
+
+c'était une excellent idée d'intervertir les connectiques des pédales afin d'en isoler la cause , si le dysfonctionnement est lié a la fonction Clutch et non a sa pédale physique alors il provient soit du cable RJ12 , soit de votre base TX .
+
+Afin d'isoler au mieux les causes possibles auriez vous une autre base ou un second pédalier afin de teser chaque produit séparément ?
+
+Nous souhaiteriosn également voir les connectiques RJ12 du pédalier et de la base .
+
+Merci de déposer ces photo sur notre cloud , je vous remet le liens ici :
+
+Dans l'attent de votre retour.
+
+
+------------------------------------------------------------
+
+Toutes mes excuses j'ai enviyé le mail sans joindre le lien du cloud , le voici a nouveau :
+
+------------------------------------------------------------
+
+Nous vous remercions pour vos retours .
+
+Nous ne recevons pas les pièces jointes envoyé directement a l'adresse mail du support ,  nous utilisons un système de cloud lié a chaque numéro de requette afin de garantir l'accesibilité des documents ainsi que la sécurité des données .
+
+Merci de bien vouloir déposer vos document sur notre cloud , via le lien ci dessous pour que nous puissions vous assister au mieux . n'hésitez pas a nous notifier l'orsque vous aurez déposer les documents afin que nous puissions revenir vers vous le plus rapidmernt possible.
+
+Dans l'atente de votre retour.
+
+------------------------------------------------------------
+
+Nous vous remercions pour toutes ces précisions , il semble effectivment que votre souci de signal soit bien liée a de l'élécticité statique .
+
+Meme lors de l'utilisation sur une surface non conductrice il peut résider une légère charge perturbant le fonctionnelent du pédalier . il est recomandé de laisser le produit hors tension et sur une surface neutre plusieurs jours ainsi que de le débrancher apres utilisation sur console .
+
+Les port USB d'un pc sont généralement plus performant pour compenser cette élétricité statique ,ce qui st moins le cas sur les consoles de salon.
+
+Etant donné que le souci est trèes reuit lors de l'utilisation hors du cockpit ainsi que sur pc , tout semble indiquer que c'est l'electicité le souci . 
+
+Votre nouveau cable RJ12 Permettra de confirmer ce diagnostique , n'hésitez pas a revenir vers nous des que vous aure z pou le tester.
+
+Dans l'attente de votre retour.
+
+
+------------------------------------------------------------
+
+Vous nous contactez concernnt un souci de son qui craque sur votre Inulse T7 Premium et nous serions ravis de vous aider.
+
+Nous vous remercions pour toutes ces précison aportés ainsi que les nombreuses étape de test que vous avez réqliser au préalable , cela est grandement apprécié et facilite notre diagnostic .
+
+Compte tenu des nombreux test que vous avez effecué ainsi que de votre zone géographique , un retour via le revendeur semble etre la meilleur solution .
+
+Si vous le souhiatez nous pouvons vous assiter pour confirmer le dysfonctionnement ce qui pourrait faciliter la procédure de retour aupres du revendeur.
+
+Pour cela nous aurions besoin de quelques éléments :
+
+Une courte vidéo du dysfonctionement rencotré avec le souci clairement audible et le produit bien visible .
+
+Pouvez vous me également confirmer que le souci de son intervient également en utilisant l'interface audio Wasapi  ?
+
+Merci de bien voulour déposer ces documents sur notre CLoud en utilisant le ien ci dessous , et en nous notifiant au dépot des fichier afin que ous puissions revenir vers vous rapidemnt .
+
+Une fois ces éléments transmis nous pourons confirmer le dysfonctionnement afin de faciliter votre rpocédure de reotur via le evendeur 
+
+
+------------------------------------------------------------
+
+Merci pour votre retour ,
+j'ai joint au Cloud dans un dossier séparer les photo des conneceur que nous souhaiterions voir ( indiqué sur les deux photo en rouge ) .
+
+Si vous avez l'occasion de tester vos produit sur une autre base cela nous aiderais grandement également.
+
+Nous aimerions également voir les pinch marks dont vous faites entiosn dans votre précédetnes réponses.
+
+Je vous joint le lien du cloud juste ici :
+Merci de nous notifier au dépot des fichier que nouspuissions revenir vers vous rapidement.
+
+dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Merci pour votre retour ainsi que pour les photos apportées.
+
+Je ne vois pas la facture jointe a votre mail , pourriez vous me la transmettre en la déposant dans notre cloud via le lien ci dessous :
+
+Merci également de vous assurer que le produit est bien branché en alimentation ainsi qu'en USB simultanément , le produit apparaitre sans vie si il n'est pas connecté a un pc .
+
+Une fois ces deux dernoers éléments recu je serait en mesure de vous proposer une solution.
+
+
+------------------------------------------------------------
+
+Merci pour les photos , vos connecteur semble en bon état , le picement sur le cable ne semble pas inquiétant non plus .
+
+Revenez vers moi quand vous aurez pu tester sur une autre base . En fonction du résulta nous pourrons vous proposer plusieurs solutins 
+
+Sachez que nous aprécions grandement la coopérationt dont vous faites preuve pour nous assister dans notre diagnostique.
+
+dans l'attente de votre retour .
+
+
+------------------------------------------------------------
+
+Meri pour ces retour , 
+
+Je comprend que la situation peut etre frustrante et je compatis sincèrement a votre situation , soyez assuré que nous somme la pour vous aider du mieux que nous pouvons et qur nous souhaitons seulement identifier au mieux les causes éventuelles du dysfonctionnement , dans le but de vous éviter des démarches pouvant prendre plus de temps  et qui , si elles ne sont pas diagnostiqué correctement  pourrait ne pas résoudre votre rpoblème ( comme un renvoi du produit par exemple ) .
+
+Malheureusement je ne dispose pas du guide de calibration en Francais pour le moment , cela étant dit si vous ne souhiatez pas tenter la procédure en anglais je comprendrais tout a fait.
+
+Si vous souhaitez simplement renvoyer votre produit pour que nous l'analysions pour vous , faite le moi savoir et je procèderais au retour de votre rpoduti.
+
+
+
+
+
+------------------------------------------------------------
+
+Meri pour ces retour , 
+
+Je comprend que la situation peut etre frustrante et je compatis sincèrement a votre situation , soyez assuré que nous somme la pour vous aider du mieux que nous pouvons et qur nous souhaitons seulement identifier au mieux les causes éventuelles du dysfonctionnement , dans le but de vous éviter des démarches pouvant prendre plus de temps  et qui , si elles ne sont pas diagnostiqué correctement  pourrait ne pas résoudre votre rpoblème ( comme un renvoi du produit par exemple ) .
+
+Malheureusement je ne dispose pas du guide de calibration en Francais pour le moment , cela étant dit si vous ne souhiatez pas tenter la procédure en anglais je comprendrais tout a fait.
+
+Si vous souhaitez simplement renvoyer votre produit pour que nous l'analysions pour vous , faite le moi savoir et je procèderais au retour de votre rpoduti.
+
+Parralèlement , si vous le souhaitez je vous invite a effectuer un test de vos boutons déféctueux dans l'outil Midi Tester accèsible via ce lien :
+
+Ce test nous permet d'éliminer toute cause logicielle ou de configuration des dysfonctionement rencontrées voici comment procéder 
+
+Une fois sur la page web un pop up apparaitra en haut de la page vous demandant l'autorisation d'accèder au controleur Midi de votre ordinateur , cliquez sur Oui ou autoriser .
+
+Au centre de la page le piano affiché devrait prendre le nom de votre controleur Dj , si ce n'est pas le cas vous pourrez le séléctionner dans le menu select midi input device en haut a droite .
+
+Une fois votre controleur séléctioné appuyez sur les boutons Fx et tourner le fader dans un sens puis dans l'autre .
+
+vos action seront affihé dans le Midi Event Log , c'est ce que nous souhaitons voir : quel signal est recu par l'ordinateur en provenance du controleur .
+
+Une simple vidéo de l'écran en effectuant les actions cité au dessus suffiront et nous aiderais grandement.
+
+Merci de déposer votre vidéo dans notre cloud en utilisant le lien ci dessous et de nous en notifier afn que nous puissions revenir vers vous rapidment .
+Dans l'attente de votre retour .
+
+
+
+
+------------------------------------------------------------
+
+Merci pour cette vérification , pourriez vou spasser le p&dalier en mode inversé afin de vérifier si le dysfonctionnement reste sur la mème pédale physiquement ou si il suit la fonction Clutch , voici comment procéder sur votre T300 :
+
+Maintenez le bouton MODE ainsi que les boutons L3 et R3 enfoncé pendant 5 secondes , les led vont flasher 5 fois pour vous indiquer que vous etes en mode inversé .
+
+Si 'est toujour la mème pédale qui ne fonctionne pas alors le problème vient du pédalier . SI le dysfonctionnement a chnagé de pédale le soui provient alors de la base .
+
+Dans l'attente de vptre retour.
+
+------------------------------------------------------------
+
+La requête que vous avez saisie semble vide . Pourriez-vous nousdonner plus de détails  afin que nous puissions vous aider au mieux ?
+
+Si vous avez besoin d’assistance, nous serions ravis de vous accompagner pour trouver une solution adaptée.
+
+Dans l’attente de votre retour, nous vous souhaitons une excellente journée.
+
+
+------------------------------------------------------------
+
+The request you entered appears to be empty. Could you please provide more details so we can assist you as best as possible?
+
+If you need any assistance, we would be happy to help you find the most suitable solution.
+
+We look forward to your response and wish you an excellent day.
+
+------------------------------------------------------------
+
+Vous nous contzctee concernant u ndocument perdu de la boite de votre volant Ferrari SF1000 
+
+Pas d'inquitéude ce petit QR code que vous mentionez n'est qu'un lien rapide pour accéder a la page du supprt technique de votre olant SF1000 , afin de télécharger les derniers Drivers et l'application My Thrustmaster Panel , il n'est pas d'une grande imprtance 
+
+Voici le lien du site en question :
+
+Si vous avez d'autre questions ou que vous renctrez des souci n'hésitez pas a revenir vers moi , je serais ravis de ous aider .
+
+Je vous soaite d'excellents sessions de courses acompagné de votre nouveau volant Thrusmaaster 
+
+
+------------------------------------------------------------
+
+Vous nous conatctez concernant un souci de steering sur votre volant T80 et nous serions ravis de vous aider .
+
+Malheureusement le T80 faisant partie de nos produit duscontinué nous ne proposons plus de pièce détachée ni de service de réparation.
+
+Au regard de la photo que vous nous avez fournis il est possible que le cable jaune soit mal soudé ou que les fiches soit trèes usées.
+
+Je suis désolé de ne pas pouvoir vous apporter plus d'informations , si vous avez d'autres question n'hésitez pas a revenir vers moi 
+
+
+------------------------------------------------------------
+
+Merci pour ces précisions , je comprend tout a fais votre décision .
+
+Si vous le souhiatez  vous pouvez Tenter une installation propre du pédalier et de la base sur un autre pc lorsque vous serez rentrée chez vous .
+
+Parralèlemnt si vous auriez encore le post Reddit mentionant le firmware update du TLCM cela me serait d'une grande utilité .
+
+N'hésitez pas à me faire un retour des test que vous effectuez ou si vous avez d'autres questions je reste disponble .
+
+Dans l'attente de votre réponse.
+
+
+
+
+
+
+------------------------------------------------------------
+
+vous nous contactez concernant un code Xbox Game Pass non fonctionnel et nous serons ravis de vous aider.
+
+Assurez-vous que le code est utilisé sur un compte Xbox qui n'a jamais eu d'abonnement au Game Pass Ultimate auparavant. Le code est généralement destiné aux nouveaux abonnés.
+
+Si vous êtes certain que le compte est éligible je vous invite a remplir le formulaire présent sur nore page support , dans votre espace client vous avez une option " Renew expired XBOX Gamepass " . 
+
+Une fois le formulaire remplit vous receverez une réponse rapidement .
+
+Si vous avez d'autres questions ou rencontrez des souci n'hésitez pas a revenir vers moi  je reste disponible.
+
+
+------------------------------------------------------------
+
+
+Toutes mes excuses je pense que vous avez contacté le mauvais Hercules , nous ne vendons pas de support pour instument a vent .
+
+Je pense que vous cherchiez a contacter Hercules Stand , voici le lien de leurs support US : 
+
+Nous sommes Hercules une entreprise francais proposant des controleurs de Dj et des accèsoire de mixing et de streaming .
+
+Je vous souhaite de très belle fete de fin d'année et j'espère que vous recevrez les élém,ets ma,quant de votre stand .

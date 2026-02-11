@@ -1,0 +1,907 @@
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var AutonomousCaseCreation;
+(function (AutonomousCaseCreation) {
+    var Constants = /** @class */ (function () {
+        function Constants() {
+        }
+        //FCS constants
+        Constants.autonomousCaseCreationFcsNamespace = "Omnichannel.AutonomousCaseCreation";
+        Constants.autonomousCaseCreationFcsKey = "EnableFCSForAutonomousCaseCreation";
+        Constants.updateFromConversationButtonFcsKey = "EnableUpdateFromConversationButton";
+        Constants.customerServiceFcsNamespace = "ServiceIntelligence.CustomerService";
+        Constants.PPACCheckEnabledFcsKey = "PPACCheckEnabled";
+        Constants.enableACCForJuly = "EnableACCForJuly";
+        Constants.liveworkitemEntityName = "msdyn_ocliveworkitem";
+        Constants.liveWorkItemActiveStatusCode = "2";
+        Constants.liveWorkItemSelectQuery = "?$select=statuscode,createdon,activityid&$filter=_msdyn_issueid_value eq ${entityId} and statuscode eq ${liveWorkItemActiveStatusCode}&$orderby=createdon desc&$top=1";
+        Constants.agentCopilotSetting = "msdyn_agentcopilotsetting";
+        Constants.agentCopilotSettingRecord = "c619dd93-b4fb-4f8b-8ab3-2c6ca53ca48a";
+        Constants.agentCopilotSettingSelectQuery = "?$select=msdyn_conversationtocaseautonomousflowenabled";
+        Constants.conversationtocaseautonomousflowenabled = "msdyn_conversationtocaseautonomousflowenabled";
+        Constants.formPredictEnabled = "FormPredictEnabled";
+        Constants.customerServiceWorkspace = "msdyn_CustomerServiceWorkspace";
+        Constants.appCopilotConfiguration = "msdyn_appcopilotconfiguration";
+        Constants.copilotFeatureAutonomousCaseCreation = 829050006;
+        Constants.ppacCrossGeo = "ppaccrossgeo";
+        Constants.empty = "";
+        Constants.edmString = "Edm.String";
+        Constants.invokeIntelligenceAction = "msdyn_InvokeIntelligenceAction";
+        Constants.RetrievePlatformCopilotSettings = "msdyn_RetrievePlatformCopilotSettings";
+        Constants.zero = 0;
+        Constants.one = 1;
+        Constants.getAppConfigByAgent = "msdyn_getAppConfigByAgent";
+        Constants.incidentEntityName = "incident";
+        Constants.incidentActiveStatusCode = "0";
+        Constants.incidentSelectQuery = "?$select=statecode&$filter=incidentid eq ${incidentId} and statecode eq ${incidentActiveStatusCode}";
+        Constants.fetchAutonomousCaseCreateUpdateRule = "msdyn_fetchAutonomousCaseCreateUpdateRule";
+        //case update CC event
+        Constants.caseAutoFormRequestEvent = "case-auto-update-form-request";
+        //Telemetry constants
+        Constants.updateAction = "UpdateAction";
+        Constants.updateActionTimer = "UpdateActionTimer";
+        Constants.isConversationToCaseEnabledTimer = "IsConversationToCaseEnabledTimer";
+        Constants.isFormPredictEnabledTimer = "IsFormPredictEnabledTimer";
+        Constants.getLiveWorkItemDataTimer = "GetLiveWorkItemDataTimer";
+        Constants.fetchRequiredFlagsForAutonomousCaseCreation = "FetchRequiredFlagsForAutonomousCaseCreation";
+        Constants.isAutonomousCaseCreationEnabled = "IsAutonomousCaseCreationEnabled";
+        Constants.autoCaseAppConfigId = "AutoCaseAppConfigId";
+        Constants.isEnabledInCrossGeoTimer = "IsEnabledInCrossGeoTimer";
+        Constants.isPPACCheckEnabled = "IsPPACCheckEnabled";
+        Constants.isCopilotEnabledInAPMTimer = "IsCopilotEnabledInAPMTimer";
+        Constants.fetchCopilotAPMConfig = "FetchCopilotAPMConfig";
+        Constants.getActiveLWITimer = "GetActiveLWITimer";
+        Constants.getIncidentStateCodeTimer = "GetIncidentStateCodeTimer";
+        Constants.fetchRuleCustomActionTimer = "FetchRuleCustomActionTimer";
+        Constants.isAutoCaseEnabledInCSAC = "IsAutoCaseEnabledInCSAC";
+        Constants.isEnabledInAIAgentTimer = "IsEnabledInAIAgentTimer";
+        return Constants;
+    }());
+    AutonomousCaseCreation.Constants = Constants;
+    var FormPredictAppSetting;
+    (function (FormPredictAppSetting) {
+        FormPredictAppSetting[FormPredictAppSetting["defaultSetting"] = 0] = "defaultSetting";
+        FormPredictAppSetting[FormPredictAppSetting["off"] = 1] = "off";
+        FormPredictAppSetting[FormPredictAppSetting["on"] = 2] = "on";
+    })(FormPredictAppSetting = AutonomousCaseCreation.FormPredictAppSetting || (AutonomousCaseCreation.FormPredictAppSetting = {}));
+})(AutonomousCaseCreation || (AutonomousCaseCreation = {}));
+var AutonomousCaseCreation;
+(function (AutonomousCaseCreation) {
+    var CommonParameters;
+    (function (CommonParameters) {
+        CommonParameters["Error"] = "Error";
+        CommonParameters["Info"] = "Info";
+        CommonParameters["Marker"] = "Marker";
+        CommonParameters["Warning"] = "Warning";
+        CommonParameters["Source"] = "Source";
+        CommonParameters["Parameters"] = "Parameters";
+    })(CommonParameters = AutonomousCaseCreation.CommonParameters || (AutonomousCaseCreation.CommonParameters = {}));
+    var Telemetry = /** @class */ (function () {
+        function Telemetry() {
+        }
+        /**
+         * Log an error event
+         * @param source Telemetry source
+         * @param error Telemetry error
+         * @param params Telemetry params
+         */
+        Telemetry.logError = function (source, error, params) {
+            var _a;
+            var errorParam;
+            if (error instanceof Error) {
+                var message = error.message, stack = error.stack;
+                errorParam = { message: message, stack: stack };
+            }
+            else if (typeof error === "string") {
+                errorParam = error;
+            }
+            else {
+                errorParam = __assign({}, error);
+            }
+            var errorMarker = (_a = {},
+                _a[CommonParameters.Source] = source,
+                _a[CommonParameters.Error] = errorParam,
+                _a[CommonParameters.Parameters] = params,
+                _a);
+            Telemetry.logInternal(CommonParameters.Error, errorMarker)();
+        };
+        /**
+         * Log a warning event
+         * @param source Telemetry source
+         * @param warning Telemetry warning
+         * @param params Telemetry params
+         */
+        Telemetry.logWarning = function (source, warning, params) {
+            var _a;
+            var warningParam;
+            if (typeof warning === "string") {
+                warningParam = warning;
+            }
+            else {
+                warningParam = __assign({}, warning);
+            }
+            var warningMarker = (_a = {},
+                _a[CommonParameters.Source] = source,
+                _a[CommonParameters.Warning] = warningParam,
+                _a[CommonParameters.Parameters] = params,
+                _a);
+            Telemetry.logInternal(CommonParameters.Warning, warningMarker)();
+        };
+        /**
+         * Log an informational event
+         * @param source Telemetry source
+         * @param info Telemetry informational
+         * @param params Telemetry params
+         */
+        Telemetry.logInfo = function (source, info, params) {
+            var _a;
+            var infoParam;
+            if (typeof info === "string") {
+                infoParam = info;
+            }
+            else {
+                infoParam = __assign({}, info);
+            }
+            var infoMarker = (_a = {},
+                _a[CommonParameters.Source] = source,
+                _a[CommonParameters.Info] = infoParam,
+                _a[CommonParameters.Parameters] = params,
+                _a);
+            Telemetry.logInternal(CommonParameters.Info, infoMarker)();
+        };
+        /**
+         * Logs duration marker
+         * @param source
+         * @param params
+         */
+        Telemetry.measureStartStop = function (source, params) {
+            var _a;
+            var marker = (_a = {},
+                _a[CommonParameters.Source] = source,
+                _a[CommonParameters.Parameters] = params,
+                _a);
+            return Telemetry.logInternal(CommonParameters.Marker, marker);
+        };
+        /**
+         * Internal method to log the event to UCI
+         * @param name Event name
+         * @param parameters Event params
+         */
+        Telemetry.logInternal = function (name, parameters) {
+            var fullName = "".concat(Telemetry.ServiceIntelligenceOCPrefix, ".").concat(Telemetry.SessionName, ".").concat(name);
+            parameters = this.prepareObjectForStringification(parameters);
+            // Safety in case the UCI context doesn't contain telemetry
+            // infrastructure.
+            var xrm = window.Xrm || parent.Xrm;
+            if (!xrm || !xrm.Internal || !xrm.Internal.createPerformanceStopwatch) {
+                return function () { };
+            }
+            var stop = xrm.Internal.createPerformanceStopwatch(fullName, parameters);
+            if (!xrm || !xrm.Reporting) {
+                return function () { };
+            }
+            var reporting = xrm.Reporting;
+            var params = parameters;
+            var reportingParams = Object.keys(params).map(function (key) {
+                return { name: key, value: params[key] };
+            });
+            //Markers will be logged at call back when the call finishes
+            if (!fullName.includes(CommonParameters.Marker)) {
+                if (name == CommonParameters.Error)
+                    reporting.reportFailure(fullName, params === null || params === void 0 ? void 0 : params.Error, "", reportingParams);
+                else
+                    reporting.reportSuccess(fullName, reportingParams);
+            }
+            return function (endParameters) {
+                endParameters = Telemetry.prepareObjectForStringification(endParameters);
+                stop(endParameters);
+                var unionedParams = __assign(__assign({}, parameters), endParameters);
+                var endReportingParams = Object.keys(unionedParams).map(function (key) {
+                    return { name: key, value: unionedParams[key] };
+                });
+                reporting.reportSuccess(fullName, endReportingParams);
+            };
+        };
+        /**
+         * Replaces any Javascript Error object with a new, stringifiable version.
+         *
+         * This function will recursively check objects contained within the given one, up to the depth specified.
+         * This function will return the given object, unless the given object is itself a Javascript Error object.
+         *
+         * If an error occurs while processing an object, it will stop processing the current object and return
+         * its original value, continuing on with other objects it encounters.
+         *
+         * See https://stackoverflow.com/questions/18391212/is-it-not-possible-to-stringify-an-error-using-json-stringify
+         * @param obj object to prepare for stringification.
+         * @param depth (default = 3) the maximum depth to process the given object.
+         * @returns an object ready to be stringified.
+         */
+        Telemetry.prepareObjectForStringification = function (obj, depth) {
+            var _this = this;
+            var _a;
+            if (depth === void 0) { depth = 3; }
+            try {
+                if (depth <= 0)
+                    return obj;
+                if (obj == null)
+                    return obj;
+                if (Array.isArray(obj)) {
+                    obj.forEach(function (value, index) {
+                        obj[index] = _this.prepareObjectForStringification(value, depth - 1);
+                    });
+                }
+                else if (typeof obj === "object") {
+                    var properties = Object.getOwnPropertyNames(obj);
+                    if (properties.length === 0)
+                        return { message: (_a = obj === null || obj === void 0 ? void 0 : obj.toString) === null || _a === void 0 ? void 0 : _a.call(obj) };
+                    var newObj_1 = {};
+                    properties.forEach(function (key) {
+                        newObj_1[key] = _this.prepareObjectForStringification(obj[key], depth - 1);
+                    });
+                    return newObj_1;
+                }
+                return obj;
+            }
+            catch (error) {
+                // If we fail for some reason, return the original object.
+                return obj;
+            }
+        };
+        Telemetry.SessionName = "Client.AutonomousCaseCreation";
+        Telemetry.ServiceIntelligenceOCPrefix = "msdyn.OCIntelligence";
+        return Telemetry;
+    }());
+    AutonomousCaseCreation.Telemetry = Telemetry;
+})(AutonomousCaseCreation || (AutonomousCaseCreation = {}));
+/**
+ * @license Copyright (c) Microsoft Corporation.  All rights reserved.
+ */
+/// <reference lib="es2017.object" />
+/// <reference path="Constants.ts" />
+/// <reference path="Telemetry.ts" />
+var AutonomousCaseCreation;
+(function (AutonomousCaseCreation) {
+    var AutonomousCaseCreationActions = /** @class */ (function () {
+        function AutonomousCaseCreationActions() {
+            var _this = this;
+            this.updateAction = function (eventContext) {
+                var _a;
+                var updateActionTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.updateActionTimer);
+                var entityId = (_a = eventContext.entityReference) === null || _a === void 0 ? void 0 : _a.id;
+                var Microsoft = window.Microsoft;
+                if (entityId) {
+                    _this.getActiveLiveWorkItemId(entityId).then(function (liveWorkItemId) {
+                        var _a;
+                        if (liveWorkItemId) {
+                            (_a = Microsoft === null || Microsoft === void 0 ? void 0 : Microsoft.CIFramework) === null || _a === void 0 ? void 0 : _a.raiseEvent(AutonomousCaseCreation.Constants.caseAutoFormRequestEvent, liveWorkItemId);
+                            updateActionTimer({ success: true, status: "Update case from conversation event triggered" });
+                        }
+                        else {
+                            updateActionTimer({ success: false, status: "Case could not be updated as related ocliveworkitem could not be fetched" });
+                        }
+                    }).catch(function (error) {
+                        updateActionTimer({
+                            success: false,
+                            status: "Case could not be updated as related ocliveworkitem could not be fetched from caseId",
+                            "error": error
+                        });
+                    });
+                }
+                else {
+                    updateActionTimer({ success: false, status: "Entity ID is missing" });
+                }
+            };
+            this.CACHE_INVALIDATION_DURATION_IN_MS = 43200000; // 12 hours
+        }
+        AutonomousCaseCreationActions.prototype.getActiveLiveWorkItemId = function (entityId) {
+            var _a;
+            return __awaiter(this, void 0, void 0, function () {
+                var getActiveLWITimer, response, error_1;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            getActiveLWITimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.getActiveLWITimer);
+                            _b.label = 1;
+                        case 1:
+                            _b.trys.push([1, 3, , 4]);
+                            return [4 /*yield*/, window.Xrm.WebApi.retrieveMultipleRecords(AutonomousCaseCreation.Constants.liveworkitemEntityName, AutonomousCaseCreation.Constants.liveWorkItemSelectQuery.replace("${entityId}", entityId)
+                                    .replace("${liveWorkItemActiveStatusCode}", AutonomousCaseCreation.Constants.liveWorkItemActiveStatusCode))];
+                        case 2:
+                            response = _b.sent();
+                            if (((_a = response === null || response === void 0 ? void 0 : response.entities) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                                if (response.entities[0].activityid) {
+                                    getActiveLWITimer({ success: true, status: "Fetched live work item data", LiveWorkItemId: response.entities[0].activityid });
+                                    return [2 /*return*/, response.entities[0].activityid];
+                                }
+                            }
+                            getActiveLWITimer({ success: true, status: "No active live work items found" });
+                            return [2 /*return*/, null];
+                        case 3:
+                            error_1 = _b.sent();
+                            getActiveLWITimer({ success: false, status: "Fetching live work item data failed", error: error_1 });
+                            return [2 /*return*/, null];
+                        case 4: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isAutonomousCaseCreationEnabled = function (eventContext) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                _this.fetchRequiredFlagsForAutonomousCaseCreation(eventContext)
+                    .then(function (result) {
+                    AutonomousCaseCreation.Telemetry.logInfo(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled, { status: "Fetching required checks for autonomous case creation succeeded", result: result });
+                    result != undefined ? resolve(result) : resolve(false);
+                })
+                    .catch(function (error) {
+                    AutonomousCaseCreation.Telemetry.logError(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled, error, { status: "Fetching required checks for autonomous case creation failed" });
+                    reject(error);
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.fetchRequiredFlagsForAutonomousCaseCreation = function (eventContext) {
+            return __awaiter(this, void 0, void 0, function () {
+                var fetchRequiredFlagsTimer, fcsValue, isEnabledInAIAgent, isACCForJulyEnabled, _a, _isConversationToCaseEnabled, _isEnabledInCrossGeo, _isMultiSessionApp, _isCopilotEnabledInAPM, _isActiveLiveWorkItemLinked, _isCaseActive;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            fetchRequiredFlagsTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.updateActionTimer);
+                            fcsValue = this.isFCSEnabled();
+                            return [4 /*yield*/, this.isEnabledInAIAgent()];
+                        case 1:
+                            isEnabledInAIAgent = _b.sent();
+                            if (!fcsValue || !isEnabledInAIAgent) {
+                                return [2 /*return*/, false];
+                            }
+                            isACCForJulyEnabled = this.isACCForJulyEnabled();
+                            return [4 /*yield*/, Promise.all([
+                                    this.isConversationToCaseEnabled(isACCForJulyEnabled),
+                                    this.isEnabledInCrossGeo(),
+                                    this.isMultiSessionApp(),
+                                    this.isCopilotEnabledInAPM(),
+                                    this.isActiveLiveWorkItemLinked(eventContext),
+                                    this.isCaseActive(eventContext)
+                                ])];
+                        case 2:
+                            _a = _b.sent(), _isConversationToCaseEnabled = _a[0], _isEnabledInCrossGeo = _a[1], _isMultiSessionApp = _a[2], _isCopilotEnabledInAPM = _a[3], _isActiveLiveWorkItemLinked = _a[4], _isCaseActive = _a[5];
+                            fetchRequiredFlagsTimer({
+                                _isConversationToCaseEnabled: _isConversationToCaseEnabled,
+                                _isEnabledInCrossGeo: _isEnabledInCrossGeo,
+                                _isMultiSessionApp: _isMultiSessionApp,
+                                _isCopilotEnabledInAPM: _isCopilotEnabledInAPM,
+                                _isActiveLiveWorkItemLinked: _isActiveLiveWorkItemLinked,
+                                _isCaseActive: _isCaseActive
+                            });
+                            if (_isConversationToCaseEnabled && _isEnabledInCrossGeo && _isMultiSessionApp &&
+                                _isCopilotEnabledInAPM && _isActiveLiveWorkItemLinked &&
+                                _isCaseActive) {
+                                return [2 /*return*/, true];
+                            }
+                            return [2 /*return*/, false];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isFCSEnabled = function () {
+            var isAutonomousCaseCreationEnabled = window.Xrm.Utility.getGlobalContext().getFeatureControlSetting(AutonomousCaseCreation.Constants.autonomousCaseCreationFcsNamespace, AutonomousCaseCreation.Constants.autonomousCaseCreationFcsKey);
+            var isUpdateFromConversationButtonEnabled = window.Xrm.Utility.getGlobalContext().getFeatureControlSetting(AutonomousCaseCreation.Constants.autonomousCaseCreationFcsNamespace, AutonomousCaseCreation.Constants.updateFromConversationButtonFcsKey);
+            return isAutonomousCaseCreationEnabled && isUpdateFromConversationButtonEnabled;
+        };
+        AutonomousCaseCreationActions.prototype.isACCForJulyEnabled = function () {
+            var isACCForJulyEnabled = window.Xrm.Utility.getGlobalContext().getFeatureControlSetting(AutonomousCaseCreation.Constants.autonomousCaseCreationFcsNamespace, AutonomousCaseCreation.Constants.enableACCForJuly);
+            return isACCForJulyEnabled || false;
+        };
+        AutonomousCaseCreationActions.prototype.isConversationToCaseEnabled = function (isACCForJulyEnabled) {
+            return __awaiter(this, void 0, void 0, function () {
+                var isConversationToCaseAutonomousFlowEnabled, isConversationToCaseEnabledTimer, agentCopilotSetting, error_2;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            isConversationToCaseAutonomousFlowEnabled = false;
+                            isConversationToCaseEnabledTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.isConversationToCaseEnabledTimer);
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 5, , 6]);
+                            if (!isACCForJulyEnabled) return [3 /*break*/, 2];
+                            isConversationToCaseAutonomousFlowEnabled = true;
+                            return [3 /*break*/, 4];
+                        case 2: return [4 /*yield*/, window.Xrm.WebApi.retrieveRecord(AutonomousCaseCreation.Constants.agentCopilotSetting, AutonomousCaseCreation.Constants.agentCopilotSettingRecord, AutonomousCaseCreation.Constants.agentCopilotSettingSelectQuery)];
+                        case 3:
+                            agentCopilotSetting = _a.sent();
+                            if (agentCopilotSetting) {
+                                isConversationToCaseAutonomousFlowEnabled = agentCopilotSetting[AutonomousCaseCreation.Constants.conversationtocaseautonomousflowenabled];
+                            }
+                            _a.label = 4;
+                        case 4:
+                            isConversationToCaseEnabledTimer({
+                                success: true,
+                                msdyn_conversationtocaseautonomousflowenabled: isConversationToCaseAutonomousFlowEnabled,
+                                isACCForJulyEnabled: isACCForJulyEnabled
+                            });
+                            return [2 /*return*/, isConversationToCaseAutonomousFlowEnabled];
+                        case 5:
+                            error_2 = _a.sent();
+                            isConversationToCaseEnabledTimer({
+                                success: false,
+                                status: "Fetching agent copilot setting failed",
+                                error: error_2,
+                                isACCForJulyEnabled: isACCForJulyEnabled
+                            });
+                            return [2 /*return*/, isConversationToCaseAutonomousFlowEnabled];
+                        case 6: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isActiveLiveWorkItemLinked = function (eventContext) {
+            var _a;
+            return __awaiter(this, void 0, void 0, function () {
+                var entityId, isActiveLiveWorkItemLinked, getLiveWorkItemDataTimer, error_3;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            entityId = (_a = eventContext.entityReference) === null || _a === void 0 ? void 0 : _a.id;
+                            isActiveLiveWorkItemLinked = false;
+                            getLiveWorkItemDataTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.getLiveWorkItemDataTimer);
+                            _b.label = 1;
+                        case 1:
+                            _b.trys.push([1, 4, , 5]);
+                            if (!entityId) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.getActiveLiveWorkItemId(entityId)];
+                        case 2:
+                            if (_b.sent()) {
+                                isActiveLiveWorkItemLinked = true;
+                            }
+                            _b.label = 3;
+                        case 3:
+                            getLiveWorkItemDataTimer({ success: true, status: "Fetched live work item data", isActiveLiveWorkItemLinked: isActiveLiveWorkItemLinked });
+                            return [2 /*return*/, isActiveLiveWorkItemLinked];
+                        case 4:
+                            error_3 = _b.sent();
+                            getLiveWorkItemDataTimer({ success: false, status: "Fetching live work item data failed", error: error_3 });
+                            return [2 /*return*/, isActiveLiveWorkItemLinked];
+                        case 5: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isNullOrUndefined = function (object) {
+            return object === undefined || object === null;
+        };
+        AutonomousCaseCreationActions.prototype.getCachedItemByKey = function (key) {
+            // Check the cache for the last stored value and its expiry date.
+            // If the value exists and hasn't expired, use it. Otherwise return null.
+            var jsonObject = sessionStorage.getItem(key);
+            if (!this.isNullOrUndefined(jsonObject)) {
+                var cachedItem = void 0;
+                try {
+                    cachedItem = JSON.parse(jsonObject !== null && jsonObject !== void 0 ? jsonObject : "");
+                }
+                catch (error) {
+                    // Do nothing. If the item cannot be parsed, it will be removed below.
+                }
+                if (!this.isNullOrUndefined(cachedItem) &&
+                    !this.isNullOrUndefined(cachedItem.expiryDate) &&
+                    !this.isNullOrUndefined(cachedItem.value) &&
+                    new Date() <= new Date(cachedItem.expiryDate)) {
+                    return cachedItem.value;
+                }
+                else {
+                    // Remove the item from the cache as it could not be parsed, does not fit the expected format or is expired.
+                    sessionStorage.removeItem(key);
+                }
+            }
+            return null;
+        };
+        AutonomousCaseCreationActions.prototype.setCachedItemByKey = function (key, value) {
+            var sessionItem = {
+                expiryDate: new Date(new Date().getTime() + this.CACHE_INVALIDATION_DURATION_IN_MS),
+                value: value
+            };
+            var itemToCache = JSON.stringify(sessionItem);
+            sessionStorage.setItem(key, itemToCache);
+        };
+        AutonomousCaseCreationActions.prototype.clearCachedItemByKey = function (key) {
+            sessionStorage.removeItem(key);
+        };
+        AutonomousCaseCreationActions.prototype.isEnabledInCrossGeo = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var ppacRelatedDataRaw, ppacData, isEnabledInCrossGeoTimer, actionRequest, res, data, ppacData, crossGeoCopilotDataMovementApplicable, crossGeoCopilotDataMovementEnabled, error_4;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            ppacRelatedDataRaw = this.getCachedItemByKey("PPACRelatedData");
+                            if (!this.isNullOrUndefined(ppacRelatedDataRaw)) {
+                                ppacData = JSON.parse(ppacRelatedDataRaw);
+                                return [2 /*return*/, (ppacData.crossGeoCopilotDataMovementApplicable && ppacData.crossGeoCopilotDataMovementEnabled) || !ppacData.crossGeoCopilotDataMovementApplicable];
+                            }
+                            isEnabledInCrossGeoTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.isEnabledInCrossGeoTimer);
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 6, , 7]);
+                            actionRequest = {
+                                ScenarioType: AutonomousCaseCreation.Constants.ppacCrossGeo,
+                                RequestPayload: AutonomousCaseCreation.Constants.empty,
+                                getMetadata: function () {
+                                    return {
+                                        parameterTypes: {
+                                            ScenarioType: {
+                                                typeName: AutonomousCaseCreation.Constants.edmString,
+                                                structuralProperty: AutonomousCaseCreation.Constants.one,
+                                            },
+                                            RequestPayload: {
+                                                typeName: AutonomousCaseCreation.Constants.edmString,
+                                                structuralProperty: AutonomousCaseCreation.Constants.one,
+                                            },
+                                        },
+                                        operationName: AutonomousCaseCreation.Constants.invokeIntelligenceAction,
+                                        operationType: AutonomousCaseCreation.Constants.zero,
+                                    };
+                                },
+                            };
+                            return [4 /*yield*/, Xrm.WebApi.online.execute(actionRequest)];
+                        case 2:
+                            res = _a.sent();
+                            if (!res.ok) return [3 /*break*/, 4];
+                            return [4 /*yield*/, res.json()];
+                        case 3:
+                            data = _a.sent();
+                            if (!data || !data.Result) {
+                                throw new Error("Invalid response from PPAC data movement service.");
+                            }
+                            ppacData = JSON.parse(data.Result);
+                            crossGeoCopilotDataMovementApplicable = ppacData === null || ppacData === void 0 ? void 0 : ppacData.crossGeoCopilotDataMovementApplicable;
+                            crossGeoCopilotDataMovementEnabled = ppacData === null || ppacData === void 0 ? void 0 : ppacData.crossGeoCopilotDataMovementEnabled;
+                            isEnabledInCrossGeoTimer({
+                                success: true,
+                                crossGeoCopilotDataMovementApplicable: crossGeoCopilotDataMovementApplicable,
+                                crossGeoCopilotDataMovementEnabled: crossGeoCopilotDataMovementEnabled
+                            });
+                            this.setCachedItemByKey("PPACRelatedData", data.Result);
+                            return [2 /*return*/, ((crossGeoCopilotDataMovementApplicable && crossGeoCopilotDataMovementEnabled) ||
+                                    !crossGeoCopilotDataMovementApplicable)];
+                        case 4:
+                            isEnabledInCrossGeoTimer({ success: false, status: "PPAC data movement service returned an error" });
+                            _a.label = 5;
+                        case 5: return [3 /*break*/, 7];
+                        case 6:
+                            error_4 = _a.sent();
+                            isEnabledInCrossGeoTimer({ success: false, status: "PPAC data movement service call failed", error: error_4 });
+                            return [2 /*return*/, false];
+                        case 7: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isEnabledInAIAgent = function () {
+            var _a, _b, _c;
+            return __awaiter(this, void 0, void 0, function () {
+                var platformCopilotSettingsRaw, platformSettings, isEnabledInAIAgentTimer, actionRequest, res, data, platformSettings, AIAgentsEnabled, error_5;
+                return __generator(this, function (_d) {
+                    switch (_d.label) {
+                        case 0:
+                            platformCopilotSettingsRaw = this.getCachedItemByKey("PlatformCopilotHubSettings");
+                            if (!this.isNullOrUndefined(platformCopilotSettingsRaw)) {
+                                try {
+                                    platformSettings = void 0;
+                                    if (typeof platformCopilotSettingsRaw === 'string') {
+                                        platformSettings = JSON.parse(platformCopilotSettingsRaw);
+                                    }
+                                    else if (typeof platformCopilotSettingsRaw === 'object') {
+                                        platformSettings = platformCopilotSettingsRaw;
+                                    }
+                                    if (platformSettings && platformSettings.CSCopilotHubSetting) {
+                                        return [2 /*return*/, platformSettings.CSCopilotHubSetting.AIAgents === true];
+                                    }
+                                }
+                                catch (parseError) {
+                                    this.clearCachedItemByKey("PlatformCopilotHubSettings");
+                                }
+                            }
+                            isEnabledInAIAgentTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.isEnabledInAIAgentTimer);
+                            _d.label = 1;
+                        case 1:
+                            _d.trys.push([1, 6, , 7]);
+                            actionRequest = {
+                                getMetadata: function () {
+                                    return {
+                                        boundParameter: null,
+                                        parameterTypes: {},
+                                        operationType: 0,
+                                        operationName: AutonomousCaseCreation.Constants.RetrievePlatformCopilotSettings,
+                                    };
+                                },
+                            };
+                            return [4 /*yield*/, Xrm.WebApi.online.execute(actionRequest)];
+                        case 2:
+                            res = _d.sent();
+                            if (!res.ok) return [3 /*break*/, 4];
+                            return [4 /*yield*/, res.json()];
+                        case 3:
+                            data = _d.sent();
+                            if (!data || !data.Result) {
+                                throw new Error("Invalid response from RetrievePlatformCopilotSettings API");
+                            }
+                            platformSettings = JSON.parse(data.Result);
+                            AIAgentsEnabled = ((_a = platformSettings === null || platformSettings === void 0 ? void 0 : platformSettings.CSCopilotHubSetting) === null || _a === void 0 ? void 0 : _a.AIAgents) === true;
+                            isEnabledInAIAgentTimer({
+                                success: true,
+                                aiAgentsEnabled: (_b = platformSettings === null || platformSettings === void 0 ? void 0 : platformSettings.CSCopilotHubSetting) === null || _b === void 0 ? void 0 : _b.AIAgents,
+                                copilotEnabled: (_c = platformSettings === null || platformSettings === void 0 ? void 0 : platformSettings.CSCopilotHubSetting) === null || _c === void 0 ? void 0 : _c.Copilot
+                            });
+                            //Cache the parsed object as JSON string
+                            this.setCachedItemByKey("PlatformCopilotHubSettings", data.Result);
+                            return [2 /*return*/, AIAgentsEnabled];
+                        case 4:
+                            isEnabledInAIAgentTimer({ success: false, status: "RetrievePlatformCopilotSettings service returned an error" });
+                            return [2 /*return*/, false];
+                        case 5: return [3 /*break*/, 7];
+                        case 6:
+                            error_5 = _d.sent();
+                            isEnabledInAIAgentTimer({ success: false, status: "RetrievePlatformCopilotSettings service call failed", error: error_5 });
+                            return [2 /*return*/, false];
+                        case 7: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isMultiSessionApp = function () {
+            var _a;
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_b) {
+                    return [2 /*return*/, ((_a = Microsoft === null || Microsoft === void 0 ? void 0 : Microsoft.AppRuntime) === null || _a === void 0 ? void 0 : _a.Sessions) != null];
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isCopilotEnabledInAPM = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var isCopilotEnabledInAPMTimer, timeoutDuration, timeoutPromise, result, error_6;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            isCopilotEnabledInAPMTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.isCopilotEnabledInAPMTimer);
+                            timeoutDuration = 120000;
+                            timeoutPromise = new Promise(function (_, reject) {
+                                return setTimeout(function () { return reject("Timed out while determining if APM has Copilot enabled."); }, timeoutDuration);
+                            });
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 3, , 4]);
+                            return [4 /*yield*/, Promise.race([this.fetchCopilotAPMConfig(), timeoutPromise])];
+                        case 2:
+                            result = _a.sent();
+                            isCopilotEnabledInAPMTimer({ success: true, status: "Copilot is enabled in APM", result: result });
+                            return [2 /*return*/, result];
+                        case 3:
+                            error_6 = _a.sent();
+                            isCopilotEnabledInAPMTimer({ success: false, status: "Copilot is not enabled in APM", error: error_6 });
+                            return [2 /*return*/, Promise.reject(error_6)];
+                        case 4: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.fetchCopilotAPMConfig = function () {
+            var _a;
+            return __awaiter(this, void 0, void 0, function () {
+                var appConfigId, getAppConfigActionRequest, configs, config, isAutonomousCaseCreationEnabled, isAutonomousCaseCreationEnabled, error_7;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0: return [4 /*yield*/, this.isMultiSessionApp()];
+                        case 1:
+                            if (!(_b.sent()))
+                                return [2 /*return*/, true];
+                            _b.label = 2;
+                        case 2:
+                            _b.trys.push([2, 10, , 11]);
+                            appConfigId = "";
+                            if (!(sessionStorage &&
+                                sessionStorage.getItem(AutonomousCaseCreation.Constants.autoCaseAppConfigId))) return [3 /*break*/, 3];
+                            appConfigId = sessionStorage.getItem(AutonomousCaseCreation.Constants.autoCaseAppConfigId);
+                            AutonomousCaseCreation.Telemetry.logInfo(AutonomousCaseCreation.Constants.autoCaseAppConfigId, {
+                                appConfigId: appConfigId,
+                                retrievedViaSessionStorage: true
+                            });
+                            return [3 /*break*/, 5];
+                        case 3:
+                            getAppConfigActionRequest = {
+                                AppUniqueName: AutonomousCaseCreation.Constants.customerServiceWorkspace,
+                                UserId: window.Xrm.Utility.getGlobalContext().userSettings
+                                    .userId,
+                                getMetadata: function () {
+                                    return {
+                                        boundParameter: null,
+                                        parameterTypes: {
+                                            AppUniqueName: {
+                                                typeName: AutonomousCaseCreation.Constants.edmString,
+                                                structuralProperty: AutonomousCaseCreation.Constants.one,
+                                            },
+                                            UserId: {
+                                                typeName: AutonomousCaseCreation.Constants.edmString,
+                                                structuralProperty: AutonomousCaseCreation.Constants.one,
+                                            },
+                                        },
+                                        operationType: AutonomousCaseCreation.Constants.one,
+                                        operationName: AutonomousCaseCreation.Constants.getAppConfigByAgent,
+                                    };
+                                },
+                            };
+                            return [4 /*yield*/, window.Xrm.WebApi.online
+                                    .execute(getAppConfigActionRequest)
+                                    .then(function (response) {
+                                    return response.json();
+                                })
+                                    .then(function (data) {
+                                    return JSON.parse(data === null || data === void 0 ? void 0 : data.AppConfigurations);
+                                })];
+                        case 4:
+                            configs = _b.sent();
+                            config = Object.values(configs)[0];
+                            appConfigId = (_a = config === null || config === void 0 ? void 0 : config.AppConfigId) !== null && _a !== void 0 ? _a : "";
+                            if (sessionStorage)
+                                sessionStorage.setItem(AutonomousCaseCreation.Constants.autoCaseAppConfigId, appConfigId);
+                            AutonomousCaseCreation.Telemetry.logInfo(AutonomousCaseCreation.Constants.autoCaseAppConfigId, {
+                                appConfigId: appConfigId,
+                                retrievedViaAPICall: true
+                            });
+                            _b.label = 5;
+                        case 5:
+                            if (!(appConfigId === "")) return [3 /*break*/, 6];
+                            AutonomousCaseCreation.Telemetry.logError(AutonomousCaseCreation.Constants.fetchCopilotAPMConfig, null, { status: "App config not found" });
+                            return [2 /*return*/, true];
+                        case 6:
+                            if (!(sessionStorage &&
+                                sessionStorage.getItem(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled) &&
+                                (sessionStorage.getItem(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled).toLowerCase() === "true" ||
+                                    sessionStorage.getItem(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled).toLowerCase() === "false"))) return [3 /*break*/, 7];
+                            isAutonomousCaseCreationEnabled = sessionStorage.getItem(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled).toLowerCase() === "true";
+                            AutonomousCaseCreation.Telemetry.logInfo(AutonomousCaseCreation.Constants.isAutoCaseEnabledInCSAC, {
+                                msdyn_copilotfeature: AutonomousCaseCreation.Constants.copilotFeatureAutonomousCaseCreation,
+                                enabled: isAutonomousCaseCreationEnabled,
+                                retrievedViaSessionStorage: true
+                            });
+                            return [2 /*return*/, isAutonomousCaseCreationEnabled];
+                        case 7: return [4 /*yield*/, this.fetchAutonomousCaseCreationEnabledFromCopilotAPMConfig(appConfigId)];
+                        case 8:
+                            isAutonomousCaseCreationEnabled = _b.sent();
+                            return [2 /*return*/, isAutonomousCaseCreationEnabled];
+                        case 9: return [3 /*break*/, 11];
+                        case 10:
+                            error_7 = _b.sent();
+                            AutonomousCaseCreation.Telemetry.logError(AutonomousCaseCreation.Constants.fetchCopilotAPMConfig, error_7, { status: "Fetching app config failed" });
+                            return [3 /*break*/, 11];
+                        case 11: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.fetchAutonomousCaseCreationEnabledFromCopilotAPMConfig = function (appConfigId) {
+            return __awaiter(this, void 0, void 0, function () {
+                var copilotConfigparams, copilotConfigEnabled;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            copilotConfigparams = "?$filter=_msdyn_appconfigurationid_value eq ".concat(appConfigId, " and msdyn_copilotfeature eq ").concat(AutonomousCaseCreation.Constants.copilotFeatureAutonomousCaseCreation);
+                            return [4 /*yield*/, window.Xrm.WebApi.retrieveMultipleRecords(AutonomousCaseCreation.Constants.appCopilotConfiguration, copilotConfigparams).then(function (response) {
+                                    var _a;
+                                    var isAutonomousCaseCreationEnabled = true;
+                                    if (response.entities.length == 0) {
+                                        AutonomousCaseCreation.Telemetry.logInfo(AutonomousCaseCreation.Constants.isAutoCaseEnabledInCSAC, {
+                                            msdyn_copilotfeature: AutonomousCaseCreation.Constants.copilotFeatureAutonomousCaseCreation,
+                                            enabled: isAutonomousCaseCreationEnabled,
+                                            responseEntitiesLength: 0,
+                                            retrievedViaAPICall: false
+                                        });
+                                    }
+                                    else {
+                                        var enabled = (_a = response.entities[0]) === null || _a === void 0 ? void 0 : _a.msdyn_enabled;
+                                        isAutonomousCaseCreationEnabled = enabled == null || enabled == undefined ? true : enabled;
+                                        AutonomousCaseCreation.Telemetry.logInfo(AutonomousCaseCreation.Constants.isAutoCaseEnabledInCSAC, {
+                                            msdyn_copilotfeature: AutonomousCaseCreation.Constants.copilotFeatureAutonomousCaseCreation,
+                                            enabled: isAutonomousCaseCreationEnabled,
+                                            responseEntitiesLength: response.entities.length,
+                                            retrievedViaAPICall: true
+                                        });
+                                    }
+                                    if (sessionStorage)
+                                        sessionStorage.setItem(AutonomousCaseCreation.Constants.isAutonomousCaseCreationEnabled, isAutonomousCaseCreationEnabled ? "true" : "false");
+                                    return isAutonomousCaseCreationEnabled;
+                                })];
+                        case 1:
+                            copilotConfigEnabled = _a.sent();
+                            return [2 /*return*/, copilotConfigEnabled];
+                    }
+                });
+            });
+        };
+        AutonomousCaseCreationActions.prototype.isCaseActive = function (eventContext) {
+            var _a, _b;
+            return __awaiter(this, void 0, void 0, function () {
+                var entityId, isActiveCaseLinked, getIncidentStateCodeTimer, response, error_8;
+                return __generator(this, function (_c) {
+                    switch (_c.label) {
+                        case 0:
+                            entityId = (_a = eventContext.entityReference) === null || _a === void 0 ? void 0 : _a.id;
+                            isActiveCaseLinked = false;
+                            getIncidentStateCodeTimer = AutonomousCaseCreation.Telemetry.measureStartStop(AutonomousCaseCreation.Constants.getIncidentStateCodeTimer);
+                            _c.label = 1;
+                        case 1:
+                            _c.trys.push([1, 4, , 5]);
+                            if (!entityId) return [3 /*break*/, 3];
+                            return [4 /*yield*/, window.Xrm.WebApi.retrieveMultipleRecords(AutonomousCaseCreation.Constants.incidentEntityName, AutonomousCaseCreation.Constants.incidentSelectQuery.replace("${incidentId}", entityId)
+                                    .replace("${incidentActiveStatusCode}", AutonomousCaseCreation.Constants.incidentActiveStatusCode))];
+                        case 2:
+                            response = _c.sent();
+                            if (((_b = response === null || response === void 0 ? void 0 : response.entities) === null || _b === void 0 ? void 0 : _b.length) > 0) {
+                                isActiveCaseLinked = true;
+                            }
+                            _c.label = 3;
+                        case 3:
+                            getIncidentStateCodeTimer({ success: true, status: "Fetched incident state code", isActiveCaseLinked: isActiveCaseLinked });
+                            return [2 /*return*/, isActiveCaseLinked];
+                        case 4:
+                            error_8 = _c.sent();
+                            getIncidentStateCodeTimer({ success: false, status: "Fetching incident state code failed", error: error_8 });
+                            return [2 /*return*/, isActiveCaseLinked];
+                        case 5: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        return AutonomousCaseCreationActions;
+    }());
+    AutonomousCaseCreation.AutonomousCaseCreationActions = AutonomousCaseCreationActions;
+    var CommandBarActions = /** @class */ (function () {
+        function CommandBarActions() {
+        }
+        CommandBarActions.Instance = new AutonomousCaseCreationActions();
+        return CommandBarActions;
+    }());
+    AutonomousCaseCreation.CommandBarActions = CommandBarActions;
+})(AutonomousCaseCreation || (AutonomousCaseCreation = {}));
+//# sourceMappingURL=msdyn_AutonomousCaseCreation.js.map

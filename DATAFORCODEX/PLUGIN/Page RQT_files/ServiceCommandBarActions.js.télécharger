@@ -1,0 +1,2753 @@
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
+    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var DialogName = (function () {
+        function DialogName() {
+        }
+        return DialogName;
+    }());
+    DialogName.DeleteDialog = "delete";
+    DialogName.AssignQueue = "AssignQueue";
+    DialogName.AssociateCase = "AssociateCase";
+    DialogName.CancelCaseDialog = "CancelCase";
+    DialogName.CancelContract = "CancelContract";
+    DialogName.ConvertToCaseDialog = "ConvertToCase";
+    DialogName.ConvertToKnowledgeArticleDialog = "ConvertToKnowledgeArticle";
+    DialogName.CopyContract = "CopyContract";
+    DialogName.MergeCase = "MergeCase";
+    DialogName.ReactivateCase = "ReactivateCase";
+    DialogName.ResolveCase = "ResolveCase";
+    DialogName.RouteCase = "routecase";
+    DialogName.SetContractCalendar = "SetContractCalendar";
+    DialogName.SaveAndRouteCase = "saveandroutecase";
+    DialogName.RenewContract = "RenewContract";
+    DialogName.SelectContractTemplate = "SelectContractTemplate";
+    DialogName.SelectEntitlementTemplate = "SelectEntitlementTemplate";
+    DialogName.RenewEntitlement = "RenewEntitlement";
+    DialogName.SetDefaultEntitlement = "SetDefaultEntitlement";
+    DialogName.MergeSuccessMessage = "MergeSuccessMessage";
+    DialogName.CancelEntitlement = "CancelEntitlement";
+    DialogName.ResourceResourceGroups = "ResourceResourceGroups";
+    DialogName.ResourceServices = "ResourceServices";
+    DialogName.SaveAndReRouteDialog = "SaveAndReRouteDialog";
+    CrmService.DialogName = DialogName;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var EntityNames = (function () {
+        function EntityNames() {
+        }
+        return EntityNames;
+    }());
+    EntityNames.Account = "account";
+    EntityNames.Appointment = "appointment";
+    EntityNames.AttributeMap = "attributemap";
+    EntityNames.Connection = "connection";
+    EntityNames.ConstraintBasedGroup = "constraintbasedgroup";
+    EntityNames.Contact = "contact";
+    EntityNames.Contract = "contract";
+    EntityNames.ContractDetail = "contractdetail";
+    EntityNames.Email = "email";
+    EntityNames.Entitlement = "entitlement";
+    EntityNames.EntitlementTemplate = "entitlementtemplate";
+    EntityNames.EntityMap = "entitymap";
+    EntityNames.EnvironmentVariableValue = "environmentvariablevalue";
+    EntityNames.Equipment = "equipment";
+    EntityNames.Fax = "fax";
+    EntityNames.Incident = "incident";
+    EntityNames.IncidentResolution = "incidentresolution";
+    EntityNames.KnowledgeArticle = "knowledgearticle";
+    EntityNames.KnowledgeArticleIncident = "knowledgearticleincident";
+    EntityNames.Lead = "lead";
+    EntityNames.Letter = "letter";
+    EntityNames.Opportunity = "opportunity";
+    EntityNames.Organization = "organization";
+    EntityNames.Product = "product";
+    EntityNames.PhoneCall = "phonecall";
+    EntityNames.RecurringAppointmentMaster = "recurringappointmentmaster";
+    EntityNames.Resource = "resource";
+    EntityNames.ResourceSpec = "resourcespec";
+    EntityNames.RoutingRule = "routingrule";
+    EntityNames.Site = "site";
+    EntityNames.SocialActivity = "socialactivity";
+    EntityNames.Subject = "subject";
+    EntityNames.Workflow = "workflow";
+    EntityNames.UserSettings = "usersettings";
+    EntityNames.Service = "service";
+    EntityNames.ServiceAppointment = "serviceappointment";
+    EntityNames.SystemUser = "systemuser";
+    EntityNames.Task = "task";
+    EntityNames.TopicModelConfiguration = "topicmodelconfiguration";
+    EntityNames.UoMSchedule = "uomschedule";
+    EntityNames.UnresolvedAddress = "unresolvedaddress";
+    EntityNames.Queue = "queue";
+    CrmService.EntityNames = EntityNames;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var EntityTypeCodes;
+    (function (EntityTypeCodes) {
+        EntityTypeCodes[EntityTypeCodes["Account"] = 1] = "Account";
+        EntityTypeCodes[EntityTypeCodes["Appointment"] = 4201] = "Appointment";
+        EntityTypeCodes[EntityTypeCodes["Contact"] = 2] = "Contact";
+        EntityTypeCodes[EntityTypeCodes["ContractTemplate"] = 2011] = "ContractTemplate";
+        EntityTypeCodes[EntityTypeCodes["Email"] = 4202] = "Email";
+        EntityTypeCodes[EntityTypeCodes["Entitlement"] = 9700] = "Entitlement";
+        EntityTypeCodes[EntityTypeCodes["EntitlementTemplate"] = 9702] = "EntitlementTemplate";
+        EntityTypeCodes[EntityTypeCodes["Equipment"] = 4000] = "Equipment";
+        EntityTypeCodes[EntityTypeCodes["Fax"] = 4204] = "Fax";
+        EntityTypeCodes[EntityTypeCodes["Incident"] = 112] = "Incident";
+        EntityTypeCodes[EntityTypeCodes["KnowledgeArticle"] = 9953] = "KnowledgeArticle";
+        EntityTypeCodes[EntityTypeCodes["Lead"] = 4] = "Lead";
+        EntityTypeCodes[EntityTypeCodes["Letter"] = 4207] = "Letter";
+        EntityTypeCodes[EntityTypeCodes["PhoneCall"] = 4210] = "PhoneCall";
+        EntityTypeCodes[EntityTypeCodes["Queue"] = 2020] = "Queue";
+        EntityTypeCodes[EntityTypeCodes["RecurringAppointmentMaster"] = 4251] = "RecurringAppointmentMaster";
+        EntityTypeCodes[EntityTypeCodes["SocialActivity"] = 4216] = "SocialActivity";
+        EntityTypeCodes[EntityTypeCodes["Subject"] = 129] = "Subject";
+        EntityTypeCodes[EntityTypeCodes["SystemUser"] = 8] = "SystemUser";
+        EntityTypeCodes[EntityTypeCodes["Task"] = 4212] = "Task";
+        EntityTypeCodes[EntityTypeCodes["UnresolvedAddress"] = 2012] = "UnresolvedAddress";
+        EntityTypeCodes[EntityTypeCodes["WebWizard"] = 4800] = "WebWizard";
+    })(EntityTypeCodes = CrmService.EntityTypeCodes || (CrmService.EntityTypeCodes = {}));
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path = "./EntityNames.ts" />
+/// <reference path = "./EntityTypeCodes.ts" />
+/// <reference path="../../../../TypeDefinitions/CRM/ClientUtility.d.ts" />
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var ClientUtil = (function () {
+        function ClientUtil() {
+        }
+        ClientUtil.getEntityName = function (entityTypeCode) {
+            switch (entityTypeCode) {
+                case CrmService.EntityTypeCodes.Appointment:
+                    return CrmService.EntityNames.Appointment;
+                case CrmService.EntityTypeCodes.Email:
+                    return CrmService.EntityNames.Email;
+                case CrmService.EntityTypeCodes.Fax:
+                    return CrmService.EntityNames.Fax;
+                case CrmService.EntityTypeCodes.KnowledgeArticle:
+                    return CrmService.EntityNames.KnowledgeArticle;
+                case CrmService.EntityTypeCodes.Queue:
+                    return CrmService.EntityNames.Queue;
+                case CrmService.EntityTypeCodes.Letter:
+                    return CrmService.EntityNames.Letter;
+                case CrmService.EntityTypeCodes.PhoneCall:
+                    return CrmService.EntityNames.PhoneCall;
+                case CrmService.EntityTypeCodes.RecurringAppointmentMaster:
+                    return CrmService.EntityNames.RecurringAppointmentMaster;
+                case CrmService.EntityTypeCodes.Task:
+                    return CrmService.EntityNames.Task;
+                case CrmService.EntityTypeCodes.Account:
+                    return CrmService.EntityNames.Account;
+                case CrmService.EntityTypeCodes.Contact:
+                    return CrmService.EntityNames.Contact;
+                case CrmService.EntityTypeCodes.SocialActivity:
+                    return CrmService.EntityNames.SocialActivity;
+                case CrmService.EntityTypeCodes.UnresolvedAddress:
+                    return CrmService.EntityNames.UnresolvedAddress;
+                default:
+                    return Xrm.Internal.getEntityName(entityTypeCode);
+            }
+        };
+        ClientUtil.getEntityTypeCodes = function (entityName) {
+            var propertyName = null;
+            for (var key in CrmService.EntityNames) {
+                if (CrmService.EntityNames.hasOwnProperty(key)) {
+                    var value = CrmService.EntityNames[key];
+                    if (value === entityName) {
+                        propertyName = key;
+                        break;
+                    }
+                }
+            }
+            if (!CrmService.EntityTypeCodes.hasOwnProperty(propertyName)) {
+                throw "Not a valid entity name";
+            }
+            var result = CrmService.EntityTypeCodes[propertyName];
+            return result;
+        };
+        /**
+         * Checks whether the code is running on a UCI client.
+         * @returns A flag indicating whether the code is running on a UCI client.
+         */
+        ClientUtil.isUCI = function () {
+            var global = window;
+            var xrm = global.Xrm;
+            var result = false;
+            if (xrm && xrm.Internal && ClientUtil.hasFunction(xrm.Internal, 'isUci')) {
+                result = xrm.Internal.isUci();
+            }
+            else {
+                // fall back to url inspection
+                result = window && window.parent && window.parent.location && window.parent.location.href && window.parent.location.href.toLowerCase().indexOf('uclient') !== -1;
+            }
+            return result;
+        };
+        return ClientUtil;
+    }());
+    ClientUtil.WebResourceName = "";
+    ClientUtil.Is_CSS_Installed = function () {
+        return new Promise(function (resolve, reject) {
+            var optionSetUrl = "/api/data/v9.0/EntityDefinitions(LogicalName='bookingstatus')/Attributes/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$filter=LogicalName eq 'msdyn_serviceappointmentstatus'&$select=LogicalName";
+            var req = new XMLHttpRequest();
+            req.open("GET", Xrm.Page.context.getClientUrl() + optionSetUrl, true);
+            req.setRequestHeader("Accept", "application/json");
+            req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            req.setRequestHeader("OData-MaxVersion", "4.0");
+            req.setRequestHeader("OData-Version", "4.0");
+            req.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    req.onreadystatechange = null;
+                    if (this.status === 200) {
+                        var data = JSON.parse(req.response);
+                        if (data != null && data.value != null && data.value.length != 0) {
+                            resolve(true);
+                        }
+                        else {
+                            resolve(false);
+                        }
+                    }
+                    else {
+                        reject();
+                    }
+                }
+            };
+            req.send();
+        });
+    };
+    /**
+     * Checks if a given object is a function
+     * @param object The object check.
+     * @returns true if the object is a function; otherwise, false.
+     */
+    ClientUtil.isFunction = function (object) {
+        return !!object && typeof object === 'function';
+    };
+    /**
+     * Checks if a given object has a given function
+     * @param object The object check.
+     * @param functionName The name of the function to check for.
+     * @returns true if the object has a given function; otherwise, false.
+     */
+    ClientUtil.hasFunction = function (object, functionName) {
+        return !!object && functionName && ClientUtil.isFunction(object[functionName]);
+    };
+    CrmService.ClientUtil = ClientUtil;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var MetadataDrivenDialogConstants = (function () {
+        function MetadataDrivenDialogConstants() {
+        }
+        // Refactor the below getter functions once Link controls support custom client scripts
+        // We have to use different keys for UCI and webclient because incident resolution link control rely on the usage of hidden controls
+        // Once link control support loading of custom scripts, this can be removed and we can just use queryparameters.
+        MetadataDrivenDialogConstants.GetAllotmentsRemaining = function (isUCI) {
+            return (isUCI ? this.ParamAllotmentsRemaining : this.AllotmentsRemaining);
+        };
+        MetadataDrivenDialogConstants.GetIsTimeAllotment = function (isUCI) {
+            return (isUCI ? this.ParamIsTimeAllotment : this.IsTimeAllotment);
+        };
+        MetadataDrivenDialogConstants.GetLastButtonClicked = function (isUCI) {
+            return (isUCI ? this.ParamLastButtonClicked : this.LastButtonClicked);
+        };
+        MetadataDrivenDialogConstants.GetEntityId = function (isUCI) {
+            return (isUCI ? this.ParamEntityId : this.EntityId);
+        };
+        MetadataDrivenDialogConstants.GetTimeSpent = function (isUCI) {
+            return (isUCI ? this.ParamTimeSpent : this.TimeSpent);
+        };
+        return MetadataDrivenDialogConstants;
+    }());
+    MetadataDrivenDialogConstants.AllotmentsRemaining = "iAllotmentsRemaining";
+    MetadataDrivenDialogConstants.AssignQueueEntityName = "entity_name";
+    MetadataDrivenDialogConstants.AssignQueueLastButtonClicked = "last_button_clicked";
+    MetadataDrivenDialogConstants.AssignQueueRecords = "entity_records";
+    MetadataDrivenDialogConstants.AssignQueueSelectedRecordAcount = "selected_records_count";
+    MetadataDrivenDialogConstants.AssignQueueShowAssignToMeOption = "show_assign_to_me_option";
+    MetadataDrivenDialogConstants.AttributeMapIdDictionary = "attributeMapIdDictionary";
+    MetadataDrivenDialogConstants.BillableTime = "billabletime_id";
+    MetadataDrivenDialogConstants.BusinessRequiredAttributes = "businessRequiredAttributes";
+    MetadataDrivenDialogConstants.CascadeStatusUpdate = "cascadestatusupdate";
+    MetadataDrivenDialogConstants.CancelCaseString = "CancelCaseConfirm";
+    MetadataDrivenDialogConstants.CaseId = "incidentId";
+    MetadataDrivenDialogConstants.CaseSettingsMandatoryFieldsNotSelected = "Web._grid.cmds.dlg_casehierarchy.aspx_6";
+    MetadataDrivenDialogConstants.CloseCaseConfirmAllotments = "Case_Resolve_Dlg_Confirm_Allotments";
+    MetadataDrivenDialogConstants.CloseCaseConfirmContractDetailState = "Case_Resolve_Dlg_Confirm_ContractDetailState";
+    MetadataDrivenDialogConstants.CloseCaseConfirmParent = "Case_Resolve_Dlg_Confirm_Parent";
+    MetadataDrivenDialogConstants.CaseResolutionIncidentNotActive = "Case_Resolve_Dlg_Incident_Not_Active";
+    MetadataDrivenDialogConstants.IncidentIdNotFound = "No_Incident_Id";
+    MetadataDrivenDialogConstants.CloseCaseStringForNullSubject = "Web.CS.cases.dlg_closecase.aspx_50";
+    MetadataDrivenDialogConstants.CloseCaseString = "Web.CS.cases.dlg_closecase.aspx_27";
+    MetadataDrivenDialogConstants.ContractStateActive = 2;
+    MetadataDrivenDialogConstants.ContractDetailStateExpired = 3;
+    MetadataDrivenDialogConstants.ContractDetailStateCanceled = 2;
+    MetadataDrivenDialogConstants.ConvertToKnowledgeArticleContent = "content_id";
+    MetadataDrivenDialogConstants.ConvertToKnowledgeArticleId = "knowledgeArticleId";
+    MetadataDrivenDialogConstants.ConvertToKnowledgeArticleOwnerId = "owner_id";
+    MetadataDrivenDialogConstants.ConvertToKnowledgeArticleSubjectId = "subject_id";
+    MetadataDrivenDialogConstants.ConvertToKnowledgeArticleTitle = "title_id";
+    MetadataDrivenDialogConstants.CreateAttributeMaps = "createAttributeMaps";
+    MetadataDrivenDialogConstants.CustomerLookup = "customerLookup";
+    MetadataDrivenDialogConstants.DefaultStatus = -1;
+    MetadataDrivenDialogConstants.DialogOkId = "ok_id";
+    MetadataDrivenDialogConstants.DialogCancelId = "cancel_id";
+    MetadataDrivenDialogConstants.DialogSetId = "set_id";
+    MetadataDrivenDialogConstants.DialogAddId = "add_id";
+    MetadataDrivenDialogConstants.EntityId = "entityId";
+    MetadataDrivenDialogConstants.EntityMapId = "entitymapid";
+    MetadataDrivenDialogConstants.EntityTypeCode = "entityTypeCode";
+    MetadataDrivenDialogConstants.ExistingAttributes = "existingAttributes";
+    MetadataDrivenDialogConstants.EntitlementDefaultDialogWidth = 1000;
+    MetadataDrivenDialogConstants.EntitlementDefaultDialogHeight = 200;
+    MetadataDrivenDialogConstants.GridControl = "gridControl";
+    MetadataDrivenDialogConstants.IncidentDescription = "incident_description";
+    MetadataDrivenDialogConstants.IncidentResolution = "incident_resolution";
+    MetadataDrivenDialogConstants.IncidentResolutionDescription = "incidentresolution_description";
+    MetadataDrivenDialogConstants.IsTimeAllotment = "bIsTimeAllotment";
+    MetadataDrivenDialogConstants.LastButtonClicked = "lastButtonClicked";
+    MetadataDrivenDialogConstants.NoValidStatusTransitionAlertTextResourceString = "Web.Record.NoValidStatusReasonTransition03";
+    MetadataDrivenDialogConstants.OpenNewId = "cbOpenNew_id";
+    MetadataDrivenDialogConstants.OpenNewRecord = "openNewRecord";
+    MetadataDrivenDialogConstants.OrganizationId = "organizationid";
+    MetadataDrivenDialogConstants.EnvVarDefinitionId = "envVarDefinitionId";
+    MetadataDrivenDialogConstants.EnvVarVariableId = "envVarVariableId";
+    MetadataDrivenDialogConstants.OwnerId = "ownerId";
+    MetadataDrivenDialogConstants.OwnerName = "ownerName";
+    MetadataDrivenDialogConstants.OwnerType = "ownerType";
+    MetadataDrivenDialogConstants.Remarks = "remarks_id";
+    MetadataDrivenDialogConstants.Resolution = "resolution_id";
+    MetadataDrivenDialogConstants.ResolutionType = "resolutionType_id";
+    MetadataDrivenDialogConstants.ResolveCaseString = "Web._cs.Cases.dlg_ConfirmResolve.aspx_3";
+    MetadataDrivenDialogConstants.RestrictStatusUpdate = "restrictstatusupdate";
+    MetadataDrivenDialogConstants.SaveActivity = "saveActivity";
+    MetadataDrivenDialogConstants.SaveActivityId = "cbSaveActivity_id";
+    MetadataDrivenDialogConstants.SelectedAttributes = "cc_selectedAttributes_id";
+    MetadataDrivenDialogConstants.SourceAttributeName = "sourceattributename";
+    MetadataDrivenDialogConstants.SpecifyClosurePreference = "specifyClosurePreference_id";
+    MetadataDrivenDialogConstants.MaxChildCaseNumberControlId = "maxChildCase_id";
+    MetadataDrivenDialogConstants.StatusReasonId = "setcasestatus_id";
+    MetadataDrivenDialogConstants.StateCode = "statecode";
+    MetadataDrivenDialogConstants.StatusCode = "statuscode";
+    MetadataDrivenDialogConstants.StatusCodeId = "statusCode_id";
+    MetadataDrivenDialogConstants.Subject = "subject";
+    MetadataDrivenDialogConstants.SubjectLookup = "subject_id";
+    MetadataDrivenDialogConstants.SystemRequiredAttributes = "systemRequiredAttributes";
+    MetadataDrivenDialogConstants.TargetAttributeName = "targetattributename";
+    MetadataDrivenDialogConstants.TimeSpent = "timeSpent";
+    MetadataDrivenDialogConstants.TotalTime = "totaltime_id";
+    MetadataDrivenDialogConstants.EntityLogicalName = "entity_logical_name";
+    MetadataDrivenDialogConstants.Entity_Id = "entity_id";
+    MetadataDrivenDialogConstants.EffectivityCalendar = "effectivity_calendar";
+    MetadataDrivenDialogConstants.AttributeEffectivityCalendar = "effectivitycalendar";
+    MetadataDrivenDialogConstants.ContractCalendarControl = "cc_ContractCalendar";
+    MetadataDrivenDialogConstants.IsReadOnly = "is_read_only";
+    MetadataDrivenDialogConstants.Id = "Id";
+    MetadataDrivenDialogConstants.ResolveCaseCommandName = "CloseIncident";
+    MetadataDrivenDialogConstants.ParamTimeSpent = "param_time_spent";
+    MetadataDrivenDialogConstants.ParamIsTimeAllotment = "param_is_time_allotment";
+    MetadataDrivenDialogConstants.ParamAllotmentsRemaining = "param_allotments_remaining";
+    MetadataDrivenDialogConstants.ParamLastButtonClicked = "param_lastButtonClicked";
+    MetadataDrivenDialogConstants.CancelEntitlementTitleId = "lbl_cancelEntitlementDialog";
+    MetadataDrivenDialogConstants.CancelEntitlementDescriptionId = "lbl_cancelEntitlementDialogDescription";
+    MetadataDrivenDialogConstants.ParamEntityId = "param_entityId";
+    MetadataDrivenDialogConstants.ParamEntityRecords = "param_entityRecords";
+    MetadataDrivenDialogConstants.ParamEntityType = "param_entityType";
+    MetadataDrivenDialogConstants.paramCaseId = "param_incidentId";
+    MetadataDrivenDialogConstants.paramCustomerLookup = "param_customerLookup";
+    MetadataDrivenDialogConstants.paramSubject = "param_subject";
+    MetadataDrivenDialogConstants.paramSaveActivity = "param_saveActivity";
+    MetadataDrivenDialogConstants.paramOpenNewRecord = "param_openNewRecord";
+    MetadataDrivenDialogConstants.paramEmailSubject = "param_emailSubject";
+    MetadataDrivenDialogConstants.paramEmailDescription = "param_emailDescription";
+    MetadataDrivenDialogConstants.CancelDateId = "cancelDate_id";
+    MetadataDrivenDialogConstants.MergeSuccessDescriptionId = "lbl_mergeSucessMessage";
+    MetadataDrivenDialogConstants.MergeSuccessTitleId = "lbl_mergecases";
+    MetadataDrivenDialogConstants.ParamResultDescription = "param_result_description";
+    MetadataDrivenDialogConstants.ParamRequestType = "param_request_type";
+    MetadataDrivenDialogConstants.IncludeCanceledContractLinesId = "includeCanceledContractLines_id";
+    MetadataDrivenDialogConstants.ParamRenewedContractId = "param_renewedContractId";
+    MetadataDrivenDialogConstants.ParamClonedContractId = "param_clonedContractId";
+    MetadataDrivenDialogConstants.ParamConvertToKnowledgeArticleId = "param_knowledgeArticleId";
+    MetadataDrivenDialogConstants.ParamIncidentTitle = "param_incident_title";
+    MetadataDrivenDialogConstants.ParamIncidentDescription = "param_incident_description";
+    MetadataDrivenDialogConstants.ParamIncidentResolution = "param_incident_resolution";
+    MetadataDrivenDialogConstants.ParamIncidentResolutionDescription = "param_incidentresolution_description";
+    MetadataDrivenDialogConstants.ParamOpenNewRecord = "param_openNewRecord";
+    MetadataDrivenDialogConstants.ParamSubjectId = "param_subjectId";
+    MetadataDrivenDialogConstants.ParamSubjectName = "param_subjectName";
+    MetadataDrivenDialogConstants.ContractTemplateLookup = "contracttemplate_id";
+    MetadataDrivenDialogConstants.ContractTemplateId = "contractTemplateId";
+    MetadataDrivenDialogConstants.ContractTemplateEntityType = "contractTemplateEntityType";
+    MetadataDrivenDialogConstants.EntitlementTemplateLookup = "entitlementtemplate_id";
+    MetadataDrivenDialogConstants.EntitlementTemplateId = "entitlementTemplateId";
+    MetadataDrivenDialogConstants.EntitlementTemplateEntityType = "entitlementTemplateEntityType";
+    MetadataDrivenDialogConstants.PreviousDefaultEntitlementId = "param_previousDefaultEntitlementId";
+    MetadataDrivenDialogConstants.CurrentDefaultEntitlementId = "param_currentDefaultEntitlementId";
+    MetadataDrivenDialogConstants.DoesDefaultEntitlementExist = "param_doesDefaultEntitlementExist";
+    // Button clicks
+    MetadataDrivenDialogConstants.Merge = "Merge";
+    MetadataDrivenDialogConstants.Set = "Set";
+    MetadataDrivenDialogConstants.CancelId = "cancel_id";
+    // ClientContextGridControl parameters
+    MetadataDrivenDialogConstants.ParamEntityLogicalName = "param_entityLogicalName";
+    MetadataDrivenDialogConstants.ParamQueryParameters = "param_queryParameters";
+    MetadataDrivenDialogConstants.ParamGridColumns = "param_gridColumns";
+    MetadataDrivenDialogConstants.SelectedRecordId = "selectedRecordId";
+    // Incident entity properties
+    MetadataDrivenDialogConstants.IncidentLogicalName = "incident";
+    MetadataDrivenDialogConstants.IncidentId = "incidentid";
+    MetadataDrivenDialogConstants.CreatedOn = "createdon";
+    MetadataDrivenDialogConstants.PriorityCode = "prioritycode";
+    MetadataDrivenDialogConstants.Title = "title";
+    MetadataDrivenDialogConstants.ParentCaseId = "parentcaseid";
+    MetadataDrivenDialogConstants.CustomerId_Value = "_customerid_value";
+    MetadataDrivenDialogConstants.CustomerId = "customerid";
+    MetadataDrivenDialogConstants.ParentCaseIdValue = "_parentcaseid_value";
+    MetadataDrivenDialogConstants.paramAllAvailableCaseAttributes = "param_allAvailableCaseAttributes";
+    MetadataDrivenDialogConstants.paramSystemRequiredAttributes = "param_systemRequiredAttributes";
+    MetadataDrivenDialogConstants.paramExistingAttributes = "param_existingAttributes";
+    MetadataDrivenDialogConstants.paramAttributeMapIdDictionary = "param_attributeMapIdDictionary";
+    MetadataDrivenDialogConstants.paramBusinessRequiredAttributes = "param_businessRequiredAttributes";
+    MetadataDrivenDialogConstants.SelectedServiceConfigStatus = "cc_availableValues_id";
+    // request types
+    MetadataDrivenDialogConstants.RequestTypeMerge = "merge";
+    MetadataDrivenDialogConstants.RequestTypeAssociateChild = "associatechild";
+    MetadataDrivenDialogConstants.ContractState = {
+        draft: 0,
+        invoiced: 1,
+        active: 2,
+        onHold: 3,
+        canceled: 4,
+        expired: 5
+    };
+    MetadataDrivenDialogConstants.ContractDetailState = {
+        existing: 0,
+        renewed: 1,
+        canceled: 2,
+        expired: 3
+    };
+    MetadataDrivenDialogConstants.EntitlementState = {
+        draft: 0,
+        active: 1,
+        cancel: 2,
+        expire: 3,
+        waiting: 4
+    };
+    MetadataDrivenDialogConstants.AdvancedSimilarityRuleState = {
+        active: 0,
+        inactive: 1
+    };
+    MetadataDrivenDialogConstants.IncidentStateCodes = {
+        active: 0,
+        resolved: 1,
+        canceled: 2,
+    };
+    MetadataDrivenDialogConstants.AccountStateCodes = {
+        active: 0,
+        inactive: 1
+    };
+    MetadataDrivenDialogConstants.ContactStateCodes = {
+        active: 0,
+        inactive: 1
+    };
+    MetadataDrivenDialogConstants.IotAlertStateCodes = {
+        active: 0,
+        inactive: 1,
+        inprogress: 2,
+        closed: 3
+    };
+    MetadataDrivenDialogConstants.ProductStateCodes = {
+        active: 0,
+        retired: 1,
+        draft: 2
+    };
+    MetadataDrivenDialogConstants.SocialProfileStateCodes = {
+        active: 0,
+        inactive: 1
+    };
+    CrmService.MetadataDrivenDialogConstants = MetadataDrivenDialogConstants;
+})(CrmService || (CrmService = {}));
+/// <reference path="DialogName.ts" />
+/// <reference path="EntityNames.ts" />
+/// <reference path="EntityTypeCodes.ts" />
+/// <reference path="ClientUtil.ts" />
+/// <reference path="MetadataDrivenDialogConstants.ts" /> 
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var DateType = (function () {
+        function DateType() {
+        }
+        return DateType;
+    }());
+    DateType.ActiveOn = "activeon";
+    DateType.ActualStart = "actualstart";
+    DateType.BeginDate = "begindate";
+    DateType.ProposedStart = "proposedstart";
+    DateType.ScheduledStart = "scheduledstart";
+    DateType.ValidFromDate = "validfromdate";
+    DateType.BillingStartOn = "billingstarton";
+    CrmService.DateType = DateType;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var IncidentOriginCode;
+    (function (IncidentOriginCode) {
+        IncidentOriginCode[IncidentOriginCode["phoneCall"] = 1] = "phoneCall";
+        IncidentOriginCode[IncidentOriginCode["email"] = 2] = "email";
+        IncidentOriginCode[IncidentOriginCode["webWizard"] = 3] = "webWizard";
+        IncidentOriginCode[IncidentOriginCode["unspecified"] = -1] = "unspecified";
+    })(IncidentOriginCode = CrmService.IncidentOriginCode || (CrmService.IncidentOriginCode = {}));
+    ;
+    var DoNotDecrementStatus;
+    (function (DoNotDecrementStatus) {
+        DoNotDecrementStatus[DoNotDecrementStatus["decrementedAlreadyStopped"] = 1] = "decrementedAlreadyStopped";
+        DoNotDecrementStatus[DoNotDecrementStatus["decrementPrevention"] = 2] = "decrementPrevention";
+        DoNotDecrementStatus[DoNotDecrementStatus["decrementPreventionForFuture"] = 3] = "decrementPreventionForFuture";
+        DoNotDecrementStatus[DoNotDecrementStatus["decrementWhenEntitlementAssociated"] = 4] = "decrementWhenEntitlementAssociated";
+    })(DoNotDecrementStatus = CrmService.DoNotDecrementStatus || (CrmService.DoNotDecrementStatus = {}));
+    ;
+    var IncidentState;
+    (function (IncidentState) {
+        IncidentState[IncidentState["active"] = 0] = "active";
+        IncidentState[IncidentState["closed"] = 1] = "closed";
+        IncidentState[IncidentState["canceled"] = 2] = "canceled";
+        IncidentState[IncidentState["resolved"] = 5] = "resolved";
+    })(IncidentState = CrmService.IncidentState || (CrmService.IncidentState = {}));
+    ;
+    var _formState;
+    (function (_formState) {
+        _formState[_formState["active"] = 0] = "active";
+        _formState[_formState["resolved"] = 1] = "resolved";
+        _formState[_formState["canceled"] = 2] = "canceled";
+    })(_formState = CrmService._formState || (CrmService._formState = {}));
+    ;
+    var ThemeType;
+    (function (ThemeType) {
+        ThemeType[ThemeType["Outlook15White"] = 0] = "Outlook15White";
+    })(ThemeType = CrmService.ThemeType || (CrmService.ThemeType = {}));
+    ;
+    var _knowledgeUsage;
+    (function (_knowledgeUsage) {
+        _knowledgeUsage[_knowledgeUsage["reference"] = 1] = "reference";
+        _knowledgeUsage[_knowledgeUsage["solution"] = 2] = "solution";
+        _knowledgeUsage[_knowledgeUsage["source"] = 3] = "source";
+    })(_knowledgeUsage = CrmService._knowledgeUsage || (CrmService._knowledgeUsage = {}));
+    ;
+    var WatermarkValidity;
+    (function (WatermarkValidity) {
+        WatermarkValidity[WatermarkValidity["AppCommonUndefined"] = 0] = "AppCommonUndefined";
+        WatermarkValidity[WatermarkValidity["XrmEntityDefined"] = 1] = "XrmEntityDefined";
+        WatermarkValidity[WatermarkValidity["XrmEntityUndefined"] = 2] = "XrmEntityUndefined";
+    })(WatermarkValidity = CrmService.WatermarkValidity || (CrmService.WatermarkValidity = {}));
+    ;
+    var IncidentResolutionMode;
+    (function (IncidentResolutionMode) {
+        IncidentResolutionMode[IncidentResolutionMode["MDD"] = 1] = "MDD";
+        IncidentResolutionMode[IncidentResolutionMode["MFD"] = 2] = "MFD";
+        IncidentResolutionMode[IncidentResolutionMode["QuickCreate"] = 3] = "QuickCreate";
+    })(IncidentResolutionMode = CrmService.IncidentResolutionMode || (CrmService.IncidentResolutionMode = {}));
+    ;
+    var IncidentUpdateAfterResolutionMode;
+    (function (IncidentUpdateAfterResolutionMode) {
+        IncidentUpdateAfterResolutionMode[IncidentUpdateAfterResolutionMode["DontAllowUpdates"] = 0] = "DontAllowUpdates";
+        IncidentUpdateAfterResolutionMode[IncidentUpdateAfterResolutionMode["ResolvedCases"] = 1] = "ResolvedCases";
+        IncidentUpdateAfterResolutionMode[IncidentUpdateAfterResolutionMode["CanceledCases"] = 2] = "CanceledCases";
+        IncidentUpdateAfterResolutionMode[IncidentUpdateAfterResolutionMode["ResolvedandCanceledCases"] = 3] = "ResolvedandCanceledCases";
+    })(IncidentUpdateAfterResolutionMode = CrmService.IncidentUpdateAfterResolutionMode || (CrmService.IncidentUpdateAfterResolutionMode = {}));
+    ;
+    var IncidentShouldValidatePrimaryContactValue;
+    (function (IncidentShouldValidatePrimaryContactValue) {
+        IncidentShouldValidatePrimaryContactValue[IncidentShouldValidatePrimaryContactValue["Unrestricted"] = 0] = "Unrestricted";
+        IncidentShouldValidatePrimaryContactValue[IncidentShouldValidatePrimaryContactValue["Default"] = 1] = "Default";
+        IncidentShouldValidatePrimaryContactValue[IncidentShouldValidatePrimaryContactValue["Balanced"] = 2] = "Balanced";
+    })(IncidentShouldValidatePrimaryContactValue = CrmService.IncidentShouldValidatePrimaryContactValue || (CrmService.IncidentShouldValidatePrimaryContactValue = {}));
+})(CrmService || (CrmService = {}));
+/**
+ * @license Copyright (c) Microsoft Corporation. All rights reserved.
+ */
+/**
+ * IMPORTANT!
+ * DO NOT MAKE CHANGES TO THIS FILE - THIS FILE IS AUTO-GENERATED FROM ODATA CSDL METADATA DOCUMENT
+ * SEE https://msdn.microsoft.com/en-us/library/mt607990.aspx FOR MORE INFORMATION
+ */
+var ODataContract;
+(function (ODataContract) {
+    'use strict';
+    /* tslint:disable:crm-force-fields-private */
+    var msdyn_RetrieveEnvironmentVariableValueForCS = (function () {
+        function msdyn_RetrieveEnvironmentVariableValueForCS(msdyn_EnvironmentVariableName) {
+            this.msdyn_EnvironmentVariableName = msdyn_EnvironmentVariableName;
+        }
+        msdyn_RetrieveEnvironmentVariableValueForCS.prototype.getMetadata = function () {
+            var metadata = {
+                boundParameter: "",
+                parameterTypes: {
+                    msdyn_EnvironmentVariableName: {
+                        typeName: 'Edm.String',
+                        structuralProperty: 1
+                    }
+                },
+                operationType: 0,
+                operationName: 'msdyn_RetrieveEnvironmentVariableValueForCS'
+            };
+            return metadata;
+        };
+        return msdyn_RetrieveEnvironmentVariableValueForCS;
+    }());
+    ODataContract.msdyn_RetrieveEnvironmentVariableValueForCS = msdyn_RetrieveEnvironmentVariableValueForCS;
+})(ODataContract || (ODataContract = {}));
+/**
+ * @license Copyright (c) Microsoft Corporation. All rights reserved.
+ */
+/**
+ * IMPORTANT!
+ * DO NOT MAKE CHANGES TO THIS FILE - THIS FILE IS AUTO-GENERATED FROM ODATA CSDL METADATA DOCUMENT
+ * SEE https://msdn.microsoft.com/en-us/library/mt607990.aspx FOR MORE INFORMATION
+ */
+var ODataContract;
+(function (ODataContract) {
+    'use strict';
+    /* tslint:disable:crm-force-fields-private */
+    var UpsertEnvironmentVariable = (function () {
+        function UpsertEnvironmentVariable(SchemaName, Type, Value) {
+            this.SchemaName = SchemaName;
+            this.Type = Type;
+            this.Value = Value;
+        }
+        UpsertEnvironmentVariable.prototype.getMetadata = function () {
+            var metadata = {
+                boundParameter: "",
+                parameterTypes: {
+                    SchemaName: {
+                        typeName: 'Edm.String',
+                        structuralProperty: 1
+                    },
+                    Type: {
+                        typeName: 'Edm.Int32',
+                        structuralProperty: 1
+                    },
+                    Value: {
+                        typeName: 'Edm.String',
+                        structuralProperty: 1
+                    }
+                },
+                operationType: 0,
+                operationName: 'UpsertEnvironmentVariable'
+            };
+            return metadata;
+        };
+        return UpsertEnvironmentVariable;
+    }());
+    ODataContract.UpsertEnvironmentVariable = UpsertEnvironmentVariable;
+})(ODataContract || (ODataContract = {}));
+/**
+ * @license Copyright (c) Microsoft Corporation. All rights reserved.
+ */
+var ODataContract;
+(function (ODataContract) {
+    'use strict';
+    /* tslint:disable:crm-force-fields-private */
+    var LogMonetizationConsumptionRequest = (function () {
+        function LogMonetizationConsumptionRequest() {
+        }
+        LogMonetizationConsumptionRequest.prototype.getMetadata = function () {
+            var metadata = {
+                boundParameter: null,
+                parameterTypes: {},
+                operationName: "msdyn_LogMonetizationConsumption",
+                operationType: 0,
+            };
+            return metadata;
+        };
+        return LogMonetizationConsumptionRequest;
+    }());
+    ODataContract.LogMonetizationConsumptionRequest = LogMonetizationConsumptionRequest;
+})(ODataContract || (ODataContract = {}));
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    CrmService.CommonParameters = {
+        Error: "Error",
+        Info: "Info",
+        Marker: "Marker",
+        Warning: "Warning",
+        Source: "Source",
+        Parameters: "Parameters"
+    };
+    CrmService.TelemetryConstants = {
+        ApplyRoutingRule: "ApplyRoutingRule",
+        ApplyRoutingRuleFromGrid: "ApplyRoutingRuleFromGrid",
+        SaveAndRoute: "SaveAndRoute",
+        ProposeKADialog: "ProposeKADialog",
+        CompulsoryPrefix: "msdyn"
+    };
+    var Telemetry = (function () {
+        function Telemetry() {
+        }
+        /**
+        * Set context which is included in all log output.
+        * @param name name of the current context
+        */
+        Telemetry.setContext = function (name) {
+            Telemetry.contextName = name;
+        };
+        /**
+        * Log an error event
+        * @param source Telemetry source
+        * @param error Telemetry error
+        * @param params Telemetry params
+        */
+        Telemetry.logError = function (source, error, params) {
+            var errorParam;
+            if (error instanceof Error) {
+                var message = error.message, stack = error.stack;
+                errorParam = { message: message, stack: stack };
+            }
+            else if (typeof error === "string") {
+                errorParam = error;
+            }
+            else {
+                errorParam = __assign({}, error);
+            }
+            var errorMarker = (_a = {},
+                _a[CrmService.CommonParameters.Source] = source,
+                _a[CrmService.CommonParameters.Error] = errorParam,
+                _a[CrmService.CommonParameters.Parameters] = params,
+                _a);
+            Telemetry.logInternal(CrmService.CommonParameters.Error, errorMarker)();
+            var _a;
+        };
+        /**
+        * Log a warning event
+        * @param source Telemetry source
+        * @param warning Telemetry warning
+        * @param params Telemetry params
+        */
+        Telemetry.logWarning = function (source, warning, params) {
+            var warningParam;
+            if (typeof warning === "string") {
+                warningParam = warning;
+            }
+            else {
+                warningParam = __assign({}, warning);
+            }
+            var warningMarker = (_a = {},
+                _a[CrmService.CommonParameters.Source] = source,
+                _a[CrmService.CommonParameters.Warning] = warningParam,
+                _a[CrmService.CommonParameters.Parameters] = params,
+                _a);
+            Telemetry.logInternal(CrmService.CommonParameters.Warning, warningMarker)();
+            var _a;
+        };
+        /**
+        * Log an informational event
+        * @param source Telemetry source
+        * @param info Telemetry informational
+        * @param params Telemetry params
+        */
+        Telemetry.logInfo = function (source, info, params) {
+            var infoParam;
+            if (typeof info === "string") {
+                infoParam = info;
+            }
+            else {
+                infoParam = __assign({}, info);
+            }
+            var infoMarker = (_a = {},
+                _a[CrmService.CommonParameters.Source] = source,
+                _a[CrmService.CommonParameters.Info] = infoParam,
+                _a[CrmService.CommonParameters.Parameters] = params,
+                _a);
+            Telemetry.logInternal(CrmService.CommonParameters.Info, infoMarker)();
+            var _a;
+        };
+        /**
+        * Logs duration marker
+        * @param source
+        * @param params
+        */
+        Telemetry.startTimer = function (source, params) {
+            var marker = (_a = {},
+                _a[CrmService.CommonParameters.Source] = source,
+                _a[CrmService.CommonParameters.Parameters] = params,
+                _a);
+            return Telemetry.logInternal(CrmService.CommonParameters.Marker, marker);
+            var _a;
+        };
+        /**
+        * Internal method to log the event to UCI
+        * @param name Event name
+        * @param parameters Event params
+        */
+        Telemetry.logInternal = function (name, parameters) {
+            // Safety in case the UCI context doesn't contain telemetry infrastructure.
+            if (!Xrm.Internal || !Xrm.Internal.createPerformanceStopwatch) {
+                return function () { };
+            }
+            var context = Telemetry.contextName || "";
+            var fullName = CrmService.TelemetryConstants.CompulsoryPrefix + "." + context + "." + name;
+            var stop = Xrm.Internal.createPerformanceStopwatch(fullName, parameters);
+            return function (endParameters) {
+                stop(endParameters);
+            };
+        };
+        return Telemetry;
+    }());
+    CrmService.Telemetry = Telemetry;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="../../../../../TypeDefinitions/CRM/ClientUtility.d.ts" />
+///<reference path="../../../../../TypeDefinitions/AppCommon/Telemetry/TelemetryLibrary.d.ts" />
+/// <reference path="../../ServiceClientCommon/Service_ClientCommon.ts" />
+/// <reference path="../../CommandBarActions/UCI/ServiceCommandBarActions.ts" />
+/// <reference path="../../../../../TypeDefinitions/Service/Localization/Script/ResourceStringProvider.d.ts" />
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var EmailToCaseFormFill = (function () {
+        function EmailToCaseFormFill() {
+            var _this = this;
+            this.isEmailToCaseManualCreationFCBEnabled = function () {
+                return EmailToCaseFormFill.isFeatureEnabled("EmailToCaseFormFillEnabled");
+                ;
+            };
+            this.isCasePredictFormParametersFCBEnabled = function () {
+                return !!EmailToCaseFormFill.isFeatureEnabled("CaseFillUsePredictFormParametersEnabled");
+            };
+            this.isEmailToCaseFormFillEnabled = function () { return __awaiter(_this, void 0, void 0, function () {
+                var cachedValue, isPPACCheckEnabled, requests, responses, allowDataMovement, isCaseToCaseResolutionAgentCopilotSettingEnabled, isCaseToCaseResolutionAPMSettingEnabled, isPayGoEnabled, isEnabled, cacheData, error_1;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            cachedValue = this.checkEmailToCaseFormFillInCache();
+                            if (cachedValue) {
+                                return [2 /*return*/, cachedValue === "enabled"];
+                            }
+                            isPPACCheckEnabled = this.getFeatureControlSetting("ServiceIntelligence.CustomerService", "PPACCheckEnabled", false);
+                            requests = [];
+                            requests.push(this.isDataMovementEnabled(isPPACCheckEnabled));
+                            requests.push(this.getEmailToCaseFormFillSettingValue());
+                            requests.push(this.getEmailToCaseFormFillAPMSettingValue());
+                            requests.push(this.checkPayGoEnabled());
+                            return [4 /*yield*/, Promise.all(requests)];
+                        case 1:
+                            responses = _a.sent();
+                            allowDataMovement = responses[0] && !!responses[0][0];
+                            isCaseToCaseResolutionAgentCopilotSettingEnabled = !!responses[1];
+                            isCaseToCaseResolutionAPMSettingEnabled = !!responses[2];
+                            isPayGoEnabled = !!responses[3];
+                            isEnabled = allowDataMovement && isCaseToCaseResolutionAgentCopilotSettingEnabled && isCaseToCaseResolutionAPMSettingEnabled && isPayGoEnabled;
+                            cacheData = this.formatDataForSessionStorage(isEnabled ? "enabled" : "disabled");
+                            sessionStorage.setItem(EmailToCaseFormFill.EmailToCaseCacheKey, JSON.stringify(cacheData));
+                            return [2 /*return*/, isEnabled];
+                        case 2:
+                            error_1 = _a.sent();
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error_1, message: "Error checking isEmailToCaseFormFillEnabled" });
+                            return [2 /*return*/, false];
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            }); };
+            this.getEmailToCaseFormFillSettingValue = function () { return __awaiter(_this, void 0, void 0, function () {
+                var reponse, error_2;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            return [4 /*yield*/, Xrm.WebApi.retrieveRecord("msdyn_agentcopilotsetting", "c619dd93-b4fb-4f8b-8ab3-2c6ca53ca48a", "?$select=msdyn_emailtocasemanualflowenabled")];
+                        case 1:
+                            reponse = _a.sent();
+                            return [2 /*return*/, reponse && !!reponse["msdyn_emailtocasemanualflowenabled"]];
+                        case 2:
+                            error_2 = _a.sent();
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error_2, message: "Error in retrieving getEmailToCaseFormFillSettingValue" });
+                            return [2 /*return*/, false];
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            }); };
+            this.getEmailToCaseFormFillAPMSettingValue = function () { return __awaiter(_this, void 0, void 0, function () {
+                var getAppConfigActionRequest, configs, config, key, appConfigUniqueName, appConfigId, isEmailToCaseEnabledInAPM, error_3, error_4;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 6, , 7]);
+                            if (!EmailToCaseFormFill.isMultiSession()) return [3 /*break*/, 5];
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 4, , 5]);
+                            getAppConfigActionRequest = {
+                                AppUniqueName: "msdyn_CustomerServiceWorkspace",
+                                UserId: window.Xrm.Utility.getGlobalContext()
+                                    .userSettings.userId,
+                                getMetadata: function () {
+                                    return {
+                                        boundParameter: null,
+                                        parameterTypes: {
+                                            AppUniqueName: {
+                                                typeName: "Edm.String",
+                                                structuralProperty: 1,
+                                            },
+                                            UserId: {
+                                                typeName: "Edm.String",
+                                                structuralProperty: 1,
+                                            },
+                                        },
+                                        operationType: 0,
+                                        operationName: "msdyn_getAppConfigByContext",
+                                    };
+                                },
+                            };
+                            return [4 /*yield*/, window.Xrm.WebApi.online
+                                    .execute(getAppConfigActionRequest)
+                                    .then(function (response) {
+                                    return response.json();
+                                })
+                                    .then(function (data) {
+                                    if (data && data.AppConfigurations) {
+                                        return JSON.parse(data.AppConfigurations);
+                                    }
+                                    else {
+                                        CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { message: "AppConfigurations not found in data." });
+                                        throw new Error("AppConfigurations not found in data.");
+                                    }
+                                })];
+                        case 2:
+                            configs = _a.sent();
+                            config = void 0;
+                            for (key in configs) {
+                                if (configs.hasOwnProperty(key)) {
+                                    config = configs[key];
+                                }
+                            }
+                            appConfigUniqueName = void 0, appConfigId = void 0;
+                            if (config) {
+                                appConfigUniqueName = config.AppConfigUniqueName;
+                                appConfigId = config.AppConfigId;
+                            }
+                            if (config == null ||
+                                appConfigUniqueName == null ||
+                                appConfigId == null) {
+                                throw "could not find an app config or could not find the unique name of an app config";
+                            }
+                            return [4 /*yield*/, this.fetchEmailToCaseEnabledFromCopilotAPMConfig(appConfigId)];
+                        case 3:
+                            isEmailToCaseEnabledInAPM = _a.sent();
+                            return [2 /*return*/, isEmailToCaseEnabledInAPM];
+                        case 4:
+                            error_3 = _a.sent();
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error_3, message: "Error in retrieving CopilotAPMConfig for propose new knowledge" });
+                            return [3 /*break*/, 5];
+                        case 5: return [2 /*return*/, true];
+                        case 6:
+                            error_4 = _a.sent();
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error_4, message: "Error in retrieving getEmailToCaseFormFillAPMSettingValue" });
+                            return [2 /*return*/, false];
+                        case 7: return [2 /*return*/];
+                    }
+                });
+            }); };
+            this.fetchEmailToCaseEnabledFromCopilotAPMConfig = function (appConfigId) { return __awaiter(_this, void 0, void 0, function () {
+                var EmailToCaseManualCreationCopilotSetting, copilotConfigparams, copilotConfigEnabled;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            EmailToCaseManualCreationCopilotSetting = 829050012;
+                            copilotConfigparams = "?$filter=_msdyn_appconfigurationid_value eq " + appConfigId + " and msdyn_copilotfeature eq " + EmailToCaseManualCreationCopilotSetting;
+                            return [4 /*yield*/, window.Xrm.WebApi.retrieveMultipleRecords("msdyn_appcopilotconfiguration", copilotConfigparams).then(function (response) {
+                                    if (response.entities.length == 0) {
+                                        return true;
+                                    }
+                                    else {
+                                        var enabled = void 0;
+                                        if (response.entities[0]) {
+                                            enabled = response.entities[0].msdyn_enabled;
+                                        }
+                                        return enabled == null || enabled == undefined
+                                            ? true
+                                            : enabled;
+                                    }
+                                })];
+                        case 1:
+                            copilotConfigEnabled = _a.sent();
+                            return [2 /*return*/, copilotConfigEnabled];
+                    }
+                });
+            }); };
+            this.isDataMovementEnabled = function (isPPACCheckEnabled) { return __awaiter(_this, void 0, void 0, function () {
+                var action;
+                return __generator(this, function (_a) {
+                    // For IND, OCE, GBR, PPAC data consent is not applicable and we are returning true since FCS is off for thsoe geos
+                    if (isPPACCheckEnabled === false) {
+                        return [2 /*return*/, [true, true]];
+                    }
+                    action = {
+                        ScenarioType: "ppaccrossgeo",
+                        RequestPayload: "",
+                        getMetadata: function () {
+                            return {
+                                boundParameter: null,
+                                parameterTypes: {
+                                    ScenarioType: {
+                                        typeName: "Edm.String",
+                                        structuralProperty: 1
+                                    },
+                                    RequestPayload: {
+                                        typeName: "Edm.String",
+                                        structuralProperty: 1
+                                    }
+                                },
+                                operationName: "msdyn_InvokeIntelligenceAction",
+                                operationType: 0
+                            };
+                        }
+                    };
+                    return [2 /*return*/, window.Xrm.WebApi.online
+                            .execute(action)
+                            .then(function (res) {
+                            if (res.ok) {
+                                return res.json().then(function (data) {
+                                    if (!data || !data.Result) {
+                                        throw "Invalid response from PPAC data movement service.";
+                                    }
+                                    var ppacData = JSON.parse(data.Result);
+                                    var allowBingCalls = (ppacData.bingPPACApplicable && ppacData.bingPPACEnabled) ||
+                                        !ppacData.bingPPACApplicable;
+                                    var allowCrossGeoCalls = (ppacData.crossGeoCopilotDataMovementApplicable && ppacData.crossGeoCopilotDataMovementEnabled) ||
+                                        !ppacData.crossGeoCopilotDataMovementApplicable;
+                                    return [allowCrossGeoCalls, allowBingCalls];
+                                });
+                            }
+                            throw res;
+                        })
+                            .catch(function (error) {
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Error from PPAC data movement service" });
+                            return [true, true];
+                        })];
+                });
+            }); };
+            this.checkPayGoEnabled = function () { return __awaiter(_this, void 0, void 0, function () {
+                var timer, requestPayloadRaw, actionRequestPayGo, response, jsonRes, result, validEntitlement, error_5;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            timer = CrmService.Telemetry.startTimer(CrmService.Telemetry.contextName, {
+                                message: "Fetching PayGo entitlement status."
+                            });
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 6, , 7]);
+                            requestPayloadRaw = {
+                                evaluationTypes: ["Capacity"],
+                                entitlements: ["MCSMessages"]
+                            };
+                            actionRequestPayGo = {
+                                ScenarioType: "paygoentitlement",
+                                RequestPayload: JSON.stringify(requestPayloadRaw),
+                                getMetadata: function () {
+                                    return {
+                                        operationType: 0,
+                                        operationName: "msdyn_InvokeIntelligenceAction",
+                                        boundParameter: null,
+                                        parameterTypes: {
+                                            ScenarioType: { typeName: "Edm.String", structuralProperty: 1 },
+                                            RequestPayload: { typeName: "Edm.String", structuralProperty: 1 }
+                                        }
+                                    };
+                                }
+                            };
+                            return [4 /*yield*/, Xrm.WebApi.online.execute(actionRequestPayGo)];
+                        case 2:
+                            response = _a.sent();
+                            if (!response.ok) return [3 /*break*/, 4];
+                            return [4 /*yield*/, response.json()];
+                        case 3:
+                            jsonRes = _a.sent();
+                            result = JSON.parse(jsonRes.Result);
+                            validEntitlement = result != null ? result.validEntitlement : false;
+                            timer({ success: true, message: "Successfully fetched PayGo entitlement status", validEntitlement: validEntitlement });
+                            CrmService.Telemetry.logInfo(CrmService.Telemetry.contextName, {
+                                message: "Successfully fetched PayGo entitlement status: " + validEntitlement
+                            });
+                            return [2 /*return*/, validEntitlement];
+                        case 4:
+                            timer({
+                                success: false,
+                                message: "Error while fetching PayGo entitlement status. Status: " + response.status + " - " + response.statusText
+                            });
+                            return [2 /*return*/, false];
+                        case 5: return [3 /*break*/, 7];
+                        case 6:
+                            error_5 = _a.sent();
+                            timer({ success: false, error: error_5 });
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error_5 });
+                            throw false;
+                        case 7: return [2 /*return*/];
+                    }
+                });
+            }); };
+            this.getFeatureControlSetting = function (nameSpace, settingKey, defaultValue) {
+                if (typeof window.Xrm === 'undefined')
+                    return defaultValue;
+                var value = Xrm.Utility.getGlobalContext().getFeatureControlSetting(nameSpace, settingKey);
+                if (value !== undefined && value !== null) {
+                    // Found the feature
+                    return value;
+                }
+                return defaultValue;
+            };
+            this.checkEmailToCaseFormFillInCache = function () {
+                if (_this.checkIfCacheExpired()) {
+                    CrmService.Telemetry.logInfo(CrmService.Telemetry.contextName + "Info", { Log: "Cache expired" });
+                    return undefined;
+                }
+                try {
+                    var cachedData = sessionStorage.getItem(EmailToCaseFormFill.EmailToCaseCacheKey);
+                    if (cachedData) {
+                        var parsedData = JSON.parse(cachedData);
+                        if (parsedData && parsedData.isFeatureEnabled) {
+                            return parsedData.isFeatureEnabled;
+                        }
+                        return undefined;
+                    }
+                }
+                catch (error) {
+                    CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Error while checking cache" });
+                    return undefined;
+                }
+                return undefined;
+            };
+            this.checkIfCacheExpired = function () {
+                try {
+                    var cachedData = sessionStorage.getItem(EmailToCaseFormFill.EmailToCaseCacheKey);
+                    if (cachedData) {
+                        var parsedData = JSON.parse(cachedData);
+                        var expiry = 0;
+                        if (parsedData && parsedData.expiry) {
+                            expiry = parsedData.expiry;
+                        }
+                        return Date.now() > expiry;
+                    }
+                }
+                catch (error) {
+                    CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Error while checking cache expiry" });
+                    return true;
+                }
+                return true;
+            };
+        }
+        EmailToCaseFormFill.isFeatureEnabled = function (fcbName) {
+            return Xrm && Xrm.Internal && Xrm.Internal.isFeatureEnabled(fcbName);
+        };
+        EmailToCaseFormFill.isMultiSession = function () {
+            return (!ClientUtility.DataUtil.isNullOrUndefined(window.Microsoft)
+                && !ClientUtility.DataUtil.isNullOrUndefined(window.Microsoft.AppRuntime)
+                && !ClientUtility.DataUtil.isNullOrUndefined(window.Microsoft.AppRuntime.Sessions));
+        };
+        EmailToCaseFormFill.prototype.formatDataForSessionStorage = function (isFeatureEnabled) {
+            return {
+                isFeatureEnabled: isFeatureEnabled,
+                expiry: Date.now() + EmailToCaseFormFill.CacheExpiryTime,
+            };
+        };
+        return EmailToCaseFormFill;
+    }());
+    EmailToCaseFormFill.EmailToCaseCacheKey = "EmailToCaseCacheKey";
+    EmailToCaseFormFill.CacheExpiryTime = 86400000; // 24 hours in milliseconds
+    CrmService.EmailToCaseFormFill = EmailToCaseFormFill;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="../../../../../TypeDefinitions/CRM/ClientUtility.d.ts" />
+/// <reference path="../../ServiceClientCommon/Service_ClientCommon.ts" />
+/// <reference path="../../ServiceClientCommon/DateType.ts" />
+/// <reference path="../../../../../TypeDefinitions/Service/Localization/Script/ResourceStringProvider.d.ts" />
+/// <reference path="../../Incident/TypeDefinitions/XrmServiceWebClientApi.d.ts" />
+/// <reference path="../../../../../TypeDefinitions/AppCommon/Telemetry/TelemetryLibrary.d.ts" />
+/// <reference path="../../ServiceClientCommon/IncidentEnums.ts" />
+/// <reference path="../../ServiceClientCommon/DataContracts/Function/RetrieveEnvironmentVariableValueForCSRequest.ts" />
+/// <reference path="../../ServiceClientCommon/DataContracts/Function/UpsertEnvironmentVariableRequest.ts" />
+/// <reference path="../../ServiceClientCommon/DataContracts/Action/LogMonetizationConsumptionRequest.ts" />
+/// <reference path="../../Utils/Telemetry.ts" />
+/// <reference path="./EmailToCaseFormFill.ts" />
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var INCIDENT_UPDATE_AFTER_RESOLUTION_ENV_VAR_IDS_FORM_XML = "<fetch top=\"1\" distinct=\"true\" >\n        <entity name=\"environmentvariabledefinition\" >\n        <attribute name=\"defaultvalue\" />\n        <attribute name=\"environmentvariabledefinitionid\" />\n        <filter type=\"and\" >\n            <condition attribute=\"schemaname\" operator=\"eq\" value=\"AllowUpdateResolvedCanceledIncidents\" />\n        </filter>\n        <link-entity name=\"environmentvariablevalue\" from=\"environmentvariabledefinitionid\" to=\"environmentvariabledefinitionid\" link-type=\"outer\" >\n            <attribute name=\"environmentvariablevalueid\" alias=\"variableValueId\" />\n            <attribute name=\"value\" alias=\"variableValue\" />\n        </link-entity>\n        </entity>\n    </fetch>";
+    // Unified Routing Rule's Tracker Entity States
+    var TrackerStatus;
+    (function (TrackerStatus) {
+        TrackerStatus[TrackerStatus["STARTED"] = 0] = "STARTED";
+        TrackerStatus[TrackerStatus["COMPLETED"] = 1] = "COMPLETED";
+        TrackerStatus[TrackerStatus["PROVISIONING_STARTED"] = 2] = "PROVISIONING_STARTED";
+        TrackerStatus[TrackerStatus["PROVISIONING_COMPLETED"] = 3] = "PROVISIONING_COMPLETED";
+        TrackerStatus[TrackerStatus["DEPROVISIONING_STARTED"] = 4] = "DEPROVISIONING_STARTED";
+        TrackerStatus[TrackerStatus["DEPROVISIONING_COMPLETED"] = 5] = "DEPROVISIONING_COMPLETED";
+        TrackerStatus[TrackerStatus["TOGGELED"] = 6] = "TOGGELED";
+        TrackerStatus[TrackerStatus["RECORD_CREATED"] = 7] = "RECORD_CREATED";
+        TrackerStatus[TrackerStatus["FAILED"] = 8] = "FAILED";
+    })(TrackerStatus || (TrackerStatus = {}));
+    var MaxChildIncidentNumber = "MaxChildIncidentNumber";
+    var defaultMaxChildIncidentNumber = 100;
+    // Supported types: [String, 100000000], [Integer, 100000001], [Boolean, 100000002], [JSON, 100000003], [Data Source, 100000004]
+    var stringParamType = 100000000;
+    var ServiceCommandBarActions = (function () {
+        function ServiceCommandBarActions() {
+            var _this = this;
+            this._closeStateCodeForActivities$p = 1;
+            this._completedStatusForAppointment$p = 3;
+            this._isBusy$p = false;
+            this._isRefreshRibbonForContract$p = false;
+            this._isRefreshRibbonForContractLine$p = false;
+            this._isRetrieveInProgressForContract$p = false;
+            this._isRetrieveInProgressForContractLine$p = false;
+            this._contractStateCodeFromContractLine$p = 0;
+            this._totalAllotments$p = -1;
+            this.ContractStateCode_Draft = 0;
+            this.ContractStateCode_Invoiced = 1;
+            this.ContractStateCode_Active = 2;
+            this.ContractStateCode_OnHold = 3;
+            this.ContractStateCode_Canceled = 4;
+            this.ContractStateCode_Expired = 5;
+            this.ContractDetailStateCode_Existing = 0;
+            this.ContractDetailStateCode_Renewed = 1;
+            this.ContractDetailStateCode_Canceled = 2;
+            this.ContractDetailStateCode_Expired = 3;
+            this.isConvertToCaseClicked = true; //Added for bug 2256271
+            this.isSLARecalculationFCBEnabled = false;
+            this.allowedSuccessStatusCodes = [200, 204];
+            this.emailToCaseFormFill = null;
+            this.convertToCaseClick = function (context) {
+                //Added for bug 2256271
+                if (_this.isConvertToCaseClicked == false)
+                    return;
+                _this.isConvertToCaseClicked = false;
+                ClientUtility.DialogUtil.showProgressMessage();
+                _this.WatermarkingStartMarkerWrapper("convertToCaseClick");
+                var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+                if (ClientUtility.ClientUtil.isMobileOffline()) {
+                    ClientUtility.DialogUtil.showMoCAOfflineError();
+                    _this.WatermarkingEndMarkerWrapper("convertToCaseClick");
+                    ClientUtility.DialogUtil.hideProgressMessage();
+                    _this.isConvertToCaseClicked = true;
+                    return;
+                }
+                var selectedItem, errorString = new ClientUtility.AlertDialogStrings(), customerId = ClientUtility.DataUtil.EmptyString, subjectId = ClientUtility.DataUtil.EmptyString, subject = ClientUtility.DataUtil.EmptyString, entityId = ClientUtility.DataUtil.EmptyString, entityTypeCode = 0, saveActivity = "false", openNewRecord = "false", entityName = ClientUtility.DataUtil.EmptyString, customerTypeCode = 0, ownerTypeCode = null, ownerId = "";
+                selectedItem = ClientUtility.DialogUtil.getAttributeValue(CrmService.MetadataDrivenDialogConstants.CustomerLookup, formContext);
+                if (ClientUtility.DataUtil.isNullOrUndefined(selectedItem) || !selectedItem.length) {
+                    errorString.text = CrmService.ResourceStringProvider.getResourceString("Alert_Conv_Act_Customer_Must");
+                    Xrm.Utility.alertDialog(errorString.text, null);
+                    _this.WatermarkingEndMarkerWrapper("convertToCaseClick");
+                    ClientUtility.DialogUtil.hideProgressMessage();
+                    _this.isConvertToCaseClicked = true;
+                    return;
+                }
+                else {
+                    customerId = selectedItem[0].id;
+                    entityName = selectedItem[0].entityType;
+                    customerTypeCode = CrmService.ClientUtil.getEntityTypeCodes(entityName);
+                }
+                ClientUtility.DialogUtil.setLastButtonClicked(CrmService.MetadataDrivenDialogConstants.DialogOkId);
+                subjectId = ClientUtility.DialogUtil.getAttributeValue(CrmService.MetadataDrivenDialogConstants.SubjectLookup, formContext);
+                var subjectValue = ClientUtility.DialogUtil.getAttributeValue(CrmService.MetadataDrivenDialogConstants.paramSubject, formContext);
+                if (!ClientUtility.DataUtil.isNullOrUndefined(subjectValue)) {
+                    subject = subjectValue.toString();
+                }
+                entityId = ClientUtility.DialogUtil.getAttributeValue(ClientUtility.MetadataDrivenDialogConstants.paramEntityId, formContext);
+                entityTypeCode = ClientUtility.DialogUtil.getAttributeValue(ClientUtility.MetadataDrivenDialogConstants.paramEntityTypeCode, formContext);
+                var saveActivityItemChecked = ClientUtility.DialogUtil.getAttributeValue(CrmService.MetadataDrivenDialogConstants.SaveActivityId, formContext);
+                if (saveActivityItemChecked) {
+                    saveActivity = "true";
+                }
+                var openNewItemChecked = ClientUtility.DialogUtil.getAttributeValue(CrmService.MetadataDrivenDialogConstants.OpenNewId, formContext);
+                if (openNewItemChecked) {
+                    openNewRecord = "true";
+                }
+                var self = _this;
+                _this.convertToCase(function (response) {
+                    response.json().then(function (response) {
+                        _this.WatermarkingEndMarkerWrapper("convertToCaseClick", true);
+                        _this.WatermarkingStartMarkerWrapper("convertToCaseClick::initiateValidation");
+                        var caseId = response.RecordId.toString();
+                        self.postConvertActivity(caseId, saveActivity, openNewRecord, formContext);
+                        _this.WatermarkingEndMarkerWrapper("convertToCaseClick::initiateValidation");
+                    });
+                }, function (response) {
+                    ClientUtility.DialogUtil.hideProgressMessage();
+                    _this.isConvertToCaseClicked = true;
+                    ClientUtility.DialogUtil.actionFailedCallbackForMoca(response);
+                }, subject, entityId, entityTypeCode, customerId, customerTypeCode, ownerId, ownerTypeCode, subjectId, CrmService.EntityTypeCodes.Subject, false);
+                _this.WatermarkingEndMarkerWrapper("convertToCaseClick");
+            };
+            this.postConvertActivity = function (caseId, saveActivity, openNewRecord, formContext) {
+                _this.WatermarkingStartMarkerWrapper("postConvertActivity");
+                var caseIdAttribute = Xrm.Page.getAttribute(CrmService.MetadataDrivenDialogConstants.CaseId);
+                ClientUtility.DialogUtil.setAttributeValue(CrmService.MetadataDrivenDialogConstants.paramCaseId, caseId, formContext);
+                var saveActivityAttribute = Xrm.Page.getAttribute(CrmService.MetadataDrivenDialogConstants.SaveActivity);
+                ClientUtility.DialogUtil.setAttributeValue(CrmService.MetadataDrivenDialogConstants.paramSaveActivity, saveActivity, formContext);
+                var openNewAttribute = Xrm.Page.getAttribute(CrmService.MetadataDrivenDialogConstants.OpenNewRecord);
+                ClientUtility.DialogUtil.setAttributeValue(CrmService.MetadataDrivenDialogConstants.paramOpenNewRecord, openNewRecord, formContext);
+                ClientUtility.DialogUtil.hideProgressMessage();
+                Xrm.Page.ui.close();
+                _this.WatermarkingEndMarkerWrapper("postConvertActivity");
+            };
+            this.convertToCase = function (successCallback, errorCallback, targetEntitySubject, activityId, activityTypeCode, customerId, customerTypeCode, ownerId, ownerTypeCode, subjectId, subjectTypeCode, logResponse) {
+                _this.WatermarkingStartMarkerWrapper("convertToCase");
+                var caseRecord = _this.getCaseEntityRecord(targetEntitySubject, activityId, activityTypeCode, customerId, customerTypeCode, ownerId, ownerTypeCode, subjectId, subjectTypeCode);
+                var entityName = CrmService.ClientUtil.getEntityName(activityTypeCode);
+                var convertActivityRequest = new ODataContract.ConvertActivityRequest({ guid: activityId }, entityName, caseRecord, CrmService.EntityNames.Incident, logResponse);
+                Xrm.WebApi.online.execute(convertActivityRequest).then(successCallback, errorCallback);
+                _this.WatermarkingEndMarkerWrapper("convertToCase");
+            };
+            this.getCaseEntityRecord = function (targetEntitySubject, activityId, activityTypeCode, customerId, customerTypeCode, ownerId, ownerTypeCode, subjectId, subjectTypeCode) {
+                _this.WatermarkingStartMarkerWrapper("getCaseEntityRecord");
+                var caseRecord = {};
+                caseRecord['incidentid'] = ClientUtility.Guid.newGuid();
+                caseRecord['@odata.type'] = "#Microsoft.Dynamics.CRM.incident";
+                caseRecord['title'] = (ClientUtility.DataUtil.isNullOrUndefined(targetEntitySubject) || targetEntitySubject.length < 200) ? targetEntitySubject : targetEntitySubject.substr(0, 199);
+                if (customerId) {
+                    if (customerTypeCode === CrmService.EntityTypeCodes.Account) {
+                        caseRecord["customerid_account@odata.bind"] = "/accounts(" + ClientUtility.Guid.create(customerId) + ")";
+                    }
+                    else if (customerTypeCode === CrmService.EntityTypeCodes.Contact) {
+                        caseRecord["customerid_contact@odata.bind"] = "/contacts(" + ClientUtility.Guid.create(customerId) + ")";
+                    }
+                }
+                if (subjectId && subjectId.length > 0) {
+                    caseRecord["subjectid@odata.bind"] = "/subjects(" + ClientUtility.Guid.create(subjectId[0].id) + ")";
+                }
+                if (ownerId) {
+                    caseRecord["ownerid@odata.bind"] = "/systemusers(" + ClientUtility.Guid.create(decodeURIComponent(ownerId)) + ")";
+                }
+                _this.WatermarkingEndMarkerWrapper("getCaseEntityRecord");
+                return caseRecord;
+            };
+            this.convertToCaseOnLoad = function (context) {
+                _this.WatermarkingStartMarkerWrapper("convertToCaseOnLoad");
+                var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+                if (formContext.data.attributes.get(ClientUtility.MetadataDrivenDialogConstants.paramEntityTypeCode).getValue() != 4214) {
+                    var entityTypeName = CrmService.ClientUtil.getEntityName(formContext.data.attributes.get(ClientUtility.MetadataDrivenDialogConstants.paramEntityTypeCode).getValue());
+                    Xrm.Utility.getEntityMetadata(entityTypeName).then(function (entity) {
+                        formContext.getControl("cbSaveActivity_id").setLabel(String.format(CrmService.ResourceStringProvider.getResourceString("Dialog_ConvertToCase_ChangeTaskStatus"), entity.DisplayName));
+                    }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+                }
+                var customerLookupAttribute = formContext.data.attributes.get(CrmService.MetadataDrivenDialogConstants.CustomerLookup); //
+                var customerLookupValue = formContext.data.attributes.get(CrmService.MetadataDrivenDialogConstants.paramCustomerLookup);
+                if (!ClientUtility.DataUtil.isNullOrUndefined(customerLookupAttribute)) {
+                    var customerLookupControl = Xrm.Page.getControl("customerLookup");
+                    customerLookupControl && customerLookupControl.setFocus();
+                    if (!ClientUtility.DataUtil.isNullOrUndefined(customerLookupValue) && !ClientUtility.DataUtil.isNullOrUndefined(customerLookupValue.getValue())) {
+                        customerLookupAttribute.setValue(customerLookupValue.getValue());
+                    }
+                }
+                _this.WatermarkingEndMarkerWrapper("convertToCaseOnLoad");
+            };
+            this.convertToCasePreload = function (element, iObjType, entityId) {
+                _this.WatermarkingStartMarkerWrapper("convertToCasePreload");
+                if (ClientUtility.ClientUtil.isMobileOffline()) {
+                    ClientUtility.DialogUtil.showMoCAOfflineError();
+                    _this.WatermarkingEndMarkerWrapper("convertToCasePreload");
+                    return;
+                }
+                if (ClientUtility.ClientUtil.isUCI() || Mscrm.InternalUtilities.Utilities.isTurboForm()) {
+                    ClientUtility.DialogUtil.showProgressMessage();
+                }
+                var dialogParams = {};
+                if (element.indexOf("customerId") !== -1) {
+                    var customerId = ClientUtility.CommandBarUtils.getElementValue(element, "customerId");
+                    var customerName = ClientUtility.CommandBarUtils.getElementValue(element, "customerName");
+                    var customerType = parseInt(ClientUtility.CommandBarUtils.getElementValue(element, "customerType"), 10);
+                    var customerLookup = {
+                        id: decodeURIComponent(customerId),
+                        name: decodeURIComponent(customerName),
+                        entityType: CrmService.ClientUtil.getEntityName(customerType)
+                    };
+                    var customerLookupParams = [];
+                    customerLookupParams[0] = customerLookup;
+                    dialogParams[CrmService.MetadataDrivenDialogConstants.paramCustomerLookup] = customerLookupParams;
+                }
+                _this._setConvertToCaseParameterAndLaunchDialog$p(dialogParams, element, iObjType, entityId);
+                _this.WatermarkingEndMarkerWrapper("convertToCasePreload");
+            };
+            this._setConvertToCaseParameterAndLaunchDialog$p = function (dialogParams, element, iObjType, entityId) {
+                _this.WatermarkingStartMarkerWrapper("_setConvertToCaseParameterAndLaunchDialog$p");
+                if (element.indexOf("subject") !== -1) {
+                    var subject = ClientUtility.CommandBarUtils.getElementValue(element, "subject");
+                    dialogParams[CrmService.MetadataDrivenDialogConstants.paramSubject] = decodeURIComponent(subject);
+                }
+                if (element.indexOf("ownerId") !== -1) {
+                    var ownerId = ClientUtility.CommandBarUtils.getElementValue(element, "ownerId");
+                    var ownerType = ClientUtility.CommandBarUtils.getElementValue(element, "ownerType");
+                    var ownerName = "";
+                    var ownerCtrl = Xrm.Page.data.entity.attributes.get("ownerid");
+                    if (!ClientUtility.DataUtil.isNullOrUndefined(ownerCtrl)) {
+                        var selectedItem = ownerCtrl.getValue();
+                        if (!ClientUtility.DataUtil.isNullOrUndefined(selectedItem) && selectedItem.length > 0) {
+                            ownerName = selectedItem[0].name;
+                            dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramOwnerName] = encodeURIComponent(ownerName);
+                        }
+                    }
+                    dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramOwnerId] = ownerId;
+                    dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramOwnerType] = ownerType;
+                }
+                dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramEntityId] = Xrm.Page.data.entity.getId();
+                dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramEntityTypeCode] = iObjType;
+                dialogParams[CrmService.MetadataDrivenDialogConstants.paramSaveActivity] = "false";
+                dialogParams[CrmService.MetadataDrivenDialogConstants.paramOpenNewRecord] = "false";
+                dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramLastButtonClicked] = "";
+                if (_this.emailToCaseFormFill.isEmailToCaseManualCreationFCBEnabled()) {
+                    var emailSubject = "";
+                    var emailDescription = "";
+                    var subjectCtrl = Xrm.Page.data.entity.attributes.get("subject");
+                    var descriptionCtrl = Xrm.Page.data.entity.attributes.get("description");
+                    if (subjectCtrl && subjectCtrl.getValue) {
+                        emailSubject = subjectCtrl.getValue();
+                    }
+                    if (descriptionCtrl && descriptionCtrl.getValue) {
+                        emailDescription = descriptionCtrl.getValue();
+                    }
+                    dialogParams[CrmService.MetadataDrivenDialogConstants.paramEmailSubject] = emailSubject;
+                    dialogParams[CrmService.MetadataDrivenDialogConstants.paramEmailDescription] = emailDescription;
+                }
+                var closeCallback = _this.convertToCaseCallback;
+                ClientUtility.DialogUtil.hideProgressMessage();
+                var initialHeight = ClientUtility.ClientUtil.isUCI() ? 530 : 400;
+                var dialogOptions = { height: initialHeight, width: 410, position: 1 /* center */ }, height = initialHeight;
+                if (element.indexOf("leadId") !== -1)
+                    height += 30;
+                if (_this.isWebClient() || Xrm.Page.context.client.getClient() === ClientUtility.ClientUtil.outlook) {
+                    dialogOptions.height = height;
+                    dialogOptions.width = 410;
+                }
+                Xrm.Navigation.openDialog(CrmService.DialogName.ConvertToCaseDialog, dialogOptions, dialogParams).then(closeCallback);
+                _this.WatermarkingEndMarkerWrapper("_setConvertToCaseParameterAndLaunchDialog$p");
+            };
+            this.convertToCaseCallback = function (dialogParams) {
+                _this.WatermarkingStartMarkerWrapper("convertToCaseCallback");
+                if (!ClientUtility.DataUtil.isNullOrUndefined(dialogParams) && dialogParams.parameters[ClientUtility.MetadataDrivenDialogConstants.paramLastButtonClicked] === ClientUtility.MetadataDrivenDialogConstants.DialogOkId) {
+                    var caseId = dialogParams.parameters[CrmService.MetadataDrivenDialogConstants.paramCaseId], saveActivity = dialogParams.parameters[CrmService.MetadataDrivenDialogConstants.paramSaveActivity], openNewRecord = dialogParams.parameters[CrmService.MetadataDrivenDialogConstants.paramOpenNewRecord], iObjType = dialogParams[ClientUtility.MetadataDrivenDialogConstants.paramEntityTypeCode], entityName = null, entityId = null;
+                    var emailSubject = null;
+                    var emailDescription = null;
+                    if (_this.emailToCaseFormFill.isEmailToCaseManualCreationFCBEnabled()) {
+                        emailSubject = dialogParams.parameters[CrmService.MetadataDrivenDialogConstants.paramEmailSubject];
+                        emailDescription = dialogParams.parameters[CrmService.MetadataDrivenDialogConstants.paramEmailDescription];
+                    }
+                    _this._convertToCaseSuccess$p(caseId, saveActivity, openNewRecord, iObjType, emailSubject, emailDescription);
+                }
+                _this.WatermarkingEndMarkerWrapper("convertToCaseCallback");
+            };
+            this._interactionCentricConvertToCaseSuccess$p = function (caseId, saveActivity, openNewRecord, entityName, entityId) {
+                _this.WatermarkingStartMarkerWrapper("_interactionCentricConvertToCaseSuccess$p");
+                if (saveActivity === "false")
+                    openNewRecord === "true" &&
+                        Xrm.Utility.openEntityForm(CrmService.EntityNames.Incident, caseId);
+                else if (openNewRecord === "true")
+                    _this.markActivityComplete(entityId, entityName, false, CrmService.EntityNames.Incident, caseId);
+                else
+                    _this.markActivityComplete(entityId, entityName, true, null, null);
+                _this.WatermarkingEndMarkerWrapper("_interactionCentricConvertToCaseSuccess$p");
+            };
+            this._convertToCaseSuccess$p = function (caseId, saveActivity, openNewRecord, iObjType, emailSubject, emailDescription) {
+                _this.WatermarkingStartMarkerWrapper("_convertToCaseSuccess$p");
+                if (ClientUtility.ClientUtil.isUCI() || (Mscrm.InternalUtilities.Utilities).isRefreshForm()) {
+                    if (!_this.emailToCaseFormFill.isEmailToCaseManualCreationFCBEnabled()) {
+                        if (saveActivity === "false") {
+                            if (openNewRecord === "true") {
+                                Xrm.Page.data.save();
+                                Xrm.Utility.openEntityForm(CrmService.EntityNames.Incident, caseId);
+                            }
+                        }
+                        else {
+                            if (openNewRecord === "true")
+                                _this.markActivityComplete(Xrm.Page.data.entity.getId(), Xrm.Page.data.entity.getEntityName(), false, CrmService.EntityNames.Incident, caseId);
+                            else
+                                _this.markActivityComplete(Xrm.Page.data.entity.getId(), Xrm.Page.data.entity.getEntityName(), true, null, null);
+                        }
+                    }
+                    else {
+                        _this.emailToCaseFormFill.isEmailToCaseFormFillEnabled()
+                            .then(function (isEnabled) {
+                            if (isEnabled) {
+                                var subject = emailSubject;
+                                var description = emailDescription;
+                                var predictionContext = {};
+                                subject && (predictionContext["subject"] = subject);
+                                description && (predictionContext["body"] = description);
+                                var pageInput = {
+                                    pageType: "entityrecord",
+                                    entityName: CrmService.EntityNames.Incident,
+                                    entityId: caseId,
+                                };
+                                if (_this.emailToCaseFormFill.isCasePredictFormParametersFCBEnabled()) {
+                                    pageInput.predictionContext = {
+                                        sourceLabel: CrmService.ResourceStringProvider.getResourceString("EmailToCaseFormFillSourceTitle"),
+                                        sourceContent: JSON.stringify({ values: predictionContext })
+                                    };
+                                }
+                                else {
+                                    pageInput.predictionContext = JSON.stringify({ values: predictionContext });
+                                }
+                                if (saveActivity === "false") {
+                                    if (openNewRecord === "true") {
+                                        Xrm.Page.data.save();
+                                        Xrm.Navigation.navigateTo(pageInput).then(function (res) {
+                                            _this.logMonetizationConsumption();
+                                            CrmService.Telemetry.logInfo(CrmService.Telemetry.contextName + "Info", { Log: "Navigation successful for case to email form fill", response: JSON.stringify(res) });
+                                        }, function (error) {
+                                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Navigation failed for case to email form fill" });
+                                        });
+                                    }
+                                }
+                                else {
+                                    if (openNewRecord === "true") {
+                                        _this.markActivityComplete(Xrm.Page.data.entity.getId(), Xrm.Page.data.entity.getEntityName(), false, null, null);
+                                        Xrm.Navigation.navigateTo(pageInput).then(function (res) {
+                                            _this.logMonetizationConsumption();
+                                            CrmService.Telemetry.logInfo(CrmService.Telemetry.contextName + "Info", { Log: "Navigation successful for case to email form fill", response: JSON.stringify(res) });
+                                        }, function (error) {
+                                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Navigation failed for case to email form fill" });
+                                        });
+                                    }
+                                    else {
+                                        _this.markActivityComplete(Xrm.Page.data.entity.getId(), Xrm.Page.data.entity.getEntityName(), true, null, null);
+                                    }
+                                }
+                            }
+                            else {
+                                if (saveActivity === "false") {
+                                    if (openNewRecord === "true") {
+                                        Xrm.Page.data.save();
+                                        Xrm.Utility.openEntityForm(CrmService.EntityNames.Incident, caseId);
+                                    }
+                                }
+                                else {
+                                    if (openNewRecord === "true")
+                                        _this.markActivityComplete(Xrm.Page.data.entity.getId(), Xrm.Page.data.entity.getEntityName(), false, CrmService.EntityNames.Incident, caseId);
+                                    else
+                                        _this.markActivityComplete(Xrm.Page.data.entity.getId(), Xrm.Page.data.entity.getEntityName(), true, null, null);
+                                }
+                            }
+                        })
+                            .catch(function (error) {
+                            CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Error checking isEmailToCaseFormFillEnabled" });
+                        });
+                    }
+                }
+                else {
+                    _this.convertToEntityLegacy(caseId, saveActivity, openNewRecord, iObjType, CrmService.EntityNames.Incident);
+                }
+                _this.WatermarkingEndMarkerWrapper("_convertToCaseSuccess$p");
+            };
+            this.refreshParentGrid = function (iObjType) {
+                Xrm.Internal.refreshParentGrid(iObjType, Xrm.Internal.getEntityName(iObjType));
+            };
+            this.convertToEntityLegacy = function (entityId, saveActivity, openNewRecord, iObjType, targetEntityName) {
+                var crmFormCtrl = $find("crmForm");
+                if (saveActivity === "false") {
+                    crmFormCtrl.SubmitCrmForm(1, true, true, false);
+                }
+                else {
+                    crmFormCtrl.SubmitCrmForm(58, true, true, false);
+                }
+                if (openNewRecord === "true" && !ClientUtility.DataUtil.isNullOrUndefined(entityId)) {
+                    Xrm.Utility.openEntityForm(targetEntityName, entityId);
+                }
+                _this.refreshParentGrid(iObjType);
+            };
+            this.markActivityComplete = function (entityId, entityName, closeWindow, entityToOpen, entityIdToOpen) {
+                _this.WatermarkingStartMarkerWrapper("markActivityComplete");
+                if (entityName !== CrmService.EntityNames.Appointment)
+                    if (entityName === CrmService.EntityNames.SocialActivity)
+                        _this.setState(entityId, entityName, _this._closeStateCodeForActivities$p, 1, closeWindow, entityToOpen, entityIdToOpen);
+                    else
+                        _this.setState(entityId, entityName, _this._closeStateCodeForActivities$p, -1, closeWindow, entityToOpen, entityIdToOpen);
+                else
+                    _this.setState(entityId, entityName, -1, _this._completedStatusForAppointment$p, closeWindow, entityToOpen, entityIdToOpen);
+                _this.WatermarkingEndMarkerWrapper("markActivityComplete");
+            };
+            this.setState = function (entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen) {
+                _this.WatermarkingStartMarkerWrapper("setState");
+                if (ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.data.entity.getId())) {
+                    _this.WatermarkingEndMarkerWrapper("setState");
+                    return;
+                }
+                if (typeof statusCode === "undefined")
+                    statusCode = -1;
+                else if (stateCode === -1) {
+                    Xrm.Utility.getEntityMetadata(entityName, ["statuscode"]).then(function (entityMetadata) {
+                        var statusAttribute = entityMetadata.Attributes.get("statuscode");
+                        stateCode = statusAttribute.getState(statusCode);
+                        _this._setStateInternal$p(entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen);
+                    }, function () {
+                        this._setStateInternal$p(entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen);
+                    });
+                    _this.WatermarkingEndMarkerWrapper("setState");
+                    return;
+                }
+                _this._setStateInternal$p(entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen);
+                _this.WatermarkingEndMarkerWrapper("setState");
+            };
+            this._setStateInternal$p = function (entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen) {
+                _this.WatermarkingStartMarkerWrapper("_setStateInternal$p");
+                var UpdateSuccessCallback = function (saveResponse) {
+                    _this.setStateUpdate(entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen);
+                }, ErrorCallback = function (saveResponse) {
+                    _this._isBusy$p = false;
+                };
+                if (!_this._isBusy$p) {
+                    _this._isBusy$p = true;
+                    var saveOptions = {};
+                    saveOptions.useSchedulingEngine = false;
+                    Xrm.Page.data.save(saveOptions).then(UpdateSuccessCallback, ErrorCallback);
+                }
+                _this.WatermarkingEndMarkerWrapper("_setStateInternal$p");
+            };
+            this.isWebClient = function () {
+                return Xrm.Page.context.client.getClient() === ClientUtility.ClientUtil.web;
+            };
+            this.setStateUpdate = function (entityId, entityName, stateCode, statusCode, closeWindow, entityToOpen, entityIdToOpen) {
+                _this.WatermarkingStartMarkerWrapper("setStateUpdate");
+                if (!entityId || !entityId.length)
+                    entityId = Xrm.Page.data.entity.getId();
+                if (ClientUtility.ClientUtil.isMobileOffline()) {
+                    var successCallback = function () {
+                        this._postSetState$p(entityId, entityName, closeWindow, entityToOpen, entityIdToOpen);
+                    };
+                    //Xrm.Utility.executeNonCudCommand(ClientUtility.MetadataDrivenDialogConstants.SetState, entityName, request, successCallback, ClientUtility.DialogUtil.actionFailedCallbackForMoca)
+                    var entityRecord = {};
+                    entityRecord.statecode = stateCode;
+                    entityRecord.statuscode = statusCode;
+                    Xrm.WebApi.updateRecord(entityName, entityId, entityRecord).then(successCallback, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+                }
+                else {
+                    var attributeValues = { statecode: stateCode, statuscode: statusCode };
+                    Xrm.WebApi.online.updateRecord(entityName, entityId, attributeValues).then(function (setStateResponse) {
+                        _this.WatermarkingEndMarkerWrapper("setStateUpdate", true);
+                        _this._postSetState$p(entityId, entityName, closeWindow, entityToOpen, entityIdToOpen);
+                    }, function (crmResponseError) {
+                        _this._isBusy$p = false;
+                        ClientUtility.DialogUtil.actionFailedCallbackForMoca(crmResponseError);
+                        _this.WatermarkingEndMarkerWrapper("setStateUpdate", true);
+                    });
+                }
+                _this.WatermarkingEndMarkerWrapper("setStateUpdate");
+            };
+            this._postSetState$p = function (entityId, entityName, closeWindow, entityToOpen, entityIdToOpen) {
+                _this.WatermarkingStartMarkerWrapper("_postSetState$p");
+                if (typeof closeWindow !== "undefined" && closeWindow) {
+                    if (!ClientUtility.DataUtil.isNullOrUndefined(entityToOpen) && !ClientUtility.DataUtil.isNullOrUndefined(entityIdToOpen)) {
+                        !ServiceCommandBarActions.isMobileCompanionApp() &&
+                            Xrm.Page.ui.close();
+                        Xrm.Utility.openEntityForm(entityToOpen, entityIdToOpen, null);
+                    }
+                    Xrm.Page.ui.close();
+                    _this._isBusy$p = false;
+                    _this.WatermarkingEndMarkerWrapper("_postSetState$p");
+                    return;
+                }
+                if (!ClientUtility.DataUtil.isNullOrUndefined(entityToOpen) && !ClientUtility.DataUtil.isNullOrUndefined(entityIdToOpen))
+                    Xrm.Utility.openEntityForm(entityToOpen, entityIdToOpen);
+                else {
+                    Xrm.Page.data.refresh(true);
+                    _this.performPageRefresh();
+                }
+                _this._isBusy$p = false;
+                _this.WatermarkingEndMarkerWrapper("_postSetState$p");
+            };
+            this.performPageRefresh = function () {
+                Xrm.Page.data.refresh(true).then(function () {
+                    Xrm.Page.ui.refreshRibbon();
+                });
+            };
+            this.createAttributeMappings = function (dialogArguments) {
+                var createAttributeList = dialogArguments[CrmService.MetadataDrivenDialogConstants.CreateAttributeMaps];
+                // we use the Array from the parent context because es6-shim is not loaded in ClientApiWrapper.aspx which invokes handler tied to the "OK" button
+                var deferreds = new parent.Array();
+                for (var i = 0; i < createAttributeList.length; i++) {
+                    var attributeName = createAttributeList[i];
+                    deferreds.push(Xrm.WebApi.createRecord(CrmService.EntityNames.AttributeMap, _this.createAttributeMapRecord(attributeName, attributeName, dialogArguments[CrmService.MetadataDrivenDialogConstants.EntityMapId])));
+                }
+                // Workaround for Promise since it is not natively supported in IE
+                var attributeMappingPromise = _this.isPromiseSupported() ? Promise.all(deferreds) : parent.Promise.all(deferreds);
+                attributeMappingPromise.then(function (response) {
+                    dialogArguments[CrmService.MetadataDrivenDialogConstants.ExistingAttributes] = dialogArguments[CrmService.MetadataDrivenDialogConstants.SelectedAttributes];
+                    return response;
+                });
+                return attributeMappingPromise;
+            };
+            this.deleteAttributeMappings = function (dialogArguments) {
+                var deleteAttributeList = dialogArguments[CrmService.MetadataDrivenDialogConstants.ExistingAttributes]
+                    .filter(function (x) {
+                    return dialogArguments[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes].indexOf(x) < 0 &&
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.SelectedAttributes].indexOf(x) < 0;
+                });
+                var deleteIdList = deleteAttributeList.map(function (x) { return dialogArguments[CrmService.MetadataDrivenDialogConstants.AttributeMapIdDictionary][x]; });
+                // we use the Array from the parent context because es6-shim is not loaded in ClientApiWrapper.aspx which invokes handler tied to the "OK" button
+                var deferreds = new parent.Array();
+                for (var i = 0; i < deleteIdList.length; i++) {
+                    var deleteId = deleteIdList[i];
+                    deferreds.push(Xrm.WebApi.deleteRecord(CrmService.EntityNames.AttributeMap, deleteId));
+                }
+                // Workaround for Promise since it is not natively supported in IE
+                return _this.isPromiseSupported() ? Promise.all(deferreds) : parent.Promise.all(deferreds);
+            };
+            this.updateCascadeClosurePreference = function (dialogArguments) {
+                var value = Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.SpecifyClosurePreference).getAttribute().getValue();
+                var entityRecord = (_a = {},
+                    _a[CrmService.MetadataDrivenDialogConstants.CascadeStatusUpdate] = value === 0,
+                    _a[CrmService.MetadataDrivenDialogConstants.RestrictStatusUpdate] = value === 1,
+                    _a);
+                return Xrm.WebApi.updateRecord(CrmService.EntityNames.Organization, dialogArguments[CrmService.MetadataDrivenDialogConstants.OrganizationId], entityRecord);
+                var _a;
+            };
+            this.updateMaxChildCaseNumber = function (dialogArguments) {
+                var value = Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.MaxChildCaseNumberControlId).getAttribute().getValue();
+                if (dialogArguments[CrmService.MetadataDrivenDialogConstants.EnvVarVariableId]) {
+                    return Xrm.WebApi.updateRecord(CrmService.EntityNames.EnvironmentVariableValue, dialogArguments[CrmService.MetadataDrivenDialogConstants.EnvVarVariableId], { "value": value });
+                }
+                else {
+                    return Xrm.WebApi.createRecord(CrmService.EntityNames.EnvironmentVariableValue, { "value": value, "EnvironmentVariableDefinitionId@odata.bind": "/environmentvariabledefinitions(" + dialogArguments[CrmService.MetadataDrivenDialogConstants.EnvVarDefinitionId] + ")" });
+                }
+            };
+            this.launchEffectivityCalendar = function (primaryEntityTypeName, primaryItemIds) {
+                _this.WatermarkingStartMarkerWrapper("launchEffectivityCalendar");
+                var isReadOnly = _this.isContractCalendarReadOnly();
+                Xrm.WebApi.retrieveRecord(primaryEntityTypeName, primaryItemIds[0], ClientUtility.ODataUtil.getSelectOption([CrmService.MetadataDrivenDialogConstants.AttributeEffectivityCalendar])).then((function (response) {
+                    this.WatermarkingEndMarkerWrapper("launchEffectivityCalendar", true);
+                    this.WatermarkingStartMarkerWrapper("launchEffectivityCalendar::initiateValidation");
+                    if (!ClientUtility.DataUtil.isNullOrUndefined(response)) {
+                        var dialogArguments = {};
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.EntityLogicalName] = primaryEntityTypeName;
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.Entity_Id] = primaryItemIds[0];
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.EffectivityCalendar] = response[CrmService.MetadataDrivenDialogConstants.AttributeEffectivityCalendar];
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.IsReadOnly] = isReadOnly;
+                        var options = {
+                            height: 525,
+                            width: 1000,
+                            position: 1 /* center */
+                        };
+                        Xrm.Navigation.openDialog(CrmService.DialogName.SetContractCalendar, options, dialogArguments);
+                    }
+                    this.WatermarkingEndMarkerWrapper("launchEffectivityCalendar::initiateValidation");
+                }), ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+                _this.WatermarkingEndMarkerWrapper("launchEffectivityCalendar");
+            };
+            this.isContractCalendarReadOnly = function () {
+                var entityStateCodeAttribute = Xrm.Page.data.entity.attributes.get(CrmService.MetadataDrivenDialogConstants.StateCode);
+                if (!ClientUtility.DataUtil.isNullOrUndefined(entityStateCodeAttribute)) {
+                    var contractDetailStateCode = entityStateCodeAttribute.getValue();
+                    return !(contractDetailStateCode === 0 && Xrm.Page.ui.getFormType() !== 3 /* ReadOnly */);
+                }
+                return Xrm.Page.ui.getFormType() === 3 /* ReadOnly */;
+            };
+            this.onLoadSetCalendarDialog = function (context) {
+                _this.WatermarkingStartMarkerWrapper("onLoadSetCalendarDialog");
+                var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+                var value = formContext.getAttribute(CrmService.MetadataDrivenDialogConstants.EffectivityCalendar).getValue();
+                var isReadOnly = formContext.getAttribute(CrmService.MetadataDrivenDialogConstants.IsReadOnly).getValue();
+                var contractCalendar = formContext.getControl(CrmService.MetadataDrivenDialogConstants.ContractCalendarControl);
+                contractCalendar.getAttribute().setValue(value);
+                contractCalendar.setDisabled(isReadOnly);
+                formContext.getControl(CrmService.MetadataDrivenDialogConstants.DialogSetId).setDisabled(isReadOnly);
+                _this.WatermarkingEndMarkerWrapper("onLoadSetCalendarDialog");
+            };
+            this.setContractCalendar = function (context) {
+                _this.WatermarkingStartMarkerWrapper("setContractCalendar");
+                var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+                var value = formContext.getControl(CrmService.MetadataDrivenDialogConstants.ContractCalendarControl).getAttribute().getValue();
+                var entityLogicalName = formContext.getAttribute(CrmService.MetadataDrivenDialogConstants.EntityLogicalName).getValue();
+                var entityId = formContext.getAttribute(CrmService.MetadataDrivenDialogConstants.Entity_Id).getValue();
+                Xrm.WebApi.updateRecord(entityLogicalName, entityId, (_a = {}, _a[CrmService.MetadataDrivenDialogConstants.AttributeEffectivityCalendar] = value, _a)).then(function () {
+                    Xrm.Page.ui.close();
+                }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+                _this.WatermarkingEndMarkerWrapper("setContractCalendar");
+                var _a;
+            };
+            this.isEntitlementActive = function () {
+                _this.WatermarkingStartMarkerWrapper("isEntitlementActive");
+                var isEnable = true;
+                if (!ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.data) && !ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.ui)) {
+                    if (Xrm.Page.data.entity.getEntityName() === CrmService.EntityNames.Entitlement) {
+                        if (Xrm.Page.ui.getFormType() === 4 /* Disabled */) {
+                            isEnable = true;
+                        }
+                        else {
+                            isEnable = false;
+                        }
+                    }
+                }
+                else {
+                    var stateCheck = Xrm.Page.getAttribute("statecode");
+                    if (Xrm.Page.ui.getFormType() === 4 /* Disabled */ && (!ClientUtility.DataUtil.isNullOrUndefined(stateCheck) && stateCheck.getValue() === 1)) {
+                        isEnable = false;
+                    }
+                    else {
+                        isEnable = true;
+                    }
+                }
+                _this.WatermarkingEndMarkerWrapper("isEntitlementActive");
+                return isEnable;
+            };
+            this.enableAddCaseForContract = function () {
+                _this.WatermarkingStartMarkerWrapper("enableAddCaseForContract");
+                if (!ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.data) && !ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.data.entity) && Xrm.Page.data.entity.getEntityName() === CrmService.EntityNames.Contract) {
+                    var stateCode = Xrm.Page.getAttribute("statecode"), contractStateCode = !ClientUtility.DataUtil.isNullOrUndefined(stateCode) ? stateCode.getValue() : -1;
+                    !_this.get_isRetrieveInProgressForContract &&
+                        _this.retrieveContractDetailAllotments(Xrm.Page.data.entity.getId());
+                    if (contractStateCode === _this.ContractStateCode_Invoiced || contractStateCode === _this.ContractStateCode_Expired || contractStateCode === _this.ContractStateCode_Canceled || contractStateCode === _this.ContractStateCode_Draft || contractStateCode === _this.ContractStateCode_OnHold || !_this.get_totalAllotmentsForContract()) {
+                        _this.WatermarkingEndMarkerWrapper("enableAddCaseForContract");
+                        return false;
+                    }
+                    else {
+                        _this.WatermarkingEndMarkerWrapper("enableAddCaseForContract");
+                        return true;
+                    }
+                }
+                else {
+                    _this.WatermarkingEndMarkerWrapper("enableAddCaseForContract");
+                    return true;
+                }
+            };
+            this.enableAddCaseForContractLine = function () {
+                _this.WatermarkingStartMarkerWrapper("enableAddCaseForContractLine");
+                if (!ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.data) && !ClientUtility.DataUtil.isNullOrUndefined(Xrm.Page.data.entity) && Xrm.Page.data.entity.getEntityName() === CrmService.EntityNames.ContractDetail) {
+                    var stateCode = Xrm.Page.getAttribute("statecode"), contractDetailStateCode = !ClientUtility.DataUtil.isNullOrUndefined(stateCode) ? stateCode.getValue() : -1, totalAllotments = Xrm.Page.getAttribute("totalallotments"), totalAllotmentsValue = !ClientUtility.DataUtil.isNullOrUndefined(totalAllotments) ? totalAllotments.getValue() : 0;
+                    !_this.get_isRetrieveInProgressForContractLine() &&
+                        _this.retrieveContractState$p(Xrm.Page.data.entity.getId());
+                    if (contractDetailStateCode === _this.ContractDetailStateCode_Expired || contractDetailStateCode === _this.ContractDetailStateCode_Canceled || (_this.get_contractStateCodeFromContractLine() === _this.ContractStateCode_Expired || _this.get_contractStateCodeFromContractLine() === _this.ContractStateCode_Canceled || _this.get_contractStateCodeFromContractLine() === _this.ContractStateCode_Draft || _this.get_contractStateCodeFromContractLine() === _this.ContractStateCode_OnHold || !totalAllotmentsValue)) {
+                        _this.WatermarkingEndMarkerWrapper("enableAddCaseForContractLine");
+                        return false;
+                    }
+                    else {
+                        _this.WatermarkingEndMarkerWrapper("enableAddCaseForContractLine");
+                        return true;
+                    }
+                }
+                else {
+                    _this.WatermarkingEndMarkerWrapper("enableAddCaseForContractLine");
+                    return true;
+                }
+            };
+            this.retrieveContractDetailAllotments = function (entityId) {
+                var fetchXml = ClientUtility.StringUtil.format("?fetchXml=<fetch version='1.0' mapping='logical'><entity name='contractdetail'><attribute name='totalallotments' /><filter type='and'><condition attribute='contractid' operator='eq' value='{0}' /></filter></entity></fetch>", ClientUtility.Guid.tryCreate(entityId)), contractDetailEntities = null;
+                Xrm.WebApi.retrieveMultipleRecords(CrmService.EntityNames.ContractDetail, fetchXml).then(function (retrieveContractDetailResponse) {
+                    contractDetailEntities = retrieveContractDetailResponse.entityCollection;
+                    contractDetailEntities.get_count() > 0 &&
+                        _this.set_totalAllotmentsForContract(contractDetailEntities.get_entities()[0].getValue("totalallotments"));
+                    if (!_this.get_isRefreshRibbonForContract()) {
+                        Xrm.Page.ui.refreshRibbon();
+                        _this.set_isRefreshRibbonForContract(true);
+                        _this.set_isRetrieveInProgressForContract(true);
+                    }
+                    else {
+                        _this.set_isRefreshRibbonForContract(false);
+                    }
+                }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+            };
+            this.retrieveContractState$p = function (entityId) {
+                var fetchXml = ClientUtility.StringUtil.format("?fetchXml=<fetch version='1.0' mapping='logical'><entity name='contractdetail'><attribute name='contractstatecode' /><filter type='and'><condition attribute='contractdetailid' operator='eq' value='{0}' /></filter></entity></fetch>", ClientUtility.Guid.tryCreate(entityId)), contractDetailEntities = null;
+                Xrm.WebApi.retrieveMultipleRecords(CrmService.EntityNames.ContractDetail, fetchXml).then(function (retrieveContractDetailResponse) {
+                    contractDetailEntities = retrieveContractDetailResponse.entityCollection;
+                    contractDetailEntities.get_count() > 0 &&
+                        _this.set_contractStateCodeFromContractLine(contractDetailEntities.get_entities()[0].getValue("contractstatecode").get_value());
+                    if (!_this.get_isRefreshRibbonForContractLine()) {
+                        Xrm.Page.ui.refreshRibbon();
+                        _this.set_isRefreshRibbonForContractLine(true);
+                        _this.set_isRetrieveInProgressForContractLine(true);
+                    }
+                    else {
+                        _this.set_isRefreshRibbonForContractLine(false);
+                    }
+                }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+            };
+            this.get_isRefreshRibbonForContract = function () {
+                return _this._isRefreshRibbonForContract$p;
+            };
+            this.set_isRefreshRibbonForContract = function (value) {
+                _this._isRefreshRibbonForContract$p = value;
+                return value;
+            };
+            this.get_isRetrieveInProgressForContract = function () {
+                return _this._isRetrieveInProgressForContract$p;
+            };
+            this.set_isRetrieveInProgressForContract = function (value) {
+                _this._isRetrieveInProgressForContract$p = value;
+                return value;
+            };
+            this.get_totalAllotmentsForContract = function () {
+                return _this._totalAllotments$p;
+            };
+            this.set_totalAllotmentsForContract = function (value) {
+                _this._totalAllotments$p = value;
+                return value;
+            };
+            this.get_isRetrieveInProgressForContractLine = function () {
+                return _this._isRetrieveInProgressForContractLine$p;
+            };
+            this.set_isRetrieveInProgressForContractLine = function (value) {
+                _this._isRetrieveInProgressForContractLine$p = value;
+                return value;
+            };
+            this.set_contractStateCodeFromContractLine = function (value) {
+                _this._contractStateCodeFromContractLine$p = value;
+                return value;
+            };
+            this.get_contractStateCodeFromContractLine = function () {
+                return this._contractStateCodeFromContractLine$p;
+            };
+            this.get_isRefreshRibbonForContractLine = function () {
+                return _this._isRefreshRibbonForContractLine$p;
+            };
+            this.set_isRefreshRibbonForContractLine = function (value) {
+                _this._isRefreshRibbonForContractLine$p = value;
+                return value;
+            };
+            this.WatermarkingStartMarkerWrapper = function (functionName) {
+                var validity = _this.CheckValidity();
+                switch (validity) {
+                    case CrmService.WatermarkValidity.AppCommonUndefined: return;
+                    case CrmService.WatermarkValidity.XrmEntityDefined: {
+                        AppCommon.TelemetryReporter.Instance().PostStartMarker("ServiceWebResources", "ServiceCommandBarActions", functionName, Xrm.Page.data.entity.getId());
+                        break;
+                    }
+                    case CrmService.WatermarkValidity.XrmEntityUndefined: {
+                        AppCommon.TelemetryReporter.Instance().PostStartMarker("ServiceWebResources", "ServiceCommandBarActions", functionName, "");
+                        break;
+                    }
+                }
+            };
+            this.WatermarkingEndMarkerWrapper = function (functionName, isAsync) {
+                if (isAsync === void 0) { isAsync = false; }
+                var validity = _this.CheckValidity();
+                switch (validity) {
+                    case CrmService.WatermarkValidity.AppCommonUndefined: return;
+                    case CrmService.WatermarkValidity.XrmEntityDefined: {
+                        AppCommon.TelemetryReporter.Instance().PostEndMarker("ServiceWebResources", "ServiceCommandBarActions", functionName, Xrm.Page.data.entity.getId(), "", isAsync);
+                        break;
+                    }
+                    case CrmService.WatermarkValidity.XrmEntityUndefined: {
+                        AppCommon.TelemetryReporter.Instance().PostEndMarker("ServiceWebResources", "ServiceCommandBarActions", functionName, "", "", isAsync);
+                        break;
+                    }
+                }
+            };
+            this.CheckValidity = function () {
+                if ((typeof (AppCommon) !== 'undefined') &&
+                    (AppCommon != null && AppCommon != undefined) &&
+                    (AppCommon.TelemetryReporter != null && AppCommon.TelemetryReporter != undefined) &&
+                    (AppCommon.TelemetryReporter.Instance() != null && AppCommon.TelemetryReporter.Instance() != undefined)) {
+                    if (Xrm && Xrm.Page && Xrm.Page.data && Xrm.Page.data.entity)
+                        return CrmService.WatermarkValidity.XrmEntityDefined;
+                    return CrmService.WatermarkValidity.XrmEntityUndefined;
+                }
+                else
+                    return CrmService.WatermarkValidity.AppCommonUndefined;
+            };
+            //Acts as an 'update or create' based on if the env variable already exists for the user/org
+            this.setIncidentResolutionModeEnvironmentVariable = function (mode) {
+                if (mode && (!_this.currentIncidentResolutionMode || _this.currentIncidentResolutionMode !== mode)) {
+                    var upsertEnvironmentVariableRequest = new ODataContract.UpsertEnvironmentVariable("msdyn_IncidentResolutionMode", stringParamType, mode.toString());
+                    Xrm.WebApi.online.execute(upsertEnvironmentVariableRequest);
+                }
+            };
+            //Acts as an 'update or create' based on if the env variable already exists for the user/org
+            this.setIncidentUpdateAfterResolutionModeEnvironmentVariable = function (mode) {
+                if (mode !== null && (!_this.currentIncidentUpdateAfterResolutionMode || _this.currentIncidentUpdateAfterResolutionMode !== mode)) {
+                    var upsertEnvironmentVariableRequest = new ODataContract.UpsertEnvironmentVariable("AllowUpdateResolvedCanceledIncidents", stringParamType, mode.toString());
+                    Xrm.WebApi.online.execute(upsertEnvironmentVariableRequest);
+                }
+            };
+            this.logMonetizationConsumption = function () {
+                try {
+                    var request = new ODataContract.LogMonetizationConsumptionRequest();
+                    Xrm.WebApi.online.execute(request).then(function (response) {
+                        if (response.ok) {
+                            response.json().then(function (jsonResponse) {
+                                CrmService.Telemetry.logInfo(CrmService.Telemetry.contextName, {
+                                    message: "LogMonetizationConsumption response (Email to case): " + jsonResponse
+                                });
+                            });
+                        }
+                        else {
+                            CrmService.Telemetry.logInfo(CrmService.Telemetry.contextName, {
+                                message: "LogMonetizationConsumption response (Email to case): " + response.status
+                            });
+                        }
+                    }, function (err) {
+                        CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: err, message: "Error in LogMonetizationConsumption (Email to case)" });
+                    });
+                }
+                catch (error) {
+                    CrmService.Telemetry.logError(CrmService.Telemetry.contextName + "Error", { error: error, message: "Error in LogMonetizationConsumption (Email to case)" });
+                }
+            };
+            this.emailToCaseFormFill = new CrmService.EmailToCaseFormFill();
+        }
+        ServiceCommandBarActions.prototype.closeDialog = function (context) {
+            this.WatermarkingStartMarkerWrapper("closeDialog");
+            var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+            ClientUtility.DialogUtil.setLastButtonClicked(ClientUtility.MetadataDrivenDialogConstants.DialogCancelId);
+            formContext.ui.close();
+            this.WatermarkingEndMarkerWrapper("closeDialog");
+        };
+        ServiceCommandBarActions.prototype.closeResolveDialog = function (context) {
+            this.WatermarkingStartMarkerWrapper("closeResolveDialog");
+            var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+            var isUCI = ClientUtility.ClientUtil.isUCI();
+            ClientUtility.DialogUtil.setAttributeValue(CrmService.MetadataDrivenDialogConstants.GetLastButtonClicked(isUCI), ClientUtility.MetadataDrivenDialogConstants.DialogCancelId);
+            formContext.ui.close();
+            this.WatermarkingEndMarkerWrapper("closeResolveDialog");
+        };
+        ServiceCommandBarActions.prototype.closeDialogAsOk = function (context) {
+            this.WatermarkingStartMarkerWrapper("closeDialogAsOk");
+            var formContext = ClientUtility.DataUtil.isNullOrUndefined(context) ? Xrm.Page : context.getFormContext();
+            ClientUtility.DialogUtil.setLastButtonClicked(CrmService.MetadataDrivenDialogConstants.DialogAddId);
+            formContext.ui.close();
+            this.WatermarkingEndMarkerWrapper("closeDialogAsOk");
+        };
+        ServiceCommandBarActions.prototype.serviceConfigurationSettingsOnLoad = function (executionContext) {
+            var _this = this;
+            var hideURToggle = Xrm.Utility.getGlobalContext().getFeatureControlSetting('CSModernAdmin.Core', 'HideURToggle') &&
+                Xrm.Utility.getGlobalContext().getFeatureControlSetting('Omnichannel.Europa', 'IsOCProvisioningCSACEnabled');
+            if (hideURToggle) {
+                Xrm.Page.ui.tabs.get('{b820d011-ff4f-4e2e-b1f4-1648a93bea16}').sections.get('{bc504106-c51d-4570-985d-adfc4b945118}').setVisible(false);
+            }
+            this.isSLARecalculationFCBEnabled = this.isSlaRecalculationFCBEnabled();
+            if (this.isSlaRecalculationFCBEnabled()) {
+                Xrm.Page.getControl("SLARecalcualtion_PreviewMsg").setVisible(true);
+                Xrm.Page.getControl("radio_recalculate_sla").setVisible(true);
+            }
+            if (this.isCalendarExportImportForSlaFeatureEnabled()) {
+                Xrm.Page.getControl("SLACalendarExportImport_PreviewMsg").setVisible(true);
+                Xrm.Page.getControl("radio_exportimportcalendar_sla").setVisible(true);
+            }
+            var orgSettings = Xrm.Utility.getGlobalContext().organizationSettings;
+            var organization = {
+                id: orgSettings.organizationId,
+                entityType: CrmService.EntityNames.Organization
+            };
+            ServiceCommandBarActions.getIncidentResolutionModeEnvironmentVariable().then(function (response) {
+                var mode = CrmService.IncidentResolutionMode.MDD;
+                response.json().then(function (jsonResponse) {
+                    mode = parseInt(jsonResponse.msdyn_EnvironmentVariableValue);
+                    Xrm.Page.data.attributes.get("picklist_resolve_case_dialog").setValueInternal(mode);
+                    _this.currentIncidentResolutionMode = mode;
+                }, function () { });
+            }, ClientUtility.ActionFailedHandler.actionFailedCallback);
+            ServiceCommandBarActions.getIncidentUpdateAfterResolutionModeEnvironmentVariable().then(function (response) {
+                var mode = CrmService.IncidentUpdateAfterResolutionMode.ResolvedandCanceledCases;
+                response.json().then(function (jsonResponse) {
+                    mode = parseInt(jsonResponse.msdyn_EnvironmentVariableValue);
+                    Xrm.Page.data.attributes.get("picklist_case_update_after_resolution_dialog").setValueInternal(mode);
+                    _this.currentIncidentUpdateAfterResolutionMode = mode;
+                }, function () { });
+            }, ClientUtility.ActionFailedHandler.actionFailedCallback);
+            // Replaced Xrm.WebApi.retrieveRecord with XmlHttpRequest as it is not showing right values for organization entity in first get call.
+            var req = new XMLHttpRequest();
+            req.open("GET", Xrm.Page.context.getClientUrl() + "/api/data/v9.1/organizations(" + organization.id + ")", true);
+            req.setRequestHeader("Accept", "application/json");
+            req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            req.responseType = "json";
+            var thisPointer = this;
+            req.onreadystatechange = function () {
+                if (this.readyState == 4) {
+                    req.onreadystatechange = null;
+                    if (thisPointer.allowedSuccessStatusCodes.indexOf(this.status) !== -1) {
+                        Xrm.Page.data.attributes.get("radio_disable_sla").setValueInternal(req.response.suppresssla);
+                        if (thisPointer.isSlaRecalculationFCBEnabled) {
+                            Xrm.Page.data.attributes.get("radio_recalculate_sla").setValueInternal(req.response.recalculatesla);
+                        }
+                        if (thisPointer.isCalendarExportImportForSlaFeatureEnabled()) {
+                            if (req.response.enablecalendarimportexport != null && req.response.enablecalendarimportexport != undefined) {
+                                Xrm.Page.data.attributes.get("radio_exportimportcalendar_sla").setValueInternal(req.response.enablecalendarimportexport);
+                            }
+                            else {
+                                // if feature is enabled but field/response is not present then again hide the toggle
+                                if (Xrm.Page.getControl("SLACalendarExportImport_PreviewMsg").getVisible() == true) {
+                                    Xrm.Page.getControl("SLACalendarExportImport_PreviewMsg").setVisible(false);
+                                }
+                                if (Xrm.Page.getControl("radio_exportimportcalendar_sla").getVisible()) {
+                                    Xrm.Page.getControl("radio_exportimportcalendar_sla").setVisible(false);
+                                }
+                            }
+                        }
+                        Xrm.Page.data.attributes.get("radio_auto_apply_sla").setValueInternal(req.response.autoapplysla);
+                        Xrm.Page.data.attributes.get("radio_auto_apply_entit_create").setValueInternal(req.response.autoapplydefaultoncasecreate);
+                        Xrm.Page.data.attributes.get("radio_auto_apply_entit_updt").setValueInternal(req.response.autoapplydefaultoncaseupdate);
+                    }
+                    else {
+                        ClientUtility.ActionFailedHandler.actionFailedCallback;
+                    }
+                }
+            };
+            req.send();
+            try {
+                if (this.isSlaProactiveChecksFCBEnabled) {
+                    var formContext = ClientUtility.DataUtil.isNullOrUndefined(executionContext) ? Xrm.Page : executionContext.getFormContext();
+                    // Show web client SLA deprecation notificaiton in UCI if any legacy SLA existed
+                    this.showSLAWebClientDeprecationNotification(formContext);
+                }
+            }
+            catch (exception) {
+                CrmService.Telemetry.logError("SLAWebClientDeprecationNotification", { error: exception, message: "ServiceCommandBarActions::serviceConfigurationSettingsOnLoad:Error in showing SLA web client deprecation notification" });
+            }
+        };
+        ;
+        ServiceCommandBarActions.prototype.isSlaProactiveChecksFCBEnabled = function () {
+            var fcbName = "SLAEnableProactiveChecks";
+            return Xrm.Internal.isUci() ? Xrm.Internal.isFeatureEnabled(fcbName) : Xrm.Internal.isFeatureEnabled("FCB." + fcbName);
+        };
+        ServiceCommandBarActions.prototype.ServiceSettingsDialogApply = function () {
+            var _this = this;
+            var orgSettings = Xrm.Utility.getGlobalContext().organizationSettings;
+            var organization = {
+                id: orgSettings.organizationId,
+                entityType: CrmService.EntityNames.Organization
+            };
+            var selectedIncidentResolutionMode = Xrm.Page.data.attributes.get("picklist_resolve_case_dialog").getValue();
+            var selectedIncidentUpdateAfterResolutionMode = Xrm.Page.data.attributes.get("picklist_case_update_after_resolution_dialog").getValue();
+            var disableSla = Xrm.Page.getControl("radio_disable_sla").getAttribute().getValue();
+            var recalculatesla = Xrm.Page.getControl("radio_recalculate_sla").getAttribute().getValue();
+            var autoApplySla = Xrm.Page.getControl("radio_auto_apply_sla").getAttribute().getValue();
+            var autoApplyCreate = Xrm.Page.getControl("radio_auto_apply_entit_create").getAttribute().getValue();
+            var autoApplyDelete = Xrm.Page.getControl("radio_auto_apply_entit_updt").getAttribute().getValue();
+            var slaPauseStatus = this.getSlaPauseStatus(CrmService.EntityNames.Incident);
+            var entityRecord = (_a = {},
+                _a["suppresssla"] = disableSla,
+                _a["autoapplysla"] = autoApplySla,
+                _a["autoapplydefaultoncasecreate"] = autoApplyCreate,
+                _a["autoapplydefaultoncaseupdate"] = autoApplyDelete,
+                _a["slapausestates"] = slaPauseStatus,
+                _a);
+            if (this.isSLARecalculationFCBEnabled) {
+                entityRecord["recalculatesla"] = recalculatesla;
+            }
+            if (this.isCalendarExportImportForSlaFeatureEnabled()) {
+                var calendarExportImportForSLa = Xrm.Page.getControl("radio_exportimportcalendar_sla").getAttribute().getValue();
+                entityRecord["enablecalendarimportexport"] = calendarExportImportForSLa;
+            }
+            ClientUtility.DialogUtil.showProgressMessage();
+            return Xrm.WebApi.updateRecord(organization.entityType, organization.id, entityRecord).then(function (respose) {
+                _this.setIncidentResolutionModeEnvironmentVariable(selectedIncidentResolutionMode);
+                _this.setIncidentUpdateAfterResolutionModeEnvironmentVariable(selectedIncidentUpdateAfterResolutionMode);
+                ClientUtility.DialogUtil.hideProgressMessage();
+            }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+            var _a;
+        };
+        ;
+        ServiceCommandBarActions.prototype.isSlaRecalculationFCBEnabled = function () {
+            var fcbName = "SlaRecalculation";
+            return Xrm.Internal.isUci() ? Xrm.Internal.isFeatureEnabled(fcbName) : false;
+        };
+        ;
+        ServiceCommandBarActions.prototype.initializeIncidentUpdateAfterResolutionSettings = function (mode, initialIncidentUpdateAfterResolutionEnvVarDefinitionID, initialIncidentUpdateAfterResolutionEnvVarValueId) {
+            this.currentIncidentUpdateAfterResolutionMode = mode;
+            this.incidentUpdateAfterResolutionEnvVarDefinitionId = initialIncidentUpdateAfterResolutionEnvVarDefinitionID;
+            this.incidentUpdateAfterResolutionEnvVarValueId = initialIncidentUpdateAfterResolutionEnvVarValueId || undefined;
+        };
+        ;
+        ServiceCommandBarActions.prototype.getSlaPauseStatus = function (entityName) {
+            var currentStatus = Xrm.Page.getControl("sla_pausestates__control").getAttribute().getValue();
+            var entitiesstates = JSON.parse(currentStatus);
+            var xml = "<entitiesstates>";
+            for (var entity in entitiesstates) {
+                xml = xml + "<entity value=\"" + entity + "\">" + entitiesstates[entity].replace(/,/g, ";") + "</entity>";
+            }
+            xml = xml + "</entitiesstates>";
+            return xml;
+        };
+        ;
+        ServiceCommandBarActions.prototype.isCalendarExportImportForSlaFeatureEnabled = function () {
+            var fcbName = "ExportCalendarsForSLA";
+            return Xrm.Internal.isUci() ? Xrm.Internal.isFeatureEnabled(fcbName) : false;
+        };
+        ServiceCommandBarActions.prototype.openCaseSettingHelp = function () {
+            this.WatermarkingStartMarkerWrapper("openCaseSettingHelp");
+            // USSec and USNat do not support redirection so we set to a static help URL
+            var orgSettings = Xrm.Utility.getGlobalContext().organizationSettings;
+            var url = "";
+            if (orgSettings && orgSettings.organizationGeo === "USR") {
+                url = "https://docs.microsoft.scloud/en-us/dynamics365/";
+            }
+            else if (orgSettings && orgSettings.organizationGeo === "USE") {
+                url = "https://docs.eaglex.ic.gov/en-us/dynamics365/";
+            }
+            else {
+                var baseUrl = "https://go.microsoft.com/fwlink/?linkid=2175147";
+                var area = encodeURIComponent("/_grid/cmds/dlg_casehierarchy.aspx");
+                var languageCode = Xrm.Page.context.getOrgLcid();
+                var version = Xrm.Page.context.getVersion();
+                url = String.format("{0}&area={1}&user_lcid={2}&ver={3}", baseUrl, area, languageCode, version);
+            }
+            var dialogOptions = {
+                openInNewWindow: true
+            };
+            Xrm.Navigation.openUrl(url, dialogOptions);
+            this.WatermarkingEndMarkerWrapper("openCaseSettingHelp");
+        };
+        ServiceCommandBarActions.prototype.caseSettingsDialogOnLoad = function (context) {
+            if (!ClientUtility.ClientUtil.isUCI()) {
+                this.WatermarkingStartMarkerWrapper("caseSettingsDialogOnLoad");
+                var dialogArguments = Mscrm.InternalUtilities.DialogUtility.getDialogArguments();
+                dialogArguments[CrmService.MetadataDrivenDialogConstants.EntityMapId] = XUI.Xml.GetText(XUI.Xml.SelectSingleNode(dialogArguments.values_xml, "//@EntityMapId", null));
+                dialogArguments[CrmService.MetadataDrivenDialogConstants.AttributeMapIdDictionary] = this.getAttributeValuesDictionaryFromDoc(dialogArguments, "select/option[@AttributeMapId!='']", "value", "AttributeMapId");
+                dialogArguments[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes] = this.getAttributeValuesFromDoc(dialogArguments, "select/option[@IsSystemRequired='true']", "value");
+                dialogArguments[CrmService.MetadataDrivenDialogConstants.BusinessRequiredAttributes] = this.getAttributeValuesFromDoc(dialogArguments, "select/option[@IsBusinessRequired='true']", "value");
+                dialogArguments[CrmService.MetadataDrivenDialogConstants.ExistingAttributes] = this.getAttributeValuesFromDoc(dialogArguments, "select/option[@IsSelected='true']", "value");
+                Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.SelectedAttributes).getAttribute().setValue(dialogArguments[CrmService.MetadataDrivenDialogConstants.ExistingAttributes].join(","));
+                this.getCascadeClosurePreference(dialogArguments);
+                this.populateMaxChildCaseNumber(dialogArguments);
+                this.WatermarkingEndMarkerWrapper("caseSettingsDialogOnLoad");
+            }
+            else {
+                this.populateCaseSettingsDialogData();
+            }
+        };
+        ServiceCommandBarActions.prototype.getAttributeValuesFromDoc = function (dialogArguments, xPathExpression, attributeName) {
+            return XUI.Xml.SelectNodes(dialogArguments.values_xml, xPathExpression, null)
+                .map(function (node) { return node.getAttribute(attributeName); });
+        };
+        ServiceCommandBarActions.prototype.getAttributeValuesDictionaryFromDoc = function (dialogArguments, xPathExpression, key, value) {
+            var dictionary = {};
+            XUI.Xml.SelectNodes(dialogArguments.values_xml, xPathExpression, null)
+                .map(function (node) { return dictionary[node.getAttribute(key)] = node.getAttribute(value); });
+            return dictionary;
+        };
+        ServiceCommandBarActions.prototype.populateCaseSettingsDialogData = function () {
+            var _this = this;
+            Xrm.WebApi.retrieveMultipleRecords("entitymap", this.getEntityMapIdForIncidentEntityRequest()).then(function (data) {
+                if (data.entities.length > 0) {
+                    var dialogParams = Xrm.Page.context.getQueryStringParameters();
+                    dialogParams[CrmService.MetadataDrivenDialogConstants.EntityMapId] = data.entities["0"].entitymapid;
+                    _this.getAllAttributes(dialogParams, Xrm.Page.context.getClientUrl() + _this.getAllAttributeUrl(data.entities["0"].entitymapid));
+                }
+            }, ClientUtility.ActionFailedHandler.actionFailedCallback);
+        };
+        ServiceCommandBarActions.prototype.getEntityMapIdForIncidentEntityRequest = function () {
+            return "?$filter=sourceentityname eq 'incident' and targetentityname eq 'incident'";
+        };
+        ServiceCommandBarActions.prototype.getSelectedAttributeUrl = function (entityMapId) {
+            return "/api/data/v9.0/entitymaps(" + entityMapId + ")/entity_map_attribute_maps?$select=sourceattributename,targetattributename,attributemapid,issystem";
+        };
+        ServiceCommandBarActions.prototype.getAllAttributeUrl = function (entityMapId) {
+            return "/api/data/v9.0/EntityDefinitions(LogicalName='incident')/Attributes?$filter=IsValidForUpdate ne false and IsLogical ne true  and LogicalName ne 'parentcaseid' and LogicalName ne 'masterid'";
+        };
+        ServiceCommandBarActions.prototype.getAllAttributes = function (dialogParams, getAllUrl) {
+            var _this = this;
+            var req = new XMLHttpRequest();
+            req.open("GET", getAllUrl, true);
+            req.setRequestHeader("OData-MaxVersion", "4.0");
+            req.setRequestHeader("OData-Version", "4.0");
+            req.setRequestHeader("Accept", "application/json");
+            req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            req.onreadystatechange = function () {
+                if (req.readyState == 4 /* complete */) {
+                    req.onreadystatechange = null;
+                    if (req.status == 200) {
+                        var data = JSON.parse(req.response);
+                        if (data != null && data.value && data.value.length > 0) {
+                            _this.initializeAllAttributesData(dialogParams, data);
+                        }
+                    }
+                    else {
+                        return;
+                    }
+                }
+            };
+            req.send();
+        };
+        ServiceCommandBarActions.prototype.getSelectedAttributes = function (dialogParams, selectedAttributesUrl) {
+            var _this = this;
+            var req = new XMLHttpRequest();
+            req.open("GET", selectedAttributesUrl, true);
+            req.setRequestHeader("OData-MaxVersion", "4.0");
+            req.setRequestHeader("OData-Version", "4.0");
+            req.setRequestHeader("Accept", "application/json");
+            req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            req.onreadystatechange = function () {
+                if (req.readyState == 4 /* complete */) {
+                    req.onreadystatechange = null;
+                    if (req.status == 200) {
+                        var data = JSON.parse(req.response);
+                        if (data != null && data.value && data.value.length > 0) {
+                            _this.initializeSelectedAttributesData(dialogParams, data);
+                        }
+                    }
+                    else {
+                        return;
+                    }
+                }
+            };
+            req.send();
+        };
+        ServiceCommandBarActions.prototype.initializeAllAttributesData = function (dialogParams, myDataJson) {
+            var records = myDataJson.value;
+            var _allAvailableAttributes = [];
+            for (var i = 0; i < records.length; i++) {
+                var record = records[i];
+                if (this.validateAllAttributesRecord(record)) {
+                    var that = this;
+                    var attribute = {
+                        LogicalName: record.LogicalName,
+                        DisplayName: (record.DisplayName.LocalizedLabels.filter(function (a) { return a.LanguageCode == Xrm.Utility.getGlobalContext().organizationSettings.languageId; }))[0].Label,
+                        isApplicationRequired: (record.RequiredLevel.Value == "ApplicationRequired") ? true : false
+                    };
+                    _allAvailableAttributes.push(attribute);
+                }
+            }
+            dialogParams[CrmService.MetadataDrivenDialogConstants.paramAllAvailableCaseAttributes] = _allAvailableAttributes.sort(function (a, b) { return a.DisplayName.localeCompare(b.DisplayName); });
+            var selectedAttributesUrl = Xrm.Page.context.getClientUrl() + this.getSelectedAttributeUrl(dialogParams[CrmService.MetadataDrivenDialogConstants.EntityMapId]);
+            this.getSelectedAttributes(dialogParams, selectedAttributesUrl);
+        };
+        ServiceCommandBarActions.prototype.initializeSelectedAttributesData = function (dialogParams, myDataJson) {
+            var records = myDataJson.value;
+            var _attributeMapIds = [];
+            for (var i = 0; i < records.length; i++) {
+                var record = records[i];
+                if (record.sourceattributename == record.targetattributename) {
+                    var attribute = {
+                        "Id": record.sourceattributename,
+                        "AttributeMapId": record.attributemapid,
+                        "issystem": record.issystem
+                    };
+                    _attributeMapIds.push(attribute);
+                }
+            }
+            var sysRequiredAttr = _attributeMapIds
+                .filter(function (d) { return d.issystem == true; })
+                .map(function (a) { return a.Id; });
+            // set the system required attributes
+            dialogParams[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes] = sysRequiredAttr;
+            var existingAttr = _attributeMapIds
+                .filter(function (d) { return d.AttributeMapId; })
+                .map(function (a) { return a.Id; });
+            // set the existing selected attributes
+            dialogParams[CrmService.MetadataDrivenDialogConstants.ExistingAttributes] = existingAttr;
+            var mapIdDictionary = {};
+            var mappedAttributes = _attributeMapIds
+                .filter(function (d) { return d.AttributeMapId; });
+            for (var index = 0; index < mappedAttributes.length; index++) {
+                mapIdDictionary[mappedAttributes[index].Id] = mappedAttributes[index].AttributeMapId;
+            }
+            //set the attributes map ID dictionary
+            dialogParams[CrmService.MetadataDrivenDialogConstants.AttributeMapIdDictionary] = mapIdDictionary;
+            var allAttributes = dialogParams[CrmService.MetadataDrivenDialogConstants.paramAllAvailableCaseAttributes];
+            var self = this;
+            var existingAttributes = allAttributes
+                .filter(function (d) { return existingAttr.indexOf(d.LogicalName) >= 0; })
+                .map(function (a) { return a.LogicalName; });
+            // set the existing selected attributes based on logical name
+            dialogParams[CrmService.MetadataDrivenDialogConstants.ExistingAttributes] = existingAttributes;
+            this.initializeBusinessRequiredAttributes(dialogParams);
+            this.getCascadeClosurePreference(this.getCaseSettingsDialogParam());
+            this.populateMaxChildCaseNumber(this.getCaseSettingsDialogParam());
+        };
+        ServiceCommandBarActions.prototype.getCaseSettingsDialogParam = function () {
+            return Xrm.Page.context.getQueryStringParameters();
+        };
+        /**
+         * set the business required attributes if systemRequiredAttributes list is already available
+         */
+        ServiceCommandBarActions.prototype.initializeBusinessRequiredAttributes = function (dialogParams) {
+            var systemAttributes = dialogParams[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes];
+            var allAttributes = dialogParams[CrmService.MetadataDrivenDialogConstants.paramAllAvailableCaseAttributes];
+            if (dialogParams[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes] != "") {
+                var that = this;
+                var businessAttr = allAttributes
+                    .filter(function (d) { return (d.isApplicationRequired == true && systemAttributes.indexOf(d.LogicalName) < 0); })
+                    .map(function (a) { return a.LogicalName; });
+                dialogParams[CrmService.MetadataDrivenDialogConstants.BusinessRequiredAttributes] = businessAttr;
+            }
+        };
+        ServiceCommandBarActions.prototype.getCascadeClosurePreference = function (dialogArguments) {
+            var _this = this;
+            this.WatermarkingStartMarkerWrapper("getCascadeClosurePreference");
+            var targetEntityId = Xrm.Page.context.getUserId();
+            var columnNames = [CrmService.MetadataDrivenDialogConstants.OrganizationId];
+            Xrm.WebApi.retrieveRecord(CrmService.EntityNames.SystemUser, targetEntityId, ClientUtility.ODataUtil.getSelectOption(columnNames)).then(function (systmeUser) {
+                _this.WatermarkingEndMarkerWrapper("getCascadeClosurePreference", true);
+                _this.WatermarkingStartMarkerWrapper("getCascadeClosurePreference::initiateValidation");
+                dialogArguments[CrmService.MetadataDrivenDialogConstants.OrganizationId] = systmeUser[CrmService.MetadataDrivenDialogConstants.OrganizationId];
+                columnNames = [CrmService.MetadataDrivenDialogConstants.CascadeStatusUpdate, CrmService.MetadataDrivenDialogConstants.RestrictStatusUpdate];
+                Xrm.WebApi.retrieveRecord(CrmService.EntityNames.Organization, dialogArguments[CrmService.MetadataDrivenDialogConstants.OrganizationId], ClientUtility.ODataUtil.getSelectOption(columnNames)).then(function (organization) {
+                    _this.WatermarkingEndMarkerWrapper("getCascadeClosurePreference::initiateValidation", true);
+                    _this.WatermarkingStartMarkerWrapper("getCascadeClosurePreference::initiateExtensiveValidation");
+                    var closurePreference = Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.SpecifyClosurePreference);
+                    // Workaround for no way to clear an non-required optionset
+                    closurePreference.addOption({ text: "", value: -1 }, 0);
+                    if (organization[CrmService.MetadataDrivenDialogConstants.CascadeStatusUpdate]) {
+                        closurePreference.getAttribute().setValue(0);
+                    }
+                    else if (organization[CrmService.MetadataDrivenDialogConstants.RestrictStatusUpdate]) {
+                        closurePreference.getAttribute().setValue(1);
+                    }
+                    else {
+                        closurePreference.getAttribute().setValue(-1);
+                    }
+                    ClientUtility.DialogUtil.hideProgressMessage();
+                    _this.WatermarkingEndMarkerWrapper("getCascadeClosurePreference::initiateExtensiveValidation");
+                }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+                _this.WatermarkingEndMarkerWrapper("getCascadeClosurePreference::initiateValidation");
+            }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+            this.WatermarkingEndMarkerWrapper("getCascadeClosurePreference");
+        };
+        ServiceCommandBarActions.prototype.populateMaxChildCaseNumber = function (dialogArguments) {
+            var _this = this;
+            this.WatermarkingStartMarkerWrapper("populateMaxChildCaseNumber");
+            ServiceCommandBarActions.getMaxChildIncidentNumber(dialogArguments).then(function (maxChildCaseNumber) {
+                _this.WatermarkingEndMarkerWrapper("populateMaxChildCaseNumber", true);
+                var maxChildCaseNumberControl = Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.MaxChildCaseNumberControlId);
+                maxChildCaseNumberControl.getAttribute().setValue(maxChildCaseNumber.toString());
+            }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+            this.WatermarkingEndMarkerWrapper("getCascadeClosurePreference");
+        };
+        ServiceCommandBarActions.prototype.caseSettingsDialogApply = function () {
+            var _this = this;
+            this.WatermarkingStartMarkerWrapper("caseSettingsDialogApply");
+            var dialogArguments = {};
+            if (!ClientUtility.ClientUtil.isUCI()) {
+                dialogArguments = Mscrm.InternalUtilities.DialogUtility.getDialogArguments();
+            }
+            else {
+                dialogArguments = this.getCaseSettingsDialogParam();
+            }
+            var selectedAttributes = Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.SelectedAttributes).getAttribute().getValue();
+            dialogArguments[CrmService.MetadataDrivenDialogConstants.SelectedAttributes] = ClientUtility.DataUtil.isNullOrUndefined(selectedAttributes) ? [] : selectedAttributes.split(",");
+            dialogArguments[CrmService.MetadataDrivenDialogConstants.SpecifyClosurePreference] = Xrm.Page.getControl(CrmService.MetadataDrivenDialogConstants.SpecifyClosurePreference).getAttribute().getValue();
+            if (!this.validateParameters(dialogArguments)) {
+                var alertDialogStrings = new ClientUtility.AlertDialogStrings();
+                alertDialogStrings.text = CrmService.ResourceStringProvider.getResourceString(CrmService.MetadataDrivenDialogConstants.CaseSettingsMandatoryFieldsNotSelected);
+                Xrm.Utility.alertDialog(alertDialogStrings.text, null);
+                this.WatermarkingEndMarkerWrapper("caseSettingsDialogApply");
+                return;
+            }
+            ClientUtility.DialogUtil.setLastButtonClicked(CrmService.MetadataDrivenDialogConstants.DialogOkId);
+            ClientUtility.DialogUtil.showProgressMessage();
+            this.deleteAttributeMappings(dialogArguments)
+                .then(function (response) { return _this.createAttributeMappings(dialogArguments)
+                .then(function (response) { return _this.updateCascadeClosurePreference(dialogArguments)
+                .then(function (response) { return _this.updateMaxChildCaseNumber(dialogArguments).then(function (response) {
+                _this.WatermarkingEndMarkerWrapper("caseSettingsDialogApply", true);
+                _this.WatermarkingStartMarkerWrapper("caseSettingsDialogApply::initiateValidation");
+                ClientUtility.DialogUtil.hideProgressMessage();
+                if (!ClientUtility.ClientUtil.isUCI()) {
+                    Xrm.Page.ui.close();
+                }
+                _this.WatermarkingEndMarkerWrapper("caseSettingsDialogApply::initiateValidation");
+            }, ClientUtility.DialogUtil.actionFailedCallbackForMoca); }, ClientUtility.DialogUtil.actionFailedCallbackForMoca); }, ClientUtility.DialogUtil.actionFailedCallbackForMoca); }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+            this.WatermarkingEndMarkerWrapper("caseSettingsDialogApply");
+        };
+        ServiceCommandBarActions.prototype.validateParameters = function (dialogArguments) {
+            // check for the list of all already selected attributes
+            var selected = dialogArguments[CrmService.MetadataDrivenDialogConstants.SelectedAttributes];
+            if (selected.length > 0 && (!this.isSuperset(selected, dialogArguments[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes]) ||
+                // Check if the all the Business required attributes are present in the selected attributes list
+                !this.isSuperset(selected, dialogArguments[CrmService.MetadataDrivenDialogConstants.BusinessRequiredAttributes]))) {
+                return false;
+            }
+            // Filter out all existing mappings and system required ones
+            dialogArguments[CrmService.MetadataDrivenDialogConstants.CreateAttributeMaps] = selected
+                .filter(function (x) {
+                return dialogArguments[CrmService.MetadataDrivenDialogConstants.SystemRequiredAttributes].indexOf(x) < 0 &&
+                    dialogArguments[CrmService.MetadataDrivenDialogConstants.ExistingAttributes].indexOf(x) < 0;
+            });
+            return true;
+        };
+        /**
+        * performs the validation of the available attributes to ignore/display the record in available items list
+        */
+        ServiceCommandBarActions.prototype.validateAllAttributesRecord = function (record) {
+            // if record is not having valid description then donot show the record in available items list
+            if (record.Description.LocalizedLabels.length > 0) {
+                // if record is not having valid display name then donot show the record in available items list
+                if (record.DisplayName.LocalizedLabels.length > 0) {
+                    // if isvalidforcreate is not equal to true then donot show the record in available items list
+                    if (record.IsValidForCreate) {
+                        if (this.validatateImeMode(record)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        };
+        /**
+        * validates imemode and returns the response to the caller
+        */
+        ServiceCommandBarActions.prototype.validatateImeMode = function (record) {
+            // Not able to get the Imemode value for actualserviceunits, billedserviceunits, timezoneruleversionnumber, utcconversiontimezonecode attributes from api call, hence hardcoded
+            if (record.LogicalName == "actualserviceunits" || record.LogicalName == "billedserviceunits" || record.LogicalName == "timezoneruleversionnumber" || record.LogicalName == "utcconversiontimezonecode") {
+                return false;
+            }
+            else if (record.ImeMode == "Disabled") {
+                return false;
+            }
+            else {
+                return true;
+            }
+        };
+        ServiceCommandBarActions.prototype.isSuperset = function (array1, array2) {
+            return array2.every(function (x) { return array1.indexOf(x) >= 0; });
+        };
+        ;
+        ServiceCommandBarActions.prototype.isPromiseSupported = function () {
+            return (typeof Promise !== "undefined");
+        };
+        ServiceCommandBarActions.prototype.createAttributeMapRecord = function (sourceattributename, targetattributename, entitymapid) {
+            var entitySetNames = {
+                name: function (entityName) {
+                    if (entityName === CrmService.EntityNames.EntityMap)
+                        return "entitymaps";
+                    return "";
+                }
+            };
+            var entityRecord = (_a = {},
+                _a[CrmService.MetadataDrivenDialogConstants.SourceAttributeName] = sourceattributename,
+                _a[CrmService.MetadataDrivenDialogConstants.TargetAttributeName] = targetattributename,
+                _a[ClientUtility.ODataUtil.getBindAttributeName(CrmService.MetadataDrivenDialogConstants.EntityMapId)] = ClientUtility.ODataUtil.getBindAttributeValue(CrmService.EntityNames.EntityMap, entitymapid, [entitySetNames]),
+                _a);
+            return entityRecord;
+            var _a;
+        };
+        ServiceCommandBarActions.prototype.showSLAWebClientDeprecationNotification = function (formContext) {
+            try {
+                var resourceString_1 = "SLA_WebClientDeprecationNotification";
+                // fetchXML for retrieve any active legacy SLAs
+                var FETCHXML_ANY_ACTIVE_LEGACY_SLA = "<fetch version=\"1.0\" output-format=\"xml-platform\" top=\"1\" mapping=\"logical\" distinct=\"false\">\n                        <entity name=\"sla\">\n                            <filter type=\"and\">\n                                <condition attribute=\"statecode\" operator=\"eq\" value=\"1\"/>\n                            </filter>\n                            <filter type=\"or\">\n                                <condition attribute=\"slaversion\" operator=\"null\"/>\n                                <condition attribute=\"slaversion\" operator=\"eq\" value=\"100000000\"/>\n                            </filter>\n                        </entity>\n                    </fetch>";
+                Xrm.WebApi.retrieveMultipleRecords("sla", "?fetchXml=" + FETCHXML_ANY_ACTIVE_LEGACY_SLA).then(function success(result) {
+                    if (result.entities.length > 0) {
+                        var notificationMessage = CrmService.ResourceStringProvider.getResourceString(resourceString_1);
+                        notificationMessage = notificationMessage.replace("{0}", "https://go.microsoft.com/fwlink/p/?linkid=2198689");
+                        formContext.ui.setFormNotification(notificationMessage, "WARNING", resourceString_1);
+                    }
+                }, function error(error) {
+                    CrmService.Telemetry.logError("SLAWebClientDeprecationNotification", { error: error, message: "ServiceCommandBarActions::showSLAWebClientDeprecationNotification:Error in showing SLA web client deprecation form notification" });
+                });
+            }
+            catch (exception) {
+                CrmService.Telemetry.logError("SLAWebClientDeprecationNotification", { error: exception, message: "ServiceCommandBarActions::showSLAWebClientDeprecationNotification:Error in showing SLA web client deprecation form notification" });
+            }
+        };
+        return ServiceCommandBarActions;
+    }());
+    ServiceCommandBarActions.performPageDataAndRibbonRefresh = function () {
+        Xrm.Page.data.refresh(true).then(function () {
+            Xrm.Page.ui.refreshRibbon();
+        }, ClientUtility.DialogUtil.actionFailedCallbackForMoca);
+    };
+    ServiceCommandBarActions.isMobileCompanionApp = function () {
+        return Xrm.Page.context.client.getClient() === ClientUtility.ClientUtil.mobile;
+    };
+    ServiceCommandBarActions.tryGetDialogStringsForEnabledMetadataDialogs = function (dialogName, confirmDialogStrings, entityName, recordsToDelete, actionUri) {
+        if (recordsToDelete === void 0) { recordsToDelete = 0; }
+        if (actionUri === void 0) { actionUri = null; }
+        var displayName = ClientUtility.DataUtil.EmptyString;
+        if (!ClientUtility.DataUtil.isNullOrEmptyString(entityName)) {
+            Xrm.Utility.getEntityMetadata(entityName).then(function (entityMetadata) {
+                displayName = entityMetadata.DisplayName;
+                if (recordsToDelete > 1)
+                    displayName = entityMetadata.LogicalCollectionName;
+            });
+        }
+        switch (dialogName) {
+            case CrmService.DialogName.DeleteDialog:
+                switch (entityName) {
+                    case CrmService.EntityNames.Incident:
+                        confirmDialogStrings.text = String.format(CrmService.ResourceStringProvider.getResourceString("Dialog_Delete_Description"), displayName);
+                        confirmDialogStrings.confirmButtonLabel = String.format(CrmService.ResourceStringProvider.getResourceString("Button_Label_Delete"));
+                        confirmDialogStrings.cancelButtonLabel = String.format(CrmService.ResourceStringProvider.getResourceString("Button_Label_Cancel"));
+                        confirmDialogStrings.title = String.format(CrmService.ResourceStringProvider.getResourceString("Web._grid.cmds.dlg_delete.aspx_26"));
+                        confirmDialogStrings.subtitle = ClientUtility.DataUtil.EmptyString;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case CrmService.DialogName.SaveAndRouteCase:
+                confirmDialogStrings.text = CrmService.ResourceStringProvider.getResourceString("Dlg_RouteCase_AddRequiredConfirmForSingleCase_Body");
+                confirmDialogStrings.confirmButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Route");
+                confirmDialogStrings.cancelButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Cancel");
+                confirmDialogStrings.title = CrmService.ResourceStringProvider.getResourceString("Dlg_RouteCase_AddRequiredConfirm_Title");
+                break;
+            case CrmService.DialogName.RouteCase:
+                confirmDialogStrings.text = CrmService.ResourceStringProvider.getResourceString("Dlg_RouteCase_AddRequiredConfirmForSingleCase_Body");
+                confirmDialogStrings.confirmButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Route");
+                confirmDialogStrings.cancelButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Cancel");
+                confirmDialogStrings.title = CrmService.ResourceStringProvider.getResourceString("Dlg_RouteCase_AddRequiredConfirm_Title");
+                break;
+            case CrmService.DialogName.ReactivateCase:
+                confirmDialogStrings.title = String.format(CrmService.ResourceStringProvider.getResourceString("Case_Reactivate_Dlg_Title"), displayName);
+                confirmDialogStrings.text = CrmService.ResourceStringProvider.getResourceString("Web.CS.cases.dlg_reactivate.aspx_50");
+                confirmDialogStrings.confirmButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Reactivate");
+                confirmDialogStrings.cancelButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Cancel");
+                break;
+            case CrmService.DialogName.ResolveCase:
+                confirmDialogStrings.title = CrmService.ResourceStringProvider.getResourceString("Web._cs.Cases.dlg_ConfirmResolve.aspx_1");
+                confirmDialogStrings.text = CrmService.ResourceStringProvider.getResourceString("Web._cs.Cases.dlg_ConfirmResolve.aspx_3");
+                confirmDialogStrings.confirmButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Confirm");
+                confirmDialogStrings.cancelButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Cancel");
+                break;
+            case CrmService.DialogName.CancelCaseDialog:
+                confirmDialogStrings.text = CrmService.ResourceStringProvider.getResourceString("Web._cs.Cases.dlg_ConfirmResolve.aspx_4");
+                confirmDialogStrings.confirmButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Confirm");
+                confirmDialogStrings.cancelButtonLabel = CrmService.ResourceStringProvider.getResourceString("Button_Label_Cancel");
+                confirmDialogStrings.title = CrmService.ResourceStringProvider.getResourceString("Web._cs.Cases.dlg_ConfirmCancel.aspx_2");
+                break;
+            default:
+                return false;
+        }
+        return true;
+    };
+    ServiceCommandBarActions.getIncidentResolutionModeEnvironmentVariable = function () {
+        var request = new ODataContract.msdyn_RetrieveEnvironmentVariableValueForCS("msdyn_IncidentResolutionMode");
+        return Xrm.WebApi.online.execute(request);
+    };
+    ServiceCommandBarActions.getIncidentUpdateAfterResolutionModeEnvironmentVariable = function () {
+        var request = new ODataContract.msdyn_RetrieveEnvironmentVariableValueForCS("AllowUpdateResolvedCanceledIncidents");
+        return Xrm.WebApi.online.execute(request);
+    };
+    ServiceCommandBarActions.getIncidentResolutionMode = function () {
+        var request = new ODataContract.msdyn_RetrieveEnvironmentVariableValueForCS("msdyn_IncidentResolutionMode");
+        var mode = CrmService.IncidentResolutionMode.MDD;
+        return Xrm.WebApi.online.execute(request).then(function (response) {
+            return response.json().then(function (jsonResponse) {
+                mode = parseInt(jsonResponse.msdyn_EnvironmentVariableValue);
+                if (!isNaN(mode)) {
+                    return mode;
+                }
+                throw new Error("Unable to parse Int result when retrieving environment variable: msdyn_IncidentResolutionMode");
+            }, function () {
+                throw new Error("Unable to parse JSON when retrieving environment variable: msdyn_IncidentResolutionMode");
+            });
+        }, function () {
+            throw new Error("Error retrieving environment variables: msdyn_IncidentResolutionMode");
+        });
+    };
+    ServiceCommandBarActions.getMaxChildIncidentNumber = function (dialogArguments) {
+        if (dialogArguments === void 0) { dialogArguments = null; }
+        var fetchXml = "<fetch top=\"1\" >\n                <entity name=\"environmentvariabledefinition\" >\n                <attribute name=\"defaultvalue\" />\n                <attribute name=\"environmentvariabledefinitionid\" />\n                <filter type=\"and\" >\n                    <condition attribute=\"schemaname\" operator=\"eq\" value=\"msdyn_MaxChildIncidentNumber\" />\n                </filter>\n                <link-entity name=\"environmentvariablevalue\" from=\"environmentvariabledefinitionid\" to=\"environmentvariabledefinitionid\" link-type=\"outer\" >\n                    <attribute name=\"value\" alias=\"variableValue\" />\n                    <attribute name=\"environmentvariablevalueid\" alias=\"variableValueId\" />\n                </link-entity>\n                </entity>\n            </fetch>";
+        return Xrm.WebApi.retrieveMultipleRecords("environmentvariabledefinition", "?fetchXml=" + encodeURIComponent(fetchXml)).then(function (result) {
+            var mode = null;
+            if (result.entities && result.entities.length > 0) {
+                if (result.entities[0].variableValue) {
+                    // if variable value populated, use that
+                    var value = parseInt(result.entities[0].variableValue);
+                    if (!isNaN(value)) {
+                        mode = value;
+                    }
+                    // if dialog args passed, add id there
+                    if (dialogArguments) {
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.EnvVarVariableId] = result.entities[0].variableValueId;
+                    }
+                }
+                else {
+                    // if variable value not populated, use the higher of the default or old config based value
+                    var defaultValue = parseInt(result.entities[0].defaultvalue);
+                    var oldConfigValue = Xrm.Utility.getGlobalContext().getAdvancedConfigSetting(MaxChildIncidentNumber);
+                    mode = !isNaN(defaultValue) && defaultValue > oldConfigValue ? defaultValue : oldConfigValue;
+                    // if dialog args passed, add id there
+                    if (dialogArguments) {
+                        dialogArguments[CrmService.MetadataDrivenDialogConstants.EnvVarDefinitionId] = result.entities[0].environmentvariabledefinitionid;
+                    }
+                }
+            }
+            // if no value was found, return hard coded default
+            return mode || defaultMaxChildIncidentNumber;
+        });
+    };
+    CrmService.ServiceCommandBarActions = ServiceCommandBarActions;
+})(CrmService || (CrmService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="../../../../TypeDefinitions/CRM/ClientUtility.d.ts" />
+/// <reference path="./UCI/ServiceCommandBarActions.ts" />
+var CrmService;
+(function (CrmService) {
+    'use strict';
+    var CommandBarActions = (function () {
+        function CommandBarActions() {
+        }
+        return CommandBarActions;
+    }());
+    CommandBarActions.Instance = new CrmService.ServiceCommandBarActions();
+    CrmService.CommandBarActions = CommandBarActions;
+})(CrmService || (CrmService = {}));
+//# sourceMappingURL=ServiceCommandBarActions.js.map

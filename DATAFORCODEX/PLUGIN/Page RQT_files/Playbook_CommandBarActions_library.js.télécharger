@@ -1,0 +1,301 @@
+var PlaybookService;
+(function (PlaybookService) {
+    var PlaybookServiceConstants = (function () {
+        function PlaybookServiceConstants() {
+        }
+        return PlaybookServiceConstants;
+    }());
+    PlaybookServiceConstants.ACTIVITY_TYPE = "activity_type";
+    PlaybookServiceConstants.ACTIVITY_TYPE_APPOINTMENT = "appointment";
+    PlaybookServiceConstants.ACTIVITY_TYPE_PHONECALL = "phonecall";
+    PlaybookServiceConstants.ACTIVITY_TYPE_TASK = "task";
+    PlaybookServiceConstants.ALLDAYEVENT = "isalldayevent";
+    PlaybookServiceConstants.ALLDAYEVENT_APPOINTMENT_CONTROL_ID = "alldayevent_appointment_id";
+    PlaybookServiceConstants.CONFIRMATION_DIALOG = "Confirmation Dialog";
+    PlaybookServiceConstants.CREATE = "1";
+    PlaybookServiceConstants.DESCRIPTION = "description";
+    PlaybookServiceConstants.DESCRIPTION_APPOINTMENT_CONTROL_ID = "description_appointment_id";
+    PlaybookServiceConstants.DESCRIPTION_CONTROL_ID = "description_task_id";
+    PlaybookServiceConstants.DESCRIPTION_PHONECALL_CONTROL_ID = "description_phonecall_id";
+    PlaybookServiceConstants.DUE = "due";
+    PlaybookServiceConstants.DUEDATE = "DueDate";
+    PlaybookServiceConstants.DUETIME = "DueTime";
+    PlaybookServiceConstants.STARTDATE = "StartDate";
+    PlaybookServiceConstants.STARTTIME = "StartTime";
+    PlaybookServiceConstants.ENDDATE = "EndDate";
+    PlaybookServiceConstants.ENDTIME = "EndTime";
+    PlaybookServiceConstants.DUETIME_TASK_CONTROL_ID = "duetime_task_id";
+    PlaybookServiceConstants.DUE_CONTROL_ID = "due_task_id";
+    PlaybookServiceConstants.DURATION = "actualdurationminutes";
+    PlaybookServiceConstants.DURATION_APPOINTMENT_CONTROL_ID = "duration_appointment_id";
+    PlaybookServiceConstants.DURATION_CONTROL_ID = "duration_task_id";
+    PlaybookServiceConstants.DURATION_PHONECALL_CONTROL_ID = "duration_phonecall_id";
+    PlaybookServiceConstants.ERRORCODE = 2147746327;
+    PlaybookServiceConstants.FORM_TYPE = "form_type";
+    PlaybookServiceConstants.MSDYN_ACTIVITY_TYPE = "msdyn_activityType";
+    PlaybookServiceConstants.MSDYN_ACTIVITY_LOGICALNAME = "msdyn_activityLogicalName";
+    PlaybookServiceConstants.MSDYN_LOGICAL_NAME = "msdyn_attributeLogicalName";
+    PlaybookServiceConstants.MSDYN_SUBJECT = "msdyn_subject";
+    PlaybookServiceConstants.MSDYN_TYPE = "msdyn_attributeType";
+    PlaybookServiceConstants.MSDYN_VALUE = "msdyn_attributeValue";
+    PlaybookServiceConstants.PLAYBOOK = "msdyn_playbookinstance";
+    PlaybookServiceConstants.PLAYBOOKACTIVITY = "msdyn_playbookactivity";
+    PlaybookServiceConstants.PLAYBOOKACTIVITYATTRIBUTEID = "msdyn_playbookactivityattributeid";
+    PlaybookServiceConstants.PLAYBOOKACTIVITYATTRIBUTES = "msdyn_playbookactivityattribute";
+    PlaybookServiceConstants.PLAYBOOK_ACTIVITIES_GRID = "playbook_activities_grid";
+    PlaybookServiceConstants.PLAYBOOK_ACTIVITY_ID = "playbook_activity_id";
+    PlaybookServiceConstants.PLAYBOOK_ACTIVITY_JSON = "msdyn_playbookactivity_json";
+    PlaybookServiceConstants.PLAYBOOK_CATEGORY_NAME = "msdyn_categoryid";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_PARTIALLYSUCCESSFUL_ALT = "PlaybookInstance_Status_PartiallySuccessful_Alt";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_PARTIALLYSUCCESSFUL_LABEL = "PlaybookInstance_Status_PartiallySuccessful_Label";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_PARTIALLYSUCCESSFUL_TOOLTIP = "PlaybookInstance_Status_PartiallySuccessful_Tooltip";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_NOTREQUIRED_ALT = "PlaybookInstance_Status_NotRequired_Alt";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_NOTREQUIRED_LABEL = "PlaybookInstance_Status_NotRequired_Label";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_NOTREQUIRED_TOOLTIP = "PlaybookInstance_Status_NotRequired_Tooltip";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_NOTSUCCESSFUL_ALT = "PlaybookInstance_Status_NotSuccessful_Alt";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_NOTSUCCESSFUL_LABEL = "PlaybookInstance_Status_NotSuccessful_Label";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_NOTSUCCESSFUL_TOOLTIP = "PlaybookInstance_Status_NotSuccessful_Tooltip";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_SUCCESSFUL_ALT = "PlaybookInstance_Status_Successful_Alt";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_SUCCESSFUL_LABEL = "PlaybookInstance_Status_Successful_Label";
+    PlaybookServiceConstants.PLAYBOOKINSTANCE_STATUS_SUCCESSFUL_TOOLTIP = "PlaybookInstance_Status_Successful_Tooltip";
+    PlaybookServiceConstants.PLAYBOOK_TEMPLATE_ID = "playbook_template_id";
+    PlaybookServiceConstants.PLAYBOOK_TEMPLATE_NAME = "msdyn_name";
+    PlaybookServiceConstants.PRIORITY = "prioritycode";
+    PlaybookServiceConstants.PRIORITY_APPOINTMENT_CONTROL_ID = "priority_appointment_id";
+    PlaybookServiceConstants.PRIORITY_CONTROL_ID = "priority_task_id";
+    PlaybookServiceConstants.PRIORITY_PHONECALL_CONTROL_ID = "priority_phonecall_id";
+    PlaybookServiceConstants.RELATIVEENDDATE_APPOINTMENT_ID = "relativeenddate_appointment_id";
+    PlaybookServiceConstants.RELATIVESTARTDATE_APPOINTMENT_ID = "relativestartdate_appointment_id";
+    PlaybookServiceConstants.RELATIVE_DUEDATE = "relativeDuedate";
+    PlaybookServiceConstants.RELATIVE_DUEDATE_PHONECALL_CONTROL_ID = "relativeduedate_phonecall_id";
+    PlaybookServiceConstants.RELATIVE_DUETIME = "relativeDuetime";
+    PlaybookServiceConstants.RELATIVE_DUETIME_PHONECALL_CONTROL_ID = "relativeduetime_phonecall_id";
+    PlaybookServiceConstants.RELATIVE_ENDTIME = "relativeEndTime";
+    PlaybookServiceConstants.RELATIVE_ENDTIME__APPOINTMENT_CONTROL_ID = "relativeendtime_appointment_id";
+    PlaybookServiceConstants.RELATIVE_STARTTIME = "relativeStartTime";
+    PlaybookServiceConstants.RELATIVE_STARTTIME_APPOINTMENT_CONTROL_ID = "relativestarttime_appointment_id";
+    PlaybookServiceConstants.REQUIRED = "required";
+    PlaybookServiceConstants.SAVE_ID = "save_id";
+    PlaybookServiceConstants.SCHEDULEDEND = "scheduledend";
+    PlaybookServiceConstants.SAVEMODE_AUTOSAVE = 70;
+    PlaybookServiceConstants.SAVEMODE_SAVEANDCLOSE = 2;
+    PlaybookServiceConstants.SCHEDULEDSTART = "scheduledstart";
+    PlaybookServiceConstants.SEQUENCE = "sequence";
+    PlaybookServiceConstants.SEQUENCE_APPOINTMENT_CONTROL_ID = "sequence_appointment_id";
+    PlaybookServiceConstants.SEQUENCE_PHONECALL_CONTROL_ID = "sequence_phonecall_id";
+    PlaybookServiceConstants.SINGLE_LINE_TEXT = "SingleLine.Text";
+    PlaybookServiceConstants.MULTI_LINE_TEXT = "Multiple";
+    PlaybookServiceConstants.STATE_CODE = "statecode";
+    PlaybookServiceConstants.STATUS_CODE = "statuscode";
+    PlaybookServiceConstants.SUBJECT_APPOINTMENT_CONTROL_ID = "subject_appointment_id";
+    PlaybookServiceConstants.SUBJECT_CONTROL_ID = "subject_task_id";
+    PlaybookServiceConstants.SUBJECT_PHONECALL_CONTROL_ID = "subject_phonecall_id";
+    PlaybookServiceConstants.UPDATE = "2";
+    PlaybookServiceConstants.SUBJECT = "subject";
+    PlaybookServiceConstants.PUBLISHED_STATECODE = 1;
+    PlaybookServiceConstants.PUBLISHED_STATUSCODE = 2;
+    PlaybookServiceConstants.REVISED_STATECODE = 0;
+    PlaybookServiceConstants.REVISED_STATUSCODE = 1;
+    //Datatypes
+    PlaybookServiceConstants.BOOLEAN = 4;
+    PlaybookServiceConstants.COMBOBOX = 8;
+    PlaybookServiceConstants.DATETIME = 3;
+    PlaybookServiceConstants.DAYS = "days";
+    PlaybookServiceConstants.INTEGER = 2;
+    PlaybookServiceConstants.OPTIONSET = 5;
+    PlaybookServiceConstants.STRING = 1;
+    PlaybookServiceConstants.TIME = "time";
+    //FCB
+    PlaybookServiceConstants.PLAYBOOKV2_FCB = "PreviewApril2019";
+    PlaybookServiceConstants.PLAYBOOK_FCB = "Playbook";
+    PlaybookServiceConstants.PLAYBOOKEXTENDED_FCS_NAMESPACE = "SalesService.Playbook";
+    PlaybookServiceConstants.ISPLAYBOOKEXTENDED_FCS = "IsPlaybookExtended";
+    PlaybookService.PlaybookServiceConstants = PlaybookServiceConstants;
+    var PlaybookResourceStringConstants = (function () {
+        function PlaybookResourceStringConstants() {
+        }
+        return PlaybookResourceStringConstants;
+    }());
+    PlaybookResourceStringConstants.ALLDAYEVENT_TEXT = "AllDayEvent_Text";
+    PlaybookResourceStringConstants.CANCEL_TEXT = "Cancel_Text";
+    PlaybookResourceStringConstants.CONFIRMATION_DIALOG = "Confirmation_Dialog_Title";
+    PlaybookResourceStringConstants.CONFIRMATIONDIALOG_PUBLISH = "ConfirmationDialog_Publish";
+    PlaybookResourceStringConstants.CONFIRMATIONDIALOG_REVISE = "ConfirmationDialog_Revise";
+    PlaybookResourceStringConstants.DESCRIPTION_TEXT = "Description_Text";
+    PlaybookResourceStringConstants.DURATION_TEXT = "Duration_Text";
+    PlaybookResourceStringConstants.ERROR_MESSAGE_ACTION_MULTIPLE_ERRORS = "Error_Message_Action_MultipleErrorsFound";
+    PlaybookResourceStringConstants.INTEGER_RANGE_ERRORMESSAGE = "IntegerRange_Message";
+    PlaybookResourceStringConstants.LAUNCHPLAYBOOK_DIALOG_NAME = "LaunchPlaybook";
+    PlaybookResourceStringConstants.LAUNCHPLAYBOOK_ENTITY_NOT_FOUND = "LaunchPlaybook_Entity_Not_Found";
+    PlaybookResourceStringConstants.LAUNCHPLAYBOOK_SELECT_ONE_ROW_MESSAGE = "LaunchPlaybook_Select_One_Row_Message";
+    PlaybookResourceStringConstants.LAUNCHPLAYBOOK_SELECT_ROW_MESSAGE = "LaunchPlaybook_Select_Row_Message";
+    PlaybookResourceStringConstants.LAUNCHPLAYBOOK_SUCCESS_MESSAGE = "LaunchPlaybook_Success_Message";
+    PlaybookResourceStringConstants.LOADING_TEXT = "Loading_Text";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PROCESSING_MESSAGE = "Processing_Message";
+    PlaybookResourceStringConstants.PLAYBOOK_PROCESSING_MESSAGE = "Processing_Message";
+    PlaybookResourceStringConstants.PLAYBOOKTEMPLATE_PROCESSING_MESSAGE = "Processing_Message";
+    PlaybookResourceStringConstants.PLAYBOOK_OK = "Playbook_Ok";
+    PlaybookResourceStringConstants.PUBLISH_TEXT = "Publish_Text";
+    PlaybookResourceStringConstants.PRIORITY_TEXT = "Priority_Text";
+    PlaybookResourceStringConstants.RELATIVEDATE_TEXT = "RelativeDate_Text";
+    PlaybookResourceStringConstants.RELATIVEENDDATE_TEXT = "RelativeEndDate_Text";
+    PlaybookResourceStringConstants.RELATIVEENDTIME_TEXT = "RelativeEndTime_Text";
+    PlaybookResourceStringConstants.RELATIVESTARTDATE_TEXT = "RelativeStartDate_Text";
+    PlaybookResourceStringConstants.RELATIVESTARTTIME_TEXT = "RelativeStartTime_Text";
+    PlaybookResourceStringConstants.RELATIVETIME_TEXT = "RelativeTime_Text";
+    PlaybookResourceStringConstants.REVISETEMPLATE_CONFIRMATION_TEXT = "ReviseTemplate_Confirmation_Text";
+    PlaybookResourceStringConstants.REVISE_TEXT = "Revise_Text";
+    PlaybookResourceStringConstants.PUBLISHTEMPLATE_CONFIRMATION_TEXT = "PublishTemplate_Confirmation_Text";
+    PlaybookResourceStringConstants.PLAYBOOK_APPOINTMENT_QUICKEDIT = "Playbook_Appointment_QuickEdit";
+    PlaybookResourceStringConstants.PLAYBOOK_APPOINTMENT_QUICKCREATE = "Playbook_Appointment_QuickCreate";
+    PlaybookResourceStringConstants.PLAYBOOK_ERRORMESSAGE = "Playbook_Errormessage";
+    PlaybookResourceStringConstants.PLAYBOOK_PHONECALL_QUICKCREATE = "Playbook_Phonecall_QuickCreate";
+    PlaybookResourceStringConstants.PLAYBOOK_PHONECALL_QUICKEDIT = "Playbook_Phonecall_QuickEdit";
+    PlaybookResourceStringConstants.PLAYBOOK_TASK_QUICKCREATE = "Playbook_Task_QuickCreate";
+    PlaybookResourceStringConstants.PLAYBOOK_TASK_QUICKEDIT = "Playbook_Task_QuickEdit";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_STARTDATETIME_ERROR_MESSAGE = "PlaybookActiivty_StartDateTime_Message";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PHONECALL_SUBJECT = "PLAYBOOKACTIVITY_PHONECALL_SUBJECT";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PHONECALL_DESCRIPTION = "PLAYBOOKACTIVITY_PHONECALL_DESCRIPTION";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PHONECALL_DUEDATE = "PLAYBOOKACTIVITY_PHONECALL_DUEDATE";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PHONECALL_DUETIME = "PLAYBOOKACTIVITY_PHONECALL_DUETIME";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PHONECALL_DURATION = "PLAYBOOKACTIVITY_PHONECALL_DURATION";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_PHONECALL_PRIORITY = "PLAYBOOKACTIVITY_PHONECALL_PRIORITY";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_SUBJECT = "PLAYBOOKACTIVITY_TASK_SUBJECT";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_DESCRIPTION = "PLAYBOOKACTIVITY_TASK_DESCRIPTION";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_DUEDATE = "PLAYBOOKACTIVITY_TASK_DUEDATE";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_DUETIME = "PLAYBOOKACTIVITY_TASK_DUETIME";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_DURATION = "PLAYBOOKACTIVITY_TASK_DURATION";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_PRIORITY = "PLAYBOOKACTIVITY_TASK_PRIORITY";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_TASK_CONTAINER = "PLAYBOOKACTIVITY_TASK_CONTAINER";
+    PlaybookResourceStringConstants.PLAYBOOKPHONEACTIVITYCONTAINER = "PLAYBOOKPHONEACTIVITYCONTAINER";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_SUBJECT = "PLAYBOOKACTIVITY_APPOINTMENT_SUBJECT";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_DESCRIPTION = "PLAYBOOKACTIVITY_APPOINTMENT_DESCRIPTION";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_STARTTIME = "PLAYBOOKACTIVITY_APPOINTMENT_STARTTIME";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_STARTDATE = "PLAYBOOKACTIVITY_APPOINTMENT_STARTDATE";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_ENDDATE = "PLAYBOOKACTIVITY_APPOINTMENT_ENDDATE";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_ENDTIME = "PLAYBOOKACTIVITY_APPOINTMENT_ENDTIME";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_ALLDAYEVENT = "PLAYBOOKACTIVITY_APPOINTMENT_ALLDAYEVENT";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_APPOINTMENT_PRIORITY = "PLAYBOOKACTIVITY_APPOINTMENT_PRIORITY";
+    PlaybookResourceStringConstants.PLAYBOOKAPPOINTMENTACTIVITYCONTAINER = "PLAYBOOKAPPOINTMENTACTIVITYCONTAINER";
+    PlaybookResourceStringConstants.PLAYBOOKACTIVITY_ALLDAYEVENT_CONTAINER = "PLAYBOOKACTIVITY_ALLDAYEVENT_CONTAINER";
+    PlaybookResourceStringConstants.PUBLISHTEMPLATE_ERRORMESSAGE = "PublishTemplate_ErrorMessage";
+    PlaybookResourceStringConstants.MULTIPLE_PUBLISH_TEXT = "Multiple_Publish_Text";
+    PlaybookResourceStringConstants.MULTIPLE_REVISE_TEXT = "Multiple_Revise_Text";
+    PlaybookResourceStringConstants.REQUIREDFIELDMISSING_ERRORMESSAGE = "RequiredFieldMissing_ErrorMessage";
+    PlaybookResourceStringConstants.REVISETEMPLATE_ERRORMESSAGE = "ReviseTemplate_ErrorMessage";
+    PlaybookResourceStringConstants.RELATEDDOCUMENTSINFO_TEXT = "RelatedDocumentsInfo_Text";
+    PlaybookResourceStringConstants.RELATIVEDUEDATE_MESSAGE = "RelativeDueDate_Message";
+    PlaybookResourceStringConstants.RELATIVEENDDATE_MESSAGE = "RelativeEndDate_Message";
+    PlaybookResourceStringConstants.RELATIVESTARTDATE_MESSAGE = "RelativeStartDate_Message";
+    PlaybookResourceStringConstants.RELATIVEDUETIME_MESSAGE = "RelativeDueTime_Message";
+    PlaybookResourceStringConstants.RELATIVESTARTTIME_MESSAGE = "RelativeStartTime_Message";
+    PlaybookResourceStringConstants.RELATIVEENDTIME_MESSAGE = "RelativeEndTime_Message";
+    PlaybookResourceStringConstants.SUBJECT_TEXT = "Subject_Text";
+    PlaybookResourceStringConstants.VIEWRECORD = "ViewRecord_Text";
+    PlaybookResourceStringConstants.SAVE_SUCCESS_MESSAGE = "PlayBook_Admin_Settings_Saved_Successfully";
+    PlaybookService.PlaybookResourceStringConstants = PlaybookResourceStringConstants;
+    var LaunchPlaybookConstants = (function () {
+        function LaunchPlaybookConstants() {
+        }
+        return LaunchPlaybookConstants;
+    }());
+    LaunchPlaybookConstants.LAUNCHPLAYBOOK_SUBGRID_NAME = "LaunchPlaybookSubgrid";
+    LaunchPlaybookConstants.LAUNCH_PLAYBOOK_ID = "LaunchPlaybookOnClickHandler";
+    PlaybookService.LaunchPlaybookConstants = LaunchPlaybookConstants;
+    var PlaybookDeprecationConstants = (function () {
+        function PlaybookDeprecationConstants() {
+        }
+        return PlaybookDeprecationConstants;
+    }());
+    PlaybookDeprecationConstants.DEPRECATIONBANNERCONTENT = "DEPRECATIONBANNERCONTENT";
+    PlaybookDeprecationConstants.LEARNMORE = "LEARNMORE";
+    PlaybookService.PlaybookDeprecationConstants = PlaybookDeprecationConstants;
+})(PlaybookService || (PlaybookService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="../Common/PlaybookConstants.ts"/>
+var PlaybookService;
+(function (PlaybookService) {
+    var CommandBarActions = (function () {
+        function CommandBarActions() {
+            var global = window;
+            var mscrm = global.Mscrm;
+        }
+        CommandBarActions.LaunchPlaybook = function (formContext) {
+            var entityId = Xrm.Page.data.entity.getId().replace('{', '').replace('}', '');
+            var entityType = Xrm.Page.data.entity.getEntityName();
+        };
+        CommandBarActions.isDisplayPlayBook = function (entityType, selectedEntityType, selectedControl) {
+            if (selectedControl === void 0) { selectedControl = null; }
+            var entities = ["lead", "quote", "opportunity", "salesorder", "invoice", "contact", "account"];
+            if (entities.indexOf(entityType) < 0) {
+                return Promise.resolve(false);
+            }
+            if (true) {
+                var ele = Xrm.Page.ui.navigation && Xrm.Page.ui.navigation.items.get("navPlaybooks");
+                if (ele) {
+                    ele.setVisible(false);
+                }
+            }
+            return Promise.resolve(false);
+        };
+        return CommandBarActions;
+    }());
+    CommandBarActions.Instance = new CommandBarActions();
+    CommandBarActions.DisplayPlaybook = null;
+    CommandBarActions.ctor = (function () {
+    })();
+    PlaybookService.CommandBarActions = CommandBarActions;
+})(PlaybookService || (PlaybookService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+var PlaybookService;
+(function (PlaybookService) {
+    var GridCommandBarActions = (function () {
+        function GridCommandBarActions() {
+            var global = window;
+            var mscrm = global.Mscrm;
+        }
+        GridCommandBarActions.LaunchPlaybook = function (selectedItem, formContext) {
+            var parameters = {};
+            if (selectedItem && selectedItem.length && selectedItem.length == 1) {
+                var entityId = selectedItem[0].Id;
+                var entityType = selectedItem[0].TypeName;
+            }
+            return true;
+        };
+        GridCommandBarActions.IsDisplayPlayBook = function (entityType, selectedEntityType, selectedControl) {
+            return PlaybookService.CommandBarActions.isDisplayPlayBook(entityType, selectedEntityType, selectedControl);
+        };
+        return GridCommandBarActions;
+    }());
+    GridCommandBarActions.Instance = new GridCommandBarActions();
+    GridCommandBarActions.ctor = (function () {
+    })();
+    PlaybookService.GridCommandBarActions = GridCommandBarActions;
+})(PlaybookService || (PlaybookService = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="commandbaractions.ts" />
+/// <reference path="gridcommandbaractions.ts" />
+var PlaybookService;
+(function (PlaybookService) {
+    var Ribbon = (function () {
+        function Ribbon() {
+        }
+        return Ribbon;
+    }());
+    Ribbon.CommandBarActions = new PlaybookService.CommandBarActions();
+    Ribbon.GridCommandActions = new PlaybookService.GridCommandBarActions();
+    Ribbon.ctor = (function () {
+        var global = window;
+        var mscrm = global.Mscrm;
+        mscrm.IncidentCommandBarActions = Ribbon.CommandBarActions;
+        mscrm.IncidentGridCommandActions = Ribbon.GridCommandActions;
+    })();
+    PlaybookService.Ribbon = Ribbon;
+})(PlaybookService || (PlaybookService = {}));
+//# sourceMappingURL=Playbook_CommandBarActions_library.js.map

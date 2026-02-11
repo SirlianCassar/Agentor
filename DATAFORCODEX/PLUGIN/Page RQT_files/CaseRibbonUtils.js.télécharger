@@ -1,0 +1,4405 @@
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCS;
+(function (CCS) {
+    var Models;
+    (function (Models) {
+        var FetchXMLInfo = /** @class */ (function () {
+            function FetchXMLInfo() {
+                this.entityid = null;
+                this.entityname = null;
+                this.alias = null;
+                this.conditionattribute = null;
+            }
+            return FetchXMLInfo;
+        }());
+        Models.FetchXMLInfo = FetchXMLInfo;
+    })(Models = CCS.Models || (CCS.Models = {}));
+})(CCS || (CCS = {}));
+var CCS;
+(function (CCS) {
+    var ResourceStringProvider = /** @class */ (function () {
+        function ResourceStringProvider() {
+        }
+        /**
+         * Returns resource string of the specified key.
+         * @param key Resource string key
+         * @returns Resource string value
+         */
+        ResourceStringProvider.getResourceString = function (key) {
+            var value = Xrm.Utility.getResourceString(ResourceStringProvider.WebResourceName, key);
+            if (value === undefined || value === null) {
+                value = key;
+            }
+            return value;
+        };
+        ResourceStringProvider.WebResourceName = "msdyn_/ConnectedCustomerService/Localization/LocalizationXml/LocalizedStrings";
+        return ResourceStringProvider;
+    }());
+    CCS.ResourceStringProvider = ResourceStringProvider;
+})(CCS || (CCS = {}));
+/**
+* @license Copyright (c) Microsoft Corporation. All rights reserved.
+*/
+/// <reference path="../ResourceStringProvider.ts" />
+/*
+ * Invokes the ResourceStringProvider if available; otherwise returns *key*.
+ * Using this class as a proxy for the ResourceStringProvider that is included per web dependency declaration
+ * in order to avoid null reference errors in case the dependency is not loaded for some reason.
+ */
+var CCS;
+(function (CCS) {
+    var StringProvider = /** @class */ (function () {
+        function StringProvider() {
+        }
+        StringProvider.getResourceString = function (key) {
+            return CCS.ResourceStringProvider ? CCS.ResourceStringProvider.getResourceString(key) : "*" + key + "*";
+        };
+        return StringProvider;
+    }());
+    CCS.StringProvider = StringProvider;
+})(CCS || (CCS = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRef;
+(function (CCSRef) {
+    var Common;
+    (function (Common) {
+        var DeviceKeyType;
+        (function (DeviceKeyType) {
+            DeviceKeyType["DeviceGuid"] = "DeviceGuid";
+            DeviceKeyType["AlertGuid"] = "AlertGuid";
+            DeviceKeyType["DeviceID"] = "DeviceID";
+        })(DeviceKeyType = Common.DeviceKeyType || (Common.DeviceKeyType = {}));
+        var Constants = /** @class */ (function () {
+            function Constants() {
+            }
+            Constants.getReadPrivilegesForEntity = function (entityName) {
+                return this.PrvReadNamesForEntities[entityName];
+            };
+            Constants.Msdyn_iotdevice = /** @class */ (function () {
+                function class_1() {
+                }
+                Object.defineProperty(class_1, "ODataEntityName", {
+                    get: function () { return "msdyn_iotdevices"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "EntityLogicalName", {
+                    get: function () { return "msdyn_iotdevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "StatusRegistered", {
+                    get: function () { return "192350003"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "StatusInProgress", {
+                    get: function () { return "192350002"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "AttributeRegistrationStatus", {
+                    get: function () { return "msdyn_registrationstatus"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "AttributeDeviceName", {
+                    get: function () { return "msdyn_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "AttributeDeviceId", {
+                    get: function () { return "msdyn_deviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "AttributeEntityId", {
+                    get: function () { return "msdyn_iotdeviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "RegisterAction", {
+                    get: function () { return "msdyn_RegisterIoTDevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "PullDataAction", {
+                    get: function () { return "msdyn_PullDataForIoTDevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "IoTHubRegisterAction", {
+                    get: function () { return "msdyn_IoTHubRegisterDevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "IoTHubPullDeviceDataAction", {
+                    get: function () { return "msdyn_IoTHubPullDeviceData"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "IoTRegisterActionHandler", {
+                    get: function () { return "msdyn_IoTRegisterActionHandler"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "IoTPullDeviceDataActionHandler", {
+                    get: function () { return "msdyn_IoTPullDeviceDataActionHandler"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_1, "IoTProviderInstance", {
+                    get: function () { return "msdyn_IoTProviderInstance"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_1;
+            }());
+            Constants.Msdyn_iotprovider = /** @class */ (function () {
+                function class_2() {
+                }
+                Object.defineProperty(class_2, "EntityLogicalName", {
+                    get: function () { return "msdyn_iotprovider"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_2, "AttributeId", {
+                    get: function () { return "msdyn_iotproviderid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_2, "ODataEntityName", {
+                    get: function () { return "msdyn_iotproviders"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_2, "AttributeRegisterAction", {
+                    get: function () { return "msdyn_registeraction"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_2, "AttributePullDeviceDataAction", {
+                    get: function () { return "msdyn_pulldevicedataaction"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_2, "IoTHubQueryReadingsAction", {
+                    get: function () { return "msdyn_IoTHubQueryDeviceReadings"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_2, "AttributeqQueryDeviceReadingSaction", {
+                    get: function () { return "msdyn_querydevicereadingsaction"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_2;
+            }());
+            Constants.Msdyn_iotalert = /** @class */ (function () {
+                function class_3() {
+                }
+                Object.defineProperty(class_3, "ODataEntityName", {
+                    get: function () { return "msdyn_iotalerts"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "EntityLogicalName", {
+                    get: function () { return "msdyn_iotalert"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeDeviceId", {
+                    get: function () { return "msdyn_deviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeDevice", {
+                    get: function () { return "msdyn_Device"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertData", {
+                    get: function () { return "msdyn_alertdata"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertType", {
+                    get: function () { return "msdyn_alerttype"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertToken", {
+                    get: function () { return "msdyn_alerttoken"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertTime", {
+                    get: function () { return "msdyn_alerttime"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertURL", {
+                    get: function () { return "msdyn_alerturl"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "CustomControlAlertData", {
+                    get: function () { return "msdyn_alertdata1"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertPriorityScore", {
+                    get: function () { return "msdyn_alertpriorityscore"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "AttributeAlertPriority", {
+                    get: function () { return "msdyn_suggestedpriority"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "CalculatingPriorityValue", {
+                    get: function () { return 192350000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "HighPriorityValue", {
+                    get: function () { return 192350001; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "LowPriorityValue", {
+                    get: function () { return 192350002; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_3, "SuggestionsSection", {
+                    get: function () { return "SuggestionsSection"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_3;
+            }());
+            Constants.Msdyn_iotsettings = /** @class */ (function () {
+                function class_4() {
+                }
+                Object.defineProperty(class_4, "AttributeId", {
+                    get: function () { return "76CD1AAA-0DFD-4C17-8915-9DF22EE05137"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "EntityLogicalName", {
+                    get: function () { return "msdyn_iotsettings"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "AttributeDefaultProviderInstance", {
+                    get: function () { return "msdyn_DefaultIoTProviderInstance"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "AttributeDefaultProviderInstanceLogicalName", {
+                    get: function () { return "msdyn_defaultiotproviderinstance"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "AttributeDeploymentAppURL", {
+                    get: function () { return "msdyn_deploymentappurl"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "AttributeEnableIoTSuggestions", {
+                    get: function () { return "msdyn_enableiotsuggestions"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "ModelStatusSection", {
+                    get: function () { return "ModelStatusSection"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_4, "SuggestionTab", {
+                    get: function () { return "SuggestionsTab"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_4;
+            }());
+            Constants.Msdyn_iotproviderinstance = /** @class */ (function () {
+                function class_5() {
+                }
+                Object.defineProperty(class_5, "EntityLogicalName", {
+                    get: function () { return "msdyn_iotproviderinstance"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_5, "AttributeName", {
+                    get: function () { return "msdyn_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_5, "AttributeId", {
+                    get: function () { return "msdyn_iotproviderinstanceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_5;
+            }());
+            Constants.GridIconImagePaths = /** @class */ (function () {
+                function class_6() {
+                }
+                Object.defineProperty(class_6, "HighPriImage", {
+                    get: function () { return "msdyn_/IoT/Images/SVG/IoTAlerts/HighPriIcon.svg"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_6, "EmptyImage", {
+                    get: function () { return "msdyn_/IoT/Images/SVG/IoTAlerts/EmptyIcon.svg"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_6, "CalculatingImage", {
+                    get: function () { return "msdyn_/IoT/Images/SVG/IoTAlerts/CalculatingIcon.svg"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_6, "ParentAlertImage", {
+                    get: function () { return "msdyn_/IoT/Images/SVG/IoTAlerts/ParentAlertIcon.svg"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_6;
+            }());
+            Constants.DeviceProperty = /** @class */ (function () {
+                function class_7() {
+                }
+                Object.defineProperty(class_7, "isTagFieldName", {
+                    get: function () { return "msdyn_istag"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_7, "propertyFieldName", {
+                    get: function () { return "msdyn_property"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_7, "IoTDevicePropertyEntityName", {
+                    get: function () { return "msdyn_iotdeviceproperty"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_7, "IoTDeviceCategoryEntityName", {
+                    get: function () { return "msdyn_iotdevicecategory"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_7, "AttributeCategory", {
+                    get: function () { return "msdyn_devicecategory"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_7, "AttributeCategoryName", {
+                    get: function () { return "msdyn_devicecategoryname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_7;
+            }());
+            Constants.PropertyDefinition = /** @class */ (function () {
+                function class_8() {
+                }
+                Object.defineProperty(class_8, "typeFieldName", {
+                    get: function () { return "msdyn_type"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_8, "editableFieldName", {
+                    get: function () { return "msdyn_editable"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_8, "visibleFieldName", {
+                    get: function () { return "msdyn_visible"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_8, "uciPropsFieldName", {
+                    get: function () { return "msdyn_additionalproperties1"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_8, "webPropsFieldName", {
+                    get: function () { return "msdyn_additionalproperties"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_8, "childParamsSectionName", {
+                    get: function () { return "ChildParameters"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_8, "ObjectTypeOptionSetValue", {
+                    get: function () { return 192350001; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_8;
+            }());
+            Constants.FieldMappingForm = /** @class */ (function () {
+                function class_9() {
+                }
+                Object.defineProperty(class_9, "AttributeSearchType", {
+                    get: function () { return "msdyn_searchtype"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_9, "AttributeDirectOrKeyPath", {
+                    get: function () { return "msdyn_directpathorkeypath"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_9, "AttributeValuePath", {
+                    get: function () { return "msdyn_valuepath"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_9, "AttributeFieldDataFormat", {
+                    get: function () { return "msdyn_fielddataformat"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_9, "FieldDataFormatDirectValue", {
+                    get: function () { return 192350000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_9, "SearchTypeDirectPathValue", {
+                    get: function () { return 192350000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_9;
+            }());
+            Constants.IoTSettingsForm = /** @class */ (function () {
+                function class_10() {
+                }
+                Object.defineProperty(class_10, "DeviceDataPullsTab", {
+                    get: function () { return "{eddc3ea8-b755-416e-8d97-c3b1fee65aad}"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_10, "DeploymentFieldValue", {
+                    get: function () { return "https://iotdeployment.dynamics.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_10, "IoTSuggestionsSection", {
+                    get: function () { return "SuggestionsSection"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_10, "AttributeEnableIoTSuggestions", {
+                    get: function () { return "msdyn_enableiotsuggestions"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_10;
+            }());
+            Constants.DeviceVisualizationConfigurationForm = /** @class */ (function () {
+                function class_11() {
+                }
+                Object.defineProperty(class_11, "OptionsetValueLatest", {
+                    get: function () { return 192350002; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "OptionsetValueNone", {
+                    get: function () { return 192350000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "IoTDeviceCategory", {
+                    get: function () { return "msdyn_iotdevicecategory"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "IoTDevice", {
+                    get: function () { return "msdyn_iotdevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "AttributeName", {
+                    get: function () { return "msdyn_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "Aggregation", {
+                    get: function () { return "msdyn_aggregation"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "IoTTimeRangeValue", {
+                    get: function () { return "msdyn_timerangevalue"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "IoTTimeRangeType", {
+                    get: function () { return "msdyn_timerangetype"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "ConfigurationType", {
+                    get: function () { return "msdyn_visualizationconfigurationtype"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "Measurement", {
+                    get: function () { return "msdyn_measurement"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "Position", {
+                    get: function () { return "msdyn_position"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "ActionName", {
+                    get: function () { return "msdyn_actionname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "DeviceEvent", {
+                    get: function () { return "msdyn_deviceevent"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "CaseAction", {
+                    get: function () { return "msdyn_GetCaseAggregation"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "AlertAction", {
+                    get: function () { return "msdyn_GetIoTAlertAggregation"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_11, "WorkorderAction", {
+                    get: function () { return "msdyn_GetWorkOrderAggregation"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_11;
+            }());
+            Constants.WebResource = /** @class */ (function () {
+                function class_12() {
+                }
+                Object.defineProperty(class_12, "ODataEntityName", {
+                    get: function () { return "webresourceset"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_12, "AttributeWebResourceId", {
+                    get: function () { return "webresourceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_12, "AttributeName", {
+                    get: function () { return "name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_12, "AttributeContent", {
+                    get: function () { return "content"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_12, "WebResourceName", {
+                    get: function () { return "webresource"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_12, "WebResourcesName", {
+                    get: function () { return "webresources"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_12;
+            }());
+            Constants.WelcomeDialog = /** @class */ (function () {
+                function class_13() {
+                }
+                Object.defineProperty(class_13, "CFSDeploymentLinkText", {
+                    get: function () { return "CFSDeploymentLinkText"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_13, "CFSDeploymentLinkImage", {
+                    get: function () { return "CFSDeploymentLinkImage"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_13, "IoTCentralLinkText", {
+                    get: function () { return "IoTCentralLinkText"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_13, "IoTCentralLinkImage", {
+                    get: function () { return "IoTCentralLinkImage"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_13, "IoTSettingsId", {
+                    get: function () { return "76CD1AAA-0DFD-4C17-8915-9DF22EE05137"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_13, "CFSLearnMoreUrl", {
+                    get: function () { return "https://docs.microsoft.com/dynamics365/customer-engagement/field-service/connected-field-service"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_13;
+            }());
+            Constants.Connection = /** @class */ (function () {
+                function class_14() {
+                }
+                Object.defineProperty(class_14, "EntityLogicalName", {
+                    get: function () { return "connection"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "ODataEntityName", {
+                    get: function () { return "connections"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "AttributeRecord1IdValue", {
+                    get: function () { return "_record1id_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "AttributeRecord2IdValue", {
+                    get: function () { return "_record2id_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "AttributeRecord2RoleId", {
+                    get: function () { return "_record2roleid_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "Record1IdValue", {
+                    get: function () { return "record1id"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "Record2IdValue", {
+                    get: function () { return "record2id"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "Record2RoleIdValue", {
+                    get: function () { return "record2roleid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_14, "IoTRoleId", {
+                    get: function () { return "9C86F660-5F5B-E611-810B-00155DBD6A1D"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_14;
+            }());
+            Constants.Dashboard = /** @class */ (function () {
+                function class_15() {
+                }
+                Object.defineProperty(class_15, "IoTSettingsId", {
+                    get: function () { return "76CD1AAA-0DFD-4C17-8915-9DF22EE05137"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_15, "GCC", {
+                    get: function () { return "crm9"; } // Flag to check for GCC region. Example of GCC org https://contoso.crm9.dynamics.com
+                    ,
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_15, "USGovt", {
+                    get: function () { return "us"; } // Flag to check for GCCHigh or DoD region. Example of GCC High org https://contoso.crm.microsoftdynamics.us or DoD https://contoso.crm.appsplatform.us
+                    ,
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_15, "China", {
+                    get: function () { return "cn"; } // Flag to check for China(MoonCake) region. Example of Mooncake org https://contoso.crm.dynamics.cn
+                    ,
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_15;
+            }());
+            Constants.Role = /** @class */ (function () {
+                function class_16() {
+                }
+                Object.defineProperty(class_16, "ODataEntityName", {
+                    get: function () { return "roles"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_16, "AttributeRoleTemplateId", {
+                    get: function () { return "_roletemplateid_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_16, "AttributeRoleId", {
+                    get: function () { return "roleid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_16, "SystemAdminRoleTemplateId", {
+                    get: function () { return "627090FF-40A3-4053-8790-584EDC5BE201"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_16;
+            }());
+            Constants.QueryString = /** @class */ (function () {
+                function class_17() {
+                }
+                Object.defineProperty(class_17, "OrgLCID", {
+                    get: function () { return "OrgLCID"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "UserLCID", {
+                    get: function () { return "UserLCID"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "Id", {
+                    get: function () { return "id"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "Orgname", {
+                    get: function () { return "orgname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "Type", {
+                    get: function () { return "type"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "Typename", {
+                    get: function () { return "typename"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "EntityTypename", {
+                    get: function () { return "entityTypeName"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "Data", {
+                    get: function () { return "Data"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_17, "WebResourceId", {
+                    get: function () { return "WebResourceId"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_17;
+            }());
+            Constants.Azure = /** @class */ (function () {
+                function class_18() {
+                }
+                Object.defineProperty(class_18, "SqlTableName", {
+                    get: function () { return "crmioteventsview"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_18, "SqlFieldName", {
+                    get: function () { return "deviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_18;
+            }());
+            Constants.FirstPartyIntegration = /** @class */ (function () {
+                function class_19() {
+                }
+                Object.defineProperty(class_19, "Env", {
+                    get: function () { return "env"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "Direction", {
+                    get: function () { return "direction"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "Mode", {
+                    get: function () { return "mode"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "PowerBIUrl", {
+                    get: function () { return "powerBIUrl"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "LoginLabel", {
+                    get: function () { return "loginLabel"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "LoginText", {
+                    get: function () { return "loginText"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "DashboardLabel", {
+                    get: function () { return "dashboardLabel"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "TileLabel", {
+                    get: function () { return "tileLabel"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "CheckboxLabel", {
+                    get: function () { return "checkboxLabel"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "TIEEndpoint", {
+                    get: function () { return "https://www.crmdynint-livetie.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "INTEndpoint", {
+                    get: function () { return "https://www.crmdynint-int.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "PRODEndpoint", {
+                    get: function () { return "https://www.crmdynint.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "PowerBIRuntime", {
+                    get: function () { return "/PowerBI/8.2/runtime.html"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_19, "PowerBIConfig", {
+                    get: function () { return "/PowerBI/8.2/config.html"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_19;
+            }());
+            Constants.CRMHostNames = /** @class */ (function () {
+                function class_20() {
+                }
+                Object.defineProperty(class_20, "Prod", {
+                    get: function () { return "dynamics.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_20, "INT", {
+                    get: function () { return "dynamics-int.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_20, "TIE", {
+                    get: function () { return "crmlivetie.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_20, "OneBox", {
+                    get: function () { return "1boxtest.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_20;
+            }());
+            Constants.Env = /** @class */ (function () {
+                function class_21() {
+                }
+                Object.defineProperty(class_21, "Dev", {
+                    get: function () { return "dev"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_21, "Ppe", {
+                    get: function () { return "ppe"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_21, "Prod", {
+                    get: function () { return "prod"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_21;
+            }());
+            Constants.ParamKeys = /** @class */ (function () {
+                function class_22() {
+                }
+                Object.defineProperty(class_22, "tileUrl", {
+                    get: function () { return "tileUrl"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_22;
+            }());
+            Constants.ConfigButtons = /** @class */ (function () {
+                function class_23() {
+                }
+                Object.defineProperty(class_23, "SaveButton", {
+                    get: function () { return "SaveButton"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_23, "CancelButton", {
+                    get: function () { return "CancelButton"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_23;
+            }());
+            Constants.FormConstants = /** @class */ (function () {
+                function class_24() {
+                }
+                Object.defineProperty(class_24, "ConnectedDeviceReadings", {
+                    get: function () { return "Connected Device Readings"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_24, "Required", {
+                    get: function () { return "required"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                ;
+                Object.defineProperty(class_24, "NotRequired", {
+                    get: function () { return "none"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                ;
+                return class_24;
+            }());
+            Constants.PostMessageEvents = /** @class */ (function () {
+                function class_25() {
+                }
+                Object.defineProperty(class_25, "TileClickedEvent", {
+                    get: function () { return "tileClicked"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_25;
+            }());
+            Constants.MetadataDrivenDialog = /** @class */ (function () {
+                function class_26() {
+                }
+                Object.defineProperty(class_26, "IoTPowerBIConfiguration", {
+                    get: function () { return "IoTPowerBIConfiguration"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_26, "Param_PBIConfigUrl", {
+                    get: function () { return "param_pbiconfigurl"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_26, "Param_PBISetUrl", {
+                    get: function () { return "param_pbiseturl"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_26;
+            }());
+            Constants.WebResourceName = /** @class */ (function () {
+                function class_27() {
+                }
+                Object.defineProperty(class_27, "ConfigData", {
+                    get: function () { return "msdyn_/IoT/PowerBI/Scripts/ConfigData.js"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_27, "PowerBIConfiguration", {
+                    get: function () { return "msdyn_/IoT/PowerBI/HTML/PowerBIConfiguration.html"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_27, "PowerBIConfigurationLegacy", {
+                    get: function () { return "msdyn_/IoT/PowerBI/Legacy/PowerBIConfigurationLegacy.html"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_27;
+            }());
+            Constants.CommandAttributeParameters = /** @class */ (function () {
+                function class_28() {
+                }
+                Object.defineProperty(class_28, "CommandAttributeAlertId", {
+                    get: function () { return "param_msdyn_parentalert"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_28, "CommandAttributeAlertName", {
+                    get: function () { return "param_msdyn_parentalertname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_28, "CommandAttributeIoTDeviceName", {
+                    get: function () { return "param_msdyn_devicename"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_28, "CommandAttributeIoTDeviceId", {
+                    get: function () { return "param_msdyn_device"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_28, "CommandAttributeParentEntityId", {
+                    get: function () { return "param_msdyn_parententityid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_28;
+            }());
+            Constants.CommandMFDParameters = /** @class */ (function () {
+                function class_29() {
+                }
+                Object.defineProperty(class_29, "CommandAttributeIsMFD", {
+                    get: function () { return "param_msdyn_isMfd"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_29;
+            }());
+            Constants.CommandViewAttributes = /** @class */ (function () {
+                function class_30() {
+                }
+                Object.defineProperty(class_30, "CommandAttributeMsdynParentAlert", {
+                    get: function () { return "msdyn_parentalert"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynParentAlertName", {
+                    get: function () { return "msdyn_parentalertname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynDevice", {
+                    get: function () { return "msdyn_device"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynDeviceName", {
+                    get: function () { return "msdyn_devicename"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynDeviceId", {
+                    get: function () { return "msdyn_deviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynMessage", {
+                    get: function () { return "msdyn_message"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynName", {
+                    get: function () { return "msdyn_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynCommand", {
+                    get: function () { return "msdyn_command"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynCommandReference", {
+                    get: function () { return "msdyn_commandreference"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynCommandOdataBind", {
+                    get: function () { return "msdyn_Command@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynParentAlertOdataBind", {
+                    get: function () { return "msdyn_ParentAlert@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_30, "CommandAttributeMsdynDeviceOdataBind", {
+                    get: function () { return "msdyn_Device@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_30;
+            }());
+            Constants.EntityLogicalNames = /** @class */ (function () {
+                function class_31() {
+                }
+                Object.defineProperty(class_31, "DeviceEntityLogicalName", {
+                    get: function () { return "msdyn_iotdevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_31, "AlertEntityLogicalName", {
+                    get: function () { return "msdyn_iotalert"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_31, "CommandEntityLogicalName", {
+                    get: function () { return "msdyn_iotdevicecommand"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_31, "CommandDefinitionEntityLogicalName", {
+                    get: function () { return "msdyn_iotdevicecommanddefinition"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_31, "CaseEntityLogicalName", {
+                    get: function () { return "incident"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_31;
+            }());
+            Constants.PluralEntityLogicalNames = /** @class */ (function () {
+                function class_32() {
+                }
+                Object.defineProperty(class_32, "DeviceEntityLogicalName", {
+                    get: function () { return "msdyn_iotdevices"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_32, "AlertEntityLogicalName", {
+                    get: function () { return "msdyn_iotalerts"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_32, "CommandEntityLogicalName", {
+                    get: function () { return "msdyn_iotdevicecommands"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_32, "CommandDefinitionEntityLogicalName", {
+                    get: function () { return "msdyn_iotdevicecommanddefinitions"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_32, "ConnectionRoleEntityLogicalName", {
+                    get: function () { return "connectionroles"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_32, "IoTSettingsEntityLogicalName", {
+                    get: function () { return "msdyn_iotsettingses"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_32;
+            }());
+            Constants.GlobalNotificationType = /** @class */ (function () {
+                function class_33() {
+                }
+                Object.defineProperty(class_33, "Toast", {
+                    get: function () { return 1; },
+                    enumerable: true,
+                    configurable: true
+                });
+                ;
+                return class_33;
+            }());
+            Constants.GlobalNotificationLevel = /** @class */ (function () {
+                function class_34() {
+                }
+                Object.defineProperty(class_34, "Success", {
+                    get: function () { return 1; },
+                    enumerable: true,
+                    configurable: true
+                });
+                ;
+                return class_34;
+            }());
+            Constants.ConnectDeviceDialog = /** @class */ (function () {
+                function class_35() {
+                }
+                Object.defineProperty(class_35, "DialogName", {
+                    get: function () { return "msdyn_ConnectDeviceDialog"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "FieldDialogTitle", {
+                    get: function () { return "lbl_connect_device_title"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "FieldMsdynDevice", {
+                    get: function () { return "msdyn_device"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ParamTargetEntityId", {
+                    get: function () { return "param_target_entity_id"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ParamTargetEntityName", {
+                    get: function () { return "param_target_entity_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ParamTargetPluralEntityName", {
+                    get: function () { return "param_target_entity_plural_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ParamTargetEntityTitle", {
+                    get: function () { return "param_target_entity_title"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ParamIsConnected", {
+                    get: function () { return "param_is_connected"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "DeviceCustomViewId", {
+                    get: function () { return "{8B04357F-F848-4D16-AD47-288E51AD75E7}"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ODataRecord2IdValue", {
+                    get: function () { return "record2id_" + "msdyn_iotdevice" + "@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "ODataRecord2RoleIdValue", {
+                    get: function () { return "record2roleid@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "Record1IdValue", {
+                    get: function () { return "record1id"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "Record2IdValue", {
+                    get: function () { return "record2id"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_35, "Record2RoleIdValue", {
+                    get: function () { return "record2roleid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_35;
+            }());
+            Constants.TabNames = /** @class */ (function () {
+                function class_36() {
+                }
+                Object.defineProperty(class_36, "DeviceInsightsTab", {
+                    get: function () { return "DeviceInsightsTab"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_36, "DeviceFormGeneralTab", {
+                    get: function () { return "{1bcff70d-5615-4084-953f-2196583d6e79}"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_36, "CustomerAssetFormGeneralTab", {
+                    get: function () { return "{b3f36061-1f16-4bbb-bd74-44fac42c9094}"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_36, "CustomerAssetFormMobileGeneralTab", {
+                    get: function () { return "fstab_summary"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_36, "IoTAlertFormGeneralTab", {
+                    get: function () { return "{b4d9bb28-1bd1-4896-aa83-a8cd2a781dde}"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_36;
+            }());
+            Constants.SectionNames = /** @class */ (function () {
+                function class_37() {
+                }
+                Object.defineProperty(class_37, "DeviceSummaryVisualizationSection", {
+                    get: function () { return "Device Summary Visualization"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_37;
+            }());
+            Constants.IoTSuggestionsDialog = /** @class */ (function () {
+                function class_38() {
+                }
+                Object.defineProperty(class_38, "DialogName", {
+                    get: function () { return "msdyn_IoTSuggestionsConfigurationDialog"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_38, "ParamIsProvisionCompleted", {
+                    get: function () { return "param_isProvisionCompleted"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_38, "ErrorLabelKey", {
+                    get: function () { return "@:errorWhilePerfomingActionTryAgain"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_38, "NoConfirmationDialogLabelKey", {
+                    get: function () { return "@:noConfirmationDialog"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_38, "YesConfirmationDialogLabelKey", {
+                    get: function () { return "@:yesConfirmationDialog"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_38, "DisableIoTSuggestionsTextLabelKey", {
+                    get: function () { return "@:disableIoTSuggestionsText"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_38, "DisableIoTSuggestionsTitleLabelKey", {
+                    get: function () { return "@:disableIoTSuggestionsTitle"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_38;
+            }());
+            Constants.IoTCacheKeys = /** @class */ (function () {
+                function class_39() {
+                }
+                Object.defineProperty(class_39, "IsValidEndpoint", {
+                    get: function () { return "iot_is_valid_endpoint"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_39, "IsIoTProviderInstance", {
+                    get: function () { return "iot_is_iot_provider_instance"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_39;
+            }());
+            Constants.PrvReadNamesForEntities = {
+                "msdyn_iotdevice": "prvReadmsdyn_iotdevice",
+                "msdyn_iotalert": "prvReadmsdyn_iotalert",
+                "msdyn_iotprovider": "prvReadmsdyn_iotprovider"
+            };
+            return Constants;
+        }());
+        Common.Constants = Constants;
+    })(Common = CCSRef.Common || (CCSRef.Common = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../Common/Constants.ts" />
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var ODataUtils = /** @class */ (function () {
+            function ODataUtils() {
+            }
+            // Executes a CRM Request
+            // httpRequest = HTTP method. Ex. "GET" or "POST"
+            // crmRequest = CRM request
+            // E.g.: "msdyn_RegisterIoTDevice" for a global action. 
+            // E.g.: "msdyn_iotalerts(B635DCB3-4F28-E611-8106-00155DBD6A1E)/Microsoft.Dynamics.CRM.msdyn_ParentIoTAlerts" for a bound action.
+            // requestParams = List of arguments for the request contained in JSON object.
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.executeRequest = function (httpRequest, crmRequest, requestParams, successCallback, failureCallback) {
+                var endpoint = this.odataEndpointUrl + crmRequest;
+                var request = new XMLHttpRequest();
+                request.open(httpRequest, endpoint, true);
+                request.setRequestHeader("Accept", "application/json");
+                request.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+                request.setRequestHeader("OData-MaxVersion", "4.0");
+                request.setRequestHeader("OData-Version", "4.0");
+                var _this = this;
+                request.onreadystatechange = function () {
+                    // https://msdn.microsoft.com/en-us/library/gg334279.aspx describes the values.
+                    if (this.readyState == 4) // On Complete.
+                     {
+                        request.onreadystatechange = null;
+                        if (this.status == 204 || this.status == 200) {
+                            if (successCallback) {
+                                successCallback(_this.parseJSON(this.response));
+                            }
+                        }
+                        else if (this.status == 403) {
+                            try {
+                                var parsedResponse = _this.parseJSON(this.response);
+                                if (parsedResponse.error.message.includes("is missing") && parsedResponse.error.message.includes("privilege")) {
+                                    console.info("logged in user doesn't have required permission on this entity");
+                                    failureCallback(parsedResponse);
+                                }
+                                else {
+                                    failureCallback(parsedResponse);
+                                }
+                            }
+                            catch (_a) {
+                                failureCallback(this.response);
+                            }
+                        }
+                        else {
+                            if (failureCallback) {
+                                failureCallback(_this.parseJSON(this.response));
+                            }
+                        }
+                    }
+                };
+                if (requestParams) {
+                    request.send(JSON.stringify(requestParams));
+                }
+                else {
+                    request.send();
+                }
+            };
+            ;
+            // Retrieves entities
+            // oDataEntityName = the OData name of the entity
+            // entityId = the Id of the entity (optional)
+            // filter = query filter (optional)
+            // selectFields = comma separated list of fields to retrieve, ex "name,content" (optional)
+            // relatedFields = related entity fields to retrieved (optional): ex. primarycontactid($select=contactid,fullname)
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.getEntities = function (oDataEntityName, entityId, filter, selectFields, relatedFields, successCallback, failureCallback) {
+                var request = this.formatRequest(oDataEntityName, entityId, filter, selectFields, relatedFields);
+                this.executeRequest("GET", request, null, successCallback, failureCallback);
+            };
+            ;
+            // Updates entities
+            // oDataEntityName = the OData name of the entity
+            // entityId = the Id of the entity (optional)
+            // body = json payload for the patch operation
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.patchEntity = function (oDataEntityName, entityId, body, successCallback, failureCallback) {
+                var request = this.formatRequest(oDataEntityName, entityId, null, null, null);
+                this.executeRequest("PATCH", request, body, successCallback, failureCallback);
+            };
+            ;
+            // Retrieves the number of entities that exist of the given type
+            // oDataEntityName = the OData name of the entity
+            // successCallback = Method to be called on success. Takes an integer argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes an integer argument that contains the response of the query.
+            ODataUtils.getEntityCount = function (oDataEntityName, successCallback, failureCallback) {
+                var request = this.formatRequest(oDataEntityName, "", "", "", "", "$count=true");
+                this.executeRequest("GET", request, null, function (result) {
+                    if (result != null) {
+                        successCallback(result["@odata.count"]);
+                    }
+                    else {
+                        successCallback(0);
+                    }
+                }, function (err) {
+                    failureCallback(err);
+                });
+            };
+            ;
+            // Formats fetchXml for CRM web API calls
+            // entityName = The target entity name in CRM Odata format. Ex. accounts
+            // fetch = The fetchxml
+            ODataUtils.formatFetchXml = function (entityName, fetch) {
+                return entityName + "?fetchXml=" + encodeURIComponent(fetch);
+            };
+            // Retrieves webresource
+            // name = name of webresource, ex: "msdyn_/IoT/PowerBI/Scripts/ConfigData.js"
+            // selectFields = comma separated list of fields to retrieve, ex "name,content" (optional)
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.getWebResource = function (name, selectFields, successCallback, failureCallback) {
+                var filter = CCSRef.Common.Constants.WebResource.AttributeName + " eq '" + name + "'";
+                var request = this.formatRequest(CCSRef.Common.Constants.WebResource.ODataEntityName, "", filter, selectFields, "");
+                this.executeRequest("GET", request, null, successCallback, failureCallback);
+            };
+            // Writes the JSON object to the webresource's content (overwrites existing content)
+            // id = guid id of webresource
+            // jsonObject = JSON object
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.updateWebResource = function (id, jsonObject, successCallback, failureCallback) {
+                var request = this.formatRequest(CCSRef.Common.Constants.WebResource.ODataEntityName, id, "", "", "");
+                var webResource = {};
+                webResource[CCSRef.Common.Constants.WebResource.AttributeContent] = btoa(JSON.stringify(jsonObject));
+                this.executeRequest("PATCH", request, webResource, successCallback, failureCallback);
+            };
+            // Publishes xml changes for a webresource
+            // id = the webresource guid id
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.publishXml = function (id, successCallback, failureCallback) {
+                var webResourceName = CCSRef.Common.Constants.WebResource.WebResourceName;
+                var webResourcesName = CCSRef.Common.Constants.WebResource.WebResourcesName;
+                var parameterxml = {
+                    ParameterXml: "<importexportxml><" + webResourcesName + "><" + webResourceName + ">{" + id + "}</" + webResourceName + "></" + webResourcesName + "></importexportxml>"
+                };
+                this.executeRequest("POST", "PublishXml", parameterxml, successCallback, failureCallback);
+            };
+            // Retrieves the current users roles
+            // selectFields = comma separated list of fields to retrieve, ex "name,content" (optional)
+            // successCallback = Method to be called on success. Takes a string argument that contains the response of the query.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            ODataUtils.getUserRoles = function (selectFields, successCallback, failureCallback) {
+                var currentUserRoles = Xrm.Utility.getGlobalContext().userSettings.securityRoles;
+                var userRoleFilter = CCSRef.Common.Constants.Role.AttributeRoleId + " eq " + currentUserRoles.join(" or " + CCSRef.Common.Constants.Role.AttributeRoleId + " eq ");
+                var request = ODataUtils.formatRequest(CCSRef.Common.Constants.Role.ODataEntityName, "", userRoleFilter, selectFields, "");
+                this.executeRequest("GET", request, null, successCallback, failureCallback);
+            };
+            // Removes the last character of a string if it is a "/"
+            ODataUtils.removeTrailingSlash = function (url) {
+                return url.replace(/\/$/, "");
+            };
+            ODataUtils.formatRequest = function (oDataEntityName, entityId, filter, selectFields, relatedFields, functions) {
+                var request = entityId ? oDataEntityName + "(" + entityId + ")" : oDataEntityName;
+                var params = [];
+                if (filter) {
+                    params.push("$filter=" + filter);
+                }
+                if (selectFields) {
+                    params.push("$select=" + selectFields);
+                }
+                if (relatedFields) {
+                    params.push("$expand=" + relatedFields);
+                }
+                if (functions) {
+                    params.push(functions);
+                }
+                if (params.length > 0) {
+                    request = request + "?" + params.join("&");
+                }
+                return request;
+            };
+            ODataUtils.parseJSON = function (json) {
+                var result = null;
+                if (json) {
+                    try {
+                        result = JSON.parse(json);
+                    }
+                    catch (err) {
+                        console.log(err);
+                    }
+                }
+                return result;
+            };
+            ;
+            ODataUtils.parentXrm = (typeof (Xrm) === "undefined") ? parent.Xrm : null;
+            ODataUtils.odataEndpointUrl = (typeof (Xrm) === "undefined") ? ODataUtils.parentXrm.Page.context.getClientUrl() + '/api/data/v9.0/' : Xrm.Utility.getGlobalContext().getClientUrl() + '/api/data/v9.0/';
+            return ODataUtils;
+        }());
+        Utils.ODataUtils = ODataUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCS;
+(function (CCS) {
+    var Common;
+    (function (Common) {
+        var Constants = /** @class */ (function () {
+            function Constants() {
+            }
+            Constants.IoTCacheKeys = /** @class */ (function () {
+                function class_40() {
+                }
+                Object.defineProperty(class_40, "AtLeastOneDeviceOrAlertExist", {
+                    get: function () { return "has_at_least_one_device_or_alert"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_40;
+            }());
+            Constants.CaseOriginConstants = /** @class */ (function () {
+                function class_41() {
+                }
+                Object.defineProperty(class_41, "CaseOriginCodeFieldName", {
+                    get: function () { return "caseorigincode"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_41, "IotCaseOriginCodeValue", {
+                    get: function () { return 700610000; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_41;
+            }());
+            Constants.Dashboard = /** @class */ (function () {
+                function class_42() {
+                }
+                Object.defineProperty(class_42, "IotDeploymentLink", {
+                    get: function () { return "https://iotdeployment.dynamics.com"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_42, "IotCentralLink", {
+                    get: function () { return "https://go.microsoft.com/fwlink/?linkid=2115241"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_42;
+            }());
+            Constants.TelemetryConstants = /** @class */ (function () {
+                function class_43() {
+                }
+                Object.defineProperty(class_43, "ClientName", {
+                    get: function () { return "ConnectedCustomerService"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_43, "setContextName", {
+                    get: function () { return "ConnectedCustomerService"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_43, "setContextPrefixName", {
+                    get: function () { return "msdyn.ConnectedCustomerService"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_43;
+            }());
+            return Constants;
+        }());
+        Common.Constants = Constants;
+    })(Common = CCS.Common || (CCS.Common = {}));
+})(CCS || (CCS = {}));
+/**
+ * @license Copyright (c) Microsoft Corporation.  All rights reserved.
+ */
+var CCS;
+(function (CCS) {
+    var Common;
+    (function (Common) {
+        Common.CommonParameters = {
+            Error: 'Error',
+            Info: 'Info',
+            Marker: 'Marker',
+            Warning: 'Warning',
+            Source: 'Source',
+            Parameters: 'Parameters',
+        };
+        var Telemetry = /** @class */ (function () {
+            function Telemetry() {
+            }
+            /**
+             * Set context which is included in all log output.
+             * @param name name of the current context
+             */
+            Telemetry.setContext = function (name, prefixName) {
+                Telemetry._contextName = name;
+                Telemetry._prefixName = prefixName;
+                Telemetry._enableConsoleLog = false;
+            };
+            /**
+             * Log an error event
+             * @param source Telemetry source
+             * @param error Telemetry error
+             * @param params Telemetry params
+             */
+            Telemetry.logError = function (source, error, params) {
+                var _a;
+                var errorParam;
+                if (error instanceof Error) {
+                    var name_1 = error.name, message = error.message;
+                    errorParam = { name: name_1, message: message };
+                }
+                else if (typeof error === 'string') {
+                    errorParam = error;
+                }
+                else {
+                    errorParam = __assign({}, error);
+                }
+                var errorMarker = (_a = {},
+                    _a[Common.CommonParameters.Source] = source,
+                    _a[Common.CommonParameters.Error] = errorParam,
+                    _a[Common.CommonParameters.Parameters] = params,
+                    _a);
+                Telemetry.logInternal(Common.CommonParameters.Error, errorMarker)();
+            };
+            /**
+             * Log a warning event
+             * @param source Telemetry source
+             * @param warning Telemetry warning
+             * @param params Telemetry params
+             */
+            Telemetry.logWarning = function (source, warning, params) {
+                var _a;
+                var warningParam;
+                if (typeof warning === 'string') {
+                    warningParam = warning;
+                }
+                else {
+                    warningParam = __assign({}, warning);
+                }
+                var warningMarker = (_a = {},
+                    _a[Common.CommonParameters.Source] = source,
+                    _a[Common.CommonParameters.Warning] = warningParam,
+                    _a[Common.CommonParameters.Parameters] = params,
+                    _a);
+                Telemetry.logInternal(Common.CommonParameters.Warning, warningMarker)();
+            };
+            /**
+             * Log an informational event
+             * @param source Telemetry source
+             * @param info Telemetry informational
+             * @param params Telemetry params
+             */
+            Telemetry.logInfo = function (source, info, params) {
+                var _a;
+                var infoParam;
+                if (typeof info === 'string') {
+                    infoParam = info;
+                }
+                else {
+                    infoParam = __assign({}, info);
+                }
+                var infoMarker = (_a = {},
+                    _a[Common.CommonParameters.Source] = source,
+                    _a[Common.CommonParameters.Info] = infoParam,
+                    _a[Common.CommonParameters.Parameters] = params,
+                    _a);
+                Telemetry.logInternal(Common.CommonParameters.Info, infoMarker)();
+            };
+            /**
+             * Logs duration marker
+             * @param source
+             * @param params
+             */
+            Telemetry.startTimer = function (source, params) {
+                var _a;
+                var marker = (_a = {},
+                    _a[Common.CommonParameters.Source] = source,
+                    _a[Common.CommonParameters.Parameters] = params,
+                    _a);
+                return Telemetry.logInternal(Common.CommonParameters.Marker, marker);
+            };
+            /**
+             * Internal method to log the event to UCI
+             * @param name Event name
+             * @param parameters Event params
+             */
+            Telemetry.logInternal = function (name, parameters) {
+                CCS.Common.Telemetry.setContext(CCS.Common.Constants.TelemetryConstants.setContextName, CCS.Common.Constants.TelemetryConstants.setContextPrefixName);
+                // Safety in case the UCI context doesn't contain telemetry
+                // infrastructure.     
+                if (!Xrm.Internal || !Xrm.Internal.createPerformanceStopwatch) {
+                    return function () { };
+                }
+                if (Telemetry._enableConsoleLog && parameters) {
+                    // TODO: Add Telemetry
+                }
+                var context = Telemetry._contextName || '';
+                var fullName = Telemetry._prefixName + "." + context + "." + name;
+                var stop = Xrm.Internal.createPerformanceStopwatch(fullName, parameters);
+                return function (endParameters) {
+                    stop(endParameters);
+                };
+            };
+            return Telemetry;
+        }());
+        Common.Telemetry = Telemetry;
+    })(Common = CCS.Common || (CCS.Common = {}));
+})(CCS || (CCS = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="Common/Constants.ts" />
+/// <reference path="../../Package/IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../Utils/Common/Telemetry.ts" />
+var CCS;
+(function (CCS) {
+    var Utils;
+    (function (Utils) {
+        var _this = this;
+        var CCSIndicatorUtils = /** @class */ (function () {
+            function CCSIndicatorUtils() {
+            }
+            // This function determines whether or not IoT is in use by the org
+            CCSIndicatorUtils.iotIsActive = function () {
+                return new Promise(function (resolve, reject) {
+                    var atLeastOneDeviceOrAlertExist = CCS.Utils.CCSIndicatorUtils.GetAlertDeviceExistSessionStorage();
+                    if (atLeastOneDeviceOrAlertExist != null) {
+                        resolve(atLeastOneDeviceOrAlertExist);
+                    }
+                    else {
+                        CCS.Utils.CCSIndicatorUtils.checkIfIoTDeviceOrAlertFromCustomAction().then(function (hasAtLeastOne) {
+                            CCS.Utils.CCSIndicatorUtils.SetAlertDeviceExistSessionStorage(hasAtLeastOne);
+                            resolve(hasAtLeastOne);
+                        }, function (err) {
+                            CCS.Common.Telemetry.logError('CCSIndicator', 'iotIsActive', {
+                                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                                Error: err
+                            });
+                            reject(err);
+                        });
+                    }
+                });
+            };
+            ;
+            // Set at least one alert or device exists flag in session storage.
+            // @param value: boolean value for the flag
+            CCSIndicatorUtils.SetAlertDeviceExistSessionStorage = function (value) {
+                try {
+                    sessionStorage.setItem(CCS.Common.Constants.IoTCacheKeys.AtLeastOneDeviceOrAlertExist, JSON.stringify(value));
+                }
+                catch (e) {
+                    // Cannot set sessionStorage, no error to output
+                }
+            };
+            ;
+            // Get at least one alert or device exists flag from session storage.
+            // @returns boolean: boolean value for the flag
+            CCSIndicatorUtils.GetAlertDeviceExistSessionStorage = function () {
+                return JSON.parse(sessionStorage.getItem(CCS.Common.Constants.IoTCacheKeys.AtLeastOneDeviceOrAlertExist));
+            };
+            ;
+            // Is the current app module CustomerServiceHub
+            // @returns boolean: boolean value for the flag
+            CCSIndicatorUtils.isCSHApp = function () {
+                return new Promise(function (resolve, reject) {
+                    var globalContext = Xrm.Utility.getGlobalContext();
+                    globalContext.getCurrentAppProperties().then(function (response) {
+                        var appUniqueName = response.uniqueName;
+                        if (appUniqueName === "Customerservicehub") {
+                            resolve(true);
+                        }
+                        resolve(false);
+                    }, function (err) {
+                        CCS.Common.Telemetry.logError('CCSIndicator', 'isCSHApp', {
+                            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                            Error: err
+                        });
+                        reject(false);
+                    });
+                });
+            };
+            ;
+            CCSIndicatorUtils.getIoTDevicesFromAssetFetchXml = function (assetId) {
+                var connectedDeviceRole = "{9C86F660-5F5B-E611-810B-00155DBD6A1D}";
+                var fetchXml = "<fetch> " +
+                    "<entity name='msdyn_iotdevice'> " + // Device.
+                    "<attribute name='msdyn_iotdeviceid'/> " +
+                    "<link-entity name='connection' " + // Connection.
+                    "from='record2id' " +
+                    "to='msdyn_iotdeviceid' " +
+                    "link-type='inner' " +
+                    "alias='connection'> " +
+                    "<attribute name='record1id'/> " +
+                    "<attribute name='record2id'/> " +
+                    "<attribute name='record2roleid'/> " +
+                    "</link-entity> " +
+                    "<filter type='and'> " +
+                    "<condition entityname='connection' " + // Filter on asset.
+                    "attribute='record1id' " +
+                    "operator='eq' " +
+                    "value='" + assetId + "'/> " +
+                    "<condition entityname='connection' " + // Filter on connected device role.
+                    "attribute='record2roleid' " +
+                    "operator='eq' " +
+                    "value='" + connectedDeviceRole + "'/> " +
+                    "</filter> " +
+                    "</entity> " +
+                    "</fetch>";
+                return fetchXml;
+            };
+            CCSIndicatorUtils.getAssetsFromCaseFetchXml = function (caseId) {
+                var fetchXml = "<fetch>" +
+                    "<entity name='msdyn_customerasset' >" +
+                    "<attribute name='msdyn_customerassetid' />" +
+                    "<attribute name='msdyn_name' />" +
+                    "<link-entity name='msdyn_incident_msdyn_customerasset' " +
+                    "from='msdyn_customerassetid' " + " to='msdyn_customerassetid' " +
+                    " link-type='inner' " +
+                    " intersect='true' >" +
+                    "<link-entity name='incident' " +
+                    "from='incidentid' " +
+                    "to='incidentid' " +
+                    "link-type='inner' >" +
+                    "<attribute name='accountidname' />" +
+                    "<attribute name='title' />" +
+                    "<filter>" +
+                    "<condition attribute='incidentid' " +
+                    "operator='eq' " +
+                    "value='" + caseId + "' />" +
+                    "</filter>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</entity>" +
+                    "</fetch>";
+                return fetchXml;
+            };
+            CCSIndicatorUtils.shouldDeviceInsightsBeVisible = function (entityName, fetchXmlQuery) {
+                return new Promise(function (resolve, reject) {
+                    CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(entityName, fetchXmlQuery), "", function (deviceInsightsconfigData) {
+                        var showDeviceInsightsTab = false;
+                        var actionName = "";
+                        var timeseriesUrl = "";
+                        if (deviceInsightsconfigData && deviceInsightsconfigData.value && deviceInsightsconfigData.value[0]) {
+                            actionName = deviceInsightsconfigData.value[0]["provider.msdyn_querydevicereadingsaction"] ? deviceInsightsconfigData.value[0]["provider.msdyn_querydevicereadingsaction"] : "";
+                            timeseriesUrl = deviceInsightsconfigData.value[0]["providerinstance.msdyn_timeseriesinsightsurl"] ? deviceInsightsconfigData.value[0]["providerinstance.msdyn_timeseriesinsightsurl"] : "";
+                            var defaultCustomActionName = CCSRef.Common.Constants.Msdyn_iotprovider.IoTHubQueryReadingsAction;
+                            //If actionName is same OOB name, then ensure timeseriesUrl is populated OR
+                            //If actionName populated but is not same as OOB, we dont check timeseriesUrl, but show the tab and any missing config will be handled by the 3rd party plugin code
+                            if (actionName !== "" && ((actionName === defaultCustomActionName && timeseriesUrl !== "") || (actionName !== defaultCustomActionName))) {
+                                showDeviceInsightsTab = true;
+                            }
+                        }
+                        resolve(showDeviceInsightsTab);
+                    }, function (err) {
+                        try {
+                            CCS.Common.Telemetry.logError('CCSIndicator', 'isCSHApp', {
+                                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                                Error: err
+                            });
+                            reject(err.error.message);
+                        }
+                        catch (e) {
+                            CCS.Common.Telemetry.logError('CCSIndicator', 'isCSHApp', {
+                                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                                Error: err
+                            });
+                        }
+                    });
+                });
+            };
+            //FetchXml Query for Device Insights Config Information using IoTSettings
+            //@returns fetchXmlquery: Query to fetch config based on iotsettings
+            CCSIndicatorUtils.getDeviceInsightsConfigFromIoTSettingsFetchXml = function () {
+                var fetchXmlQuery = "<fetch version='1.0' output-format='xml-platform' mapping='logical'>" +
+                    "<entity name='msdyn_iotsettings'>" +
+                    "<attribute name = 'msdyn_defaultiotproviderinstance'/>" +
+                    "<link-entity name='msdyn_iotproviderinstance' from='msdyn_iotproviderinstanceid' to='msdyn_defaultiotproviderinstance' link-type='inner' alias='providerinstance'>" +
+                    "<attribute name = 'msdyn_iotproviderinstanceid'/>" +
+                    "<attribute name = 'msdyn_timeseriesinsightsurl'/>" +
+                    "<link-entity name = 'msdyn_iotprovider' from = 'msdyn_iotproviderid' to = 'msdyn_iotprovider' link-type='inner' alias = 'provider'>" +
+                    "<attribute name = 'msdyn_querydevicereadingsaction'/>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</entity>" +
+                    "</fetch>";
+                return fetchXmlQuery;
+            };
+            // This function determines if atleast one record exists in msdyn_iotdevice or msdyn_iotalert
+            // @param successCallback Success callback function
+            // @param failureCallback failure callback function
+            // @returns a boolean Promise: true if atleast one record exists in msdyn_iotdevice or msdyn_iotalert, otherwise false
+            CCSIndicatorUtils.checkIfIoTDeviceOrAlertFromCustomAction = function () { return __awaiter(_this, void 0, void 0, function () {
+                var entitiesLogicalName, params;
+                return __generator(this, function (_a) {
+                    entitiesLogicalName = 'msdyn_iotdevice,msdyn_iotalert';
+                    params = {
+                        EntitiesLogicalNames: entitiesLogicalName
+                    };
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            CCSRef.Utils.ODataUtils.executeRequest("POST", 'msdyn_IoTCheckIfRecordExistsInEntity', params, function (response) {
+                                if (response && ('IsRecordExists' in response)) {
+                                    var isRecordExists = response["IsRecordExists"];
+                                    resolve(isRecordExists);
+                                }
+                                else {
+                                    reject(new EvalError('ConstantErrorCodes.errorFailCallPlugin'));
+                                }
+                            }, function (err) {
+                                reject(err.error);
+                            });
+                        })];
+                });
+            }); };
+            return CCSIndicatorUtils;
+        }());
+        Utils.CCSIndicatorUtils = CCSIndicatorUtils;
+    })(Utils = CCS.Utils || (CCS.Utils = {}));
+})(CCS || (CCS = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var msdyn = msdyn || {};
+msdyn.RibbonUtils = msdyn.RibbonUtils || {};
+msdyn.RibbonUtils.CCS = msdyn.RibbonUtils.CCS || {};
+msdyn.RibbonUtils.CCS.isNullOrEmpty = function (entity) {
+    return !(entity && entity.length > 0);
+};
+// Used for the onChange event of a field on form.
+// executionFormContext = the execution form context of the form.
+msdyn.RibbonUtils.CCS.refreshRibbonFnFromExecutionFormContext = function (executionFormContext) {
+    executionFormContext.getFormContext().ui.refreshRibbon(false);
+};
+msdyn.RibbonUtils.CCS.checkPrivilege = function (userId, privilegeName) {
+    return new Promise(function (resolve, reject) {
+        var url = Xrm.Page.context.getClientUrl();
+        var res;
+        var req = new XMLHttpRequest();
+        req.open("GET", url + "/api/data/v9.0/systemusers(" + userId + ")/Microsoft.Dynamics.CRM.RetrieveUserPrivilegeByPrivilegeName(PrivilegeName='" + privilegeName + "')");
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 /* complete */) {
+                req.onreadystatechange = null;
+                if (this.status == 200 || this.status == 204) {
+                    res = JSON.parse(this.response);
+                    resolve(res);
+                }
+                else {
+                    reject();
+                }
+            }
+        };
+        req.send(window.JSON.stringify());
+    });
+};
+var msdyn = msdyn || {};
+msdyn.RibbonUtilFetches = msdyn.RibbonUtilFetches || {};
+msdyn.RibbonUtilFetches.CCS = msdyn.RibbonUtilFetches.CCS || {};
+msdyn.RibbonUtilFetches.CCS.getAlertFromEntityFetchXML = function (fetchXMLInfo) {
+    var fetchXml = "<fetch> " +
+        "<entity name='msdyn_iotalert'> " + // IoT Alert.
+        "<attribute name='msdyn_iotalertid'/> " +
+        "<attribute name='msdyn_description'/> " +
+        "<link-entity name='" + fetchXMLInfo.entityname + "' " + // Work order or Case.
+        "from='msdyn_iotalert' " +
+        "to='msdyn_iotalertid' " +
+        "link-type='inner' " +
+        "alias='" + fetchXMLInfo.alias + "'> " +
+        "<filter type='and'> " +
+        "<condition attribute='" + fetchXMLInfo.conditionattribute + "' " + // Filter on workorderId/caseId.
+        "operator='eq' " +
+        "value='" + fetchXMLInfo.entityid + "'/> " + // Id.
+        "</filter> " +
+        "</link-entity> " +
+        "</entity> " +
+        "</fetch>";
+    return fetchXml;
+};
+msdyn.RibbonUtilFetches.CCS.getAssetsFromRelationshipFetchXML = function (fetchXMLInfo) {
+    var fetchXml = "<fetch> " +
+        "<entity name='msdyn_customerasset'> " + // Customer Asset.
+        "<attribute name='msdyn_customerassetid'/> " +
+        "<attribute name='msdyn_name'/> " +
+        "<link-entity name='" + fetchXMLInfo["relationshipname"] + "' " + // Relationship name
+        "from='msdyn_customerassetid' " +
+        "to='msdyn_customerassetid' " +
+        "link-type='inner' " +
+        "alias='" + fetchXMLInfo.alias + "'> " +
+        "<filter type='and'> " +
+        "<condition attribute='" + fetchXMLInfo.conditionattribute + "' " + // Filter on caseId.
+        "operator='eq' " +
+        "value='" + fetchXMLInfo.entityid + "'/> " + // Id.
+        "</filter> " +
+        "</link-entity> " +
+        "</entity> " +
+        "</fetch>";
+    return fetchXml;
+};
+/// <reference path="../../Package/IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../Utils/CCSIndicatorUtils.ts" />
+/// <reference path="../Utils/Models/FetchXMLInfo.ts" />
+/// <reference path="../Utils/RibbonUtils.ts" />
+/// <reference path="../RibbonUtilFetchs/RibbonUtilFetchs.ts" />
+/// <reference path="../Utils/Common/Telemetry.ts" />
+var msdyn = msdyn || {};
+msdyn.DisplayRibbonUtils = msdyn.DisplayRibbonUtils || {};
+msdyn.DisplayRibbonUtils.CCS = msdyn.DisplayRibbonUtils.CCS || {};
+// Retrieve if alert associated and refresh ribbon if there is an alert associated.
+// recordId = the id of the record selected.
+// selectedControl = selected control.
+// fetchXMLInfo = fetchXML model containing details of the fetchXML call.
+msdyn.DisplayRibbonUtils.CCS.displayIfAssociatedAlertHome = function (recordId, fetchXMLInfo) {
+    return new Promise(function (resolve, reject) {
+        var entityReference = recordId[0];
+        fetchXMLInfo.entityid = entityReference.Id;
+        var fetchXML = msdyn.RibbonUtilFetches.CCS.getAlertFromEntityFetchXML(fetchXMLInfo);
+        CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml("msdyn_iotalerts", fetchXML), "", function (data) {
+            if (data) {
+                var entity = data.value;
+                // Ensure entities that require an alert have an alert associated.
+                resolve(!msdyn.RibbonUtils.CCS.isNullOrEmpty(entity));
+            }
+            else {
+                resolve(false);
+            }
+        }, function (err) {
+            try {
+                CCS.Common.Telemetry.logError('DisplayRibbonUtils', 'displayIfAssociatedAlertHome', {
+                    Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                    Error: err
+                });
+            }
+            catch (e) {
+                CCS.Common.Telemetry.logError('DisplayRibbonUtils', 'displayIfAssociatedAlertHome', {
+                    Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                    Error: e
+                });
+            }
+            resolve(false);
+        });
+    });
+};
+// Retrieve if asset associated and refresh ribbon if there is an customer asset related.
+// recordId = the id of the record selected.
+// selectedControl = selected control.
+// fetchXMLInfo = fetchXML model containing details of the fetchXML call.
+msdyn.DisplayRibbonUtils.CCS.displayIfAssociatedAssetHome = function (fetchXMLInfo) {
+    return new Promise(function (resolve, reject) {
+        CCS.Utils.CCSIndicatorUtils.iotIsActive().then(function (isIoTInUse) {
+            if (!isIoTInUse) {
+                resolve(isIoTInUse);
+            }
+            else {
+                var fetchXML = msdyn.RibbonUtilFetches.CCS.getAssetsFromRelationshipFetchXML(fetchXMLInfo);
+                CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml("msdyn_customerassets", fetchXML), "", function (data) {
+                    if (data) {
+                        var entities = data.value;
+                        // Ensure entities that require an asset have an asset associated.
+                        resolve(!msdyn.RibbonUtils.CCS.isNullOrEmpty(entities));
+                    }
+                    else {
+                        resolve(false);
+                    }
+                }, function (err) {
+                    try {
+                        CCS.Common.Telemetry.logError('DisplayRibbonUtils', 'displayIfAssociatedAssetHome', {
+                            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                            Error: err.error.message
+                        });
+                    }
+                    catch (e) {
+                        CCS.Common.Telemetry.logError('DisplayRibbonUtils', 'displayIfAssociatedAssetHome', {
+                            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                            Error: e
+                        });
+                    }
+                    resolve(false);
+                });
+            }
+        }, function (error) {
+            CCS.Common.Telemetry.logError('DisplayRibbonUtils', 'displayIfAssociatedAssetHome', {
+                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                Error: error
+            });
+            resolve(false);
+        });
+    });
+};
+// This function determines whether or not IoT is in use by the org
+// @returns boolean: true if IoT is in use, false if IoT is not in use
+// POTENTIAL TO REMOVE AFTER IOTCENTRAL DEPLOYMENT FEATURE IS COMPLETE
+msdyn.DisplayRibbonUtils.CCS.displayIfIoTIsInUse = function () {
+    return new Promise(function (resolve, reject) {
+        CCS.Utils.CCSIndicatorUtils.iotIsActive().then(function (isIoTInUse) {
+            resolve(isIoTInUse);
+        }, function (err) {
+            resolve(false);
+        });
+    });
+};
+msdyn.DisplayRibbonUtils.CCS.displayIfCSHAppModule = function () {
+    return new Promise(function (resolve, reject) {
+        CCS.Utils.CCSIndicatorUtils.isCSHApp().then(function (isCSH) {
+            resolve(isCSH);
+        }, function (err) {
+            CCS.Common.Telemetry.logInfo('DisplayRibbonUtils', 'displayIfAssociatedAssetHome', {
+                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                Error: err.error.message
+            });
+            resolve(false);
+        });
+    });
+};
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRef;
+(function (CCSRef) {
+    var Models;
+    (function (Models) {
+        var AlertDeviceInfo = /** @class */ (function () {
+            function AlertDeviceInfo() {
+                this.alertid = null;
+                this.alertname = null;
+                this.iotdeviceid = null;
+                this.deviceid = null;
+                this.iotdevicename = null;
+                this.parententityid = null;
+            }
+            return AlertDeviceInfo;
+        }());
+        Models.AlertDeviceInfo = AlertDeviceInfo;
+    })(Models = CCSRef.Models || (CCSRef.Models = {}));
+})(CCSRef || (CCSRef = {}));
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var IotProviderUtils = /** @class */ (function () {
+            function IotProviderUtils() {
+            }
+            //FetchXml Query for Device Insights Config Information using AlertId
+            //@param alertId: AlertGuid associated with Form
+            //@returns fetchXmlquery: Query to fetch config based on alertId
+            IotProviderUtils.getDeviceInsightsConfigFromAlertGuidFetchXml = function (alertId) {
+                var fetchXmlQuery = "<fetch version='1.0' output-format='xml-platform' mapping='logical'>" +
+                    "<entity name='msdyn_iotalert'>" +
+                    "<attribute name = 'msdyn_iotalertid'/>" +
+                    "<filter type = 'and'>" +
+                    "<condition attribute = 'msdyn_iotalertid' operator = 'eq' value = '" + alertId + "'/>" +
+                    "</filter>" +
+                    "<link-entity name = 'msdyn_iotdevice' from = 'msdyn_iotdeviceid' to = 'msdyn_device' link-type='inner' alias = 'iotDevice'>" +
+                    "<attribute name='msdyn_iotdeviceid'/>" +
+                    "<link-entity name='msdyn_iotproviderinstance' from='msdyn_iotproviderinstanceid' to='msdyn_iotproviderinstance' link-type='inner' alias='providerinstance'>" +
+                    "<attribute name = 'msdyn_iotproviderinstanceid'/>" +
+                    "<attribute name = 'msdyn_timeseriesinsightsurl'/>" +
+                    "<link-entity name = 'msdyn_iotprovider' from = 'msdyn_iotproviderid' to = 'msdyn_iotprovider' link-type='inner' alias = 'provider'>" +
+                    "<attribute name = 'msdyn_querydevicereadingsaction'/>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</entity>" +
+                    "</fetch>";
+                return fetchXmlQuery;
+            };
+            //FetchXml Query for Device Insights Config Information using DeviceId
+            //@param deviceId: deviceGuid associated with Form
+            //@returns fetchXmlquery: Query to fetch config based on deviceId
+            IotProviderUtils.getDeviceInsightsConfigFromDeviceGuidFetchXml = function (deviceId) {
+                var fetchXmlQuery = "<fetch version='1.0' output-format='xml-platform' mapping='logical'>" +
+                    "<entity name='msdyn_iotdevice'>" +
+                    "<attribute name = 'msdyn_iotdeviceid'/>" +
+                    "<filter type = 'and'>" +
+                    "<condition attribute = 'msdyn_iotdeviceid' operator = 'eq' value = '" + deviceId + "'/>" +
+                    "</filter>" +
+                    "<link-entity name='msdyn_iotproviderinstance' from='msdyn_iotproviderinstanceid' to='msdyn_iotproviderinstance' link-type='inner' alias='providerinstance'>" +
+                    "<attribute name = 'msdyn_iotproviderinstanceid'/>" +
+                    "<attribute name = 'msdyn_timeseriesinsightsurl'/>" +
+                    "<link-entity name = 'msdyn_iotprovider' from = 'msdyn_iotproviderid' to = 'msdyn_iotprovider' link-type='inner' alias = 'provider'>" +
+                    "<attribute name = 'msdyn_querydevicereadingsaction'/>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</entity>" +
+                    "</fetch>";
+                return fetchXmlQuery;
+            };
+            //FetchXml Query for Device Insights Config Information using DeviceId
+            //@param deviceId: deviceId associated with Form
+            //@returns fetchXmlquery: Query to fetch config based on deviceId
+            IotProviderUtils.getDeviceInsightsConfigFromDeviceIdFetchXml = function (deviceId) {
+                var fetchXmlQuery = "<fetch version='1.0' output-format='xml-platform' mapping='logical'>" +
+                    "<entity name='msdyn_iotdevice'>" +
+                    "<attribute name = 'msdyn_deviceid'/>" +
+                    "<filter type = 'and'>" +
+                    "<condition attribute = 'msdyn_deviceid' operator = 'eq' value = '" + deviceId + "'/>" +
+                    "</filter>" +
+                    "<link-entity name='msdyn_iotproviderinstance' from='msdyn_iotproviderinstanceid' to='msdyn_iotproviderinstance' link-type='inner' alias='providerinstance'>" +
+                    "<attribute name = 'msdyn_iotproviderinstanceid'/>" +
+                    "<attribute name = 'msdyn_timeseriesinsightsurl'/>" +
+                    "<link-entity name = 'msdyn_iotprovider' from = 'msdyn_iotproviderid' to = 'msdyn_iotprovider' link-type='inner' alias = 'provider'>" +
+                    "<attribute name = 'msdyn_querydevicereadingsaction'/>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</entity>" +
+                    "</fetch>";
+                return fetchXmlQuery;
+            };
+            return IotProviderUtils;
+        }());
+        Utils.IotProviderUtils = IotProviderUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRefAsset;
+(function (CCSRefAsset) {
+    var Models;
+    (function (Models) {
+        var AlertAndDeviceInfo = /** @class */ (function () {
+            function AlertAndDeviceInfo() {
+                this.alertid = null;
+                this.alertname = null;
+                this.iotdeviceid = null;
+                this.deviceid = null;
+                this.iotdevicename = null;
+                this.parententityid = null;
+                this.assetid = null;
+                this.assetname = null;
+                this.assethide = null;
+                this.assetviewname = null;
+                this.assetviewfetch = null;
+                this.assetview = null;
+                this.assetviewsecondaryname = null;
+                this.assetviewsecondaryfetch = null;
+            }
+            return AlertAndDeviceInfo;
+        }());
+        Models.AlertAndDeviceInfo = AlertAndDeviceInfo;
+    })(Models = CCSRefAsset.Models || (CCSRefAsset.Models = {}));
+})(CCSRefAsset || (CCSRefAsset = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Models/AlertAndDeviceInfo.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/IoTProviderUtils.ts" />
+/// <reference path="../AlertAndDeviceInfo/AlertAndDeviceInfo.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/Scripts/typings/IoT/Localization/Localization.d.ts" />
+var CCSRefAsset;
+(function (CCSRefAsset) {
+    var Utils;
+    (function (Utils) {
+        var FormUtils = /** @class */ (function () {
+            function FormUtils() {
+            }
+            // Checks if the entity is an alert.
+            // entityName = the type of the entity. For example, "msdyn_iotalerts" or "msdyn_iotdevices".
+            // returns true if the entity is an alert, false otherwise.
+            FormUtils.isAlertEntity = function (entityName) {
+                return entityName == "msdyn_iotalerts";
+            };
+            // Checks if the entity exists (is associated).
+            // entity = the entity you want to check if it exists (is associated).
+            // returns true if is the entity does not exist (is not associated), false otherwise.
+            FormUtils.isNullOrEmpty = function (entity) {
+                return !(entity && entity.length > 0);
+            };
+            // Gets the device information associated to the entity.
+            // alertAndDeviceInfo = class containing the alert and device information associated to the given entity.
+            // entityName = the type of the entity. For example, "msdyn_iotalerts" or "msdyn_iotdevices".
+            // entity = the entity you want to get the associated device of.
+            FormUtils.populateDeviceInfo = function (alertAndDeviceInfo, entityName, entity) {
+                // If there is a device associated.
+                // If not, the device fields in alertAndDeviceInfo remain null.
+                if (!FormUtils.isNullOrEmpty(entity)) {
+                    var AttributeDeviceId = "msdyn_deviceid";
+                    var AttributeIoTDeviceId;
+                    var AttributeDeviceName;
+                    // Depending on type of entity, attribute names differ.
+                    if (FormUtils.isAlertEntity(entityName)) {
+                        AttributeIoTDeviceId = "_msdyn_device_value";
+                        AttributeDeviceName = "msdyn_device_name";
+                    }
+                    else { // entityName == "msdyn_iotdevices"
+                        AttributeIoTDeviceId = "msdyn_iotdeviceid";
+                        AttributeDeviceName = "msdyn_name";
+                    }
+                    alertAndDeviceInfo.deviceid = entity[0][AttributeDeviceId];
+                    alertAndDeviceInfo.iotdeviceid = entity[0][AttributeIoTDeviceId];
+                    alertAndDeviceInfo.iotdevicename = entity[0][AttributeDeviceName];
+                }
+            };
+            // Gets the asset information associated to the entity.
+            // alertAndDeviceInfo = class containing the alert and device information associated to the given entity.
+            // entityName = the type of the entity. For example, "msdyn_iotalerts" or "msdyn_iotdevices".
+            // entity = the entity you want to get the associated device of.
+            FormUtils.populateAssetInfo = function (alertAndDeviceInfo, entityName, entity) {
+                // If there is a device associated.
+                // If not, the device fields in alertAndDeviceInfo remain null.
+                if (!FormUtils.isNullOrEmpty(entity)) {
+                    var AttributeAssetId = "_msdyn_customerasset_value";
+                    var AttributeAssetName = "msdyn_customerasset_name";
+                    alertAndDeviceInfo.assetid = entity[0][AttributeAssetId];
+                    alertAndDeviceInfo.assetname = entity[0][AttributeAssetName];
+                }
+            };
+            // Gets the alert information associated to the entity.
+            // alertAndDeviceInfo = class containing the alert and device information associated to the given entity.
+            // alertEntity = the alert entity you want to get associated alert information from.
+            // alertReference = reference to the alert containing alert id and alert name.
+            FormUtils.populateAlertInfo = function (alertAndDeviceInfo, alertEntity, alertReference) {
+                if (alertReference) {
+                    alertAndDeviceInfo.alertid = alertReference.Id;
+                    alertAndDeviceInfo.alertname = alertReference.Name;
+                }
+                else if (!FormUtils.isNullOrEmpty(alertEntity)) {
+                    var AttributeDescription = "msdyn_description";
+                    var AttributeIoTAlertId = "msdyn_iotalertid";
+                    alertAndDeviceInfo.alertid = alertEntity[0][AttributeIoTAlertId];
+                    alertAndDeviceInfo.alertname = alertEntity[0][AttributeDescription];
+                }
+            };
+            // Retrieves alert and/or device information associated to entity and opens a new command form.
+            // entityName = name of entity you are trying to fetch in fetchXML. 
+            // fetchXml = the fetchXml used to retrive the alert and/or device associated with the given entity.
+            // successCallback = Method to be called on success. Takes a variable containing alert and device information for given entity.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            // alertReference = reference to the alert containing alert id and alert name.
+            FormUtils.getAlertDeviceFromEntity = function (entityName, fetchXml, successCallback, failureCallback, alertReference) {
+                CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(entityName, fetchXml), "", function (data) {
+                    if (data) {
+                        var entity = data.value;
+                        var alertAndDeviceInfo = new CCSRefAsset.Models.AlertAndDeviceInfo();
+                        // Ensure entities that require an alert have an alert associated.
+                        if (FormUtils.isAlertEntity(entityName) && FormUtils.isNullOrEmpty(entity)) {
+                            // If the entity needs an alert and does not have an alert linked to it.
+                            Xrm.Navigation.openAlertDialog({ text: CCSRef.Localization.Localization.localize("@:associateAlertToEntity") }, { height: 300 });
+                        }
+                        else {
+                            if (FormUtils.isAlertEntity(entityName)) {
+                                FormUtils.populateAssetInfo(alertAndDeviceInfo, entityName, entity);
+                                FormUtils.populateAlertInfo(alertAndDeviceInfo, entity);
+                            }
+                            else {
+                                FormUtils.populateAlertInfo(alertAndDeviceInfo, null, alertReference);
+                            }
+                            FormUtils.populateDeviceInfo(alertAndDeviceInfo, entityName, entity);
+                            if (successCallback) {
+                                successCallback(alertAndDeviceInfo);
+                            }
+                        }
+                    }
+                }, function (err) {
+                    try {
+                        console.error(err.error.message);
+                    }
+                    catch (e) {
+                        console.error(err);
+                    }
+                    if (failureCallback) {
+                        failureCallback(err);
+                    }
+                });
+            };
+            return FormUtils;
+        }());
+        Utils.FormUtils = FormUtils;
+    })(Utils = CCSRefAsset.Utils || (CCSRefAsset.Utils = {}));
+})(CCSRefAsset || (CCSRefAsset = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRefAsset;
+(function (CCSRefAsset) {
+    var Command;
+    (function (Command_1) {
+        var Models;
+        (function (Models) {
+            var Command = /** @class */ (function () {
+                function Command() {
+                    this.msdyn_deviceid = null;
+                    this.msdyn_devicename = null;
+                    this.msdyn_command = null;
+                    this.msdyn_parentalert = null;
+                    this.msdyn_parentalertname = null;
+                    this.msdyn_device = null;
+                    this.msdyn_name = null;
+                    this.msdyn_message = null;
+                    this.msdyn_customerasset = null;
+                }
+                return Command;
+            }());
+            Models.Command = Command;
+        })(Models = Command_1.Models || (Command_1.Models = {}));
+    })(Command = CCSRefAsset.Command || (CCSRefAsset.Command = {}));
+})(CCSRefAsset || (CCSRefAsset = {}));
+/// <reference path="../Localization/Provider/StringProvider.ts" />
+/// <reference path="../../Package/IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../../TypeDefinitions/Crm.ClientApiTypings/clientapi/XrmClientApi.d.ts" />
+/// <reference path="../SendCommandRibbonUtils/SendCommandRibbonUtils.ts" />
+/// <reference path="../Utils/CCSIndicatorUtils.ts" />
+/// <reference path="../Utils/RibbonUtils.ts" />
+/// <reference path="../Utils/Common/Constants.ts" />
+/// <reference path="../Utils/Common/Telemetry.ts" />
+var msdyn = msdyn || {};
+msdyn.AssetRibbonUtils = msdyn.AssetRibbonUtils || {};
+msdyn.AssetRibbonUtils.CCS = msdyn.AssetRibbonUtils.CCS || {};
+msdyn.AssetRibbonUtils.CCS.IoTDevice_MFD = "dde8984c-b2fe-40ee-a248-c74d6ecc736d";
+msdyn.AssetRibbonUtils.CCS.isCaseCreationAllowed = function () {
+    return new Promise(function (resolve, reject) {
+        var userId = Xrm.Page.context.getUserId().replace(/[{}]/g, "");
+        var PrivilegeName = "prvCreateIncident";
+        msdyn.RibbonUtils.CCS.checkPrivilege(userId, PrivilegeName).then(function (result) {
+            if (result.RolePrivileges.length > 0) {
+                resolve(true);
+            }
+            else {
+                resolve(false);
+            }
+        }).catch(function () {
+            resolve(false);
+        });
+    });
+};
+msdyn.AssetRibbonUtils.CCS.displayDeviceAttributes = function (firstPrimaryItemId) {
+    msdyn.SendCommandRibbonUtils.CCS.IsOnlyOneDeviceLinked().then(function (hasOne) {
+        if (hasOne) {
+            CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml("msdyn_iotdevices", CCS.Utils.CCSIndicatorUtils.getIoTDevicesFromAssetFetchXml(firstPrimaryItemId)), "", function (data) {
+                if (data) {
+                    var devices = data.value;
+                    if (devices && devices.length > 0) {
+                        var deviceId = devices[0]["msdyn_iotdeviceid"];
+                        var pageInput = {
+                            pageType: "entityrecord",
+                            entityName: "msdyn_iotdevice",
+                            entityId: deviceId,
+                            formId: msdyn.AssetRibbonUtils.CCS.IoTDevice_MFD
+                        };
+                        var options = {
+                            showDialog: true,
+                            hideDialogHeader: true,
+                            target: 2,
+                            width: 600,
+                            position: 2 /* right */
+                        };
+                        Xrm.Navigation.navigateTo(pageInput, options).then(function (success) {
+                            CCS.Common.Telemetry.logInfo('AssetRibbonUtils', 'displayDeviceAttributes', {
+                                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                                Log: 'success'
+                            });
+                        });
+                    }
+                }
+            }, function (err) {
+                CCS.Common.Telemetry.logInfo('AssetRibbonUtils', 'displayDeviceAttributes', {
+                    Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                    Log: err.error.message
+                });
+            });
+        }
+        else {
+            var alertStrings = { text: CCS.StringProvider.getResourceString("nodeviceslinked") };
+            Xrm.Navigation.openAlertDialog(alertStrings);
+        }
+    }, function (err) {
+        CCS.Common.Telemetry.logError('AssetRibbonUtils', 'displayDeviceAttributes', {
+            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+            Error: err
+        });
+    });
+};
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../../../../Scripts/typings/IoT/Localization/Localization.d.ts"/>
+/// <reference path="../../../../Scripts/typings/IoT/Libes6/lib.es6.d.ts" />
+/// <reference path="../Models/AlertAndDeviceInfo.ts" />
+/// <reference path="../Utils/ODataUtils.ts" />
+/// <reference path="../Utils/IoTProviderUtils.ts" />
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var FormUtils = /** @class */ (function () {
+            function FormUtils() {
+            }
+            // Checks if the entity is an alert.
+            // entityName = the type of the entity. For example, "msdyn_iotalerts" or "msdyn_iotdevices".
+            // returns true if the entity is an alert, false otherwise.
+            FormUtils.isAlertEntity = function (entityName) {
+                return entityName == "msdyn_iotalerts";
+            };
+            // Checks if the entity exists (is associated).
+            // entity = the entity you want to check if it exists (is associated).
+            // returns true if is the entity does not exist (is not associated), false otherwise.
+            FormUtils.isNullOrEmpty = function (entity) {
+                return !(entity && entity.length > 0);
+            };
+            // Gets the device information associated to the entity.
+            // alertAndDeviceInfo = class containing the alert and device information associated to the given entity.
+            // entityName = the type of the entity. For example, "msdyn_iotalerts" or "msdyn_iotdevices".
+            // entity = the entity you want to get the associated device of.
+            FormUtils.populateDeviceInfo = function (alertAndDeviceInfo, entityName, entity) {
+                // If there is a device associated.
+                // If not, the device fields in alertAndDeviceInfo remain null.
+                if (!FormUtils.isNullOrEmpty(entity)) {
+                    var AttributeDeviceId = "msdyn_deviceid";
+                    var AttributeIoTDeviceId;
+                    var AttributeDeviceName;
+                    // Depending on type of entity, attribute names differ.
+                    if (FormUtils.isAlertEntity(entityName)) {
+                        AttributeIoTDeviceId = "_msdyn_device_value";
+                        AttributeDeviceName = "msdyn_device_name";
+                    }
+                    else { // entityName == "msdyn_iotdevices"
+                        AttributeIoTDeviceId = "msdyn_iotdeviceid";
+                        AttributeDeviceName = "msdyn_name";
+                    }
+                    alertAndDeviceInfo.deviceid = entity[0][AttributeDeviceId];
+                    alertAndDeviceInfo.iotdeviceid = entity[0][AttributeIoTDeviceId];
+                    alertAndDeviceInfo.iotdevicename = entity[0][AttributeDeviceName];
+                }
+            };
+            // Gets the alert information associated to the entity.
+            // alertAndDeviceInfo = class containing the alert and device information associated to the given entity.
+            // alertEntity = the alert entity you want to get associated alert information from.
+            // alertReference = reference to the alert containing alert id and alert name.
+            FormUtils.populateAlertInfo = function (alertAndDeviceInfo, alertEntity, alertReference) {
+                if (alertReference) {
+                    alertAndDeviceInfo.alertid = alertReference.Id;
+                    alertAndDeviceInfo.alertname = alertReference.Name;
+                }
+                else if (!FormUtils.isNullOrEmpty(alertEntity)) {
+                    var AttributeDescription = "msdyn_description";
+                    var AttributeIoTAlertId = "msdyn_iotalertid";
+                    alertAndDeviceInfo.alertid = alertEntity[0][AttributeIoTAlertId];
+                    alertAndDeviceInfo.alertname = alertEntity[0][AttributeDescription];
+                }
+            };
+            // Retrieves alert and/or device information associated to entity and opens a new command form.
+            // entityName = name of entity you are trying to fetch in fetchXML. 
+            // fetchXml = the fetchXml used to retrive the alert and/or device associated with the given entity.
+            // successCallback = Method to be called on success. Takes a variable containing alert and device information for given entity.
+            // failureCallback = Method to be called on failure. Takes a string argument that contains the response of the query.
+            // alertReference = reference to the alert containing alert id and alert name.
+            FormUtils.getAlertDeviceFromEntity = function (entityName, fetchXml, successCallback, failureCallback, alertReference) {
+                CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(entityName, fetchXml), "", function (data) {
+                    if (data) {
+                        var entity = data.value;
+                        var alertAndDeviceInfo = new CCSRef.Models.AlertDeviceInfo();
+                        // Ensure entities that require an alert have an alert associated.
+                        if (FormUtils.isAlertEntity(entityName) && FormUtils.isNullOrEmpty(entity)) {
+                            // If the entity needs an alert and does not have an alert linked to it.
+                            Xrm.Navigation.openAlertDialog({ text: CCSRef.Localization.Localization.localize("@:associateAlertToEntity") }, { height: 300 });
+                        }
+                        else {
+                            if (FormUtils.isAlertEntity(entityName)) {
+                                FormUtils.populateAlertInfo(alertAndDeviceInfo, entity);
+                            }
+                            else {
+                                FormUtils.populateAlertInfo(alertAndDeviceInfo, null, alertReference);
+                            }
+                            FormUtils.populateDeviceInfo(alertAndDeviceInfo, entityName, entity);
+                            if (successCallback) {
+                                successCallback(alertAndDeviceInfo);
+                            }
+                        }
+                    }
+                }, function (err) {
+                    try {
+                        console.error(err.error.message);
+                    }
+                    catch (e) {
+                        console.error(err);
+                    }
+                    if (failureCallback) {
+                        failureCallback(err);
+                    }
+                });
+            };
+            //Fetch Device Insights Config Information to determine whether to show/hide Device Insights tab
+            //@param entityName: entityName to query data from
+            //@param fetchXmlquery: Query to fetch deviceInsights config
+            //@returns: Returns boolean to show or hide Device Insights tab
+            FormUtils.shouldDeviceInsightsBeVisible = function (entityName, fetchXmlQuery) {
+                return new Promise(function (resolve, reject) {
+                    CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(entityName, fetchXmlQuery), "", function (deviceInsightsconfigData) {
+                        var showDeviceInsightsTab = false;
+                        var actionName = "";
+                        var timeseriesUrl = "";
+                        if (deviceInsightsconfigData && deviceInsightsconfigData.value && deviceInsightsconfigData.value[0]) {
+                            actionName = deviceInsightsconfigData.value[0]["provider.msdyn_querydevicereadingsaction"] ? deviceInsightsconfigData.value[0]["provider.msdyn_querydevicereadingsaction"] : "";
+                            timeseriesUrl = deviceInsightsconfigData.value[0]["providerinstance.msdyn_timeseriesinsightsurl"] ? deviceInsightsconfigData.value[0]["providerinstance.msdyn_timeseriesinsightsurl"] : "";
+                            var defaultCustomActionName = CCSRef.Common.Constants.Msdyn_iotprovider.IoTHubQueryReadingsAction;
+                            //If actionName is same OOB name, then ensure timeseriesUrl is populated OR
+                            //If actionName populated but is not same as OOB, we dont check timeseriesUrl, but show the tab and any missing config will be handled by the 3rd party plugin code
+                            if (actionName !== "" && ((actionName === defaultCustomActionName && timeseriesUrl !== "") || (actionName !== defaultCustomActionName))) {
+                                showDeviceInsightsTab = true;
+                            }
+                        }
+                        resolve(showDeviceInsightsTab);
+                    }, function (err) {
+                        try {
+                            console.error(err.error.message);
+                            reject(err.error.message);
+                        }
+                        catch (e) {
+                            console.error(err);
+                        }
+                    });
+                });
+            };
+            // Check pre validation conditions and show or hide device insights tab based on availabilty of tab, fields (device id or device or alert). 
+            // tab = Tab to be shown or hidden
+            // guidorid = device guid or alert guid or deviceid.
+            // field = can be device ID, device, Alert fields
+            // deviceOrAlert = We have different fetchXml queries based on device guid or alert guid or device id sent. This field is used to decide which fetchXml function is to be called.
+            FormUtils.preValidateShowHideDeviceInsightsTab = function (tab, guidorid, field, deviceOrAlert) {
+                if (tab) {
+                    if (field && field.getValue()) {
+                        // If we have deviceGuid then proceed with logic to show or hide device insights tab.
+                        if (guidorid) {
+                            // Show or Hide Device Insights (Preview) tab based on device having iot provider with OOB and TSI deployed
+                            // or custom action.
+                            CCSRef.Utils.FormUtils.showHideDeviceInsightsTab(tab, guidorid, deviceOrAlert);
+                        }
+                        else {
+                            tab.setVisible(false);
+                        }
+                    }
+                    else {
+                        tab.setVisible(false);
+                    }
+                }
+            };
+            // Show or Hide tab if the linked device has a provider with OOB action name and TSI url. 
+            // If both exist, then we will show the tab.If it is a 3rd party action name, we will show the tab. If it is OOB action name but no tsi url, then we will hide the tab.
+            // tab = Tab to be shown or hidden
+            // guidorid = device guid or alert guid or deviceid.
+            // deviceOrAlert = We have different fetchXml queries based on device guid or alert guid or device id sent. This field is used to decide which fetchXml function is to be called.
+            FormUtils.showHideDeviceInsightsTab = function (tab, guidorid, deviceOrAlert) {
+                if (guidorid) {
+                    // Device Guid
+                    if (deviceOrAlert === CCSRef.Common.DeviceKeyType.DeviceGuid) {
+                        //FetchXML Query based on deviceGuid for DeviceInsightsConfig
+                        var fetchXmlQuery = CCSRef.Utils.IotProviderUtils.getDeviceInsightsConfigFromDeviceGuidFetchXml(guidorid);
+                        //Determine showDeviceInsightsTab based on Device Insights Config
+                        CCSRef.Utils.FormUtils.shouldDeviceInsightsBeVisible(CCSRef.Common.Constants.PluralEntityLogicalNames.DeviceEntityLogicalName, fetchXmlQuery).then(function (showDeviceInsights) {
+                            tab.setVisible(showDeviceInsights);
+                        }).catch(function (error) {
+                            tab.setVisible(false);
+                            console.error(error); // Remove and add this to UI telemetry in future
+                        });
+                    }
+                    // Alert Guid
+                    else if (deviceOrAlert === CCSRef.Common.DeviceKeyType.AlertGuid) {
+                        //FetchXML Query based on alertGuid for DeviceInsightsConfig
+                        var fetchXmlQuery = CCSRef.Utils.IotProviderUtils.getDeviceInsightsConfigFromAlertGuidFetchXml(guidorid);
+                        //Determine showDeviceInsightsTab based on Device Insights Config
+                        CCSRef.Utils.FormUtils.shouldDeviceInsightsBeVisible(CCSRef.Common.Constants.PluralEntityLogicalNames.AlertEntityLogicalName, fetchXmlQuery).then(function (showDeviceInsights) {
+                            tab.setVisible(showDeviceInsights);
+                        }).catch(function (error) {
+                            tab.setVisible(false);
+                            console.error(error); // Remove and add this to UI telemetry in future
+                        });
+                    }
+                    // Device ID
+                    else if (deviceOrAlert === CCSRef.Common.DeviceKeyType.DeviceID) {
+                        //FetchXML Query based on deviceId for DeviceInsightsConfig
+                        var fetchXmlQuery = CCSRef.Utils.IotProviderUtils.getDeviceInsightsConfigFromDeviceIdFetchXml(guidorid);
+                        //Determine showDeviceInsightsTab based on Device Insights Config
+                        CCSRef.Utils.FormUtils.shouldDeviceInsightsBeVisible(CCSRef.Common.Constants.PluralEntityLogicalNames.DeviceEntityLogicalName, fetchXmlQuery).then(function (showDeviceInsights) {
+                            tab.setVisible(showDeviceInsights);
+                        }).catch(function (error) {
+                            tab.setVisible(false);
+                            console.error(error); // Remove and add this to UI telemetry in future
+                        });
+                    }
+                    else {
+                        //Placeholder to implement other fetchXml logic based on the requirement
+                        tab.setVisible(false);
+                    }
+                }
+                else {
+                    tab.setVisible(false);
+                }
+            };
+            // This method is used to get guid from field lookup.
+            // @param field: Field for which we get record's guid
+            FormUtils.getGuidFromField = function (field) {
+                var fieldValue = field != null ? field.getValue() : null;
+                return (fieldValue && fieldValue[0] && fieldValue[0].id) ? fieldValue[0].id : "";
+            };
+            // This method is used to display/hide fields based on the suggested priority field on Alert Form.
+            // @param field: Field for which we want to display/hide
+            // @param sugprivalues: Suggested priority values for which to display the field
+            FormUtils.displayHideAlertFieldBasedOnSuggestedPriority = function (formContext, field, sugprivalues) {
+                if (field) {
+                    var alertPriorityField = formContext.getAttribute(CCSRef.Common.Constants.Msdyn_iotalert.AttributeAlertPriority);
+                    var alertPriorityValue = alertPriorityField !== null ? alertPriorityField.getValue() : null;
+                    // Check if priority is equal to a value in the list. ex: for priority score, pri needs to be High/Low. for inc type, pri needs to be high
+                    var showscore = sugprivalues.indexOf(alertPriorityValue) > -1;
+                    field.setVisible(showscore); // Will be false if priority is not in the list of sugprivales. Field will stay hidden.
+                }
+            };
+            // Prevent auto save feature
+            FormUtils.preventAutoSave = function (eventArgs) {
+                // These enum values are coming from ths documentation: https://docs.microsoft.com/en-us/dynamics365/customerengagement/on-premises/customize/manage-auto-save
+                if (eventArgs.getSaveMode() === 70 /* AutoSave */) {
+                    eventArgs.preventDefault();
+                }
+            };
+            // Show or Hide Summary visualization section based on field.
+            // field = Can be Device or Alert field
+            FormUtils.showHideSummaryVisualizationBasedOnField = function (generalTab, field) {
+                if (generalTab && generalTab.sections) {
+                    var section = generalTab.sections.get(CCSRef.Common.Constants.SectionNames.DeviceSummaryVisualizationSection);
+                    if (section && field && field.getValue()) {
+                        section.setVisible(true);
+                    }
+                    else if (section) {
+                        section.setVisible(false);
+                    }
+                } // else condition not needed as the section is hidden by default.
+            };
+            return FormUtils;
+        }());
+        Utils.FormUtils = FormUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRef;
+(function (CCSRef) {
+    var Command;
+    (function (Command_2) {
+        var Models;
+        (function (Models) {
+            var Command = /** @class */ (function () {
+                function Command() {
+                    this.msdyn_deviceid = null;
+                    this.msdyn_devicename = null;
+                    this.msdyn_command = null;
+                    this.msdyn_parentalert = null;
+                    this.msdyn_parentalertname = null;
+                    this.msdyn_device = null;
+                    this.msdyn_name = null;
+                    this.msdyn_message = null;
+                }
+                return Command;
+            }());
+            Models.Command = Command;
+        })(Models = Command_2.Models || (Command_2.Models = {}));
+    })(Command = CCSRef.Command || (CCSRef.Command = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRef;
+(function (CCSRef) {
+    var Models;
+    (function (Models) {
+        var EntityForLookup = /** @class */ (function () {
+            function EntityForLookup() {
+                this.entityType = null;
+                this.id = null;
+                this.name = null;
+            }
+            return EntityForLookup;
+        }());
+        Models.EntityForLookup = EntityForLookup;
+    })(Models = CCSRef.Models || (CCSRef.Models = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../../../../Scripts/typings/xrm/xrm.d.ts"/>
+/// <reference path="../../../../Scripts/typings/IoT/Libes6/lib.es6.d.ts" />
+/// <reference path="ODataUtils.ts" />
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var ServiceEndpointUtils = /** @class */ (function () {
+            function ServiceEndpointUtils() {
+            }
+            // Determines if there is a valid endpoint and returns boolean Promise of true if valid, otherwise false.
+            ServiceEndpointUtils.isValidEndpoint = function () {
+                return new Promise(function (resolve, reject) {
+                    CCSRef.Utils.ODataUtils.getEntities("serviceendpoints", ServiceEndpointUtils.IoTEndpointId, "", "path", "", function (data) {
+                        resolve(ServiceEndpointUtils.isValid(data));
+                    }, function (err) {
+                        try {
+                            console.error(err.error.message);
+                        }
+                        catch (e) {
+                            console.error(err);
+                        }
+                        reject(err);
+                    });
+                });
+            };
+            ;
+            ServiceEndpointUtils.isValid = function (data) {
+                return data && ServiceEndpointUtils.isPathValid(data["path"]);
+            };
+            ;
+            //Determines if the Path is valid
+            ServiceEndpointUtils.isPathValid = function (str) {
+                return (str != null && str.trim().length > 0 && str !== ServiceEndpointUtils.LegacyDefaultEndpointPath);
+            };
+            ServiceEndpointUtils.IoTEndpointId = "fadc3b14-a91b-e611-8103-00155dbd6a1d";
+            ServiceEndpointUtils.LegacyDefaultEndpointPath = "ks1testcrmf1-crm";
+            return ServiceEndpointUtils;
+        }());
+        Utils.ServiceEndpointUtils = ServiceEndpointUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var ClientUtils = /** @class */ (function () {
+            function ClientUtils() {
+            }
+            // Get the datacenter name - crm, crm2, crm4 etc.
+            // Example: Given https://contoso.crm4.dynamics.com, return "crm4".
+            ClientUtils.getDataCenterSuffix = function () {
+                var suffix = "crm";
+                var globalContext = Xrm.Utility.getGlobalContext();
+                if (globalContext) {
+                    var clientUrl = globalContext.getClientUrl();
+                    var startIndex = clientUrl.indexOf(".") + 1;
+                    if (startIndex > 0) {
+                        var partialUrl = clientUrl.substr(startIndex); // Example: crm4.dynamics.com
+                        var length_1 = partialUrl.indexOf(".");
+                        if (length_1 > 0) {
+                            suffix = partialUrl.substr(0, length_1); // Example: crm4
+                        }
+                    }
+                }
+                return suffix;
+            };
+            // Get the region of CRM org i.e. end of CRM org URL 
+            // Example: Given https://contoso.crm.dynamics.cn (mooncake) or https://contoso.crm.microsoftdynamics.us (gcchigh) or https://contoso.crm.appsplatform.us (DoD), return "cn" or "us"
+            ClientUtils.getRegion = function () {
+                var globalContext = Xrm.Utility.getGlobalContext();
+                if (globalContext) {
+                    var clientUrl = globalContext.getClientUrl();
+                    var startIndex = clientUrl.indexOf(".") + 1; // removing the intial part of url to handle scenario where customer's org url is similar to contosodynamics.crm.dynamics.us
+                    if (startIndex > 0) {
+                        var partialUrl = clientUrl.substr(startIndex); // Example: crm.dynamics.us (gcchigh) or crm.appsplatform.us (DoD)
+                        startIndex = partialUrl.indexOf("dynamics.") + 9;
+                        var DoDIndex = partialUrl.indexOf("appsplatform.") + 13;
+                        if (startIndex > 0) {
+                            return partialUrl.substr(startIndex); // Example: us or cn
+                        }
+                        else if (DoDIndex > 0) {
+                            return partialUrl.substr(DoDIndex); // Example: us
+                        }
+                    }
+                }
+            };
+            return ClientUtils;
+        }());
+        Utils.ClientUtils = ClientUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../../Utils/ServiceEndpointUtils.ts" />
+/// <reference path="../../Utils/ClientUtils.ts" />
+/// <reference path="../../Common/Constants.ts" />
+/// <reference path="../../Command/Models/Command.ts" />
+/// <reference path="../../Models/EntityForLookup.ts" />
+var msdyn = msdyn || {};
+msdyn.CCSRef = msdyn.CCSRef || {};
+msdyn.CCSRef.RibbonUtils = msdyn.CCSRef.RibbonUtils || {};
+// Check if the org does not belong to gcc, gcchigh, mooncake regions. If it does not return true. If it belongs to one of those regions return false.
+msdyn.CCSRef.RibbonUtils.displayIfValidRegion = function () {
+    var region = CCSRef.Utils.ClientUtils.getRegion();
+    return ((CCSRef.Utils.ClientUtils.getDataCenterSuffix() !== CCSRef.Common.Constants.Dashboard.GCC) && (region !== CCSRef.Common.Constants.Dashboard.USGovt &&
+        region !== CCSRef.Common.Constants.Dashboard.China));
+};
+msdyn.CCSRef.RibbonUtils.displayIfValidEndpoint = function () {
+    return new Promise(function (resolve, reject) {
+        CCSRef.Utils.ServiceEndpointUtils.isValidEndpoint().then(function (isValidEndpoint) {
+            resolve(isValidEndpoint);
+        }, function (err) {
+            resolve(false);
+        });
+    });
+};
+msdyn.CCSRef.RibbonUtils.isMFD = function () {
+    return Xrm.Page.ui.tabs.get("mfdTab").getVisible();
+};
+msdyn.CCSRef.RibbonUtils.CloseMFD = function () {
+    msdyn.CCSRef.RibbonUtils.clearForm();
+    Xrm.Page.ui.close();
+};
+msdyn.CCSRef.RibbonUtils.OpenAdvanced = function () {
+    var entityFormOptions = {};
+    entityFormOptions["formId"] = msdyn.CCSRef.RibbonUtils.IoTDeviceCommand_main;
+    entityFormOptions["entityName"] = CCSRef.Common.Constants.EntityLogicalNames.CommandEntityLogicalName;
+    entityFormOptions["openInNewWindow"] = true;
+    var formParameters = new CCSRef.Command.Models.Command();
+    formParameters.msdyn_device = Xrm.Page.data.entity.attributes.get(CCSRef.Common.Constants.CommandViewAttributes.CommandAttributeMsdynDevice).getValue();
+    formParameters.msdyn_command = Xrm.Page.data.entity.attributes.get(CCSRef.Common.Constants.CommandViewAttributes.CommandAttributeMsdynCommand).getValue();
+    formParameters.msdyn_message = Xrm.Page.data.entity.attributes.get(CCSRef.Common.Constants.CommandViewAttributes.CommandAttributeMsdynMessage).getValue();
+    formParameters.msdyn_parentalert = Xrm.Page.data.entity.attributes.get(CCSRef.Common.Constants.CommandViewAttributes.CommandAttributeMsdynParentAlert).getValue();
+    msdyn.CCSRef.RibbonUtils.clearForm();
+    Xrm.Page.ui.close();
+    Xrm.Navigation.openForm(entityFormOptions, formParameters);
+};
+msdyn.CCSRef.RibbonUtils.CreateLookupEntity = function (entityType, id, name) {
+    var entity = new CCSRef.Models.EntityForLookup();
+    entity.entityType = entityType;
+    entity.id = id;
+    entity.name = name;
+    return entity;
+};
+msdyn.CCSRef.RibbonUtils.clearForm = function () {
+    var attributes = Xrm.Page.data.entity.attributes.getAll();
+    for (var i = 0; i < attributes.length; i++) {
+        attributes[i].setSubmitMode("never");
+    }
+};
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../Common/Constants.ts" />
+/// <reference path="../../../../Scripts/typings/IoT/Localization/Localization.d.ts" />
+/// <reference path="../Models/AlertAndDeviceInfo.ts" />
+/// <reference path="../Command/Models/Command.ts" />
+/// <reference path="../Models/EntityForLookup.ts" />
+/// <reference path="../Utils/RibbonUtils/RibbonUtils.ts" />
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var CommandDialogUtils = /** @class */ (function () {
+            function CommandDialogUtils() {
+            }
+            // Opens a new iot device command dialog with fields prefilled.
+            // alertAndDeviceInfo = class containing the alert and device information associated to the given entity.
+            CommandDialogUtils.openNewCommandDialog = function (alertAndDeviceInfo) {
+                var parameters = {};
+                var CommandDialogName = "msdyn_SendIoTCommandDialog";
+                var CommandDialogHeight = 600;
+                var CommandDialogWidth = 700;
+                var CommandAttributeParameters = CCSRef.Common.Constants.CommandAttributeParameters;
+                if (alertAndDeviceInfo.alertid && alertAndDeviceInfo.alertname) {
+                    parameters[CommandAttributeParameters.CommandAttributeAlertId] = CommandDialogUtils.formatGuid(alertAndDeviceInfo.alertid);
+                    parameters[CommandAttributeParameters.CommandAttributeAlertName] = alertAndDeviceInfo.alertname;
+                }
+                if (alertAndDeviceInfo.iotdeviceid && alertAndDeviceInfo.iotdevicename) {
+                    parameters[CommandAttributeParameters.CommandAttributeIoTDeviceId] = CommandDialogUtils.formatGuid(alertAndDeviceInfo.iotdeviceid);
+                    parameters[CommandAttributeParameters.CommandAttributeIoTDeviceName] = alertAndDeviceInfo.iotdevicename;
+                }
+                if (alertAndDeviceInfo.parententityid) {
+                    parameters[CommandAttributeParameters.CommandAttributeParentEntityId] = CommandDialogUtils.formatGuid(alertAndDeviceInfo.parententityid);
+                }
+                var dialogOptions = {
+                    height: CommandDialogHeight,
+                    width: CommandDialogWidth,
+                    position: 1 // center
+                };
+                Xrm.Navigation.openDialog(CommandDialogName, dialogOptions, parameters);
+            };
+            ;
+            CommandDialogUtils.openNewCommandMFD = function (deviceInfo, parameters) {
+                if (parameters === void 0) { parameters = new CCSRef.Command.Models.Command(); }
+                var Constants = CCSRef.Common.Constants;
+                var CommandMFDParameters = Constants.CommandMFDParameters;
+                if (deviceInfo.iotdeviceid && deviceInfo.iotdevicename) {
+                    parameters.msdyn_device = msdyn.CCSRef.RibbonUtils.CreateLookupEntity(Constants.EntityLogicalNames.DeviceEntityLogicalName, deviceInfo.iotdeviceid, deviceInfo.iotdevicename);
+                }
+                if (deviceInfo.alertid && deviceInfo.alertname) {
+                    parameters.msdyn_parentalert = msdyn.CCSRef.RibbonUtils.CreateLookupEntity(Constants.EntityLogicalNames.AlertEntityLogicalName, deviceInfo.alertid, deviceInfo.alertname);
+                }
+                parameters[CommandMFDParameters.CommandAttributeIsMFD] = true;
+                var pageInput = {
+                    pageType: "entityrecord",
+                    entityName: Constants.EntityLogicalNames.CommandEntityLogicalName,
+                    data: parameters
+                };
+                var options = {
+                    showDialog: true,
+                    hideDialogHeader: true,
+                    target: 2,
+                    width: 700,
+                    height: 500,
+                    position: 1 /* center */
+                };
+                var nav = Xrm.Navigation;
+                nav.navigateTo(pageInput, options).then(function (success) {
+                    console.log(success);
+                });
+            };
+            // Retrieve the field from the dialog
+            // fieldName: the name of the field in the dialog
+            // formAttributes: the data attributes in the dialog
+            CommandDialogUtils.getField = function (fieldName, formAttributes) {
+                return fieldName && formAttributes ? formAttributes.get(fieldName) : null;
+            };
+            // Retrieve the field value from the dialog
+            // fieldName: the name of the field in the dialog
+            // formAttributes: the data attributes in the dialog
+            CommandDialogUtils.getFieldValue = function (fieldName, formAttributes) {
+                var field = CommandDialogUtils.getField(fieldName, formAttributes);
+                if (field) {
+                    return field.getValue();
+                }
+                return null;
+            };
+            // Set the field value
+            // field: the name of the field in the dialog
+            // value: to assign to the field
+            CommandDialogUtils.setFieldValue = function (field, value) {
+                if (field) {
+                    field.setValue(value);
+                }
+            };
+            // Set the control visibility
+            // field: the name of the field in the dialog
+            // isVisible: true for the control to be visible, false otherwise
+            CommandDialogUtils.setControlVisible = function (control, isVisible) {
+                if (control) {
+                    control.setVisible(isVisible);
+                }
+            };
+            // Get the form context from the event context
+            // eventContext: includes form information for the event
+            CommandDialogUtils.getFormContext = function (eventContext) {
+                return eventContext ? eventContext.getFormContext() : null;
+            };
+            // Get the data attributes from the form context
+            // formContext: includes the form information in the dialog
+            CommandDialogUtils.getFormAttributes = function (formContext) {
+                return formContext && formContext.data ? formContext.data.attributes : null;
+            };
+            // eventContext: includes form information for the event
+            CommandDialogUtils.closeDialog = function (eventContext) {
+                if (!eventContext) {
+                    return;
+                }
+                var formContext = eventContext.getFormContext();
+                var formContextUI = formContext ? formContext.ui : null;
+                if (formContextUI) {
+                    formContextUI.close();
+                }
+            };
+            // Checks if the entity exists.
+            // entity: the entity you want to check if it exists.
+            // returns true if is the entity does not exist, false otherwise.
+            CommandDialogUtils.isNullOrEmpty = function (entity) {
+                return !(entity && entity.length > 0);
+            };
+            // Build odata bind value like /msdyn_iotdevicecommanddefinitions(21ef8de0-e71e-e911-817c-000d3af95b3b)
+            // pluralEntityLogicalName: the plural logical name for the entity like msdyn_iotdevicecommanddefinitions
+            // entityId: Guid for the entity
+            // Return the odata bind value like /msdyn_iotdevicecommanddefinitions(21ef8de0-e71e-e911-817c-000d3af95b3b)
+            CommandDialogUtils.getOdataBindValue = function (pluralEntityLogicalName, entityId) {
+                return pluralEntityLogicalName && entityId ? '/' + pluralEntityLogicalName + '(' + entityId.replace(/[{|}]/gi, "") + ')' : null;
+            };
+            // Remove properties, which value is null or undefined, from the Json object commandEntity
+            // commandEntity: the object that holds the command parameters
+            CommandDialogUtils.removeNullvalue = function (commandEntity) {
+                for (var propName in commandEntity) {
+                    if (commandEntity[propName] === null || commandEntity[propName] === undefined) {
+                        delete commandEntity[propName];
+                    }
+                }
+            };
+            // Get the layout xml for entity lookup
+            // entityLogicalName: the logical name of entity
+            CommandDialogUtils.getLayoutXml = function (entityLogicalName) {
+                var layoutXml = '<grid name="" jump="msdyn_name" select="1" icon="1" preview="0">' +
+                    '<row name= "' + entityLogicalName + '" id= "' + entityLogicalName + 'id" >' +
+                    '<cell name="msdyn_name" width= "300" />' +
+                    '</row>' +
+                    '</grid>';
+                return layoutXml;
+            };
+            CommandDialogUtils.formatGuid = function (guid) {
+                return guid ? guid.replace(/[{}]/g, "") : null;
+            };
+            return CommandDialogUtils;
+        }());
+        Utils.CommandDialogUtils = CommandDialogUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRef;
+(function (CCSRef) {
+    var Models;
+    (function (Models) {
+        var EntityReference = /** @class */ (function () {
+            function EntityReference() {
+                this.Id = null;
+                this.Name = null;
+                this.TypeName = null;
+            }
+            return EntityReference;
+        }());
+        Models.EntityReference = EntityReference;
+    })(Models = CCSRef.Models || (CCSRef.Models = {}));
+})(CCSRef || (CCSRef = {}));
+/// <reference path="../Common/Constants.ts" />
+/// <reference path="../Models/EntityReference.ts" />
+var CCSRef;
+(function (CCSRef) {
+    var Utils;
+    (function (Utils) {
+        var ActionUtils = /** @class */ (function () {
+            function ActionUtils() {
+            }
+            //private static readonly entityReferenceStructuralProperty: number = 5; // code for an EntityReference structural property https://docs.microsoft.com/en-us/dynamics365/customer-engagement/developer/clientapi/reference/xrm-webapi/online/execute
+            /**
+             * Returns an Entity Collection that can be passed to an action as input of type EntityCollection
+             * @param control: the PrimaryControl passed in as a crmparameter by the ribbon
+             * @returns Entity Collection
+             */
+            ActionUtils.makeEntityCollectionFromForm = function (control, recordId) {
+                var ref = new Array();
+                ref.push({
+                    TypeName: control.entityReference.entityType,
+                    Id: recordId ? recordId : control.entityReference.id.replace(/[{}]/g, ""),
+                    Name: control.getAttribute(this.IoTDeviceAttributeName).getValue()
+                });
+                return this.makeEntityCollectionFromGrid(ref);
+            };
+            /**
+             * Returns an Entity Collection that can be passed to an action as input of type EntityCollection
+             * @param refs the array containing the references to use containing the entities to use
+             * @returns Entity Collection
+             */
+            ActionUtils.makeEntityCollectionFromGrid = function (refs) {
+                var entityArray = new Array();
+                for (var _i = 0, refs_1 = refs; _i < refs_1.length; _i++) {
+                    var ref = refs_1[_i];
+                    var entity = {};
+                    entity[ref.TypeName + "id"] = ref.Id;
+                    entity[this.IoTDeviceAttributeName] = ref.Name;
+                    entity["@odata.type"] = "Microsoft.Dynamics.CRM." + ref.TypeName;
+                    entityArray.push(entity);
+                }
+                return entityArray;
+            };
+            /**
+             * Returns a request object to be executed using Xrm.WebApi.online.execute
+             * @param actionName: name of the action to be executed
+             * @param inputEntityCollection: the entity collection or entity reference to be passed to the action
+             * @returns request object to be executed using Xrm.WebApi.online.execute
+             */
+            ActionUtils.buildRequestObject = function (actionName, inputEntityCollection) {
+                var parameter = ActionUtils.entityCollectionParameterName;
+                var typeName = ActionUtils.entityCollectionTypeName;
+                var structuralProperty = ActionUtils.entityCollectionStructuralProperty;
+                var request = {};
+                request.getMetadata = function () {
+                    var metadata = {
+                        boundParameter: null,
+                        operationName: actionName,
+                        operationType: 0 /* Action */,
+                        parameterTypes: {}
+                    };
+                    metadata["parameterTypes"][parameter] = {
+                        "typeName": typeName,
+                        "structuralProperty": structuralProperty
+                    };
+                    return metadata;
+                };
+                if (inputEntityCollection) {
+                    request[parameter] = inputEntityCollection;
+                }
+                return request;
+            };
+            ActionUtils.IoTDeviceAttributeName = CCSRef.Common.Constants.Msdyn_iotdevice.AttributeDeviceName;
+            ActionUtils.entityCollectionTypeName = "Collection(mscrm.crmbaseentity)";
+            ActionUtils.entityCollectionParameterName = "EntityCollection";
+            //private static readonly entityReferenceParameterName: string = "EntityReference";
+            ActionUtils.entityCollectionStructuralProperty = 4; // code for a collection structural property https://docs.microsoft.com/en-us/dynamics365/customer-engagement/developer/clientapi/reference/xrm-webapi/online/execute
+            return ActionUtils;
+        }());
+        Utils.ActionUtils = ActionUtils;
+    })(Utils = CCSRef.Utils || (CCSRef.Utils = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../../../Interfaces/IRegistrator.ts" />
+/// <reference path="../../../Utils/ActionUtils.ts" />
+/// <reference path="../../../Utils/ODataUtils.ts" />
+/// <reference path="../../../Common/Constants.ts" />
+/// <reference path="../../../../../../Scripts/typings/IoT/Localization/Localization.d.ts" />
+/// <reference path="../../../Models/EntityReference.ts" />
+var CCSRef;
+(function (CCSRef) {
+    var IoTDevice;
+    (function (IoTDevice) {
+        var IoTDeviceRibbonRegistrator = /** @class */ (function () {
+            function IoTDeviceRibbonRegistrator() {
+            }
+            // Register the device and inform user.
+            IoTDeviceRibbonRegistrator.prototype.executeRegisterRequestAndShowMessage = function (recordReferences, control, refresh) {
+                // If executing from the grid, we use the recordReferences, otherwise we use the control
+                var devicesToRegister;
+                if (IoTDeviceRibbonRegistrator.isGridPage(control)) {
+                    devicesToRegister = CCSRef.Utils.ActionUtils.makeEntityCollectionFromGrid(recordReferences);
+                }
+                else {
+                    // need to get id from recordReferences because control doesn't always have it
+                    devicesToRegister = CCSRef.Utils.ActionUtils.makeEntityCollectionFromForm(control, recordReferences[0]);
+                }
+                var request = CCSRef.Utils.ActionUtils.buildRequestObject(CCSRef.Common.Constants.Msdyn_iotdevice.IoTRegisterActionHandler, devicesToRegister);
+                Xrm.WebApi.online.execute(request).then(function () {
+                    if (recordReferences.length > 1) {
+                        IoTDeviceRibbonRegistrator._showMessage(CCSRef.Localization.Localization.localize("@:moreThanOneDeviceBeingRegistered"), refresh);
+                    }
+                    else {
+                        IoTDeviceRibbonRegistrator._showMessage(CCSRef.Localization.Localization.localize("@:oneDeviceBeingRegistered"), refresh);
+                    }
+                }, function (errorObject) {
+                    IoTDeviceRibbonRegistrator._showMessage(errorObject ? errorObject.error.message : CCSRef.Localization.Localization.localize("@:errorWhilePerfomingActionTryAgain"), refresh);
+                });
+            };
+            ;
+            // Pull data for the selected device with the IoT hub by calling an action.
+            IoTDeviceRibbonRegistrator.pullDeviceData = function (recordReferences, control) {
+                if (recordReferences.length > 0) {
+                    IoTDeviceRibbonRegistrator._pullDeviceData(recordReferences, control);
+                }
+                else {
+                    // This is just a safeguard. The button should not be visible under these conditions.
+                    Xrm.Navigation.openAlertDialog({ text: CCSRef.Localization.Localization.localize("@:noRecordSelected") }, { height: 300 });
+                }
+            };
+            ;
+            // Pull data for all the devices with the IoT hub by calling an action.
+            IoTDeviceRibbonRegistrator.pullDeviceDataForProviderInstance = function (iotProviderInstanceReference, control) {
+                if (control === void 0) { control = null; }
+                // ToDo: iotProviderInstanceReference need to be passed when iot provider middleware is implemented.
+                // Currently the pull request is specific IoTHub only
+                var importDevicesInBackgroundMessage = !!iotProviderInstanceReference
+                    ?
+                        CCSRef.Localization.Localization.localize("@:importingAllDeviceDataInBackground")
+                    :
+                        CCSRef.Localization.Localization.localize("@:importingAllDeviceDataInBackgroundFromDeviceGrid");
+                CCSRef.Utils.ODataUtils.executeRequest("POST", CCSRef.Common.Constants.Msdyn_iotdevice.IoTHubPullDeviceDataAction, "", function () {
+                    IoTDeviceRibbonRegistrator._showMessage(importDevicesInBackgroundMessage, function () {
+                        if (control) {
+                            if (IoTDeviceRibbonRegistrator.isGridPage(control)) {
+                                control.refresh();
+                            }
+                            else {
+                                control.data.refresh();
+                            }
+                        }
+                    });
+                }, function (errorObject) {
+                    IoTDeviceRibbonRegistrator._showMessage(errorObject ? errorObject.error.message : CCSRef.Localization.Localization.localize("@:errorWhilePerfomingActionTryAgain"), control.refresh());
+                });
+            };
+            ;
+            IoTDeviceRibbonRegistrator.getRecordIds = function (recordReferences) {
+                var recordIds = new Array();
+                for (var _i = 0, recordReferences_1 = recordReferences; _i < recordReferences_1.length; _i++) {
+                    var recordReference = recordReferences_1[_i];
+                    recordIds.push(recordReference.Id);
+                }
+                return recordIds;
+            };
+            // Form level: control.getGrid == undefined (control is PrimaryControl); Entity level: control is the grid.
+            // This logic is in RibbonDiff.xml
+            IoTDeviceRibbonRegistrator._pullDeviceData = function (recordReferences, control) {
+                if (IoTDeviceRibbonRegistrator.isGridPage(control)) {
+                    var recordIds = IoTDeviceRibbonRegistrator.getRecordIds(recordReferences);
+                    IoTDeviceRibbonRegistrator.verifyAndPullData(recordIds, control, function () {
+                        control.refresh();
+                    });
+                }
+                else {
+                    control.data.save().then(function () {
+                        IoTDeviceRibbonRegistrator.verifyAndPullData(recordReferences, control, function () {
+                            control.data.refresh(true);
+                        });
+                    }, function (error, message) {
+                        Xrm.Navigation.openAlertDialog({ text: message }, { height: 300 });
+                    });
+                }
+            };
+            ;
+            IoTDeviceRibbonRegistrator.verifyAndPullData = function (recordIds, control, refresh, isCustomerAssetForm) {
+                var registeredDeviceRefs = [];
+                var deviceFields = [];
+                var deviceIdFilters = [];
+                for (var i = 0; i < recordIds.length; i++) {
+                    recordIds[i] = recordIds[i].replace(/[{}]/g, "");
+                    deviceIdFilters.push(CCSRef.Common.Constants.Msdyn_iotdevice.AttributeEntityId + " eq " + recordIds[i]);
+                }
+                deviceFields.push(CCSRef.Common.Constants.Msdyn_iotdevice.AttributeEntityId);
+                deviceFields.push(CCSRef.Common.Constants.Msdyn_iotdevice.AttributeDeviceName);
+                deviceFields.push(CCSRef.Common.Constants.Msdyn_iotdevice.AttributeRegistrationStatus);
+                CCSRef.Utils.ODataUtils.getEntities(CCSRef.Common.Constants.Msdyn_iotdevice.ODataEntityName, "", deviceIdFilters.join(" or "), deviceFields.join(','), "", function (devices) {
+                    if (devices && devices.value) {
+                        for (var i = 0; i < devices.value.length; i++) {
+                            if (devices.value[i][CCSRef.Common.Constants.Msdyn_iotdevice.AttributeRegistrationStatus] == CCSRef.Common.Constants.Msdyn_iotdevice.StatusRegistered) {
+                                var deviceRef = new CCSRef.Models.EntityReference();
+                                deviceRef.Id = devices.value[i][CCSRef.Common.Constants.Msdyn_iotdevice.AttributeEntityId];
+                                deviceRef.Name = devices.value[i][CCSRef.Common.Constants.Msdyn_iotdevice.AttributeDeviceName];
+                                deviceRef.TypeName = CCSRef.Common.Constants.Msdyn_iotdevice.EntityLogicalName;
+                                registeredDeviceRefs.push(deviceRef);
+                            }
+                        }
+                        if (registeredDeviceRefs.length > 0) {
+                            IoTDeviceRibbonRegistrator.pullDeviceDataAndUpdateStatus(registeredDeviceRefs, control, registeredDeviceRefs.length == recordIds.length, refresh, isCustomerAssetForm);
+                        }
+                        else {
+                            Xrm.Navigation.openAlertDialog({ text: CCSRef.Localization.Localization.localize("@:devicesNotRegistered") }, { height: 300 });
+                        }
+                    }
+                    else {
+                        Xrm.Navigation.openAlertDialog({ text: CCSRef.Localization.Localization.localize("@:deviceNotFound") }, { height: 300 });
+                    }
+                }, function (err) {
+                    this.logError(err);
+                });
+            };
+            IoTDeviceRibbonRegistrator.pullDeviceDataAndUpdateStatus = function (recordReferences, control, allRegistered, refresh, isCustomerAssetForm) {
+                // If executing from the grid, we use the recordReferences, otherwise we use the control
+                var devicesToPullDeviceData;
+                if (IoTDeviceRibbonRegistrator.isGridPage(control) || isCustomerAssetForm) {
+                    devicesToPullDeviceData = CCSRef.Utils.ActionUtils.makeEntityCollectionFromGrid(recordReferences);
+                }
+                else {
+                    devicesToPullDeviceData = CCSRef.Utils.ActionUtils.makeEntityCollectionFromForm(control);
+                }
+                var request = CCSRef.Utils.ActionUtils.buildRequestObject(CCSRef.Common.Constants.Msdyn_iotdevice.IoTPullDeviceDataActionHandler, devicesToPullDeviceData);
+                Xrm.WebApi.online.execute(request).then(function () {
+                    if (allRegistered) {
+                        IoTDeviceRibbonRegistrator._showMessage(recordReferences.length > 1 ? CCSRef.Localization.Localization.localize("@:pullingSelectedDeviceDataInBackground") : CCSRef.Localization.Localization.localize("@:pullingSingleDeviceDataInBackground"), refresh);
+                    }
+                    else {
+                        IoTDeviceRibbonRegistrator._showMessage(CCSRef.Localization.Localization.localize("@:someDevicesNotRegistered"), refresh);
+                    }
+                }, function (errorObject) {
+                    IoTDeviceRibbonRegistrator._showMessage(errorObject ? errorObject.error.message : CCSRef.Localization.Localization.localize("@:errorWhilePerfomingActionTryAgain"), refresh);
+                });
+            };
+            ;
+            // Returns true if the control is passed in from a grid page rather than the form page
+            IoTDeviceRibbonRegistrator.isGridPage = function (control) {
+                return (control && control.getGrid) ? true : false;
+            };
+            IoTDeviceRibbonRegistrator.logError = function (err) {
+                if (typeof err == "string") {
+                    console.log(err);
+                }
+                else if (err.error && err.error.message) {
+                    // Odata error format
+                    console.log(err.error.message);
+                }
+                else {
+                    console.log(err.message);
+                }
+            };
+            IoTDeviceRibbonRegistrator._showMessage = function (message, refresh) {
+                Xrm.Navigation.openAlertDialog({ text: message }, { height: 300 });
+                refresh();
+            };
+            ;
+            return IoTDeviceRibbonRegistrator;
+        }());
+        IoTDevice.IoTDeviceRibbonRegistrator = IoTDeviceRibbonRegistrator;
+    })(IoTDevice = CCSRef.IoTDevice || (CCSRef.IoTDevice = {}));
+})(CCSRef || (CCSRef = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+var CCSRefAsset;
+(function (CCSRefAsset) {
+    var Utils;
+    (function (Utils) {
+        var IoTAssetCommonUtils = /** @class */ (function () {
+            function IoTAssetCommonUtils() {
+            }
+            // This function determines whether or not IoT is in use by the org
+            IoTAssetCommonUtils.getIoTDevicesFromAssetFetchXml = function (assetId) {
+                var fetchXml = "<fetch> " +
+                    "<entity name='msdyn_iotdevice'> " + // Device.
+                    "<attribute name='msdyn_iotdeviceid'/> " +
+                    "<link-entity name='connection' " + // Connection.
+                    "from='record2id' " +
+                    "to='msdyn_iotdeviceid' " +
+                    "link-type='inner' " +
+                    "alias='connection'> " +
+                    "<attribute name='record1id'/> " +
+                    "<attribute name='record2id'/> " +
+                    "<attribute name='record2roleid'/> " +
+                    "</link-entity> " +
+                    "<filter type='and'> " +
+                    "<condition entityname='connection' " + // Filter on asset.
+                    "attribute='record1id' " +
+                    "operator='eq' " +
+                    "value='" + assetId + "'/> " +
+                    "<condition entityname='connection' " + // Filter on connected device role.
+                    "attribute='record2roleid' " +
+                    "operator='eq' " +
+                    "value='" + IoTAssetCommonUtils.connectedDeviceRole + "'/> " +
+                    "</filter> " +
+                    "</entity> " +
+                    "</fetch>";
+                return fetchXml;
+            };
+            IoTAssetCommonUtils.shouldDeviceInsightsBeVisible = function (entityName, fetchXmlQuery) {
+                return new Promise(function (resolve, reject) {
+                    CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(entityName, fetchXmlQuery), "", function (deviceInsightsconfigData) {
+                        var showDeviceInsightsTab = false;
+                        var actionName = "";
+                        var timeseriesUrl = "";
+                        if (deviceInsightsconfigData && deviceInsightsconfigData.value && deviceInsightsconfigData.value[0]) {
+                            actionName = deviceInsightsconfigData.value[0]["provider.msdyn_querydevicereadingsaction"] ? deviceInsightsconfigData.value[0]["provider.msdyn_querydevicereadingsaction"] : "";
+                            timeseriesUrl = deviceInsightsconfigData.value[0]["providerinstance.msdyn_timeseriesinsightsurl"] ? deviceInsightsconfigData.value[0]["providerinstance.msdyn_timeseriesinsightsurl"] : "";
+                            var defaultCustomActionName = CCSRef.Common.Constants.Msdyn_iotprovider.IoTHubQueryReadingsAction;
+                            //If actionName is same OOB name, then ensure timeseriesUrl is populated OR
+                            //If actionName populated but is not same as OOB, we dont check timeseriesUrl, but show the tab and any missing config will be handled by the 3rd party plugin code
+                            if (actionName !== "" && ((actionName === defaultCustomActionName && timeseriesUrl !== "") || (actionName !== defaultCustomActionName))) {
+                                showDeviceInsightsTab = true;
+                            }
+                        }
+                        resolve(showDeviceInsightsTab);
+                    }, function (err) {
+                        try {
+                            console.error(err.error.message);
+                            reject(err.error.message);
+                        }
+                        catch (e) {
+                            console.error(err);
+                        }
+                    });
+                });
+            };
+            //FetchXml Query for Device Insights Config Information using IoTSettings
+            //@returns fetchXmlquery: Query to fetch config based on iotsettings
+            IoTAssetCommonUtils.getDeviceInsightsConfigFromIoTSettingsFetchXml = function () {
+                var fetchXmlQuery = "<fetch version='1.0' output-format='xml-platform' mapping='logical'>" +
+                    "<entity name='msdyn_iotsettings'>" +
+                    "<attribute name = 'msdyn_defaultiotproviderinstance'/>" +
+                    "<link-entity name='msdyn_iotproviderinstance' from='msdyn_iotproviderinstanceid' to='msdyn_defaultiotproviderinstance' link-type='inner' alias='providerinstance'>" +
+                    "<attribute name = 'msdyn_iotproviderinstanceid'/>" +
+                    "<attribute name = 'msdyn_timeseriesinsightsurl'/>" +
+                    "<link-entity name = 'msdyn_iotprovider' from = 'msdyn_iotproviderid' to = 'msdyn_iotprovider' link-type='inner' alias = 'provider'>" +
+                    "<attribute name = 'msdyn_querydevicereadingsaction'/>" +
+                    "</link-entity>" +
+                    "</link-entity>" +
+                    "</entity>" +
+                    "</fetch>";
+                return fetchXmlQuery;
+            };
+            IoTAssetCommonUtils.connectedDeviceRole = "{9C86F660-5F5B-E611-810B-00155DBD6A1D}";
+            return IoTAssetCommonUtils;
+        }());
+        Utils.IoTAssetCommonUtils = IoTAssetCommonUtils;
+    })(Utils = CCSRefAsset.Utils || (CCSRefAsset.Utils = {}));
+})(CCSRefAsset || (CCSRefAsset = {}));
+var CCSRefAsset;
+(function (CCSRefAsset) {
+    var Common;
+    (function (Common) {
+        var Constants = /** @class */ (function () {
+            function Constants() {
+            }
+            Constants.ConnectionConstants = /** @class */ (function () {
+                function class_44() {
+                }
+                Object.defineProperty(class_44, "ConnectionEntityName", {
+                    get: function () { return "connections"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_44, "ConnectionAttributeRecord1Id", {
+                    get: function () { return "_record1id_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_44, "ConnectionAttributeRecord2Id", {
+                    get: function () { return "_record2id_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_44, "ConnectionAttributeRecord2RoleId", {
+                    get: function () { return "_record2roleid_value"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_44, "ConnectedDeviceRole", {
+                    get: function () { return "9C86F660-5F5B-E611-810B-00155DBD6A1D"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_44, "ConnectedDeviceNavigation", {
+                    get: function () { return "record2id_msdyn_iotdevice"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_44;
+            }());
+            Constants.DeviceConstants = /** @class */ (function () {
+                function class_45() {
+                }
+                Object.defineProperty(class_45, "DeviceName", {
+                    get: function () { return "msdyn_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_45, "DeviceEntityId", {
+                    get: function () { return "msdyn_iotdeviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_45;
+            }());
+            Constants.CommandMFDParameters = /** @class */ (function () {
+                function class_46() {
+                }
+                Object.defineProperty(class_46, "CommandAttributeIsMFD", {
+                    get: function () { return "param_msdyn_isMfd"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_46, "CommandAttributeAssetHide", {
+                    get: function () { return "param_msdyn_asset_hide"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_46, "CommandAttributeAssetViewName", {
+                    get: function () { return "param_msdyn_assetView_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_46, "CommandAttributeAssetViewFetch", {
+                    get: function () { return "param_msdyn_assetView_fetch"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_46, "CommandAttributeAssetView", {
+                    get: function () { return "param_msdyn_assetView_view"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_46, "CommandAttributeAssetSecondaryViewName", {
+                    get: function () { return "param_msdyn_assetViewSecondary_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_46, "CommandAttributeAssetSecondaryViewFetch", {
+                    get: function () { return "param_msdyn_assetViewSecondary_fetch"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_46;
+            }());
+            Constants.CommandViewAttributes = /** @class */ (function () {
+                function class_47() {
+                }
+                Object.defineProperty(class_47, "CommandAttributeMsdynParentAlert", {
+                    get: function () { return "msdyn_parentalert"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynParentAlertName", {
+                    get: function () { return "msdyn_parentalertname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynDevice", {
+                    get: function () { return "msdyn_device"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynDeviceName", {
+                    get: function () { return "msdyn_devicename"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynDeviceId", {
+                    get: function () { return "msdyn_deviceid"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynMessage", {
+                    get: function () { return "msdyn_message"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynName", {
+                    get: function () { return "msdyn_name"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynCommand", {
+                    get: function () { return "msdyn_command"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynCustomerAsset", {
+                    get: function () { return "msdyn_customerasset"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynCustomerAssetName", {
+                    get: function () { return "msdyn_customerassetname"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynCommandReference", {
+                    get: function () { return "msdyn_commandreference"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynCommandOdataBind", {
+                    get: function () { return "msdyn_Command@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynParentAlertOdataBind", {
+                    get: function () { return "msdyn_ParentAlert@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_47, "CommandAttributeMsdynDeviceOdataBind", {
+                    get: function () { return "msdyn_Device@odata.bind"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_47;
+            }());
+            Constants.AlertConstants = /** @class */ (function () {
+                function class_48() {
+                }
+                Object.defineProperty(class_48, "AttributeDescription", {
+                    get: function () { return "msdyn_description"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_48, "AttributeDevice", {
+                    get: function () { return "msdyn_device"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(class_48, "AttributeAsset", {
+                    get: function () { return "msdyn_customerasset"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_48;
+            }());
+            Constants.EntityLogicalNames = /** @class */ (function () {
+                function class_49() {
+                }
+                Object.defineProperty(class_49, "AssetEntityLogicalName", {
+                    get: function () { return "msdyn_customerasset"; },
+                    enumerable: true,
+                    configurable: true
+                });
+                return class_49;
+            }());
+            return Constants;
+        }());
+        Common.Constants = Constants;
+    })(Common = CCSRefAsset.Common || (CCSRefAsset.Common = {}));
+})(CCSRefAsset || (CCSRefAsset = {}));
+/*! WARNING! Do not update this file manually! Manual update of this file is not supported and will likely lead to issues. In addition, future solution upgrades wont apply to manually edited files. */
+/// <reference path="../../../../../..//IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/FormUtils.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/CommandDialogUtils.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/RibbonUtils/RibbonUtils.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Common/Constants.ts" />
+/// <reference path="../../../../../../IoT/CrmPackage/WebResources/msdyn_/IoT/Device/Scripts/IoTDeviceRibbonRegistrator/IoTDeviceRibbonRegistrator.ts" />
+/// <reference path="../AlertAndDeviceInfo/AlertAndDeviceInfo.ts" />
+/// <reference path="../Utils/IoTAssetCommonUtils.ts" />
+/// <reference path="../Constants/Constants.ts" />
+/// <reference path="../IoTDeviceCommand/Models/Command.ts" />
+var msdyn = msdyn || {};
+msdyn.CCSRefAsset = msdyn.CCSRefAsset || {};
+msdyn.CCSRefAsset.RibbonUtils = msdyn.CCSRefAsset.RibbonUtils || {};
+msdyn.CCSRefAsset.RibbonUtils.displayIfDevicesExist = function (primaryItemIds) {
+    return new Promise(function (resolve, reject) {
+        var deviceIds = new Array();
+        if (primaryItemIds && primaryItemIds.length > 0) {
+            deviceIds = primaryItemIds;
+        }
+        else {
+            deviceIds.push(Xrm.Page.data.entity.getId());
+        }
+        if (deviceIds) {
+            for (var i = 0; i < deviceIds.length; i++) {
+                CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(CCSRef.Common.Constants.PluralEntityLogicalNames.DeviceEntityLogicalName, CCSRefAsset.Utils.IoTAssetCommonUtils.getIoTDevicesFromAssetFetchXml(deviceIds[i])), "", function (data) {
+                    if (data) {
+                        var devices = data.value;
+                        if (devices && devices.length > 0) {
+                            resolve(true);
+                        }
+                    }
+                }, function (err) {
+                    console.log(err.error.message);
+                    resolve(false);
+                });
+            }
+        }
+    });
+};
+msdyn.CCSRefAsset.RibbonUtils.getDeviceList = function (primaryItemIds) {
+    return new Promise(function (resolve, reject) {
+        var deviceIds = new Array();
+        var dataProcessed = 0;
+        for (var i = 0; i < primaryItemIds.length; i++) {
+            CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml(CCSRef.Common.Constants.PluralEntityLogicalNames.DeviceEntityLogicalName, CCSRefAsset.Utils.IoTAssetCommonUtils.getIoTDevicesFromAssetFetchXml(primaryItemIds[i])), "", function (data) {
+                if (data) {
+                    dataProcessed++;
+                    var devices = data.value;
+                    if (devices && devices.length > 0) {
+                        for (var _i = 0, devices_1 = devices; _i < devices_1.length; _i++) {
+                            var device = devices_1[_i];
+                            deviceIds.push(device["msdyn_iotdeviceid"]);
+                        }
+                    }
+                    if (dataProcessed == primaryItemIds.length) {
+                        resolve(deviceIds);
+                    }
+                }
+            }, function (err) {
+                console.log(err.error.message);
+                resolve(err.error.message);
+            });
+        }
+    });
+};
+msdyn.CCSRefAsset.RibbonUtils.pullDeviceData = function (primaryItemIds, control) {
+    msdyn.CCSRefAsset.RibbonUtils.getDeviceList(primaryItemIds).then(function (deviceIds) {
+        if (deviceIds && deviceIds.length > 0) {
+            if (CCSRef.IoTDevice.IoTDeviceRibbonRegistrator.isGridPage(control)) {
+                CCSRef.IoTDevice.IoTDeviceRibbonRegistrator.verifyAndPullData(deviceIds, control, function () {
+                    control.refresh();
+                });
+            }
+            else {
+                control.data.save().then(function () {
+                    CCSRef.IoTDevice.IoTDeviceRibbonRegistrator.verifyAndPullData(deviceIds, control, function () {
+                        control.data.refresh(true);
+                    }, true);
+                }, function (error, message) {
+                    Xrm.Navigation.openAlertDialog({ text: message }, { height: 300 });
+                });
+            }
+        }
+    });
+};
+msdyn.CCSRefAsset.RibbonUtils.getIoTDevicesFromAssetFetchXml = function (assetId) {
+    var fetchXml = "<fetch> " +
+        "<entity name='msdyn_iotdevice'> " + // Device.
+        "<attribute name='msdyn_iotdeviceid'/> " +
+        "<attribute name='msdyn_name'/> " +
+        "<link-entity name='connection' " + // Connection.
+        "from='record2id' " +
+        "to='msdyn_iotdeviceid' " +
+        "link-type='inner' " +
+        "alias='connection'> " +
+        "<attribute name='record1id'/> " +
+        "<attribute name='record2id'/> " +
+        "<attribute name='record2roleid'/> " +
+        "</link-entity> " +
+        "<filter type='and'> " +
+        "<condition entityname='connection' " + // Filter on asset.
+        "attribute='record1id' " +
+        "operator='eq' " +
+        "value='" + assetId + "'/> " +
+        "<condition entityname='connection' " + // Filter on connected device role.
+        "attribute='record2roleid' " +
+        "operator='eq' " +
+        "value='" + CCSRefAsset.Common.Constants.ConnectionConstants.ConnectedDeviceRole + "'/> " +
+        "</filter> " +
+        "</entity> " +
+        "</fetch>";
+    return fetchXml;
+};
+msdyn.CCSRefAsset.RibbonUtils.sendCommandAsset = function (context, records) {
+    'use strict';
+    if (records) {
+        // Home ribbon.
+        if (records.length === 1) {
+            var assetRef = records[0];
+            sendCommand(assetRef);
+        }
+    }
+    else {
+        // Form ribbon.
+        context.data.save().then(function () {
+            var assetRef = { Id: context.data.entity.getId(), Name: context.data.entity.getPrimaryAttributeValue() };
+            sendCommand(assetRef);
+        }, function (error, message) {
+            Xrm.Navigation.openAlertDialog({ text: message });
+        });
+    }
+    function sendCommand(assetRef) {
+        var deviceInfo = new CCSRefAsset.Models.AlertAndDeviceInfo();
+        deviceInfo.assetid = assetRef.Id.replace(/[{}]/g, "");
+        deviceInfo.assetname = assetRef.Name;
+        var filterFields = [];
+        filterFields.push(CCSRefAsset.Common.Constants.ConnectionConstants.ConnectionAttributeRecord1Id + " eq " + assetRef.Id.replace(/[{}]/g, ""));
+        filterFields.push(CCSRefAsset.Common.Constants.ConnectionConstants.ConnectionAttributeRecord2RoleId + " eq " + CCSRefAsset.Common.Constants.ConnectionConstants.ConnectedDeviceRole);
+        var selectFields = [];
+        selectFields.push(CCSRefAsset.Common.Constants.ConnectionConstants.ConnectionAttributeRecord1Id);
+        selectFields.push(CCSRefAsset.Common.Constants.ConnectionConstants.ConnectionAttributeRecord2Id);
+        selectFields.push(CCSRefAsset.Common.Constants.ConnectionConstants.ConnectionAttributeRecord2RoleId);
+        var relatedFields = [];
+        relatedFields.push(CCSRefAsset.Common.Constants.DeviceConstants.DeviceName);
+        relatedFields.push(CCSRefAsset.Common.Constants.DeviceConstants.DeviceEntityId);
+        var expandParam = CCSRefAsset.Common.Constants.ConnectionConstants.ConnectedDeviceNavigation + "($select=" + relatedFields.join(',') + ")";
+        var request = msdyn.CCSRefAsset.RibbonUtils.formatRequest(CCSRefAsset.Common.Constants.ConnectionConstants.ConnectionEntityName, filterFields.join(" and "), selectFields.join(','), expandParam);
+        CCSRef.Utils.ODataUtils.executeRequest("Get", request, null, function (data) {
+            var connections = data.value;
+            if (connections && connections.length > 0 && connections[0][CCSRefAsset.Common.Constants.ConnectionConstants.ConnectedDeviceNavigation]) {
+                if (connections.length == 1) {
+                    deviceInfo.iotdeviceid = connections[0][CCSRefAsset.Common.Constants.ConnectionConstants.ConnectedDeviceNavigation][CCSRefAsset.Common.Constants.DeviceConstants.DeviceEntityId];
+                    deviceInfo.iotdevicename = connections[0][CCSRefAsset.Common.Constants.ConnectionConstants.ConnectedDeviceNavigation][CCSRefAsset.Common.Constants.DeviceConstants.DeviceName];
+                }
+                msdyn.CCSRefAsset.RibbonUtils.openNewCommandMFD(deviceInfo);
+            }
+        }, function (error) {
+        });
+    }
+};
+msdyn.CCSRefAsset.RibbonUtils.openNewCommandMFD = function (deviceInfo, parameters) {
+    if (parameters === void 0) { parameters = new CCSRefAsset.Command.Models.Command(); }
+    if (deviceInfo.assetid && deviceInfo.assetname) {
+        var asset = msdyn.CCSRef.RibbonUtils.CreateLookupEntity(CCSRefAsset.Common.Constants.EntityLogicalNames.AssetEntityLogicalName, deviceInfo.assetid, deviceInfo.assetname);
+        parameters.msdyn_customerasset = asset;
+    }
+    if (deviceInfo.assethide) {
+        parameters[CCSRefAsset.Common.Constants.CommandMFDParameters.CommandAttributeAssetHide] = deviceInfo.assethide;
+    }
+    if (deviceInfo.assetviewfetch && deviceInfo.assetview) {
+        parameters[CCSRefAsset.Common.Constants.CommandMFDParameters.CommandAttributeAssetView] = deviceInfo.assetview;
+        parameters[CCSRefAsset.Common.Constants.CommandMFDParameters.CommandAttributeAssetViewFetch] = deviceInfo.assetviewfetch;
+        parameters[CCSRefAsset.Common.Constants.CommandMFDParameters.CommandAttributeAssetViewName] = deviceInfo.assetviewname;
+    }
+    if (deviceInfo.assetviewsecondaryfetch && deviceInfo.assetview) {
+        parameters[CCSRefAsset.Common.Constants.CommandMFDParameters.CommandAttributeAssetSecondaryViewFetch] = deviceInfo.assetviewsecondaryfetch;
+        parameters[CCSRefAsset.Common.Constants.CommandMFDParameters.CommandAttributeAssetSecondaryViewName] = deviceInfo.assetviewsecondaryname;
+    }
+    CCSRef.Utils.CommandDialogUtils.openNewCommandMFD(deviceInfo, parameters);
+};
+msdyn.CCSRefAsset.RibbonUtils.formatRequest = function (entityName, filter, selectFields, relatedFields) {
+    var params = [];
+    var request = entityName;
+    if (filter) {
+        params.push("$filter=" + filter);
+    }
+    if (selectFields) {
+        params.push("$select=" + selectFields);
+    }
+    if (relatedFields) {
+        params.push("$expand=" + relatedFields);
+    }
+    if (params.length > 0) {
+        request = request + "?" + params.join("&");
+    }
+    return request;
+};
+msdyn.CCSRefAsset.RibbonUtils.OpenAdvanced = function () {
+    var entityFormOptions = {};
+    entityFormOptions["entityName"] = "msdyn_iotdevicecommand";
+    entityFormOptions["openInNewWindow"] = true;
+    var formParameters = new CCSRefAsset.Command.Models.Command();
+    formParameters.msdyn_device = Xrm.Page.data.entity.attributes.get(CCSRefAsset.Common.Constants.CommandViewAttributes.CommandAttributeMsdynDevice).getValue();
+    formParameters.msdyn_command = Xrm.Page.data.entity.attributes.get(CCSRefAsset.Common.Constants.CommandViewAttributes.CommandAttributeMsdynCommand).getValue();
+    formParameters.msdyn_message = Xrm.Page.data.entity.attributes.get(CCSRefAsset.Common.Constants.CommandViewAttributes.CommandAttributeMsdynMessage).getValue();
+    formParameters.msdyn_customerasset = Xrm.Page.data.entity.attributes.get(CCSRefAsset.Common.Constants.CommandViewAttributes.CommandAttributeMsdynCustomerAsset).getValue();
+    formParameters.msdyn_parentalert = Xrm.Page.data.entity.attributes.get(CCSRefAsset.Common.Constants.CommandViewAttributes.CommandAttributeMsdynParentAlert).getValue();
+    msdyn.CCSRefAsset.RibbonUtils.clearForm();
+    Xrm.Page.ui.close();
+    Xrm.Navigation.openForm(entityFormOptions, formParameters);
+};
+msdyn.CCSRefAsset.RibbonUtils.isSendCommandMFD = function () {
+    return Xrm.Page.ui.tabs.get("mfdTab").getVisible();
+};
+/// <reference path="../Localization/Provider/StringProvider.ts" />
+/// <reference path="../../TypeDefinitions/Crm.ClientApiTypings/clientapi/XrmClientApi.d.ts" />
+/// <reference path="../../Package/IoTAssetCommon/CrmPackage/WebResources/msdyn_/IoTAssetCommon/Utils/FormUtils.ts" />
+/// <reference path="../../Package/IoTAssetCommon/CrmPackage/WebResources/msdyn_/IoTAssetCommon/IoTDeviceCommand/Models/Command.ts" />
+/// <reference path="../AssetRibbonUtils/AssetRibbonUtils.ts" />
+/// <reference path="../RibbonUtilFetchs/RibbonUtilFetchs.ts" />
+/// <reference path="../../Package/IoTAssetCommon/CrmPackage/WebResources/msdyn_/IoTAssetCommon/Utils/RibbonUtils.ts" />
+/// <reference path="../Utils/Common/Telemetry.ts" />
+var msdyn = msdyn || {};
+msdyn.SendCommandRibbonUtils = msdyn.SendCommandRibbonUtils || {};
+msdyn.SendCommandRibbonUtils.CCS = msdyn.SendCommandRibbonUtils.CCS || {};
+msdyn.SendCommandRibbonUtils.CCS.IoTDevice_MFD = "dde8984c-b2fe-40ee-a248-c74d6ecc736d";
+msdyn.SendCommandRibbonUtils.CCS.CloseMFD = function () {
+    Xrm.Page.ui.close();
+};
+msdyn.SendCommandRibbonUtils.CCS.isMFD = function () {
+    var form = Xrm.Page.ui.formSelector.getCurrentItem();
+    var formId = form !== null ? form.getId() : undefined;
+    if (formId === msdyn.SendCommandRibbonUtils.CCS.IoTDevice_MFD) {
+        return true;
+    }
+    return false;
+};
+msdyn.SendCommandRibbonUtils.CCS.getAlertAndDeviceNameFromEntityFetchXML = function (fetchXMLInfo) {
+    var fetchXml = "<fetch> " +
+        "<entity name='msdyn_iotalert'> " + // IoT Alert.
+        "<attribute name='msdyn_iotalertid'/> " +
+        "<attribute name='msdyn_description'/> " +
+        "<attribute name='createdon'/> " +
+        "<attribute name='msdyn_device'/> " +
+        "<attribute name='msdyn_deviceid'/> " +
+        "<link-entity name='msdyn_iotdevice' " + // Device.
+        "from='msdyn_iotdeviceid' " +
+        "to='msdyn_device' " +
+        "link-type='outer' " +
+        "alias='msdyn_iotdevice'> " +
+        "<attribute alias = 'msdyn_device_name' name='msdyn_name'/> " + // Device name.
+        "</link-entity> " +
+        "<link-entity name='msdyn_customerasset' " + // Asset.
+        "from='msdyn_customerassetid' " +
+        "to='msdyn_customerasset' " +
+        "link-type='outer' " +
+        "alias='msdyn_customerasset'> " +
+        "<attribute alias = 'msdyn_customerasset_name' name='msdyn_name'/> " + // Device name.
+        "</link-entity> " +
+        "<link-entity name='" + fetchXMLInfo.entityname + "' " + // Work order or Case.
+        "from='msdyn_iotalert' " +
+        "to='msdyn_iotalertid' " +
+        "link-type='inner' " +
+        "alias='" + fetchXMLInfo.alias + "'> " +
+        "<filter type='and'> " +
+        "<condition attribute='" + fetchXMLInfo.conditionattribute + "' " + // Filter on caseId.
+        "operator='eq' " +
+        "value='" + fetchXMLInfo.entityid + "'/> " + // Id.
+        "</filter> " +
+        "</link-entity> " +
+        "</entity> " +
+        "</fetch>";
+    return fetchXml;
+};
+msdyn.SendCommandRibbonUtils.CCS.getAssetsFromEntityAccountFetchXML = function (fetchXMLInfo) {
+    var fetchXml = "<fetch>" +
+        "<entity name='msdyn_customerasset' >" +
+        "<attribute name='msdyn_customerassetid' />" +
+        "<attribute name='msdyn_name' />" +
+        "<attribute name='createdon' />" +
+        "<link-entity name='" + fetchXMLInfo.entityname + "' " +
+        "from='accountid' to='msdyn_account' " +
+        " link-type='inner' " +
+        " intersect='true' >" +
+        "<filter>" +
+        "<condition attribute='" + fetchXMLInfo.conditionattribute + "' " +
+        "operator='eq' " +
+        "value='" + fetchXMLInfo.entityid + "' />" +
+        "</filter>" +
+        "</link-entity>" +
+        "</entity>" +
+        "</fetch>";
+    return fetchXml;
+};
+// Opens a command dialog with prefilled fields to take action on the alert for the given entity.
+// fetchXMLInfo = class containing the fetchxml information for the entity needed for fetchxml call.
+msdyn.SendCommandRibbonUtils.CCS.openCommandDialogForEntity = function (fetchXMLInfo) {
+    var fetchXML = msdyn.SendCommandRibbonUtils.CCS.getAlertAndDeviceNameFromEntityFetchXML(fetchXMLInfo);
+    // Gets alert and device associated to entity and opens new command form.
+    /// Remove reference to IoT files below when MDD lights up.
+    CCSRefAsset.Utils.FormUtils.getAlertDeviceFromEntity("msdyn_iotalerts", fetchXML, function (alertAndDeviceInfo) {
+        alertAndDeviceInfo.assethide = alertAndDeviceInfo.assetid ? false : true;
+        msdyn.SendCommandRibbonUtils.CCS.openNewCommandMFD(alertAndDeviceInfo);
+    }, function (err) {
+        try {
+            CCS.Common.Telemetry.logError('SendCommandRibbonUtils', 'openCommandDialogForEntity', {
+                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                Error: err.error.message
+            });
+        }
+        catch (err) {
+            CCS.Common.Telemetry.logError('SendCommandRibbonUtils', 'openCommandDialogForEntity', {
+                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                Error: err
+            });
+        }
+    });
+};
+msdyn.SendCommandRibbonUtils.CCS.openNewCommandMFD = function (deviceInfo, parameters) {
+    if (parameters === void 0) { parameters = new CCSRefAsset.Command.Models.Command(); }
+    parameters["param_msdyn_caseId"] = deviceInfo["caseid"];
+    msdyn.CCSRefAsset.RibbonUtils.openNewCommandMFD(deviceInfo, parameters);
+};
+// Send Command for entity.
+// recordId = the selected record id.
+// fetchXMLInfo = class containing the fetchxml information for the entity needed for fetchxml call.
+msdyn.SendCommandRibbonUtils.CCS.sendCommand = function (context, recordId, fetchXMLInfo) {
+    'use strict';
+    var deviceInfo = new CCSRefAsset.Models.AlertAndDeviceInfo();
+    if (recordId) {
+        // Home ribbon.
+        if (recordId.length === 1) {
+            var entityReference = recordId[0];
+            fetchXMLInfo.entityid = entityReference.Id;
+            if (fetchXMLInfo["relationshipname"]) {
+                deviceInfo.assetviewsecondaryname = CCS.StringProvider.getResourceString("devicesRelatedToAccountLabel");
+                deviceInfo.assetviewsecondaryfetch = msdyn.SendCommandRibbonUtils.CCS.getAssetsFromEntityAccountFetchXML(fetchXMLInfo);
+            }
+            if (fetchXMLInfo.entityname == 'incident') {
+                deviceInfo["caseid"] = entityReference.Id;
+            }
+            msdyn.SendCommandRibbonUtils.CCS.openCommandDialogForAssetEntity(fetchXMLInfo, deviceInfo);
+        }
+        else {
+            // This is just a safeguard. The button should not be visible under these conditions.
+            Xrm.Navigation.openAlertDialog({ text: CCS.StringProvider.getResourceString("selectOnlyOneRecord") });
+        }
+    }
+    else {
+        // Form ribbon.
+        context.data.save().then(function () {
+            fetchXMLInfo.entityid = context.data.entity.getId();
+            if (fetchXMLInfo["relationshipname"]) {
+                deviceInfo.assetviewsecondaryname = CCS.StringProvider.getResourceString("devicesRelatedToAccountLabel");
+                deviceInfo.assetviewsecondaryfetch = msdyn.SendCommandRibbonUtils.CCS.getAssetsFromEntityAccountFetchXML(fetchXMLInfo);
+            }
+            if (fetchXMLInfo.entityname == 'incident') {
+                deviceInfo["caseid"] = fetchXMLInfo.entityid;
+            }
+            msdyn.SendCommandRibbonUtils.CCS.openCommandDialogForAssetEntity(fetchXMLInfo, deviceInfo);
+        }, function (error, message) {
+            Xrm.Navigation.openAlertDialog({ text: message });
+        });
+    }
+};
+msdyn.SendCommandRibbonUtils.CCS.IsOnlyOneDeviceLinked = function () {
+    return new Promise(function (resolve, reject) {
+        var assetId = Xrm.Page.data.entity.getId();
+        CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml("msdyn_iotdevices", CCS.Utils.CCSIndicatorUtils.getIoTDevicesFromAssetFetchXml(assetId)), "", function (data) {
+            if (data) {
+                var devices = data.value;
+                if (devices && devices.length === 1) {
+                    resolve(true);
+                }
+                else {
+                    resolve(false);
+                }
+            }
+            else {
+                resolve(false);
+            }
+        }, function (err) {
+            CCS.Common.Telemetry.logInfo('SendCommandRibbonUtils', 'IsOnlyOneDeviceLinked', {
+                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                Log: err.error.message
+            });
+            resolve(false);
+        });
+    });
+};
+// Opens a command dialog with prefilled fields to take action on the alert for the given entity.
+// fetchXMLInfo = class containing the fetchxml information for the entity needed for fetchxml call.
+msdyn.SendCommandRibbonUtils.CCS.openCommandDialogForAssetEntity = function (fetchXMLInfo, deviceInfo) {
+    var fetchXML = msdyn.RibbonUtilFetches.CCS.getAssetsFromRelationshipFetchXML(fetchXMLInfo);
+    CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml("msdyn_customerassets", fetchXML), "", function (data) {
+        if (data) {
+            var assets = data.value;
+            if (assets.length == 1) {
+                deviceInfo.assetid = assets[0]['msdyn_customerassetid'];
+                deviceInfo.assetname = assets[0]['msdyn_name'];
+            }
+            deviceInfo.assetviewname = CCS.StringProvider.getResourceString("devicesRelatedToCaseLabel");
+            deviceInfo.assetviewfetch = fetchXML;
+            deviceInfo.assetview = "<grid name=\"\" jump=\"msdyn_name\" select=\"1\" icon=\"1\" preview=\"0\">\n                        <row name=\"msdyn_customerasset\" id=\"msdyn_customerassetid\">\n                        <cell name=\"msdyn_name\" width=\"300\" />\n                        <cell name=\"createdon\" width=\"125\" />\n                        </row>\n                    </grid>";
+            var alertFetchXML = msdyn.RibbonUtilFetches.CCS.getAlertFromEntityFetchXML(fetchXMLInfo);
+            CCSRef.Utils.ODataUtils.executeRequest("GET", CCSRef.Utils.ODataUtils.formatFetchXml("msdyn_iotalerts", alertFetchXML), "", function (data) {
+                if (data && data.value && data.value.length == 1) {
+                    deviceInfo.alertid = data.value[0]['msdyn_iotalertid'];
+                    deviceInfo.alertname = data.value[0]['msdyn_description'];
+                    msdyn.SendCommandRibbonUtils.CCS.openNewCommandMFD(deviceInfo);
+                }
+                else {
+                    msdyn.SendCommandRibbonUtils.CCS.openNewCommandMFD(deviceInfo);
+                }
+            }, function (err) {
+                CCS.Common.Telemetry.logInfo('SendCommandRibbonUtils', 'openCommandDialogForAssetEntity', {
+                    Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                    Log: err
+                });
+            });
+        }
+        else {
+            msdyn.SendCommandRibbonUtils.CCS.openCommandDialogForEntity(fetchXMLInfo);
+        }
+    }, function (err) {
+        CCS.Common.Telemetry.logInfo('SendCommandRibbonUtils', 'openCommandDialogForAssetEntity', {
+            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+            Log: err
+        });
+    });
+};
+/// <reference path="../../TypeDefinitions/Crm.ClientApiTypings/clientapi/XrmClientApi.d.ts" />
+/// <reference path="../../Package/IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../Utils/Common/Constants.ts" />
+/// <reference path="../Utils/Common/Telemetry.ts" />
+var msdyn = msdyn || {};
+msdyn.CaseDeviceAssociationUtils = msdyn.CaseDeviceAssociationUtils || {};
+msdyn.CaseDeviceAssociationUtils.CCS = msdyn.CaseDeviceAssociationUtils.CCS || {};
+//Associate devices to incident
+msdyn.CaseDeviceAssociationUtils.CCS.associateRequest = function (caseId, deviceId) {
+    var serverURL = Xrm.Page.context.getClientUrl();
+    var associate = {
+        "@odata.id": serverURL + "/api/data/v9.0/incidents(" + caseId + ")"
+    };
+    CCSRef.Utils.ODataUtils.executeRequest("POST", "/msdyn_customerassets(" + deviceId + ")/msdyn_incident_msdyn_customerasset/$ref", associate, function (data) {
+        CCS.Common.Telemetry.logInfo('CaseDeviceAssociationUtils', 'associateRequest', {
+            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+            Log: 'Record Associated'
+        });
+    }, function (err) {
+        var error = JSON.parse(this.response).error;
+        CCS.Common.Telemetry.logError('CaseDeviceAssociationUtils', 'associateRequest', {
+            Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+            Error: error.message
+        });
+    });
+};
+/// <reference path="../Utils/Models/FetchXMLInfo.ts" />
+/// <reference path="../../TypeDefinitions/Crm.ClientApiTypings/clientapi/XrmClientApi.d.ts" />
+/// <reference path="../Localization/Provider/StringProvider.ts" />
+/// <reference path="../../Package/IoT/CrmPackage/WebResources/msdyn_/IoT/Utils/ODataUtils.ts" />
+/// <reference path="../DisplayRibbonUtils/DisplayRibbonUtils.ts" />
+/// <reference path="../SendCommandRibbonUtils/SendCommandRibbonUtils.ts" />
+/// <reference path="../CaseDeviceAssociationUtils/CaseDeviceAssociationUtils.ts" />
+/// <reference path="../Utils/Common/Telemetry.ts" />
+var msdyn = msdyn || {};
+msdyn.CaseRibbonUtils = msdyn.CaseRibbonUtils || {};
+msdyn.CaseRibbonUtils.CCS = msdyn.CaseRibbonUtils.CCS || {};
+// Landing logic from case home page to check whether an alert is associated with the selected record.
+// control = selected control.
+// recordId = the id of the record selected.
+// defaultValue = the default value of whether the button should be displayed or not.
+// @returns boolean: true if alert is associated, false otherwise.
+msdyn.CaseRibbonUtils.CCS.displayIfAssociatedAlertHomeCase = function (recordId) {
+    var fetchXMLInfo = new CCS.Models.FetchXMLInfo();
+    fetchXMLInfo.entityname = "incident";
+    fetchXMLInfo.alias = "incident";
+    fetchXMLInfo.conditionattribute = "incidentid";
+    return msdyn.DisplayRibbonUtils.CCS.displayIfAssociatedAlertHome(recordId, fetchXMLInfo);
+};
+// Landing logic from case home page to check whether an asset is associated with the selected record.
+// control = selected control.
+// recordId = the id of the record selected.
+// defaultValue = the default value of whether the button should be displayed or not.
+// @returns boolean: true if asset is associated, false otherwise.
+msdyn.CaseRibbonUtils.CCS.displayIfAssociatedAssetHomeCase = function (recordId) {
+    var fetchXMLInfo = new CCS.Models.FetchXMLInfo();
+    fetchXMLInfo.entityname = "incident";
+    fetchXMLInfo["relationshipname"] = "msdyn_incident_msdyn_customerasset";
+    fetchXMLInfo.alias = "relationship";
+    fetchXMLInfo.conditionattribute = "incidentid";
+    var entityReference = recordId[0];
+    fetchXMLInfo.entityid = entityReference.Id;
+    return msdyn.DisplayRibbonUtils.CCS.displayIfAssociatedAssetHome(fetchXMLInfo);
+};
+// Send a command to the IoT device linked to the alert associated with the given case.
+// recordId = the selected record id.
+msdyn.CaseRibbonUtils.CCS.sendCommandCase = function (context, recordId) {
+    var fetchXMLInfo = new CCS.Models.FetchXMLInfo();
+    fetchXMLInfo.entityname = "incident";
+    fetchXMLInfo["relationshipname"] = "msdyn_incident_msdyn_customerasset";
+    fetchXMLInfo.alias = "relationship";
+    fetchXMLInfo.conditionattribute = "incidentid";
+    msdyn.SendCommandRibbonUtils.CCS.sendCommand(context, recordId, fetchXMLInfo);
+};
+// Create case for selected devices
+// selectedControlSelectedItemIds : selected device ids.
+msdyn.CaseRibbonUtils.CCS.createCaseCommand = function (selectedControlSelectedItemIds) {
+    if (selectedControlSelectedItemIds && selectedControlSelectedItemIds.length > 0) {
+        var entityFormOptions = {};
+        entityFormOptions["entityName"] = "incident";
+        entityFormOptions["useQuickCreateForm"] = true;
+        var formParameters = {};
+        if (Xrm.Page.data.entity.getEntityName().toString() === "account") {
+            formParameters["customeridtype"] = "account";
+            formParameters["customerid"] = Xrm.Page.data.entity.getId();
+            formParameters["customeridname"] = Xrm.Page.data.entity.getPrimaryAttributeValue();
+        }
+        formParameters["CCS_hide_iot_alert"] = true;
+        var deviceData = { devices: selectedControlSelectedItemIds };
+        Xrm.Navigation.openForm(entityFormOptions, formParameters).then(function (success) {
+            if (success.savedEntityReference != null && success.savedEntityReference.length > 0) {
+                var entityRef = success.savedEntityReference[0];
+                var entityId = entityRef.id.replace(/[{}]/g, "");
+                for (var i = 0; i < this.devices.length; i++) {
+                    msdyn.CaseDeviceAssociationUtils.CCS.associateRequest(entityId, this.devices[i]);
+                }
+                msdyn.CaseRibbonUtils.CCS.createTimelinePost(entityRef, 1, CCS.StringProvider.getResourceString("caseCreatedFromDevicesPostText"));
+                var entityMainFormOptions = {};
+                entityMainFormOptions["entityName"] = success.savedEntityReference[0].entityType;
+                entityMainFormOptions["entityId"] = success.savedEntityReference[0].id;
+                Xrm.Navigation.openForm(entityMainFormOptions);
+            }
+        }.bind(deviceData), function (error) {
+            CCS.Common.Telemetry.logInfo('CaseRibbonUtils', 'createCaseCommand', {
+                Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                Error: error
+            });
+        });
+    }
+    else {
+        var alertStrings = { text: CCS.StringProvider.getResourceString("norecordselected") };
+        Xrm.Navigation.openAlertDialog(alertStrings);
+    }
+};
+//Create timeline post with given regardingObject, source and text through SOAP request
+msdyn.CaseRibbonUtils.CCS.createTimelinePost = function (regardingObject, postSource, postText) {
+    var serverURL = Xrm.Page.context.getClientUrl();
+    var servicePath = "/XRMServices/2011/Organization.svc/web";
+    var req = new XMLHttpRequest();
+    req.open("POST", serverURL + servicePath, true);
+    req.setRequestHeader("Accept", "application/xml, text/xml, */*");
+    req.setRequestHeader("Content-Type", "text/xml; charset=utf-8");
+    req.setRequestHeader("SOAPAction", "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/Execute");
+    var requestXML = "<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'>\n                        <s:Body>\n                          <Execute xmlns='http://schemas.microsoft.com/xrm/2011/Contracts/Services' xmlns:i='http://www.w3.org/2001/XMLSchema-instance' xmlns:c='http://www.w3.org/2001/XMLSchema'>\n                            <request xmlns:a='http://schemas.microsoft.com/xrm/2011/Contracts'>\n                              <a:Parameters xmlns:b='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>\n                                <a:KeyValuePairOfstringanyType>\n                                  <b:key>Target</b:key>\n                                  <b:value i:type='a:Entity'>\n                                    <a:Attributes xmlns:b='http://schemas.datacontract.org/2004/07/System.Collections.Generic'>\n                                      <a:KeyValuePairOfstringanyType>\n                                        <b:key>text</b:key>\n                                        <b:value i:type='c:string' xmlns:c='http://www.w3.org/2001/XMLSchema'>" + postText + "</b:value>\n                                      </a:KeyValuePairOfstringanyType>\n                                      <a:KeyValuePairOfstringanyType>\n                                        <b:key>source</b:key>\n                                        <b:value i:type='a:OptionSetValue' >\n                                          <a:Value>" + postSource + "</a:Value>\n                                        </b:value>\n                                      </a:KeyValuePairOfstringanyType>\n                                      <a:KeyValuePairOfstringanyType>\n                                        <b:key>regardingobjectid</b:key>\n                                        <b:value i:type='a:EntityReference'>\n                                          <a:Id>" + regardingObject.id.replace(/[{}]/g, "") + "</a:Id>\n                                          <a:LogicalName>" + regardingObject.entityType + "</a:LogicalName>\n                                        <a:Name i:nil='true' />\n                                      </b:value>\n                                    </a:KeyValuePairOfstringanyType>\n                                  </a:Attributes>\n                                  <a:EntityState i:nil='true' />\n                                  <a:FormattedValues />\n                                  <a:LogicalName>post</a:LogicalName>\n                                  <a:RelatedEntities xmlns:b='http://schemas.datacontract.org/2004/07/System.Collections.Generic'/>\n                                </b:value>\n                              </a:KeyValuePairOfstringanyType>\n                              <a:KeyValuePairOfstringanyType>\n                                <b:key>SuppressDuplicateDetection</b:key>\n                                <b:value i:type='c:boolean' xmlns:c='http://www.w3.org/2001/XMLSchema'>true</b:value>\n                              </a:KeyValuePairOfstringanyType>\n                            </a:Parameters>\n                            <a:RequestId i:nil='true' />\n                            <a:RequestName>Create</a:RequestName>\n                          </request>\n                        </Execute>\n                      </s:Body>\n                    </s:Envelope>";
+    req.onreadystatechange = function () {
+        if (this.readyState == 4 /* complete */) {
+            req.onreadystatechange = null;
+            if (this.status == 204) {
+                CCS.Common.Telemetry.logInfo('CaseRibbonUtils', 'onreadystatechange', {
+                    Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                    Log: 'Post created'
+                });
+            }
+            else {
+                CCS.Common.Telemetry.logError('CaseRibbonUtils', 'onreadystatechange', {
+                    Control: CCS.Common.Constants.TelemetryConstants.ClientName,
+                    Error: this.response
+                });
+            }
+        }
+    };
+    req.send(requestXML);
+};
+// Landing logic from forms to check if there is an associated asset to entity.
+msdyn.CaseRibbonUtils.CCS.displayIfAssociatedAssetForm = function (primaryControl) {
+    var entityRef = primaryControl.entityReference;
+    var fetchXMLInfo = new CCS.Models.FetchXMLInfo();
+    fetchXMLInfo.entityname = "incident";
+    fetchXMLInfo["relationshipname"] = "msdyn_incident_msdyn_customerasset";
+    fetchXMLInfo.alias = "relationship";
+    fetchXMLInfo.conditionattribute = "incidentid";
+    fetchXMLInfo.entityid = entityRef.id.replace(/[{}]/g, "");
+    return msdyn.DisplayRibbonUtils.CCS.displayIfAssociatedAssetHome(fetchXMLInfo);
+};

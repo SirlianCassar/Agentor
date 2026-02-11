@@ -1,0 +1,358 @@
+{
+  "categories": [
+    {
+      "id": "cat-p99rf0",
+      "name": "I.INTRODUCTION",
+      "color": "#A1FF0A",
+      "order": 0
+    },
+    {
+      "id": "cat-vl4fru",
+      "name": "II.THANKS FOR ...",
+      "color": "#0AEFFF",
+      "order": 1
+    },
+    {
+      "id": "cat-fwp7k4",
+      "name": "III.DOCUMENTS NEEDED",
+      "color": "#147DF5",
+      "order": 2
+    },
+    {
+      "id": "cat-jf27nq",
+      "name": "IV.TESTS",
+      "color": "#BE0AFF",
+      "order": 4
+    },
+    {
+      "id": "cat-a08y4r",
+      "name": "V.CLOSING",
+      "color": "#FF8700",
+      "order": 5
+    },
+    {
+      "id": "cat-plwxgs",
+      "name": "VI.OTHERS",
+      "color": "#FF0000",
+      "order": 6
+    }
+  ],
+  "bullets": [
+    {
+      "id": "b-74lj9y",
+      "title": "Intro : Acknowledge",
+      "content": "Vous nous contactez pour un souci de *ISSUE* votre *PRODUCT* et nous serions ravis de vous aider.",
+      "categoryId": "cat-p99rf0",
+      "order": 0,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-9yod9k",
+      "title": "Intro : Feedback",
+      "content": "Nous vous remercions pour vos retours.",
+      "categoryId": "cat-p99rf0",
+      "order": 1,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-pmqg88",
+      "title": "Intro : Precisions",
+      "content": "Nous vous remercions pour ces précisions.",
+      "categoryId": "cat-p99rf0",
+      "taskText": "",
+      "taskOptional": true,
+      "order": 2
+    },
+    {
+      "id": "b-n8zk0s",
+      "title": "Intro : Interest",
+      "content": "Nous vous remercions pour l'intérêt que vous portez à nos produits.",
+      "categoryId": "cat-p99rf0",
+      "taskText": "",
+      "taskOptional": true,
+      "order": 3
+    },
+    {
+      "id": "b-ify13g",
+      "title": "Intro : Delay",
+      "content": "Toutes nos excuses pour ce délai de réponses .",
+      "categoryId": "cat-p99rf0",
+      "taskText": "",
+      "taskOptional": true,
+      "order": 4
+    },
+    {
+      "id": "b-6hmirb",
+      "title": "Thanks : Documents",
+      "content": "Nous vous remercions pour les documents fournis.",
+      "categoryId": "cat-vl4fru",
+      "order": 0,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-jpvkg7",
+      "title": "Thanks : First Information",
+      "content": "Nous vous remercions pour les informations apportées en amont.",
+      "categoryId": "cat-vl4fru",
+      "order": 1,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-dofjks",
+      "title": "Thanks : Test",
+      "content": "Nous vous remercions d'avoir effectué les test requis.",
+      "categoryId": "cat-vl4fru",
+      "order": 2,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-oj6s48",
+      "title": "Thanks : Vidéo",
+      "content": "Nous vous remercions pour la vidéo fournie.",
+      "categoryId": "cat-vl4fru",
+      "order": 3,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-6seime",
+      "title": "Thanks : First Steps",
+      "content": "Nous vous remercions pour les premier pas de résolutions entrepris.",
+      "categoryId": "cat-vl4fru",
+      "taskText": "",
+      "taskOptional": true,
+      "order": 4
+    },
+    {
+      "id": "b-39vjza",
+      "title": "Needed : Intro 1",
+      "content": "Afin de pouvoir vous apporter la solution la plus adaptée, nous aurions besoin",
+      "categoryId": "cat-fwp7k4",
+      "order": 0,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-at7yf0",
+      "title": "Needed : Intro 2",
+      "content": "Afin de mieux comprendre votre souci, nous aurions besoin",
+      "categoryId": "cat-fwp7k4",
+      "order": 1,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-6excfz",
+      "title": "Needed : Video",
+      "content": "d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.",
+      "categoryId": "cat-fwp7k4",
+      "order": 2,
+      "taskText": "< Asked for video issue",
+      "taskOptional": false
+    },
+    {
+      "id": "b-ng98ql",
+      "title": "Needed : S/N",
+      "content": "d'une photo du numéro de série de votre *produit*",
+      "categoryId": "cat-fwp7k4",
+      "order": 3,
+      "taskText": "< asked for SN picture",
+      "taskOptional": false
+    },
+    {
+      "id": "b-66wzfa",
+      "title": "Needed : PoP",
+      "content": "Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie.",
+      "categoryId": "cat-fwp7k4",
+      "order": 4,
+      "taskText": "< Asked for PoP",
+      "taskOptional": false
+    },
+    {
+      "id": "b-j5ftcw",
+      "title": "Needed : Cloud Link",
+      "content": "Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.",
+      "categoryId": "cat-fwp7k4",
+      "order": 5,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-rowuto",
+      "title": "Test : CPL",
+      "content": "Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : \n\n-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.\n-   Entrez joy.cpl dans le champ et cliquez sur OK.\n-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.\n-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.\n-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre *PRODUCT* .",
+      "categoryId": "cat-jf27nq",
+      "order": 0,
+      "taskText": "> Asked for CPL test",
+      "taskOptional": false
+    },
+    {
+      "id": "b-a9npm3",
+      "title": "Test : WheelTester",
+      "content": "Dans le cas ou vous n'auriez pas de pc a votre disposition , vous pouvez effectuer le mème test sur WheelTester directment sur votre Xbox : *link*",
+      "categoryId": "cat-jf27nq",
+      "order": 1,
+      "taskText": "> Asked for WheelTester test",
+      "taskOptional": false
+    },
+    {
+      "id": "b-xmgcv3",
+      "title": "Test : Bootloader",
+      "content": "Une fois ces vérifications effectuées, si le problème persiste, nous vous recommandons d’effectuer une procédure de réveil de votre produit (également appelée bootloader). Je vous joint la procédure.",
+      "categoryId": "cat-jf27nq",
+      "order": 2,
+      "taskText": "> Sent Bootloader procedure",
+      "taskOptional": false
+    },
+    {
+      "id": "b-lkg4ok",
+      "title": "Close : Documents",
+      "content": "Une fois ces éléments en notre possession, nous serons plus à même de vous aider.",
+      "categoryId": "cat-a08y4r",
+      "taskText": "",
+      "taskOptional": true,
+      "order": 0
+    },
+    {
+      "id": "b-fo0tyi",
+      "title": "Close : Further",
+      "content": "Si vous avez d'autres questions , ou besoin de plus d'assistance n'hésitez pas à revenir vers nous.",
+      "categoryId": "cat-a08y4r",
+      "taskText": "",
+      "taskOptional": true,
+      "order": 1
+    },
+    {
+      "id": "b-p5z9xn",
+      "title": "Close : Await",
+      "content": "Dans l'attente de votre réponse.",
+      "categoryId": "cat-a08y4r",
+      "order": 2,
+      "taskText": "",
+      "taskOptional": true
+    },
+    {
+      "id": "b-8wsfyl",
+      "title": "SF1000 QRU",
+      "content": "Nous vous remercions pour l’intérêt que vous portez à nos produits.\n\nLe Quick Release Upgrade pour le volant SF1000 est actuellement en rupture de stock. Nous prévoyons un réassort fin janvier 2026. Je ne peux malheureusement pas vous donner plus de précisions. Soyez assuré que nous faisons notre possible pour un retour en stock au plus tôt.\n\nSi vous avez d’autres questions ou besoin de plus d’assistance, n’hésitez pas à revenir vers nous.",
+      "categoryId": "cat-plwxgs",
+      "taskText": "QRU STOCK STATUS \nGave info available in Eshop Order Status",
+      "taskOptional": false,
+      "order": 0
+    }
+  ],
+  "chargers": [
+    {
+      "id": "ch-m19p6s",
+      "name": "GENERIC INFO GATHERING",
+      "content": "Vous nous contactez pour un souci *souci* sur votre *product* et nous serions ravis de vous aider.\n\nAfin de mieux comprendre votre souci, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.\n\nPourriez vous réaliser votre vidéo dans l'interface joy.cpl sur un pc Windows 11 ? Voici comment faire : \n\n-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.\n-   Entrez joy.cpl dans le champ et cliquez sur OK.\n-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.\n-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.\n-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre *product* .\n\nNous aurions également besoin d'une photo du numéro de série de votre *product* ainsi que  d'une facture d'achat de votre produit , afin de vérifier son statuts de garantie.\n\nMerci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.\n\nDans l'attente de votre réponse.",
+      "lang": "fr",
+      "taskOptional": false
+    },
+    {
+      "id": "ch-ycjbce",
+      "name": "SPARE PART IN ADVANCE",
+      "content": "You are contacting us to acquire a *SPARE* for your *PRODUCT*, and we would be happy to assist you.\n\nUnfortunately, we are not able to provide spare parts in advance. As technical support, our role is to address any malfunctions encountered by our customers. The sale of spare parts is at the discretion of our technical experts, and in the absence of a malfunction, we cannot respond favorably to your request.\n\nRest assured that if you experience any malfunction in the future, we will be here and happy to assist you.",
+      "lang": "en",
+      "taskTemplateId": "tt-3ign8v",
+      "taskOptional": false
+    },
+    {
+      "id": "ch-4dvr8k",
+      "name": "SPARE PART IN ADVANCE",
+      "content": "Vous nous contactez pour acquérir *SPARE* pour votre *PRODUCT*, et nous serions ravis de vous aider.\n\nMalheureusement, nous ne sommes pas en mesure de fournir des pièces détachées à l’avance. En tant que support technique, notre rôle est de répondre aux différents dysfonctionnements rencontrés par nos clients. La vente de pièces détachées étant à la discrétion de nos experts techniques, en l’absence de dysfonctionnement, nous ne pouvons répondre favorablement à votre demande.\n\nSoyez assuré que, si vous rencontrez un dysfonctionnement à l’avenir, nous serons présents et ravis de vous assister.",
+      "lang": "fr",
+      "taskTemplateId": "tt-3ign8v",
+      "taskOptional": false
+    },
+    {
+      "id": "ch-o2mhse",
+      "name": "SOLVED",
+      "content": "Thank you for getting back to us.\n\nWe are very happy to hear that the initially reported problem has been resolved and that now you are able to fully enjoy your *PRODUCT* !\n\nIf you ever encounter any other issues, or simply have any questions or doubts, do not hesitate to let us know.\nWe're always happy to help.\n\nIn the meantime, we wish you a pleasant day.",
+      "lang": "en",
+      "taskTemplateId": "tt-22ydr3",
+      "taskOptional": false
+    },
+    {
+      "id": "ch-1oxdi8",
+      "name": "DUPLICATE",
+      "content": "Thank you for contacting Thrustmaster Technical Support.\n\nPlease know that there is more than one incident request opened in your name, regarding the same product and issue.\n\nWe have responded to the original ticket - *RQT* - and as such, this ticket will now be closed.\n\nPlease make sure that you do not reply to this email, but to the email related to ticket *RQT*.\n\nIt is very important to reply and provide information to the original ticket, as this will help keep the information centralized for much smoother and faster communication and troubleshooting.\n\nWe appreciate your understanding and wish you a pleasant day.",
+      "lang": "en",
+      "taskTemplateId": "tt-ghqtf2",
+      "taskOptional": false
+    }
+  ],
+  "taskTemplates": [
+    {
+      "id": "tt-3sm5ng",
+      "name": "RMA EU  UW",
+      "content": "*PRODUCT* (repair) UW \n\nPortal Order #*number* \nIssue Description: *issue*\nTroubleshooting Performed: *trblshoot*\nPrevious (related) Ticket(s): \n\n*PRODUCT NAME*\nDOP: *date*\nS/N: *sn*\nSKU(s): *sku*\n\nRecipient: *name*\nAddress:  *adress*\nPhone: *07*\nEmail : *mail*",
+      "order": 0
+    },
+    {
+      "id": "tt-101k7h",
+      "name": "SPARE PART UW",
+      "content": "Spare part UW - ORDER *000000*\nPart : *NAMEOFPART*\nSKU : *0000000*\nQuantity : 1\nIssue : *Description*",
+      "order": 1
+    },
+    {
+      "id": "tt-mt7njf",
+      "name": "SPARE PART PROPOSAL",
+      "content": "Spare part Proposal\nPart : *part*\nSKU : *0000000* \nUW OOW",
+      "order": 2
+    },
+    {
+      "id": "tt-nj50fs",
+      "name": "TM EXPERT ESCALATE",
+      "content": "TM Expert Escalation\nHello , O wise Expert,\nProduct Concerned: *PRODUCT*\nPlatform(s): *PLATFORM*\nIssue description: *ISSUE*\nTroubleshooting performed: *TROUBLESHOOT*\nPrevious related tickets: *RELATED*\n*NOTES*\nThank you, O wise Expert.",
+      "order": 3
+    },
+    {
+      "id": "tt-rhls74",
+      "name": "HR EXPERT ESCALATE",
+      "content": "HR Expert Escalation\nHello , O wise Expert,\nProduct Concerned: *PRODUCT*\nSystem: *SYSTEM*\nDJ app and version: *APP/VERSION*\nIssue description: *ISSUE*\nTroubleshooting performed: *TROUBLESHOOT*\nPrevious related tickets: *RELATED*\n*NOTE*\nThank you, O wise Expert.",
+      "order": 4
+    },
+    {
+      "id": "tt-h2r209",
+      "name": "14 DAYS RMA",
+      "content": "14-Days RMA #*ORDER* \nReason for withdrawal: *REASON*\nMagento Order #*MAGENTO ORDER*\nOrder Date: *ORDER DATE*\nDelivery Date: *DELIVERY DATE*\nConcerns all products: YES / NO\nProduct Name: *PRODUCT*\nSKU: *SKU*",
+      "order": 5
+    },
+    {
+      "id": "tt-22ydr3",
+      "name": "SOLVED",
+      "content": "Issue Solved - CU happy , Me happy.",
+      "order": 6
+    },
+    {
+      "id": "tt-3ign8v",
+      "name": "SPARE PART IN ADVANCE",
+      "content": "SPARE PART IN ADVANCE\n< CU want to buy SP for *PRODUCT* without issue \n>Told him we don't provide in advance",
+      "order": 7
+    },
+    {
+      "id": "tt-mmkd6q",
+      "name": "RMA RICMOTECH UW",
+      "content": "RICMOTECH – *PRODUCT* (repair) UW\n\nPortal Order #*000000*\nProduct Name(s): *PRODUCT*\nSKU(s): *SKU*\n\nRecipient: *CUSTOMER*\nAddress:\n*ADDRESS*\n\nPhone Number: *PHONENUMBER*\nEmail: *EMAIL*",
+      "order": 8
+    },
+    {
+      "id": "tt-ghqtf2",
+      "name": "DUPLICATE",
+      "content": "Duplicate of *RQT*\n\nCLOSING",
+      "order": 9
+    },
+    {
+      "id": "tt-j4v34h",
+      "name": "SPARE PART OOW",
+      "content": "Spare part OOW - ORDER *000000*\nDesignation: *NAME OF SPARE PART*\nSKU : *0000000*\nPiece: 1\nPrice (Part): *00,00* €\nShipping (Standard): *00,00* €\nTOTAL: *00,00* €",
+      "order": 10
+    }
+  ]
+}

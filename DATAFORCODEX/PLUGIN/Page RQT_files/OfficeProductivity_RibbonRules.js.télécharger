@@ -1,0 +1,433 @@
+var OfficeProductivity;
+(function (OfficeProductivity) {
+    "use strict";
+    /**
+     * File for common constants in Ribbon Rules and Ribbon Commands.
+     */
+    var Constants;
+    (function (Constants) {
+        /**
+         * Feature Constant.
+         */
+        var FeatureConstant;
+        (function (FeatureConstant) {
+            FeatureConstant.OrgSettingMSTeamsIntegrationEnabled = "ismsteamsenabled";
+        })(FeatureConstant = Constants.FeatureConstant || (Constants.FeatureConstant = {}));
+        /**
+         * Telemetry Constants.
+         */
+        var TelemetryConstant;
+        (function (TelemetryConstant) {
+            TelemetryConstant.EventName = "EventName";
+            TelemetryConstant.StartTime = "StartTime";
+            TelemetryConstant.EndTime = "EndTime";
+            TelemetryConstant.ExecutionTime = "ExecutionTime";
+            TelemetryConstant.EventErrorCount = "ErrorCount";
+            TelemetryConstant.EventErrorMessage = "ErrorMessage";
+            TelemetryConstant.NoLinkedRecords = "NumberOfLinkedRecords";
+            TelemetryConstant.OpenedDialogType = "DialogType";
+            TelemetryConstant.MultiChannel = "MultiChannel";
+            TelemetryConstant.NoChannel = "NoChannel";
+            /* Event Constants */
+            TelemetryConstant.EventTeamsButtonClicked = "MsTeamsIntegration.GetStartedButtonClicked";
+            TelemetryConstant.EventTeamsCommandClicked = "MsTeamsIntegration.CollaborationRibbonCommandClicked";
+            TelemetryConstant.EventTeamsLearnMoreLinkClicked = "MsTeamsIntegration.LearnMoreLinkClicked";
+            TelemetryConstant.EventTeamsGridItemClicked = "MsTeamsIntegration.MultiChannelGridItemClicked";
+            TelemetryConstant.ComponentName = "ComponentName";
+            TelemetryConstant.NoChannelMdd = "NoChannelMDD";
+        })(TelemetryConstant = Constants.TelemetryConstant || (Constants.TelemetryConstant = {}));
+    })(Constants = OfficeProductivity.Constants || (OfficeProductivity.Constants = {}));
+})(OfficeProductivity || (OfficeProductivity = {}));
+var OfficeProductivity;
+(function (OfficeProductivity) {
+    "use strict";
+    /**
+     * Utility class for web resources
+     */
+    var Util = (function () {
+        function Util() {
+        }
+        /**
+         * Creates a delegate method for error handling with current Telemtry event
+         * @param event
+         * @param message
+         */
+        Util.CreateErrorResponseHandler = function (event, clientMessage, debugMessage, suggestedMitigation) {
+            return function (error) {
+                if (event) {
+                    var errorMessage = JSON.stringify(error);
+                    OfficeProductivity.Telemetry.addErrorEventParameter(event, errorMessage);
+                    OfficeProductivity.Telemetry.reportErrorEvent(event, debugMessage, suggestedMitigation);
+                }
+                Util.HanldeErrorResponse(error, clientMessage);
+            };
+        };
+        /**
+         * Generic handler for error response in SDK call to Dynaimcs server
+         * @param error
+         */
+        Util.HanldeErrorResponse = function (error, clientMessage) {
+            if (clientMessage) {
+                error.message = clientMessage;
+            }
+            Xrm.Navigation.openErrorDialog(error);
+        };
+        /**
+         * Format GUID to be used in Xrm SDK calls
+         * @param id GUID to be formatted
+         */
+        Util.FormatId = function (id) {
+            if (id) {
+                id = id.replace("{", "").replace("}", "");
+            }
+            return id;
+        };
+        /**
+         * Wrapper for getting resource string from OfficeProductivity.<lcid>.resx files
+         * The <lcid> is picked up based on user/org setting
+         * @param key The key of the resource string to be fetched
+         * @param webResourceName (optional) the name of resx file in which the key is present
+         *			The name should be without <lcid>.resx suffix. It will be handled by this function
+         */
+        Util.getResourceString = function (key, webResourceName) {
+            if (webResourceName === void 0) { webResourceName = Util.CommonWebResource; }
+            return Xrm.Utility.getResourceString(webResourceName, key);
+        };
+        /**
+         * Utility to check if the Feature MS Teams INtegration turned on at ORG level
+         * returns true if org setting is 1
+         * */
+        Util.IsMSTeamsIntegrationEnabledAtOrgLevel = function () {
+            return Xrm.Utility.getGlobalContext().organizationSettings.attributes[OfficeProductivity.Constants.FeatureConstant.OrgSettingMSTeamsIntegrationEnabled] == 0
+                ? false
+                : true;
+        };
+        return Util;
+    }());
+    Util.CommonWebResource = "msdyn_/OfficeProductivity/Resources/OfficeProductivity";
+    OfficeProductivity.Util = Util;
+})(OfficeProductivity || (OfficeProductivity = {}));
+var OfficeProductivity;
+(function (OfficeProductivity) {
+    "use strict";
+    OfficeProductivity.MSTeamsFCB = "MSTeamsIntegration";
+    OfficeProductivity.IsMSTeamsIntegrationEnabled = "IsMSTeamsIntegrationEnabled";
+    OfficeProductivity.ContextualEmailFormId = "b54ca399-eaa6-45f8-83f2-c268b0021087";
+    var RibbonRules = (function () {
+        function RibbonRules() {
+        }
+        /**
+         * Enable rule to show MS teams collaborate command
+         */
+        RibbonRules.showMSTeamsCollaborateCommand = function (formContext) {
+            // Returns true if
+            // 1. Running in UCI context
+            // 2. Form factor is not phone
+            if (this.isUCI() &&
+                Xrm.Utility.getGlobalContext().client.getFormFactor() != 3 /* Phone */) {
+                return this.isMSTeamsIntegrationEnabled(formContext.data.entity.getEntityName());
+            }
+            else {
+                return new Promise(function (resolve) {
+                    resolve(false);
+                });
+            }
+        };
+        /**
+         * Enable rule to show MS teams collaborate command at the entity list level.
+         */
+        RibbonRules.showMSTeamsViewCollaborateCommand = function (formContext) {
+            // Returns true if
+            // 1. Running in UCI context
+            // 2. Form factor is not phone
+            if (this.isUCI() &&
+                Xrm.Utility.getGlobalContext().client.getFormFactor() != 3 /* Phone */) {
+                return this.isMSTeamsIntegrationEnabled(formContext.getEntityName());
+            }
+            else {
+                return new Promise(function (resolve) {
+                    resolve(false);
+                });
+            }
+        };
+        /**
+         * Enable rule to Hide MS teams collaborate command for Contextual Email Form
+         */
+        RibbonRules.hideCollaborateCommandForContextualEmail = function (primaryControl) {
+            var formContext = primaryControl.ui.formSelector.getCurrentItem();
+            var formId = formContext.getId();
+            return formId.toLowerCase() != OfficeProductivity.ContextualEmailFormId;
+        };
+        RibbonRules.isUCI = function () {
+            return Xrm.Internal.isUci();
+        };
+        /**
+         * utility to check if MS Teams Integration is enabled
+         */
+        RibbonRules.isMSTeamsIntegrationEnabled = function (entityName) {
+            if (!Xrm.Internal.isFeatureEnabled(OfficeProductivity.MSTeamsFCB) || !OfficeProductivity.Util.IsMSTeamsIntegrationEnabledAtOrgLevel()) {
+                return new Promise(function (resolve) {
+                    resolve(false);
+                });
+            }
+            if (!(RibbonRules.IsMSTeamsIntegrationEnabled === null ||
+                RibbonRules.IsMSTeamsIntegrationEnabled === undefined)) {
+                return new Promise(function (resolve) {
+                    resolve(RibbonRules.IsMSTeamsIntegrationEnabled);
+                });
+            }
+            else {
+                var promise_1 = Xrm.Utility.getEntityMetadata(entityName);
+                return new Promise(function (resolve) {
+                    promise_1.then(function (entityMetadata) {
+                        if (entityMetadata.IsMSTeamsIntegrationEnabled !== null &&
+                            typeof entityMetadata.IsMSTeamsIntegrationEnabled === "boolean") {
+                            RibbonRules.IsMSTeamsIntegrationEnabled = entityMetadata.IsMSTeamsIntegrationEnabled;
+                            resolve(RibbonRules.IsMSTeamsIntegrationEnabled);
+                        }
+                        else {
+                            var eventParam = OfficeProductivity.Telemetry.createEvent("isMSTeamsIntegrationEnabled");
+                            OfficeProductivity.Telemetry.addEventParameter(eventParam, "Error", "type of IsMSTeamsIntegration is either not boolean or is null");
+                            OfficeProductivity.Telemetry.reportErrorEvent(eventParam);
+                            RibbonRules.IsMSTeamsIntegrationEnabled = false;
+                            resolve(false);
+                        }
+                    });
+                    promise_1.catch(function (err) {
+                        OfficeProductivity.Telemetry.addErrorEventParameter(err, "");
+                        RibbonRules.IsMSTeamsIntegrationEnabled = false;
+                        resolve(false);
+                    });
+                });
+            }
+        };
+        return RibbonRules;
+    }());
+    OfficeProductivity.RibbonRules = RibbonRules;
+})(OfficeProductivity || (OfficeProductivity = {}));
+var OfficeProductivity;
+(function (OfficeProductivity) {
+    "use strict";
+    /**
+     * Utility class for web resources
+     */
+    var Telemetry = (function () {
+        function Telemetry() {
+        }
+        /**
+         * Returns if the value is null
+         */
+        Telemetry.isNull = function (value) {
+            return typeof value === "undefined" || value == null;
+        };
+        /**
+         * Returns if the value is not null
+         */
+        Telemetry.isNotNull = function (value) {
+            return !Telemetry.isNull(value);
+        };
+        /**
+         * Creates Xrm telemtery event with given event name
+         */
+        Telemetry.createEvent = function (eventName) {
+            var event = new Array();
+            Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.EventName, eventName);
+            Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.StartTime, new Date());
+            Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.EventErrorCount, 0);
+            return event;
+        };
+        /**
+         * Utility method to add parameters to given telemetry event
+         */
+        Telemetry.addEventParameter = function (event, name, value) {
+            try {
+                if (event != null && name != null && value != null) {
+                    var item = {
+                        name: name,
+                        value: value,
+                    };
+                    event.push(item);
+                }
+            }
+            catch (Exception) {
+                console.assert(false, Exception.message);
+            }
+        };
+        /**
+         * Utility to log telemetry events
+         */
+        Telemetry.reportEvent = function (event) {
+            if (event == null) {
+                return;
+            }
+            var currentEventName = null;
+            var start = null;
+            var end = new Date();
+            try {
+                var item = null;
+                for (var _i = 0, event_1 = event; _i < event_1.length; _i++) {
+                    item = event_1[_i];
+                    if (OfficeProductivity.Constants.TelemetryConstant.EventName != null &&
+                        OfficeProductivity.Constants.TelemetryConstant.EventName == item.name) {
+                        currentEventName = item.value;
+                    }
+                    else if (OfficeProductivity.Constants.TelemetryConstant.StartTime != null &&
+                        OfficeProductivity.Constants.TelemetryConstant.StartTime == item.name) {
+                        start = item.value;
+                    }
+                }
+                if (currentEventName == null || start == null) {
+                    return;
+                }
+                Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.EndTime, end);
+                Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.ExecutionTime, end.valueOf() - start.valueOf());
+                var endTime = {
+                    eventName: currentEventName,
+                    eventParameters: event,
+                };
+                if (Xrm && Xrm.Reporting) {
+                    Xrm.Reporting.reportEvent(endTime);
+                }
+            }
+            catch (Exception) {
+                console.assert(false, Exception.message);
+            }
+        };
+        /**
+         * Update the execution time of the event
+         */
+        Telemetry.updateEventExecutionTime = function (event) {
+            if (Telemetry.isNull(event)) {
+                return;
+            }
+            var currentEventName = null;
+            var start = null;
+            var end = new Date();
+            try {
+                var item = null;
+                for (var _i = 0, event_2 = event; _i < event_2.length; _i++) {
+                    item = event_2[_i];
+                    if (OfficeProductivity.Constants.TelemetryConstant.EventName != null &&
+                        OfficeProductivity.Constants.TelemetryConstant.EventName == item.name) {
+                        currentEventName = item.value;
+                    }
+                    else if (Telemetry.isNotNull(OfficeProductivity.Constants.TelemetryConstant.StartTime) &&
+                        OfficeProductivity.Constants.TelemetryConstant.StartTime == item.name) {
+                        start = item.value;
+                    }
+                }
+                if (Telemetry.isNull(currentEventName) || Telemetry.isNull(start)) {
+                    return;
+                }
+                Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.EndTime, end);
+                Telemetry.addEventParameter(event, OfficeProductivity.Constants.TelemetryConstant.ExecutionTime, end.valueOf() - start.valueOf());
+                return event;
+            }
+            catch (Exception) {
+                console.assert(false, Exception.message);
+            }
+        };
+        /**
+         * Updates the event parametrs in case of error
+         */
+        Telemetry.addErrorEventParameter = function (event, value) {
+            var errorCount = 0;
+            try {
+                if (Telemetry.isNotNull(event) && event.length != 0) {
+                    var item = null;
+                    for (var _i = 0, event_3 = event; _i < event_3.length; _i++) {
+                        item = event_3[_i];
+                        if (item.name == OfficeProductivity.Constants.TelemetryConstant.EventErrorCount) {
+                            errorCount = parseInt(item.value.toString());
+                            item.value = errorCount + 1;
+                        }
+                    }
+                }
+                if (Telemetry.isNotNull(event) && Telemetry.isNotNull(value)) {
+                    var item = {
+                        name: OfficeProductivity.Constants.TelemetryConstant.EventErrorMessage + (errorCount + 1),
+                        value: value,
+                    };
+                    event.push(item);
+                }
+            }
+            catch (Exception) {
+                console.assert(false, Exception.message);
+            }
+        };
+        /**
+         * Utility to check if event ran into error
+         */
+        Telemetry.findErrorEventParameter = function (event) {
+            try {
+                if (Telemetry.isNotNull(event) && event.length != 0) {
+                    var item = null;
+                    for (var _i = 0, event_4 = event; _i < event_4.length; _i++) {
+                        item = event_4[_i];
+                        if (item.name == OfficeProductivity.Constants.TelemetryConstant.EventErrorCount) {
+                            if (item.value != 0) {
+                                return true;
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        else {
+                            continue;
+                        }
+                    }
+                }
+                return false;
+            }
+            catch (Exception) {
+                console.assert(false, Exception.message);
+            }
+        };
+        /**
+         * Used to report the telemetry event for a component
+         */
+        Telemetry.reportActivityEvent = function (telemetryEvent, componentName) {
+            if (Telemetry.isNull(telemetryEvent)) {
+                return;
+            }
+            if (Xrm && Xrm.Reporting) {
+                if (!Telemetry.findErrorEventParameter(telemetryEvent)) {
+                    Xrm.Reporting.reportSuccess(componentName, Telemetry.updateEventExecutionTime(telemetryEvent));
+                }
+                else {
+                    Xrm.Reporting.reportFailure(componentName, Error(componentName), "Check the stacktrace", Telemetry.updateEventExecutionTime(telemetryEvent));
+                }
+            }
+        };
+        /**
+         * Reports an error event
+         * @param telemetryEvent
+         * @param debugMessage
+         */
+        Telemetry.reportErrorEvent = function (telemetryEvent, debugMessage, suggestedMitigation) {
+            if (Telemetry.isNull(telemetryEvent)) {
+                return;
+            }
+            if (Xrm && Xrm.Reporting) {
+                var componentName = void 0;
+                var item = void 0;
+                for (var _i = 0, telemetryEvent_1 = telemetryEvent; _i < telemetryEvent_1.length; _i++) {
+                    item = telemetryEvent_1[_i];
+                    if (OfficeProductivity.Constants.TelemetryConstant.EventName == item.name) {
+                        componentName = item.value;
+                    }
+                }
+                if (!debugMessage) {
+                    debugMessage = componentName;
+                }
+                if (!suggestedMitigation) {
+                    suggestedMitigation = "No suggested mitigation";
+                }
+                Xrm.Reporting.reportFailure(componentName, Error(debugMessage), suggestedMitigation, Telemetry.updateEventExecutionTime(telemetryEvent));
+            }
+        };
+        return Telemetry;
+    }());
+    OfficeProductivity.Telemetry = Telemetry;
+})(OfficeProductivity || (OfficeProductivity = {}));
+//# sourceMappingURL=OfficeProductivity_RibbonRules.js.map

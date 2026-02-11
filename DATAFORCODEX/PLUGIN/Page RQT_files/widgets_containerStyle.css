@@ -1,0 +1,330 @@
+﻿:root {
+	--sessionPanelAreaWidth: 0px;
+	--flapAreaWidth: 0px;
+	--widgetAreaWidth: calc(100% - var(--sessionPanelAreaWidth) - var(--flapAreaWidth));
+}
+
+div#PresenceList
+{
+	display:none;
+}
+
+.headerDiv
+{
+	margin-left: 14px;
+	margin-right: 14px;
+	margin-bottom: 8px;
+	padding: 8px 0px;
+	border-bottom: 1px solid #EFEFEF;
+	font-family: 'Segoe UI';
+	font-size: 14px;
+	line-height: 19px;
+	font-weight: 600;
+	color: #000000;
+}
+
+.ColorNode
+{
+	height:12px;
+	width:12px;
+	border-radius: 50%;
+	vertical-align: middle;
+	margin-top: 8px;
+}
+
+[dir='ltr'] .ColorNode
+{
+	margin-left: 14px;
+}
+
+[dir='rtl'] .ColorNode 
+{
+	margin-right: 14px;
+}
+
+.textNode
+{
+	font-size: 10px;
+	font-family: 'Segoe UI';
+	font-style: normal;
+	overflow: hidden;
+	margin-top: 4px;
+}
+
+.agentPresenceDiv
+{
+	background-color: transparent;
+	padding-top: 5px;
+	cursor: pointer;
+}
+
+.agentPresenceDiv:hover
+{
+	background-color: #FFFFFF;
+}
+
+.agentPresenceDiv:hover .agentPresenceColorNode
+{
+	border-color: #FFFFFF;
+}
+
+.innerDiv {
+	display: none;
+	height: 28px;
+	width: 28px;
+	margin: auto;
+}
+
+.backgroundColorDiv {
+	height: 28px;
+	width: 28px;
+	background-color: #315FA2;
+	border-radius: 50%;
+	text-align: center;
+}
+
+.agentPresenceDiv .textNode 
+{
+	margin: 2px 4px;
+	text-align: center;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.userImageNode
+{
+	height: 14px;
+	width: 14px;
+	position: relative;
+	top: 6px;
+	filter: invert(100%);
+}
+
+.agentPresenceColorNode
+{
+	border-radius: 50%;
+	border: 2px solid #efefef;
+	width: 10px;
+	height: 10px;
+	position: absolute;
+	margin-top: 17px;
+}
+
+[dir='ltr'] .agentPresenceColorNode
+{
+	right: 4px;
+}
+
+[dir='rtl'] .agentPresenceColorNode
+{
+	left: 4px;
+}
+
+.widgetArea
+{
+	width: calc(var(--widgetAreaWidth));
+	height: calc(100% - 4px);
+	position: absolute;
+}
+
+[dir='ltr'] .widgetArea
+{
+	right: calc(var(--sessionPanelAreaWidth));
+}
+
+[dir='rtl'] .widgetArea
+{
+	left: calc(var(--sessionPanelAreaWidth));
+}
+
+.widgetAreaZFP
+{
+	width: calc(var(--widgetAreaWidth));
+	height: calc(100% - 4px);
+	position: absolute;
+}
+
+[dir='ltr'] .widgetAreaZFP
+{
+	left: calc(var(--sessionPanelAreaWidth));
+}
+
+[dir='rtl'] .widgetAreaZFP
+{
+	right: calc(var(--sessionPanelAreaWidth));
+}
+
+.flapAreaZFP{
+	position: absolute;
+}
+[dir='ltr'] .flapAreaZFP
+{
+	right: 0;
+}
+
+[dir='rtl'] .flapAreaZFP
+{
+	left: 0;
+}
+
+.widgetControl 
+{
+	height: 100%;
+}
+
+.flexJustify
+{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.sessionPanel
+{
+	background-color: #EFEFEF;
+	width: calc(var(--sessionPanelAreaWidth));
+	position: fixed;
+	height: calc(100% - 4px);
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	z-index: 1;
+}
+
+[dir='ltr'] .sessionPanel
+{
+	right: 0px;
+}
+
+[dir='rtl'] .sessionPanel
+{
+	left: 0px;
+}
+
+.sessions
+{
+	display: flex;
+	flex-direction: column;
+}
+
+.session
+{
+	height: 49px;
+	cursor: pointer;
+	background-color: transparent;
+}
+
+.iconCircle
+{
+	width: 28px;
+	height: 28px; 
+	border-radius: 50%;
+	text-align: center;
+}
+
+.initials
+{
+	position: relative;
+	top: 3px;
+	font-size: 12px;
+	line-height: 16px;
+	color: #fff;
+	font-family: Segoe UI;
+}
+
+.uiSessionNotification {
+	height: 10px;
+	width: 10px;
+	background-color: #56CCF2;
+	position: absolute;
+	border-radius: 50%;
+	border: 2px solid white;
+	margin-top: 10px;
+	font-size: 7px;
+	color: white;
+	text-align: center;
+}
+
+[dir='ltr'] .uiSessionNotification
+{
+	right: 4px;
+}
+
+[dir='rtl'] .uiSessionNotification
+{
+	left: 4px;
+}
+
+.crossIconFont
+{
+	font-size: 20px;
+	color: #BF0900;
+}
+
+.PresenceListItem 
+{
+	display: flex;
+	height: 28px;
+	cursor: pointer;
+	background-color: #FFFFFF;
+}
+
+.PresenceListItem:hover
+{
+	background-color: #EFEFEF;
+}
+
+.PresenceListItem .textNode
+{
+	font-size: 14px;
+	vertical-align: middle;
+}
+
+[dir='ltr'] .PresenceListItem .textNode
+{
+	padding-left: 7px;
+}
+
+[dir='rtl'] .PresenceListItem .textNode
+{
+	padding-right: 7px;
+}
+
+.PresenceListInnerNode:last-child
+{
+	padding-bottom: 12px;
+}
+
+.PresenceListInnerNode
+{
+	background-color: #FFFFFF;
+	position: fixed;
+	bottom: 10px;
+	width: 191px;
+	box-shadow:0px 0px 8px rgba(0,0,0,0.1);
+}
+
+[dir='ltr'] .PresenceListInnerNode
+{
+	right: calc(var(--sessionPanelAreaWidth));
+}
+
+[dir='rtl'] .PresenceListInnerNode
+{
+	left: calc(var(--sessionPanelAreaWidth));
+}
+
+.notesDiv
+{
+	top:0px;
+}
+
+[dir='ltr'] .notesDiv
+{
+	left: 0px;
+}
+
+[dir='rtl'] .notesDiv
+{
+	right: 0px;
+}

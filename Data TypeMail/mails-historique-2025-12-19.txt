@@ -1,0 +1,598 @@
+Nous vous remercions pour vos retours.
+
+Avez vous pu effectuer des test de votre coté pour confirmer un éventuel problème ? Si , oui lesquels ? 
+
+Afin de permettreune meilleur prise en charge , nous avons besoins de plus d'élément , car la majorité des dysfonctionnement rencotré sont résolus a distance . Nous effectuons un retour du produit uniqument a la confirmation que le dysfonctionnement ne peut etrerésolu a distance rapidement.
+
+Nous aurions également besoin d'une facture d'achat du produit ainsi que d'une photo du numéro de série de l'Inpulse T7.
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de détéction de votre Stream 200 XLR et nous serions ravis de vous aider.
+
+Nous vous remercions pour les photos déposées dans notre Cloud ainsi pour les premier pas de résolutions entrepris.
+
+
+Afin de pouvoir vous apporter la solution la plus adaptée,  POurriez vous me confirmer que les étapes de résoltuons que vous avez suivi sont bien celles présente sur notre site support ? 
+*lien*
+
+Si oui nous aurions alors besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de détéction votre T-LCM et nous serions ravis de vous aider.
+
+Nous vous remercions pour ces précisions apportées en amont.
+
+Afin de pouvoir vous apporter la solution la plus adaptée, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible. 
+
+Pourriez vous réaliser votre vidéo de test dans l'interface de calibration du pédalier sur un pc Windows 11 ? Voici le lien : https://support.thrustmaster.com/en/product/t-lcm-pedals-en/#software
+
+Nous vous recommandons d'effectuer ce test en utilisant la connection USB du pédalier.
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie ainsi que d'une photo du numéro de série de votre T-LCM
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Pourriez vous également confirmer si , l'ors de l'utilisation sur la base du voalnt en mode load cell , un voyant bleu s'allume au dos du pédalier ?
+
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci d'alignement des axes sur votre TCA QUADRANT AIRBUS et nous serions ravis de vous aider.
+
+Nous vous remercions pour la photo fournie en amont ainsi que les précisions aportées.
+
+Il semble que l'un de vos axes ai perdu son alignement avec sa calibration.
+
+Voici quelques piste de résolutions : 
+
+Il est possibe de recalibrer les axes de votre produit , je vous joint la procédure a suivre .
+
+Je vous recommande également de vérifier qu'aucune calibration supplementaire n'est appliqué par Windows , je vous joint également laprocédures .
+
+Enfin , si vous le souhaitez il est recommandé de nettoyer les capteurs a l'intérieur du produit , donc je vous joint également la procédure.
+
+Si le problème persiste ;
+
+Afin de pouvoir vous apporter la solution la plus adaptée, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre TCA QUADRANT AIRBUS .
+
+Nous aurions également besoin d'une facture d'achat de votre produit et d'une photo du numéro de série .
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Si vous avez d'autres questions , ou besoin de plus d'assistance n'hésitez pas à revenir vers nous.
+
+ 
+
+------------------------------------------------------------
+
+Nous vous remercions pour ces précisions ainsi que pour les documents apportés.
+
+Si le souci n'est visible qu l'ors de l'utilisation de la connectique RJ12 nous aurions alors besoin d'une vidéo de test du pédalier raccordé a la base sur un pc avec le produit et l'écran visible simultanément .
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre T-LCM .
+
+Pour ce test Windows 10 ne posera aucun souci , pas d'inquitude .
+
+Veillez à ce que la base soit bien en mode Load Cell , et que la led bleu au dos du pédalier est bien allumée.
+
+Nous aurions également besoin de quelques photos des connectiques RJ12 de la base et du pédalier.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Concernat votre question :
+Au portugal tout nos produit sont garantis 3 ans a compté de la récéption du produit . Donc votre T248 ainsi que son pédalier sont garantis jusqu'en Mai 2026 .
+
+Je suis ravi d'avoir pu vous aider , et vous souhiate également d'excellentes fetes de fin d'années .
+
+
+------------------------------------------------------------
+
+Nous vous remercions pour ces précisions.
+
+Malheureusment , nous avons besoin d'éléments visuels sur les quels baser notre diagnostique avant de pouvoir vous proposer une solution.
+
+Le souci que vous nous décrivez semble néccésiter une réparation a nos ateliers , cependant sans confirmation viseulle il nous est impossibe de lancer la  procédure .
+
+Soyez assuré que nous serons pret a vous assiter des que vous serez de retour . 
+
+------------------------------------------------------------
+
+En fonction des résutats des test, notre chmap d'action varie entre une résolution a distance , l'envoe de pièce détachée et le retour en atelier pour réparation , voici quelque précision :
+
+L'envoi de pièce détachée est a la discrétion de nos experts et réservé a des dysfnctionnement précis . 
+
+Pour le retour en atelier , nous le résrvons pour les cas ou aucune solution a distance n'est envisageable , si nous envisageaons cette procédure pour votre produit , comme votre tlcm est sous garatie nous vous fournirions une étiquette de retour , puis le renvérrions chez vous aprèes réparation , a notre charge , la garrantie couvrant l'intégralité de la réparation.
+
+Une fois de retour , si vous souhaitez que nous puisions traiter votre demande au plus vite , je vous encourage a fournir le plus d'éléments possible directement , pour rappel :
+
+Quelques photos des connecter RJ12 de la base et du pédalier 
+
+Une vidéo de test du produit , dans l'interface joy.cpl sur votre pc :
+*   Press the Windows + R keys simultaneously to open the Run dialog box.
+*   Enter joy.cpl in the field and click OK.
+*   The Game Controllers window will open and display the list of connected devices.
+*   Select your device from the list, then click Properties.
+*   A test tab will open, allowing you to check the functionality of your T-LCM.
+
+Une photo du numéro de série de votre T-LCM , ( celle que vous nous avez envoyé précédemment ne contient pas le numéro de série , il sagit d'un code associé a un code barre que nous sohaitosn ) .
+
+Nous nous tenons pret , quand vous le serez afin de vous permettre de disposer pleinement de votre pédzlier dans les  plus bref délais 
+
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de détéction votre TCA QUADRANT BOEING EDITION et nous serions ravis de vous aider.
+
+Nous vous remercions pour les documents fournis en amont.
+
+Afin de mieux comprendre votre souci, nous aurions besoin de quelques précisions : 
+
+Le sélecteur sur la façade avant de votre produit est-il bien placé sur "ENG 1&2" ? Et votre TCA Quadrant Boeing Edition est-il bien connecté en USB directement à votre ordinateur ( sans utiliser de Hub ou de rallonge USB ) ?
+
+Disposez vous des dernières version des pilotes pour votre TCA QUADRANT BOEING EDITION ? Vous pouvez retrouver ces pilotes sur la page de votre rpoduit de notre site support , je vous joint le lien ci dessous .
+
+NOus aurions également besoin de quelques éléments supplémentaires : 
+
+Nous sohaiterions une courte vidéode test , démontrant le dysfonctionnement du produit ainsi qu'un apercu globale des branchelent et installation  .
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre TCA QUADRANT BOEING EDITION .
+
+Merci de vous assurez que le produit ainsi que l'écran soit bien visible lors des manipulations.
+
+Nous aurions égalment d'une photo du numéro de série de votre TCA QUADRANT BOEING EDITION situé sous la base .
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+
+
+
+------------------------------------------------------------
+
+Nous vous remercions pour l'intérêt que vous portez à nos produits.
+
+Nous ne pouvons pas procéder a u échnage,  a proprement parler , de votre TCA Captain pack avec un TCA Yoke and Throttle 
+
+Cependant , il est possible de renvoyer votre produit pour un remboursement , en effet vous disposez d'une période de 30 jours  à récéption du produit pour le tester , si il n e convient pas a vos besoins , vous pouvez donc nous le renvoyer afin d'obtenir un remboursement. Et donc d'acquérir ensuite le pack TCA Yoke et Throttle Boeing .
+
+N'hésiter pas a me confirmer si cette solution vous cinvient et que vous souhaitez procéder .
+
+
+
+
+------------------------------------------------------------
+
+Vous nous contactez au sujet de DJUCED qui plante sur votre ordinateur.
+
+Nous serions ravis de vous aider ! Afin de vous fournir une meilleure assistance, pourriez-vous détailler les circonstances dans lesquelles ces plantages se produisent ? Le logiciel démarre-t-il puis se ferme directement ? Affiche-t-il un message d’erreur ?
+
+Afin de mieux comprendre votre souci, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré ainsi que les circonstances.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Chaque fois que DJUCED plante, il génère un rapport de crash et vous propose d’envoyer le « Send Error Report ». Merci de le faire, car il nous sera transmis et nous pourrons l’analyser. Les détails de cette fenêtre de rapport de crash se trouvent ci-dessous :
+
+Nous aurions également besoin du numéro de ticket de crash BugSplat (mentionné dans l’article juste au-dessus).
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l’attente de votre réponse.
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de drift sur votre Simtask Farmstick et nous serions ravis de vous aider.
+
+Nous vous remercions pour les documents fournis en amont ainsi que la vidéo réalisée , cela facilite grandement notre diagnostique .
+
+Afin de pouvoir vous apporter la solution la plus adaptée, nous aurions besoin que vous effecutyez quelques vérifications en premier lieux.
+
+Pourriez vous vérifier que votre produit est bien a jour , je vous joint la procédure de mise a jour du firmware.
+
+Une fois la mise a jour effectué , si le problème persiste , vous pouvez tenter une recalibration du produit . JE vous joint égalment la procédure.
+
+Enfin si le problème persiste , pourriez vous réaliser une seconde vidéo de test afin que nous confirmions le dysfontionneent .
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre SIMTASK FARMSTICK  .
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Vous nous contactez afin d'aquérir un jeu de visserie pour votre TH8A et nous serions ravis de vous aider.
+
+Nous proposons effectivement un kit de vis + clé Allen en tant que pièce détachée .
+
+Afin de vous offrir la solution la plus adaptée nous aurions besoin d'une photo du numéro de série de votre TH8A
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statut de garantie.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous faire une propositon.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Vous nous contactez afin d’acquérir un système de connectique pour votre TM LEATHER 28GT et nous serions ravis de vous aider.
+
+Pouvez vous me confirmr qu'il s'agit bien du système de fixation d'origine du volant  TM LEATHER 28GT que vous recherchez ? Si vous parlez d'un autre volant , merci de me le faire savoir.
+
+Afin de vous offrir la solution la plus adaptée, nous aurions besoin d’une photo du numéro de série de votre TM LEATHER 28GT.  
+Nous aurions également besoin d’une éventuelle facture d’achat de votre produit, afin de vérifier son statut de garantie.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous faire une proposition.
+
+Dans l’attente de votre réponse.
+
+
+------------------------------------------------------------
+
+Thank you for getting back to us.
+
+We are very happy to hear that the initially reported problem has been resolved and that now you are able to fully enjoy your TM LEATHER 28GT !
+
+If you ever encounter any other issues, or simply have any questions or doubts, do not hesitate to let us know.
+We're always happy to help.
+
+In the meantime, we wish you a pleasant day.
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci d'axes votre TCA QUADRANT AIRBUS et nous serions ravis de vous aider.
+
+Nous vous remercions pour les premier pas de résolutions entrepris.
+
+Afin de mieux comprendre votre souci, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre TCA QUADRANT AIRBUS .
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie ainsi que d'une photo du numéro de série de votre TCA QUADRANT AIRBUS.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+------------------------------------------------------------
+
+Nous vous remercions pour l'intérêt que vous portez à nos produits.
+
+Le Quick Release Upgrade pour volant SF1000 est actuellement en rupture de stock , nous prévoyons un réassort des stock fin Janvier 2026 . Je ne peu malheureusment pas vous donneer plus de précisions . SOyez assuré que nous faisons notre possible pour un retour en stock au plus tot .
+
+Si vous avez d'autres questions , ou besoin de plus d'assistance n'hésitez pas à revenir vers nous.
+
+------------------------------------------------------------
+
+Nous vous remercions pour l'intérêt que vous portez à nos produits.
+
+The SimTask Farmstick typically uses standard bolt sizes for mounting. For most Thrustmaster products, the common thread size for mounting bolts is M6. 
+
+To mount the farmstick you will need two M6 Bolt scren and a 6mm Allen Key head 
+
+Si vous avez d'autres questions , ou besoin de plus d'assistance n'hésitez pas à revenir vers nous.
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci sur votre pédalier T-LCM et nous serions ravis de vous aider.
+
+Nous vous remercions pour les informations apportées en amont.
+
+Afin de mieux comprendre votre souci, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interfacede calibration du T-LCM sur un PC Windows 11 ? Voici le lien pour télécharger le logiciel de calibration :
+
+Pour ce test nou vous recommandons de connecter le pédalier en USB sur votre pc .
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+Ainsi que d'une photo du numéro de série de votre T-LCM.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Pourriez égalemen nous donner plu d'information sur le dysfonctionnelent renctnré ? ( Signal incorrect ? course altérée ? , aucun réponse ? )
+
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci sur votre pédalier T-LCM et nous serions ravis de vous aider.
+
+Nous vous remercions pour les informations apportées en amont.
+
+Afin de mieux comprendre votre souci, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interfacede calibration du T-LCM sur un PC Windows 11 ? Voici le lien pour télécharger le logiciel de calibration :
+
+Pour ce test nou vous recommandons de connecter le pédalier en USB sur votre pc .
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+Ainsi que d'une photo du numéro de série de votre T-LCM.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Pourriez vous préciser si le dysfonctionnement mentioné est présent sur l'ensemble du pédalier ou une seule pédale ?
+Assurez vous également que votre base soit dans le correct mode de pédalier , je vous joint le guide de configuration.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+
+
+------------------------------------------------------------
+
+Thank you for contacting Thrustmaster Technical Support.
+
+Please know that there is more than one incident request opened in your name, regarding the same product and issue.
+
+We have responded to the original ticket - RQT-692063-2025 - and as such, this ticket will now be closed.
+
+Please make sure that you do not reply to this email, but to the email related to ticket RQT.
+
+It is very important to reply and provide information to the original ticket, as this will help keep the information centralized for much smoother and faster communication and troubleshooting.
+
+We appreciate your understanding and wish you a pleasant day.
+
+------------------------------------------------------------
+
+Vous nous contactez pour un dysfonctionnement de votre TFRP Rudder et nous serions ravis de vous aider.
+
+Nous vous remercions pour les documents fournis en amont.
+
+Afin de pouvoir vous apporter la solution la plus adaptée, nous aurions besoin de pluseur éléments supplémentaires :
+
+nous souhaiterions une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre TFRP Rudder .
+
+Nous aurions également besoin d'une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Si vous disposez de l'adaptateur RJ12 vers USB permettant d'utiliser le TFRP seul , pourrivez vous égalmznt réaliser un court test vidéo dans l'utilitaire de calibration suivant :
+
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de syncronisation sur Djuced et nous serions ravis de vous aider.
+
+Afin de mieux comprendre votre souci, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré .
+Pourriez vous également préciser si la Beat Grid est désychronisé avec le BPM de la musique ou avec le son qui sort de l'odrinateur ?
+
+Nous aurions également besoin du numéro de version de DJUCED que vous utilisez .
+
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+You are contacting us regarding random disconnections of your T598.
+
+We would be happy to assist you and send you a new power supply .
+
+In order for us to proceed, could you please send us the following elements ?
+
+- Your address and phone number
+
+- A photo of the serial number ( you can find it by navigating through the T598 menu, or by scanning 
+the QR code under the base - please note that the serial number differs from the one on the cardboard 
+package )
+
+- A few close-up photos of the power cable connector pins (the three square metal pins inside the male 
+connector that plugs into the back of the T598)
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.We kindly invite you to upload these files in the "Documents" section of your request. Please note that 
+we will not be able to review files shared via external storage platforms.
+
+Dans l'attente de votre réponse.
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de pédale votre T2PM Pedalset et nous serions ravis de vous aider.
+
+Nous vous remercions pour les documents fournis en amont.
+
+
+Afin de pouvoir vous apporter la solution la plus adaptée, nous aurions besoin d’une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre T2PM .
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Pourriez vous préciser si le dysfonctionnelent intervient a un moment spécifique ou si il est aléatoire ?
+
+Pourriez vous également , ouvrir votre pédalier afin d'en nettoyer les capteur , il est aussi possible d'inverser les cables reliant les carte mères des pédales afin de vérifier si le souci est lié a la pédale ou de nature locale.
+
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci sur votre volant SF1000 et nous serions ravis de vous aider.
+
+Afin de mieux comprendre votre souci, nous aurions besoin de plus d'éléments dont :
+
+une courte vidéo démontrant le dysfonctionnement rencontré , avec le produit clairement visible.
+
+Pourriez vous réaliser votre vidéo dans l'interface joy.cpl d'un PC Windows 11 ? Voici comment faire : 
+
+-   Appuyez simultanément sur les touches Windows + R pour ouvrir la boîte de dialogue Exécuter.
+-   Entrez joy.cpl dans le champ et cliquez sur OK.
+-   La fenêtre Contrôleurs de jeu s’ouvre et affiche la liste des périphériques connectés.
+-   Sélectionnez votre périphérique dans la liste, puis cliquez sur Propriétés.
+-   Un onglet de test s’ouvrira, vous permettant de vérifier le fonctionnement de votre SF1000  .
+
+une photo du numéro de série de votre SF1000 
+
+une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+Nous aurions également besoin de savoir sur quelle base vous utilisez votre Voalnt , ainsi que les nuéros de série et de Firware des deux appareils .
+
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+
+
+
+------------------------------------------------------------
+
+
+The SimTask Steering Kit is designed to be attached to tables, desks, or shelves with a thickness between 15 mm and 50 mm (approximately 0.6 inches to 2 inches). Since your desk has a thickness of 0.4 inches, it falls below the minimum thickness requirement for the clamping system. Additionally, the presence of a support beam 2 inches away from the edge may interfere with the proper attachment of the kit as it need at least 8.5 cm ( or 3.35 inches ) of depth space .
+
+In this case, it might be necessary to consider using an additional support or platform that meets the thickness requirements to ensure a secure fit.
+
+------------------------------------------------------------
+
+
+
+Nous vous remercions pour l'intérêt que vous portez à nos produits.
+
+The SimTask Steering Kit is designed to be attached to tables, desks, or shelves with a thickness between 15 mm and 50 mm (approximately 0.6 inches to 2 inches). Since your desk has a thickness of 0.4 inches, it falls below the minimum thickness requirement for the clamping system. Additionally, the presence of a support beam 2 inches away from the edge may interfere with the proper attachment of the kit as it need at least 8.5 cm ( or 3.35 inches ) of depth space .
+
+In this case, it might be necessary to consider using an additional support or platform that meets the thickness requirements to ensure a secure fit.
+
+Si vous avez d'autres questions , ou besoin de plus d'assistance n'hésitez pas à revenir vers nous.
+
+------------------------------------------------------------
+
+n'hésitez pas a nous fournir quelques éléments supplémentaire comme 
+d'une photo du numéro de série de votre pédalier , ainsi qu'une facture d'achat de votre produit , afin de vérifier son statu de garantie.
+
+cela facilitera le traitement de votre requette 
+Merci de bien vouloir déposer ces documents sur notre cloud via le lien ci-dessous, et de nous notifier une fois les fichiers déposés afin que nous puissions revenir vers vous dans les plus brefs délais.
+
+Une fois ces éléments en notre possession, nous serons plus à même de vous aider.
+
+Dans l'attente de votre réponse.
+
+------------------------------------------------------------
+
+Vous nous contactez afin d'obtenir des informations de suivi de votre commande et nous serions ravis de vous aider.
+
+Basé sur les inforations de suivi de votre commande GE10796479659CA , le colis à été livré ( ou sera ) aujpurdhui en date du 19 décmebre 2025.
+
+vous pouvez suivre l'avencement de votre commande via ce lien :
+avec le numéro de suivi suivant : D421506990000011706001
+
+N'hésitez pas a me confirmer la bonne récéption de votre colis.
+
+Si vous avez d'autres questions , ou besoin de plus d'assistance n'hésitez pas à revenir vers nous.
+
+------------------------------------------------------------
+
+Nous vous remercions pour vos retours.
+
+J'ai également besoin de votre numéro de téléphone , afin de le transmettre au servcie de livraison .
+
+Une fois cette rapide confirmation effectuée , je pourrais poursuivre avec la procédure .
+
+Dans l'attente de votre réponse.
+
+
+------------------------------------------------------------
+
+Vous nous contactez pour un souci de drift votre manette Thrustmaster et nous serions ravis de vous aider.
+
+Votre produit étant un produit d'occasion vendu par un vendeur tierce , les seules solutions que nous pourions vous propose serait l'achat d'une pièce détachée aupres de nos services technique pour remplacer le composant déféctueux , ou bien le renvoi a nos ateliers pour réparation , cette opération étant effectué hors gaantie elle serait a votre charge , ainsi que l'envoi .
+
+Nous vous recommendons de vous tourner vers le service aprèes vente d'Amazon afin demander un éventuel échange du produit .
+
+Si vous le souhaitez nous pouvons effectuer quelques vérifications ensemble afin de confirmer le dysfonctionement pour faciliter les démarches avec Amazon .
+
+n'hésitez pas a me direc comment vous souhaitez procéder 
+
+Dans l'attente de votre réponse.

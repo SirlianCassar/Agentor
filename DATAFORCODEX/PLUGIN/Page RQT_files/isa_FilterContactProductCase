@@ -1,0 +1,23 @@
+
+var formContext;
+
+function filterContactProduct(executionContext) {
+
+    formContext = executionContext.getFormContext();
+    formContext.getControl("isa_produit_contact").addPreSearch(customContactProductFilter);
+}
+
+function customContactProductFilter() {
+
+    var customerField = formContext.getAttribute('customerid').getValue();
+    var productField = formContext.getAttribute('productid').getValue();
+
+    var filter = "<filter type='and'>";
+    if (customerField !== null)
+        filter += "<condition attribute='isa_contact' operator='eq' value='" + customerField[0].id + "' />";
+    if (productField !== null)
+        filter += "<condition attribute='isa_product' operator='eq' value='" + productField[0].id + "' />";
+    filter += "</filter>";
+
+    formContext.getControl("isa_produit_contact").addCustomFilter(filter);
+}

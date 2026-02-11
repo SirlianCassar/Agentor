@@ -1,0 +1,1580 @@
+﻿((function(){ return this ? this : typeof window !== 'undefined' ? window : globalThis; })()["webpackJsonp"] = (function(){ return this ? this : typeof window !== 'undefined' ? window : globalThis; })()["webpackJsonp"] || []).push([[1],{
+
+/***/ "../../../js/Player/Msal.Authentication/lib/AuthError.js":
+/*!********************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/AuthError.js ***!
+  \********************************************************************************/
+/*! exports provided: AuthErrorKind, AuthError */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AuthErrorKind", function() { return AuthErrorKind; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AuthError", function() { return AuthError; });
+/* harmony import */ var _TelemetryAdapter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TelemetryAdapter */ "../../../js/Player/Msal.Authentication/lib/TelemetryAdapter.js");
+/* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Constants */ "../../../js/Player/Msal.Authentication/lib/Constants.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+
+var AuthErrorKind;
+(function (AuthErrorKind) {
+    AuthErrorKind[AuthErrorKind["BadConfig"] = 0] = "BadConfig";
+    AuthErrorKind[AuthErrorKind["MainAppInIframe"] = 1] = "MainAppInIframe";
+    AuthErrorKind[AuthErrorKind["InfiniteLoop"] = 2] = "InfiniteLoop";
+    AuthErrorKind[AuthErrorKind["AadError"] = 3] = "AadError";
+    AuthErrorKind[AuthErrorKind["UnhandledException"] = 4] = "UnhandledException";
+    AuthErrorKind[AuthErrorKind["Assertion"] = 5] = "Assertion";
+    AuthErrorKind[AuthErrorKind["Unknown"] = 6] = "Unknown";
+    // Known issues for which we have custom troubleshooting steps:
+    AuthErrorKind[AuthErrorKind["UserInterventionNeeded_StorageBlocked"] = 7] = "UserInterventionNeeded_StorageBlocked";
+    AuthErrorKind[AuthErrorKind["UserInterventionNeeded_CookiesBlocked"] = 8] = "UserInterventionNeeded_CookiesBlocked";
+    AuthErrorKind[AuthErrorKind["UserInterventionNeeded_NavigateToAadDenied"] = 9] = "UserInterventionNeeded_NavigateToAadDenied";
+    AuthErrorKind[AuthErrorKind["UserInterventionNeeded_NavigateToAadTimeout"] = 10] = "UserInterventionNeeded_NavigateToAadTimeout";
+    AuthErrorKind[AuthErrorKind["UserInterventionNeeded_StorageLost"] = 11] = "UserInterventionNeeded_StorageLost";
+})(AuthErrorKind || (AuthErrorKind = {}));
+var retryableErrors = ['login_required', 'login required', 'interaction_required', 'Token Renewal Failed'];
+var tokenRetryableErrors = ['Request is ambiguous'];
+var timeoutRetryableErrors = ['failed due to timeout'];
+var AuthError = /** @class */ (function () {
+    function AuthError(error, description) {
+        this.error = error;
+        this.description = description;
+        Object(_TelemetryAdapter__WEBPACK_IMPORTED_MODULE_0__["trackErrorTrace"])(_Constants__WEBPACK_IMPORTED_MODULE_1__["AuthenticationScope"], 'authErrorCreated', {
+            errorKind: AuthErrorKind[error],
+            description: description,
+            tokenRetryable: this.tokenRetryable,
+            loginRetryable: this.loginRetryable,
+        });
+    }
+    Object.defineProperty(AuthError.prototype, "loginRetryable", {
+        get: function () {
+            var _this = this;
+            return retryableErrors.some(function (value) { return _this.description.indexOf(value) > -1; });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(AuthError.prototype, "tokenRetryable", {
+        get: function () {
+            var _this = this;
+            return tokenRetryableErrors.some(function (value) { return _this.description.indexOf(value) > -1; });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(AuthError.prototype, "timeoutRetryable", {
+        /**
+         * Returns true if this error is a timeout that should be retried; otherwise, false.
+         */
+        get: function () {
+            var _this = this;
+            return timeoutRetryableErrors.some(function (value) { return _this.description.indexOf(value) > -1; });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return AuthError;
+}());
+
+//# sourceMappingURL=AuthError.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Authentication/AuthenticationService.js":
+/*!***********************************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Authentication/AuthenticationService.js ***!
+  \***********************************************************************************************************/
+/*! exports provided: maxRetryCount, loginRedirect, loginPopup, acquireTokenAsync, logout, setPromptForUserToResolveError, wrapWithTimeout */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "maxRetryCount", function() { return maxRetryCount; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loginRedirect", function() { return loginRedirect; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loginPopup", function() { return loginPopup; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "acquireTokenAsync", function() { return acquireTokenAsync; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "logout", function() { return logout; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPromptForUserToResolveError", function() { return setPromptForUserToResolveError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "wrapWithTimeout", function() { return wrapWithTimeout; });
+/* harmony import */ var _Configuration__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Configuration */ "../../../js/Player/Msal.Authentication/lib/Authentication/Configuration.js");
+/* harmony import */ var _Logger__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Logger */ "../../../js/Player/Msal.Authentication/lib/Authentication/Logger.js");
+/* harmony import */ var _Errors__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Errors */ "../../../js/Player/Msal.Authentication/lib/Authentication/Errors.js");
+/* harmony import */ var _Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Utils/UUIDGenerator */ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/UUIDGenerator.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+
+
+
+var maxRetryCount = 5;
+var isInteractiveFlowInProgress = false;
+var interactiveFlowProgressPromise = Promise.resolve();
+var promptUserToResolveError;
+// A map of all token request promises that are in flight for a given set of scopes.
+var inFlightTokenRequestPromiseMap = new Map();
+function loginRedirect(_a) {
+    var onSuccess = _a.onSuccess, onError = _a.onError, onBeforeRedirect = _a.onBeforeRedirect, _b = _a.scopes, scopes = _b === void 0 ? [] : _b, loginHint = _a.loginHint;
+    return __awaiter(this, void 0, void 0, function () {
+        var msalInstance, redirectResponse, account, accessToken, currentAccount, loginRedirectRequest, err_1;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    msalInstance = Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])();
+                    _c.label = 1;
+                case 1:
+                    _c.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, msalInstance.handleRedirectPromise()];
+                case 2:
+                    redirectResponse = _c.sent();
+                    if (redirectResponse) {
+                        account = redirectResponse.account, accessToken = redirectResponse.accessToken;
+                        if (!account) {
+                            throw new Error(_Errors__WEBPACK_IMPORTED_MODULE_2__["msalAuthServiceErrorMessages"].accountNotFound);
+                        }
+                        Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoginSuccessfulAfterRedirect');
+                        onSuccess(account, accessToken);
+                        return [2 /*return*/];
+                    }
+                    currentAccount = getCurrentAccount();
+                    if (currentAccount) {
+                        Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoginSuccessfulUsingActiveAccount');
+                        onSuccess(currentAccount);
+                        return [2 /*return*/];
+                    }
+                    // Redirect to AAD to log the user in
+                    onBeforeRedirect === null || onBeforeRedirect === void 0 ? void 0 : onBeforeRedirect();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoginRedirectToAAD');
+                    loginRedirectRequest = {
+                        scopes: scopes,
+                        correlationId: Object(_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_3__["generate128BitUUID"])(),
+                    };
+                    if (loginHint) {
+                        loginRedirectRequest.loginHint = loginHint;
+                    }
+                    msalInstance.loginRedirect(loginRedirectRequest);
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_1 = _c.sent();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('LoginRedirectFailed', __assign({}, err_1));
+                    onError(err_1);
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+function loginPopup(_a) {
+    var onSuccess = _a.onSuccess, onError = _a.onError, onBeforeLoginPopup = _a.onBeforeLoginPopup, _b = _a.scopes, scopes = _b === void 0 ? [] : _b, loginHint = _a.loginHint;
+    return __awaiter(this, void 0, void 0, function () {
+        var currentAccount, loginPopupRequest, _c, account, accessToken, err_2;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    currentAccount = getCurrentAccount();
+                    if (currentAccount) {
+                        Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoginPopupSuccessfulUsingActiveAccount');
+                        onSuccess(currentAccount);
+                        return [2 /*return*/];
+                    }
+                    onBeforeLoginPopup === null || onBeforeLoginPopup === void 0 ? void 0 : onBeforeLoginPopup();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoginPopupFlowStarted');
+                    loginPopupRequest = {
+                        scopes: scopes,
+                        correlationId: Object(_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_3__["generate128BitUUID"])(),
+                    };
+                    if (loginHint) {
+                        loginPopupRequest.loginHint = loginHint;
+                    }
+                    _d.label = 1;
+                case 1:
+                    _d.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])().loginPopup(loginPopupRequest)];
+                case 2:
+                    _c = _d.sent(), account = _c.account, accessToken = _c.accessToken;
+                    if (!account) {
+                        throw new Error(_Errors__WEBPACK_IMPORTED_MODULE_2__["msalAuthServiceErrorMessages"].accountNotFound);
+                    }
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoginSuccessfulUsingPopup');
+                    onSuccess(account, accessToken);
+                    return [2 /*return*/];
+                case 3:
+                    err_2 = _d.sent();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('LoginPopupFailed', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(err_2, loginPopupRequest));
+                    onError(err_2);
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+function acquireTokenAsync(request) {
+    return __awaiter(this, void 0, void 0, function () {
+        var requestScopeString, tokenRequestPromise;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    requestScopeString = request.scopes.toString();
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, , 3, 4]);
+                    tokenRequestPromise = void 0;
+                    // If a request for this set of scopes is already in flight, we use the stored token request promise
+                    // to avoid making redundant token requests for the same set of scopes.
+                    if (inFlightTokenRequestPromiseMap.has(requestScopeString)) {
+                        tokenRequestPromise = inFlightTokenRequestPromiseMap.get(requestScopeString);
+                    }
+                    else {
+                        tokenRequestPromise = _acquireTokenAsync(request);
+                        // Store the promise object in the in-flight token request map
+                        inFlightTokenRequestPromiseMap.set(requestScopeString, tokenRequestPromise);
+                    }
+                    return [4 /*yield*/, tokenRequestPromise];
+                case 2: return [2 /*return*/, _a.sent()];
+                case 3:
+                    // Clear the in-flight request map entry for the current set of scopes for both success and error cases.
+                    inFlightTokenRequestPromiseMap.delete(requestScopeString);
+                    return [7 /*endfinally*/];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+function _acquireTokenAsync(request) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var attemptCount, performanceEntries, tokenRequest, startTimeAcquireTokenSilent, msalAuthenticationResult, endTimeAcquireTokenSilent, err_3, interactiveFlowResult, interactiveFlowResult;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    attemptCount = 0;
+                    performanceEntries = [];
+                    _b.label = 1;
+                case 1:
+                    if (false) {}
+                    attemptCount++;
+                    tokenRequest = void 0;
+                    _b.label = 2;
+                case 2:
+                    _b.trys.push([2, 4, , 12]);
+                    tokenRequest = __assign(__assign({}, request), { account: getCurrentAccount(), correlationId: Object(_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_3__["generate128BitUUID"])() });
+                    startTimeAcquireTokenSilent = performance === null || performance === void 0 ? void 0 : performance.now();
+                    return [4 /*yield*/, acquireTokenSilent(tokenRequest, attemptCount)];
+                case 3:
+                    msalAuthenticationResult = _b.sent();
+                    endTimeAcquireTokenSilent = performance === null || performance === void 0 ? void 0 : performance.now();
+                    performanceEntries.push({
+                        startTime: startTimeAcquireTokenSilent,
+                        duration: endTimeAcquireTokenSilent - startTimeAcquireTokenSilent,
+                        detail: { step: 'acquireTokenSilent' },
+                    });
+                    return [2 /*return*/, __assign(__assign({}, msalAuthenticationResult), { performance: performanceEntries })];
+                case 4:
+                    err_3 = _b.sent();
+                    if (!Object(_Errors__WEBPACK_IMPORTED_MODULE_2__["isMultipleMatchingTokensError"])(err_3)) return [3 /*break*/, 6];
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('MultipleMatchingTokensError', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(err_3, tokenRequest));
+                    return [4 /*yield*/, Object(_Errors__WEBPACK_IMPORTED_MODULE_2__["clearAllMsalCache"])(Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])())];
+                case 5:
+                    _b.sent();
+                    _b.label = 6;
+                case 6:
+                    if (!(attemptCount >= maxRetryCount)) return [3 /*break*/, 9];
+                    if (!Object(_Errors__WEBPACK_IMPORTED_MODULE_2__["isInteractionRequiredError"])(err_3, true // isLastRetry
+                    )) return [3 /*break*/, 8];
+                    return [4 /*yield*/, tryInteractiveFlowOnError(performanceEntries, tokenRequest, err_3)];
+                case 7:
+                    interactiveFlowResult = _b.sent();
+                    if (interactiveFlowResult) {
+                        return [2 /*return*/, interactiveFlowResult];
+                    }
+                    _b.label = 8;
+                case 8:
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('AcquireTokenFailed', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(err_3, tokenRequest));
+                    if (Object(_Errors__WEBPACK_IMPORTED_MODULE_2__["isFatalError"])(err_3) && ((_a = Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getAuthServiceConfig"])().errorHandling) === null || _a === void 0 ? void 0 : _a.enableDefaultFatalErrorHandling)) {
+                        Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('FatalErrorOccurred', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(err_3, tokenRequest));
+                        handleFatalError();
+                    }
+                    throw err_3;
+                case 9:
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackWarningTrace"])('AcquireTokenSilentError', __assign(__assign({}, Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(err_3, tokenRequest)), { attemptCount: attemptCount }));
+                    if (!Object(_Errors__WEBPACK_IMPORTED_MODULE_2__["isInteractionRequiredError"])(err_3)) return [3 /*break*/, 11];
+                    return [4 /*yield*/, tryInteractiveFlowOnError(performanceEntries, tokenRequest, err_3)];
+                case 10:
+                    interactiveFlowResult = _b.sent();
+                    if (interactiveFlowResult) {
+                        return [2 /*return*/, interactiveFlowResult];
+                    }
+                    _b.label = 11;
+                case 11: return [3 /*break*/, 12];
+                case 12: return [3 /*break*/, 1];
+                case 13: return [2 /*return*/];
+            }
+        });
+    });
+}
+function tryInteractiveFlowOnError(performanceEntries, tokenRequest, error) {
+    return __awaiter(this, void 0, void 0, function () {
+        var startTimeInteraction, endTimeInteraction, startTimeAcquireTokenInteractive, msalAuthenticationResult, endTimeAcquireTokenInteractive;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!isInteractiveFlowInProgress) return [3 /*break*/, 2];
+                    // If there is already an interactive flow in progress, we wait for it to complete.
+                    // Once the existing flow completes, we retry the token exchange since we might no longer need
+                    // an interactive flow for this request.
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('WaitingForActiveInteractiveFlowToComplete', { scopes: tokenRequest.scopes });
+                    startTimeInteraction = performance === null || performance === void 0 ? void 0 : performance.now();
+                    return [4 /*yield*/, interactiveFlowProgressPromise];
+                case 1:
+                    _a.sent();
+                    endTimeInteraction = performance === null || performance === void 0 ? void 0 : performance.now();
+                    performanceEntries.push({
+                        startTime: startTimeInteraction,
+                        duration: endTimeInteraction - startTimeInteraction,
+                        detail: { step: 'interaction' },
+                    });
+                    return [2 /*return*/];
+                case 2:
+                    startTimeAcquireTokenInteractive = performance === null || performance === void 0 ? void 0 : performance.now();
+                    return [4 /*yield*/, acquireTokenInteractive(tokenRequest, error)];
+                case 3:
+                    msalAuthenticationResult = _a.sent();
+                    endTimeAcquireTokenInteractive = performance === null || performance === void 0 ? void 0 : performance.now();
+                    performanceEntries.push({
+                        startTimeAcquireTokenInteractive: startTimeAcquireTokenInteractive,
+                        duration: endTimeAcquireTokenInteractive - startTimeAcquireTokenInteractive,
+                        detail: { step: 'acquireTokenInteractive' },
+                    });
+                    return [2 /*return*/, __assign(__assign({}, msalAuthenticationResult), { performance: performanceEntries })];
+            }
+        });
+    });
+}
+function acquireTokenSilent(tokenRequest, attemptCount) {
+    return __awaiter(this, void 0, void 0, function () {
+        var initialTimeoutThreshold, thresholdIncrement, timeoutThreshold;
+        return __generator(this, function (_a) {
+            initialTimeoutThreshold = tokenRequest.initialAttemptTimeoutThreshold || 5000;
+            thresholdIncrement = tokenRequest.retryTimeoutThresholdIncrement || 3000;
+            timeoutThreshold = initialTimeoutThreshold + (attemptCount - 1) * thresholdIncrement;
+            return [2 /*return*/, wrapWithTimeout(Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])().acquireTokenSilent(tokenRequest), timeoutThreshold)];
+        });
+    });
+}
+function acquireTokenInteractive(request, interactionReqdError) {
+    return __awaiter(this, void 0, void 0, function () {
+        var msalInstance, promiseResolver, promise, tokenRequest, tokenResult, err_4;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    msalInstance = Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])();
+                    promise = new Promise(function (resolve) { return (promiseResolver = resolve); });
+                    tokenRequest = __assign(__assign({}, request), { correlationId: Object(_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_3__["generate128BitUUID"])() });
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 4, 5, 6]);
+                    isInteractiveFlowInProgress = true;
+                    interactiveFlowProgressPromise = promise;
+                    return [4 /*yield*/, showPromptForUserToResolveError(interactionReqdError, tokenRequest)];
+                case 2:
+                    _a.sent();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('PromptForAuthenticationApproved', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(interactionReqdError, tokenRequest));
+                    return [4 /*yield*/, msalInstance.acquireTokenPopup(tokenRequest)];
+                case 3:
+                    tokenResult = _a.sent();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('InteractiveAcquireTokenSuccessful', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(interactionReqdError, tokenRequest));
+                    return [2 /*return*/, tokenResult];
+                case 4:
+                    err_4 = _a.sent();
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('InteractiveAcquireTokenFailed', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(err_4, tokenRequest));
+                    throw err_4;
+                case 5:
+                    isInteractiveFlowInProgress = false;
+                    promiseResolver();
+                    return [7 /*endfinally*/];
+                case 6: return [2 /*return*/];
+            }
+        });
+    });
+}
+function logout() {
+    return __awaiter(this, void 0, void 0, function () {
+        var correlationId;
+        return __generator(this, function (_a) {
+            correlationId = Object(_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_3__["generate128BitUUID"])();
+            Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('LoggingOut', { correlationId: correlationId });
+            return [2 /*return*/, Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])().logoutRedirect({ correlationId: correlationId })];
+        });
+    });
+}
+/**
+ * This sets the "promptUserToResolveError" callback.
+ * The "promptUserToResolveError" callback when invoked is meant to show a prompt to the user with an error message either before we begin the interactive token acquisition
+ * flow or in the case of recoverable errors. This callback will be invoked with an `onContinue` parameter which should be invoked when
+ * the prompt is closed and then the interactive flow(if applicable) can begin.
+ */
+function setPromptForUserToResolveError(_promptUserToResolveError) {
+    promptUserToResolveError = _promptUserToResolveError;
+}
+function showPromptForUserToResolveError(error, tokenRequest) {
+    return __awaiter(this, void 0, void 0, function () {
+        var promiseResolver, promise;
+        return __generator(this, function (_a) {
+            if (!promptUserToResolveError) {
+                Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('promptUserToResolveErrorNotSet');
+                throw new Error(_Errors__WEBPACK_IMPORTED_MODULE_2__["msalAuthServiceErrorMessages"].promptUserToResolveErrorNotSet);
+            }
+            promise = new Promise(function (resolve) { return (promiseResolver = resolve); });
+            promptUserToResolveError(promiseResolver, error);
+            Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('ShowingPromptWithErrorInfo', Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["getEventData"])(error, tokenRequest));
+            return [2 /*return*/, promise];
+        });
+    });
+}
+function getCurrentAccount() {
+    var getCurrentAccountOverride = Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getAuthServiceConfig"])().getCurrentAccountOverride;
+    if (getCurrentAccountOverride) {
+        return getCurrentAccountOverride();
+    }
+    // If an active account is available, use that
+    var activeAccount = Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])().getActiveAccount();
+    if (activeAccount) {
+        return activeAccount;
+    }
+    var accounts = Object(_Configuration__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"])().getAllAccounts();
+    return accounts[0];
+}
+// Task 9736559: Investigate the handleFatalError in Msal AuthenticationService
+function handleFatalError() {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            // Clear MSAL cache
+            Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('ClearingMsalCache');
+            Object(_Errors__WEBPACK_IMPORTED_MODULE_2__["clearMsalCache"])(getCurrentAccount());
+            return [2 /*return*/];
+        });
+    });
+}
+function wrapWithTimeout(_promise, timeout) {
+    var hasCompleted = false;
+    var promiseResolver;
+    var promiseRejecter;
+    var promise = new Promise(function (resolve, reject) {
+        promiseResolver = resolve;
+        promiseRejecter = reject;
+    });
+    setTimeout(function () {
+        if (hasCompleted) {
+            return;
+        }
+        hasCompleted = true;
+        promiseRejecter(new Error("".concat(_Errors__WEBPACK_IMPORTED_MODULE_2__["msalAuthServiceErrorMessages"].requestTimedOut, " Timeout threshold: ").concat(timeout)));
+    }, timeout);
+    _promise.then(function (result) {
+        if (hasCompleted) {
+            return;
+        }
+        hasCompleted = true;
+        promiseResolver(result);
+    }, function (err) {
+        if (hasCompleted) {
+            return;
+        }
+        hasCompleted = true;
+        promiseRejecter(err);
+    });
+    return promise;
+}
+//# sourceMappingURL=AuthenticationService.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Authentication/Configuration.js":
+/*!***************************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Authentication/Configuration.js ***!
+  \***************************************************************************************************/
+/*! exports provided: logger, getMsalInstance, getAuthServiceConfig, initializeMsalService, getConfig, getLogger */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "logger", function() { return logger; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getMsalInstance", function() { return getMsalInstance; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getAuthServiceConfig", function() { return getAuthServiceConfig; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "initializeMsalService", function() { return initializeMsalService; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getConfig", function() { return getConfig; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getLogger", function() { return getLogger; });
+/* harmony import */ var _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @azure/msal-browser */ "../../common/temp/node_modules/.pnpm/@azure+msal-browser@2.18.0/node_modules/@azure/msal-browser/dist/index.js");
+/* harmony import */ var _Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Utils/StorageAndCookieCheckers */ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/StorageAndCookieCheckers.js");
+/* harmony import */ var _Errors__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Errors */ "../../../js/Player/Msal.Authentication/lib/Authentication/Errors.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+
+
+var msalInstance;
+var authServiceConfig;
+var logger;
+function getMsalInstance() {
+    if (!msalInstance) {
+        throw new Error(_Errors__WEBPACK_IMPORTED_MODULE_2__["msalAuthServiceErrorMessages"].authServiceNotInitialized);
+    }
+    return msalInstance;
+}
+function getAuthServiceConfig() {
+    if (!authServiceConfig) {
+        throw new Error(_Errors__WEBPACK_IMPORTED_MODULE_2__["msalAuthServiceErrorMessages"].authServiceNotInitialized);
+    }
+    return authServiceConfig;
+}
+function initializeMsalService(config, telemetryFunctions) {
+    if (msalInstance) {
+        return;
+    }
+    logger = telemetryFunctions;
+    msalInstance = new _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["PublicClientApplication"](getConfig(config, logger));
+    authServiceConfig = config;
+}
+function getConfig(config, telemetryFunctions) {
+    var defaultSystemConfig = getDefaultSystemConfig(telemetryFunctions, config);
+    return __assign(__assign({}, defaultSystemConfig), config);
+}
+function getDefaultSystemConfig(telemetryFunctions, config) {
+    return {
+        cache: {
+            cacheLocation: getCacheLocation(!!config.skipCookiesAndStorageCheck),
+        },
+        system: {
+            loggerOptions: {
+                loggerCallback: getLogger(telemetryFunctions),
+            },
+            loadFrameTimeout: 15000,
+        },
+    };
+}
+function getCacheLocation(skipCookiesAndStorageCheck) {
+    if (skipCookiesAndStorageCheck) {
+        return Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["isUsingIE"])() ? _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].SessionStorage : _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].LocalStorage;
+    }
+    if (!Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["checkCookies"])()) {
+        throw Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["createCookiesBlockedError"])();
+    }
+    if (Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["isUsingIE"])() && Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["checkSessionStorage"])()) {
+        return _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].SessionStorage;
+    }
+    if (!Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["isUsingIE"])() && Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["checkLocalStorage"])()) {
+        return _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].LocalStorage;
+    }
+    throw Object(_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_1__["createStorageBlockedError"])();
+}
+function getLogger(telemetryFunctions) {
+    return function (level, message, containsPii) {
+        if (containsPii) {
+            return;
+        }
+        var eventName = 'MSAL-PKCE Log';
+        switch (level) {
+            case _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["LogLevel"].Error:
+                return telemetryFunctions.traceError(eventName, { message: message });
+            case _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["LogLevel"].Warning:
+                return telemetryFunctions.traceWarning(eventName, { message: message });
+            case _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["LogLevel"].Info:
+                return telemetryFunctions.traceInfo(eventName, { message: message });
+            case _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["LogLevel"].Verbose:
+                return telemetryFunctions.traceVerbose(eventName, { message: message });
+            default:
+                break;
+        }
+    };
+}
+//# sourceMappingURL=Configuration.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Authentication/Errors.js":
+/*!********************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Authentication/Errors.js ***!
+  \********************************************************************************************/
+/*! exports provided: msalAuthServiceErrorMessages, interactionRequiredErrors, isAuthError, isInteractionRequiredError, fatalErrorCodes, isFatalError, isMultipleMatchingTokensError, isStorageBlockedError, isCookiesBlockedError, clearMsalCache, clearAllMsalCache */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "msalAuthServiceErrorMessages", function() { return msalAuthServiceErrorMessages; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "interactionRequiredErrors", function() { return interactionRequiredErrors; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isAuthError", function() { return isAuthError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isInteractionRequiredError", function() { return isInteractionRequiredError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fatalErrorCodes", function() { return fatalErrorCodes; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isFatalError", function() { return isFatalError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isMultipleMatchingTokensError", function() { return isMultipleMatchingTokensError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isStorageBlockedError", function() { return isStorageBlockedError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isCookiesBlockedError", function() { return isCookiesBlockedError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearMsalCache", function() { return clearMsalCache; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearAllMsalCache", function() { return clearAllMsalCache; });
+/* harmony import */ var _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @azure/msal-browser */ "../../common/temp/node_modules/.pnpm/@azure+msal-browser@2.18.0/node_modules/@azure/msal-browser/dist/index.js");
+/* harmony import */ var _Logger__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Logger */ "../../../js/Player/Msal.Authentication/lib/Authentication/Logger.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+
+var msalAuthServiceErrorMessages = {
+    promptUserToResolveErrorNotSet: 'promptUserToResolveError has not been set. Did you forget to call setPromptForUserToResolveError?',
+    authServiceNotInitialized: 'MSAL has not been initialized yet. Please ensure you call initializeMsalService first.',
+    accountNotFound: 'Could not find the signed-in account.',
+    requestTimedOut: 'MsalPkceAuthenticationService: Request has timed out.',
+};
+var interactionRequiredErrors = [_azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserAuthErrorMessage"].noAccountError, _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserAuthErrorMessage"].monitorIframeTimeoutError];
+function isAuthError(err) {
+    return err instanceof _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["AuthError"];
+}
+function isInteractionRequiredError(err, isLastRetry) {
+    if (isLastRetry === void 0) { isLastRetry = false; }
+    if (err instanceof _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["InteractionRequiredAuthError"] ||
+        (isLastRetry && err.message.startsWith("".concat(msalAuthServiceErrorMessages.requestTimedOut)))) {
+        return true;
+    }
+    return (isAuthError(err) &&
+        interactionRequiredErrors.some(function (intErr) {
+            return err.errorCode === intErr.code;
+        }));
+}
+var fatalErrorCodes = ['AADSTS700081'];
+/**
+ * Helper that determines if the error is a fatal error.
+ * A fatal error is an error that the session cannot recover from. The guidance is to clear the MSAL cache
+ * and redirect to AAD for a fresh start.
+ */
+function isFatalError(error) {
+    if (typeof (error === null || error === void 0 ? void 0 : error.message) !== 'string') {
+        return false;
+    }
+    return fatalErrorCodes.some(function (errCode) { return error.message.indexOf(errCode) !== -1; });
+}
+function isMultipleMatchingTokensError(error) {
+    if (typeof (error === null || error === void 0 ? void 0 : error.message) !== 'string') {
+        return false;
+    }
+    return error.message.indexOf('multiple_matching_tokens') !== -1;
+}
+function isStorageBlockedError(error) {
+    if (typeof (error === null || error === void 0 ? void 0 : error.message) !== 'string') {
+        return false;
+    }
+    return error.message.indexOf('StorageBlockedError') !== -1;
+}
+function isCookiesBlockedError(error) {
+    if (typeof (error === null || error === void 0 ? void 0 : error.message) !== 'string') {
+        return false;
+    }
+    return error.message.indexOf('CookieBlockedError') !== -1;
+}
+function clearMsalCache(accountInfo) {
+    var homeAccountId = accountInfo.homeAccountId;
+    var msalStorageKeyPrefix = "".concat(homeAccountId, "-");
+    var keys = Object.keys(localStorage);
+    try {
+        keys.forEach(function (k) {
+            if (k.startsWith(msalStorageKeyPrefix)) {
+                localStorage.removeItem(k);
+            }
+        });
+    }
+    catch (err) {
+        Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackErrorTrace"])('UnableToClearMsalCache', __assign({}, err));
+    }
+}
+function clearAllMsalCache(msal) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    Object(_Logger__WEBPACK_IMPORTED_MODULE_1__["trackInfoTrace"])('clearAllMsalCache');
+                    return [4 /*yield*/, msal.logoutRedirect({
+                            onRedirectNavigate: function () {
+                                // Return false to stop navigation after local logout
+                                return false;
+                            },
+                        })];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+//# sourceMappingURL=Errors.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Authentication/Logger.js":
+/*!********************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Authentication/Logger.js ***!
+  \********************************************************************************************/
+/*! exports provided: trackInfoTrace, trackErrorTrace, trackWarningTrace, getEventData */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "trackInfoTrace", function() { return trackInfoTrace; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "trackErrorTrace", function() { return trackErrorTrace; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "trackWarningTrace", function() { return trackWarningTrace; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getEventData", function() { return getEventData; });
+/* harmony import */ var _Configuration__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Configuration */ "../../../js/Player/Msal.Authentication/lib/Authentication/Configuration.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+var messagePrefix = 'MsalPkceAuthenticationService/';
+function trackInfoTrace(eventName, eventdata) {
+    var message = messagePrefix + eventName;
+    _Configuration__WEBPACK_IMPORTED_MODULE_0__["logger"].traceInfo(message, eventdata);
+}
+function trackErrorTrace(eventName, eventdata) {
+    var message = messagePrefix + eventName;
+    _Configuration__WEBPACK_IMPORTED_MODULE_0__["logger"].traceError(message, eventdata);
+}
+function trackWarningTrace(eventName, eventdata) {
+    var message = messagePrefix + eventName;
+    _Configuration__WEBPACK_IMPORTED_MODULE_0__["logger"].traceWarning(message, eventdata);
+}
+function getEventData(error, requestInfo) {
+    return {
+        name: error.name,
+        message: error.message,
+        scopes: requestInfo.scopes,
+        correlationId: requestInfo.correlationId || '',
+    };
+}
+//# sourceMappingURL=Logger.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/StorageAndCookieCheckers.js":
+/*!********************************************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Authentication/Utils/StorageAndCookieCheckers.js ***!
+  \********************************************************************************************************************/
+/*! exports provided: checkLocalStorage, checkSessionStorage, checkCookies, isUsingIE, deleteCookie, createStorageBlockedError, createCookiesBlockedError, allowSameSiteNoneAttribute */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "checkLocalStorage", function() { return checkLocalStorage; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "checkSessionStorage", function() { return checkSessionStorage; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "checkCookies", function() { return checkCookies; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isUsingIE", function() { return isUsingIE; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "deleteCookie", function() { return deleteCookie; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createStorageBlockedError", function() { return createStorageBlockedError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createCookiesBlockedError", function() { return createCookiesBlockedError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "allowSameSiteNoneAttribute", function() { return allowSameSiteNoneAttribute; });
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+var TestStorageKey = '__storageTest';
+function checkStorage(storageType) {
+    var storageWorks = false;
+    try {
+        window[storageType].setItem(TestStorageKey, TestStorageKey);
+        storageWorks = window[storageType].getItem(TestStorageKey) === TestStorageKey;
+        window[storageType].removeItem(TestStorageKey);
+        return storageWorks;
+    }
+    catch (e) {
+        return false;
+    }
+}
+function checkLocalStorage() {
+    return checkStorage('localStorage');
+}
+function checkSessionStorage() {
+    return checkStorage('sessionStorage');
+}
+/**
+ * Helper to determine if cookies are enabled in the browser.
+ */
+function checkCookies() {
+    var sameSiteAttribute = allowSameSiteNoneAttribute() ? 'SameSite=None; Secure' : '';
+    try {
+        // eslint-disable-next-line @microsoft/sdl/no-cookies
+        document.cookie = "value=1; ".concat(sameSiteAttribute);
+        // eslint-disable-next-line @microsoft/sdl/no-cookies
+        var cookiesEnabled = document.cookie.indexOf('value=') !== -1;
+        // eslint-disable-next-line @microsoft/sdl/no-cookies
+        document.cookie = "value=1; ".concat(sameSiteAttribute, "; expires=").concat(new Date(0).toUTCString());
+        return cookiesEnabled;
+    }
+    catch (_a) {
+        return false;
+    }
+}
+function isUsingIE() {
+    return /MSIE|Trident/.test(window.navigator.userAgent);
+}
+function deleteCookie(name) {
+    // eslint-disable-next-line @microsoft/sdl/no-cookies
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+}
+function createStorageBlockedError() {
+    return new Error('StorageBlockedError: Unable to access session/local storage. Please ensure your browser is configured to allow storage of local data.');
+}
+function createCookiesBlockedError() {
+    return new Error('CookiesBlockedError: Unable to access cookies. Please ensure that you have cookies enabled in your browser.');
+}
+/**
+ * Helper that determines if the SameSite=None cookie attribute is allowed based on the user agent.
+ * See https://www.chromium.org/updates/same-site/incompatible-clients and
+ * https://msazure.visualstudio.com/One/_git/AD-MSA-Login?path=%2Fsrc%2Ftestinfrastructure%2FTestLibraries%2FConsolidatedLibraries%2FMicrosoft.WindowsLive.Test.LiveId%2FActivityHelper%2FUserAgent.cs&version=GBmaster
+ * for more information.
+ */
+function allowSameSiteNoneAttribute() {
+    var userAgent = window.navigator.userAgent;
+    if (!userAgent) {
+        return false;
+    }
+    Object.getOwnPropertyNames(sameSiteNoneIncompatibleBrowserList).forEach(function (broswerName) {
+        if (userAgent.indexOf(sameSiteNoneIncompatibleBrowserList[broswerName]) !== -1) {
+            return false;
+        }
+    });
+    // Commenting PPUX implementation as it needs es2017 to support Object.values
+    // if (
+    //     !userAgent ||
+    //     Object.values(sameSiteNoneIncompatibleBrowserList).some(browserName => browserName === userAgent)
+    // ) {
+    //     return false;
+    // }
+    return true;
+}
+// List of browsers that show erroneous behavior on SameSite=None either by ignoring the entire cookie header (Chrome 6x) or by treating it as SameSite=Strict (OS 10.14 and iOS 12).
+// Reference: https://msazure.visualstudio.com/One/_git/AD-MSA-Login?path=%2Fsrc%2Ftestinfrastructure%2FTestLibraries%2FConsolidatedLibraries%2FMicrosoft.WindowsLive.Test.LiveId%2FActivityHelper%2FUserAgent.cs&version=GBmaster
+var sameSiteNoneIncompatibleBrowserList = {
+    Safari12iOS12iPhone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1',
+    Safari12iOs12iPad: 'Mozilla/5.0 (iPad; CPU OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1',
+    Safari12iOS12iPodTouch: 'Mozilla/5.0 (iPod touch; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1',
+    Safari12MacOs10_14: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Safari/605.1.15", "Safari", "MacOS',
+    Safari13MacOs10_14: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15',
+    WebkitWebviewiOs12iPhone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+    WebkitWebviewMacOs10_14: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+    Chrome77iOs12: 'Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/77.0.3865.69 Mobile/15E148 Safari/605.1',
+    Chrome66ElectronSkypeWindows10: 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Skype/8.50.0.38 Chrome/66.0.3359.181 Electron/3.1.8 Safari/537.36',
+    Edge18Windows10: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763',
+    // Pingdom runs Chromium, but fails to advertise as Chrome.
+    PingdomTMS: 'Mozilla/5.0 (Unknown; Linux x86_64) AppleWebKit/534.34 (KHTML, like Gecko) PingdomTMS/0.8.5 Safari/534.34',
+    // Unreal Engine runs Chromium but fails to advertise as Chrome until 4.23
+    // See: https://github.com/EpicGames/UnrealEngine/commit/4f196aac5c08267cc3b90dee20db196a88bcfdc0#diff-5595d8b517eef5f83f2cfdb650308567
+    GearGame: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) GearGame UnrealEngine/4.11.2-0   depot UE4-Releases 4.9 Safari/537.36',
+    // Telemetry reports a regression for SameSite=None here. The same regression cannot be found in manual testing on a VM with Chromium.
+    // Probably, somebody is using a misleading user agent. Exclude out of an abundance of caution.
+    Chrome73Win7: 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
+    Chrome49Win7: 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
+    // Per https://www.chromium.org/updates/same-site/incompatible-clients, UCBrowser < 12.13.2 does not support SameSite=None
+    UCBrowserAndroid12_11: 'Mozilla/5.0 (Linux; U; Android 6.0; pt-BR; U FEEL Build/MRA58K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/12.11.5.1185 (SpeedMode) U4/1.0 UCWEB/2.0 Mobile Safari/534.30',
+    UCBrowserAndroid11_4: 'Mozilla/5.0 (Linux; U; Android 5.0; en-US; ASUS_Z00AD Build/LRX21V) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/11.4.5.1005 U3/0.8.0 Mobile Safari/534.30',
+    // MSN Games Manager ships a Chrome variant
+    MsnGamesManager: 'Mozilla/5.0 (Windows NT 10.0; Win32; x86) Version/3.6.6.540 GamesManager/3.6.6.540 20000009 WinVer/10.0 [x64] CEF/3.3163.1651.gf229796 UAPI',
+};
+//# sourceMappingURL=StorageAndCookieCheckers.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/UUIDGenerator.js":
+/*!*********************************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Authentication/Utils/UUIDGenerator.js ***!
+  \*********************************************************************************************************/
+/*! exports provided: generate128BitUUID, isGUID */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "generate128BitUUID", function() { return generate128BitUUID; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isGUID", function() { return isGUID; });
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+/**
+ * Generates a hex character to replace another given character
+ * If the given character is x, any hex character will do
+ * Otherwise, the hex character must be greater than 7 (ie. 8,9,a,b,c,d,e,f)
+ */
+function hexGenerator(seed, patternCharacter) {
+    var rnd = (seed + Math.random() * 16) % 16 | 0;
+    return (patternCharacter === 'x' ? rnd : (rnd & 0x3) | 0x8).toString(16);
+}
+/**
+ * Returns an RFC 4122 Compliant UUID; i.e. a GUID.
+ */
+function generate128BitUUID() {
+    var seed = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (replacer) {
+        return hexGenerator(seed, replacer);
+    });
+    return uuid;
+}
+var isGUID = function (text) {
+    return !!text.match(/[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}/g);
+};
+//# sourceMappingURL=UUIDGenerator.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/Constants.js":
+/*!********************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/Constants.js ***!
+  \********************************************************************************/
+/*! exports provided: authRouteV2, authRouteV3, AuthenticationScope */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "authRouteV2", function() { return authRouteV2; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "authRouteV3", function() { return authRouteV3; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AuthenticationScope", function() { return AuthenticationScope; });
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+var authRouteV2 = '/auth/v2';
+var authRouteV3 = '/auth/v3';
+var AuthenticationScope = 'msal.authentication';
+//# sourceMappingURL=Constants.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/MsalPkceAuthenticationAdapter.js":
+/*!****************************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/MsalPkceAuthenticationAdapter.js ***!
+  \****************************************************************************************************/
+/*! exports provided: setPromptForUserToResolveError, getMsalInstance, setLogger, init, loginRedirect, loginPopup, acquireTokenAsync, logout, _enableConsoleLogs, enableConsoleLogs, clearCache, getCurrentAccount, getLoginHint */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "init", function() { return init; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loginRedirect", function() { return loginRedirect; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loginPopup", function() { return loginPopup; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "acquireTokenAsync", function() { return acquireTokenAsync; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "logout", function() { return logout; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "_enableConsoleLogs", function() { return _enableConsoleLogs; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "enableConsoleLogs", function() { return enableConsoleLogs; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearCache", function() { return clearCache; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getCurrentAccount", function() { return getCurrentAccount; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getLoginHint", function() { return getLoginHint; });
+/* harmony import */ var _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @azure/msal-browser */ "../../common/temp/node_modules/.pnpm/@azure+msal-browser@2.18.0/node_modules/@azure/msal-browser/dist/index.js");
+/* harmony import */ var _Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Authentication/AuthenticationService */ "../../../js/Player/Msal.Authentication/lib/Authentication/AuthenticationService.js");
+/* harmony import */ var _azure_msal_browser_dist_interaction_handler_SilentHandler__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @azure/msal-browser/dist/interaction_handler/SilentHandler */ "../../common/temp/node_modules/.pnpm/@azure+msal-browser@2.18.0/node_modules/@azure/msal-browser/dist/interaction_handler/SilentHandler.js");
+/* harmony import */ var _Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Authentication/Configuration */ "../../../js/Player/Msal.Authentication/lib/Authentication/Configuration.js");
+/* harmony import */ var _Authentication_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Authentication/Utils/StorageAndCookieCheckers */ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/StorageAndCookieCheckers.js");
+/* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Constants */ "../../../js/Player/Msal.Authentication/lib/Constants.js");
+/* harmony import */ var _TelemetryAdapter__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./TelemetryAdapter */ "../../../js/Player/Msal.Authentication/lib/TelemetryAdapter.js");
+/* harmony import */ var _AuthError__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./AuthError */ "../../../js/Player/Msal.Authentication/lib/AuthError.js");
+/* harmony import */ var jwt_decode__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! jwt-decode */ "../../common/temp/node_modules/.pnpm/jwt-decode@3.1.2/node_modules/jwt-decode/build/jwt-decode.esm.js");
+/* harmony import */ var _Authentication_Errors__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Authentication/Errors */ "../../../js/Player/Msal.Authentication/lib/Authentication/Errors.js");
+/* harmony import */ var _ScopeUtils__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./ScopeUtils */ "../../../js/Player/Msal.Authentication/lib/ScopeUtils.js");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "setPromptForUserToResolveError", function() { return _Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__["setPromptForUserToResolveError"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getMsalInstance", function() { return _Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getMsalInstance"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "setLogger", function() { return _TelemetryAdapter__WEBPACK_IMPORTED_MODULE_6__["setLogger"]; });
+
+/* harmony import */ var _Authentication_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./Authentication/Utils/UUIDGenerator */ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/UUIDGenerator.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var tokenRedirectUri = "".concat(window.location.protocol, "//").concat(window.location.host, "/auth-redirect.html");
+var initTenantId = '';
+var currentAccount;
+var loginHint = getQueryParamValue('login_hint')
+    ? decodeURIComponent(getQueryParamValue('login_hint'))
+    : undefined;
+var domainHint = getQueryParamValue('domain_hint')
+    ? decodeURIComponent(getQueryParamValue('domain_hint'))
+    : undefined;
+var telemetryFunctions = {
+    traceError: function (eventName, eventData) {
+        Object(_TelemetryAdapter__WEBPACK_IMPORTED_MODULE_6__["trackErrorTrace"])(_Constants__WEBPACK_IMPORTED_MODULE_5__["AuthenticationScope"], eventName, eventData);
+        logToConsoleIfEnabled(eventName, eventData);
+    },
+    traceWarning: function (eventName, eventData) {
+        Object(_TelemetryAdapter__WEBPACK_IMPORTED_MODULE_6__["trackEventTrace"])(_Constants__WEBPACK_IMPORTED_MODULE_5__["AuthenticationScope"], eventName, eventData);
+        logToConsoleIfEnabled(eventName, eventData);
+    },
+    traceInfo: function (eventName, eventData) {
+        Object(_TelemetryAdapter__WEBPACK_IMPORTED_MODULE_6__["trackEventTrace"])(_Constants__WEBPACK_IMPORTED_MODULE_5__["AuthenticationScope"], eventName, eventData);
+        logToConsoleIfEnabled(eventName, eventData);
+    },
+    traceVerbose: function (eventName, eventData) {
+        logToConsoleIfEnabled(eventName, eventData);
+    },
+};
+function init(aadClientId, aadInstance, tenantId, redirectUrl, msalSystemOptions, enableCP1ClientCapabilities, localNetworkAccessIframeAttribute) {
+    if (redirectUrl === void 0) { redirectUrl = ''; }
+    if (enableCP1ClientCapabilities === void 0) { enableCP1ClientCapabilities = false; }
+    if (localNetworkAccessIframeAttribute === void 0) { localNetworkAccessIframeAttribute = false; }
+    try {
+        var authority = getAuthority(aadInstance, tenantId);
+        telemetryFunctions.traceInfo('Initializing MSAL-PKCE', { authority: authority });
+        if (redirectUrl === '') {
+            redirectUrl = "".concat(window.location.protocol, "//").concat(window.location.host).concat(_Constants__WEBPACK_IMPORTED_MODULE_5__["authRouteV2"]);
+        }
+        var cacheLocation = getCacheLocation();
+        initTenantId = !!tenantId && Object(_Authentication_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_11__["isGUID"])(tenantId) ? tenantId : '';
+        var msalConfig = {
+            auth: {
+                clientId: aadClientId,
+                redirectUri: redirectUrl,
+                authority: authority,
+                postLogoutRedirectUri: null,
+            },
+            errorHandling: {
+                enableDefaultFatalErrorHandling: true,
+            },
+            cache: {
+                cacheLocation: cacheLocation,
+                storeAuthStateInCookie: cacheLocation === _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].MemoryStorage,
+            },
+            skipCookiesAndStorageCheck: true,
+            getCurrentAccountOverride: getCurrentAccount,
+        };
+        if (enableCP1ClientCapabilities) {
+            telemetryFunctions.traceInfo('Enabling CP1 client capabilities');
+            msalConfig.auth.clientCapabilities = ['CP1'];
+        }
+        if (msalSystemOptions) {
+            msalConfig.system = __assign({ loggerOptions: {
+                    loggerCallback: Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getLogger"])(telemetryFunctions),
+                }, loadFrameTimeout: 15000 }, msalSystemOptions);
+        }
+        Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["initializeMsalService"])(msalConfig, telemetryFunctions);
+        if (localNetworkAccessIframeAttribute) {
+            patchSilentHandlerCreateHiddenIframe();
+        }
+    }
+    catch (error) {
+        handleLoginError(error);
+    }
+}
+function getCacheLocation() {
+    return Object(_Authentication_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_4__["checkLocalStorage"])()
+        ? _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].LocalStorage
+        : Object(_Authentication_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_4__["checkSessionStorage"])()
+            ? _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].SessionStorage
+            : _azure_msal_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserCacheLocation"].MemoryStorage;
+}
+function loginRedirect(onSuccess, onError, resourceUrl) {
+    if (onError === void 0) { onError = handleLoginError; }
+    if (resourceUrl === void 0) { resourceUrl = ''; }
+    return __awaiter(this, void 0, void 0, function () {
+        var scopes;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    scopes = resourceUrl === '' ? [] : Object(_ScopeUtils__WEBPACK_IMPORTED_MODULE_10__["getScopes"])(resourceUrl);
+                    telemetryFunctions.traceInfo('Logging in using MSAL-PKCE', { resourceUrl: resourceUrl, scopes: scopes });
+                    return [4 /*yield*/, Object(_Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__["loginRedirect"])({
+                            onSuccess: function (accountInfo) { return handleLogin(accountInfo, onSuccess, 'loginRedirect'); },
+                            onError: onError,
+                            onBeforeRedirect: onBeforeRedirect,
+                            scopes: scopes,
+                            loginHint: loginHint,
+                            domainHint: domainHint,
+                        })];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+function loginPopup(onSuccess, onError, resourceUrl) {
+    if (onError === void 0) { onError = handleLoginError; }
+    if (resourceUrl === void 0) { resourceUrl = ''; }
+    return __awaiter(this, void 0, void 0, function () {
+        var scopes;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    scopes = resourceUrl === '' ? [] : Object(_ScopeUtils__WEBPACK_IMPORTED_MODULE_10__["getScopes"])(resourceUrl);
+                    telemetryFunctions.traceInfo('Logging with Popup using MSAL-PKCE', { resourceUrl: resourceUrl, scopes: scopes });
+                    return [4 /*yield*/, Object(_Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__["loginPopup"])({
+                            onSuccess: function (accountInfo) { return handleLogin(accountInfo, onSuccess, 'loginPopup'); },
+                            onError: onError,
+                            onBeforeLoginPopup: onBeforeLoginPopup,
+                            scopes: scopes,
+                            loginHint: loginHint,
+                            domainHint: domainHint,
+                        })];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+function onBeforeRedirect() {
+    // Keeping this empty now to decide later if we need to add any logic before redirect.
+}
+function onBeforeLoginPopup() {
+    // Keeping this empty now to decide later if we need to add any logic before popup.
+}
+function handleLogin(accountInfo, callback, source) {
+    Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getMsalInstance"])().setActiveAccount(accountInfo);
+    var tenantId = accountInfo.tenantId, localAccountId = accountInfo.localAccountId, name = accountInfo.name, username = accountInfo.username;
+    var idTokenClaims = accountInfo.idTokenClaims;
+    var familyName = idTokenClaims === null || idTokenClaims === void 0 ? void 0 : idTokenClaims.family_name;
+    var givenName = idTokenClaims === null || idTokenClaims === void 0 ? void 0 : idTokenClaims.given_name;
+    var puid = (idTokenClaims === null || idTokenClaims === void 0 ? void 0 : idTokenClaims.puid) || '';
+    currentAccount = accountInfo;
+    updateCurrentAccount(accountInfo, source);
+    callback({
+        familyName: familyName,
+        givenName: givenName,
+        name: name || username,
+        username: username,
+        oid: localAccountId,
+        tid: tenantId,
+        puid: puid,
+    });
+}
+function getAuthority(aadInstance, tenant) {
+    if (aadInstance === void 0) { aadInstance = 'https://login.microsoftonline.com/'; }
+    aadInstance = aadInstance.endsWith('/') ? aadInstance : "".concat(aadInstance, "/");
+    return tenant ? "".concat(aadInstance).concat(tenant) : "".concat(aadInstance, "common");
+}
+function acquireTokenAsync(resourceUrl, claims) {
+    return __awaiter(this, void 0, void 0, function () {
+        var scopes, result, tokenResult, shrClaims, forceRefresh;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    scopes = Object(_ScopeUtils__WEBPACK_IMPORTED_MODULE_10__["getScopes"])(resourceUrl);
+                    telemetryFunctions.traceInfo('AcquireTokenAsync using MSAL-PKCE', { resourceUrl: resourceUrl, scopes: scopes });
+                    return [4 /*yield*/, Object(_Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__["acquireTokenAsync"])({ scopes: scopes, redirectUri: tokenRedirectUri, claims: claims })];
+                case 1:
+                    result = _a.sent();
+                    tokenResult = createAcquireTokenResult(result, resourceUrl);
+                    telemetryFunctions.traceInfo('AcquireTokenAsync received a token with expiry', {
+                        expiresOn: tokenResult.expiresOn,
+                    });
+                    clearMapValueForResource(scopes);
+                    if (!isExpiredToken(tokenResult)) return [3 /*break*/, 3];
+                    // We received an expired token from msal
+                    telemetryFunctions.traceInfo('AcquireTokenAsync received an expired token from msal', { resourceUrl: resourceUrl });
+                    shrClaims = Object(_Authentication_Utils_UUIDGenerator__WEBPACK_IMPORTED_MODULE_11__["generate128BitUUID"])();
+                    forceRefresh = true;
+                    return [4 /*yield*/, Object(_Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__["acquireTokenAsync"])({
+                            scopes: scopes,
+                            redirectUri: tokenRedirectUri,
+                            claims: claims,
+                            forceRefresh: forceRefresh,
+                            shrClaims: shrClaims,
+                        })];
+                case 2:
+                    result = _a.sent();
+                    tokenResult = createAcquireTokenResult(result, resourceUrl);
+                    _a.label = 3;
+                case 3: return [2 /*return*/, tokenResult];
+            }
+        });
+    });
+}
+/**
+ *  This is a workaround to clear the Map used inside the Msal for silent token requests
+ *  due to using WinJS promises, the delete of the map entry happens before setting the entry in the map.
+ * @param scopes
+ */
+function clearMapValueForResource(scopes) {
+    telemetryFunctions.traceInfo('clearMapValueForResource checking map for entries', { scopes: scopes });
+    try {
+        Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getMsalInstance"])().activeSilentTokenRequests.forEach(function (value, key) {
+            if (key.includes(scopes[0])) {
+                Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getMsalInstance"])().activeSilentTokenRequests.delete(key);
+                telemetryFunctions.traceInfo('clearMapValueForResource deleted entry for resource', { scopes: scopes });
+            }
+        });
+    }
+    catch (e) {
+        telemetryFunctions.traceInfo('clearMapValueForResource an error happened while trying to delete the key from map', { error: JSON.stringify(e) });
+    }
+}
+function isExpiredToken(tokenResult) {
+    if (new Date(tokenResult.expiresOn).getTime() <= Date.now()) {
+        return true;
+    }
+    return false;
+}
+function createAcquireTokenResult(result, resourceUrl) {
+    var accessToken = result.accessToken, idToken = result.idToken, expiresOn = result.expiresOn, correlationId = result.correlationId, fromCache = result.fromCache;
+    var performanceEntries = [];
+    if (result && 'performance' in result) {
+        performanceEntries = performanceEntries.concat(result.performance);
+    }
+    return {
+        accessToken: accessToken,
+        expiresOn: expiresOn || getTokenExpiration(accessToken),
+        idToken: idToken,
+        resourceUrl: resourceUrl,
+        correlationId: correlationId,
+        fromCache: fromCache,
+        performance: performanceEntries,
+    };
+}
+function logout() {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            telemetryFunctions.traceInfo('Logging out.');
+            if (window !== window.top) {
+                telemetryFunctions.traceInfo('UnableToLogOutInsideIframe');
+                return [2 /*return*/];
+            }
+            return [2 /*return*/, Object(_Authentication_AuthenticationService__WEBPACK_IMPORTED_MODULE_1__["logout"])()];
+        });
+    });
+}
+function getTokenExpiration(accessToken) {
+    var expClaim = Object(jwt_decode__WEBPACK_IMPORTED_MODULE_8__["default"])(accessToken).exp;
+    return new Date(expClaim * 1000);
+}
+var TruncatedString = ' [truncated]';
+function handleLoginError(error) {
+    if (Object(_Authentication_Errors__WEBPACK_IMPORTED_MODULE_9__["isStorageBlockedError"])(error)) {
+        return goToLoginErrorPage({
+            errorCode: _AuthError__WEBPACK_IMPORTED_MODULE_7__["AuthErrorKind"][_AuthError__WEBPACK_IMPORTED_MODULE_7__["AuthErrorKind"].UserInterventionNeeded_StorageBlocked],
+            errorMessage: error.message,
+        });
+    }
+    if (Object(_Authentication_Errors__WEBPACK_IMPORTED_MODULE_9__["isCookiesBlockedError"])(error)) {
+        return goToLoginErrorPage({
+            errorCode: _AuthError__WEBPACK_IMPORTED_MODULE_7__["AuthErrorKind"][_AuthError__WEBPACK_IMPORTED_MODULE_7__["AuthErrorKind"].UserInterventionNeeded_CookiesBlocked],
+            errorMessage: error.message,
+        });
+    }
+    goToLoginErrorPage({
+        errorCode: 'MSAL-PKCE Login Error',
+        errorMessage: error.message,
+    });
+}
+function goToLoginErrorPage(error, oid, tid) {
+    var errorCode = error.errorCode, errorMessage = error.errorMessage;
+    telemetryFunctions.traceError('MsalPkceAuthAdapter/LoginFailed', {
+        errorCode: errorCode,
+        errorMessage: errorMessage,
+    });
+    var encodedErrorKind = encodeURIComponent(errorCode);
+    var MaxDescriptionLengthBeforeEncoding = 200 - TruncatedString.length;
+    var truncatedDescription = errorMessage.length <= MaxDescriptionLengthBeforeEncoding
+        ? errorMessage
+        : errorMessage.substr(0, MaxDescriptionLengthBeforeEncoding) + TruncatedString;
+    var encodedDescription = encodeURIComponent(truncatedDescription);
+    var encodedOid = encodeURIComponent(oid || '');
+    var encodedTid = encodeURIComponent(tid || '');
+    var errorPageUri = "".concat(window.location.protocol, "//").concat(window.location.host, "/autherror?errorKind=") +
+        "".concat(encodedErrorKind, "&errorDescription=").concat(encodedDescription, "&oid=").concat(encodedOid, "&tid=").concat(encodedTid);
+    window.location.assign(errorPageUri);
+}
+var _enableConsoleLogs = false;
+function enableConsoleLogs(enabled) {
+    _enableConsoleLogs = enabled;
+}
+function logToConsoleIfEnabled(eventName, eventData) {
+    if (_enableConsoleLogs) {
+        console.log("".concat(eventName, "\n").concat(JSON.stringify(eventData)));
+    }
+}
+function clearCache() {
+    try {
+        var account = getCurrentAccount();
+        Object(_Authentication_Errors__WEBPACK_IMPORTED_MODULE_9__["clearMsalCache"])(account);
+    }
+    catch (e) {
+        // do nothing
+    }
+}
+function getCurrentAccount() {
+    if (currentAccount) {
+        // If we have an account stored in memory, always use that as we've logged in with that user
+        return currentAccount;
+    }
+    try {
+        // If an active account is available, use that
+        var activeAccount = Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getMsalInstance"])().getActiveAccount();
+        if (activeAccount) {
+            if (!!loginHint && activeAccount.username !== loginHint) {
+                telemetryFunctions.traceInfo('getCurrentAccount.ActiveAccountLoginHintMismatch');
+            }
+            else if (!!initTenantId && activeAccount.tenantId !== initTenantId) {
+                telemetryFunctions.traceInfo('getCurrentAccount.ActiveAccountTenantMismatch');
+            }
+            else {
+                updateCurrentAccount(activeAccount, 'getCurrentAccount');
+                return activeAccount;
+            }
+        }
+        var account = null;
+        var allAccounts = Object(_Authentication_Configuration__WEBPACK_IMPORTED_MODULE_3__["getMsalInstance"])().getAllAccounts() || [];
+        var filteredAccounts = initTenantId
+            ? allAccounts.filter(function (a) { return a.tenantId === initTenantId; })
+            : allAccounts;
+        if (loginHint) {
+            // If we have a login hint, we want to always return the result because the account either
+            // existed and we are logged in, or we need to try to login as that specific user.
+            // However, guest users will have multiple accounts with the same username, so we need to filter out the
+            // accounts using both loginHint and tenant ID instead of relying on getAccountByUsername.
+            var accountsWithUserName = filteredAccounts.filter(function (a) { return a.username.toLowerCase() === loginHint.toLowerCase(); });
+            account = accountsWithUserName[0];
+            telemetryFunctions.traceInfo('getCurrentAccount.getAccountByUsername', {
+                message: 'Login hint provided',
+                hasAccount: !!account,
+            });
+            updateCurrentAccount(account, 'getCurrentAccount');
+            return account;
+        }
+        if (filteredAccounts.length > 1) {
+            telemetryFunctions.traceInfo('getCurrentAccount.MultipleAccountsFound', {
+                numOfAccounts: filteredAccounts.length,
+            });
+        }
+        updateCurrentAccount(filteredAccounts[0], 'getCurrentAccount');
+        return filteredAccounts[0];
+    }
+    catch (error) {
+        telemetryFunctions.traceError('getCurrentAccount.Failed', __assign({}, error));
+        return null;
+    }
+}
+function getLoginHint() {
+    return loginHint;
+}
+function getQueryParamValue(queryParamKey) {
+    var url = window.location.href;
+    var urlObj = new URL(url.toLocaleLowerCase());
+    return urlObj.searchParams.get(queryParamKey);
+}
+function updateCurrentAccount(account, source) {
+    var accountTelemetryData = { source: source };
+    if (currentAccount) {
+        accountTelemetryData.prevHomeAccountId = currentAccount.homeAccountId;
+        accountTelemetryData.prevLocalAccountId = currentAccount.localAccountId;
+        accountTelemetryData.prevTenantId = currentAccount.tenantId;
+    }
+    if (!account) {
+        telemetryFunctions.traceError('MsalPkceAuthAdapter.updateCurrentAccount.NoAccount', accountTelemetryData);
+        return;
+    }
+    accountTelemetryData.newHomeAccountId = account.homeAccountId;
+    accountTelemetryData.newLocalAccountId = account.localAccountId;
+    accountTelemetryData.newTenantId = account.tenantId;
+    telemetryFunctions.traceInfo('MsalPkceAuthAdapter.updateCurrentAccount', accountTelemetryData);
+    currentAccount = account;
+}
+function patchSilentHandlerCreateHiddenIframe() {
+    // Override SilentHandler.prototype.createHiddenIframe to add the allow attribute
+    // for Chrome 142+ compatibility with local network access
+    try {
+        if (_azure_msal_browser_dist_interaction_handler_SilentHandler__WEBPACK_IMPORTED_MODULE_2__["SilentHandler"] && _azure_msal_browser_dist_interaction_handler_SilentHandler__WEBPACK_IMPORTED_MODULE_2__["SilentHandler"].prototype) {
+            _azure_msal_browser_dist_interaction_handler_SilentHandler__WEBPACK_IMPORTED_MODULE_2__["SilentHandler"].prototype.createHiddenIframe = function () {
+                var authFrame = document.createElement('iframe');
+                authFrame.className = 'msalSilentIframe';
+                authFrame.style.visibility = 'hidden';
+                authFrame.style.position = 'absolute';
+                authFrame.style.width = authFrame.style.height = '0';
+                authFrame.style.border = '0';
+                authFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
+                // Add allow attribute for Chrome 142+ local network access
+                authFrame.setAttribute('allow', 'local-network-access *');
+                document.body.appendChild(authFrame);
+                return authFrame;
+            };
+        }
+    }
+    catch (error) {
+        // Silently fail - not critical if patching doesn't work
+        // Log error if logging is available
+        if (error instanceof Error) {
+            console.warn("Failed to patch SilentHandler.createHiddenIframe: ".concat(error.message));
+        }
+    }
+}
+//# sourceMappingURL=MsalPkceAuthenticationAdapter.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/ScopeUtils.js":
+/*!*********************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/ScopeUtils.js ***!
+  \*********************************************************************************/
+/*! exports provided: getResourceWithScopes, getResource, getScopes */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getResourceWithScopes", function() { return getResourceWithScopes; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getResource", function() { return getResource; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getScopes", function() { return getScopes; });
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+var scopeDelimiter = '|scopes|';
+var scopeSeperator = ',';
+function getResourceWithScopes(resource, scopes) {
+    if (!resource || !scopes || scopes.length === 0) {
+        // If no resource or scopes were given, just return the resource
+        return resource;
+    }
+    // Otherwise append the scopes to the resource
+    var scopesList = scopes.join(scopeSeperator);
+    return "".concat(resource).concat(scopeDelimiter).concat(scopesList);
+}
+function getResource(resourceValue, customScopesSupported) {
+    if (!customScopesSupported) {
+        var resource = parseResource(resourceValue).resource;
+        return resource;
+    }
+    return resourceValue;
+}
+function getScopes(resourceValue) {
+    if (!resourceValue) {
+        return undefined;
+    }
+    var _a = parseResource(resourceValue), resource = _a.resource, scopes = _a.scopes;
+    if (scopes) {
+        return scopes;
+    }
+    return getDefaultScopes(resource);
+}
+function parseResource(resourceValue) {
+    var _a = (resourceValue === null || resourceValue === void 0 ? void 0 : resourceValue.split(scopeDelimiter)) || [], originalResouce = _a[0], scopesList = _a[1];
+    var scopes = scopesList === null || scopesList === void 0 ? void 0 : scopesList.split(scopeSeperator);
+    return {
+        resource: originalResouce || resourceValue,
+        scopes: (scopes === null || scopes === void 0 ? void 0 : scopes.length) > 0 ? scopes : undefined,
+    };
+}
+function getDefaultScopes(resourceUrl) {
+    return [resourceUrl + '/.default'];
+}
+//# sourceMappingURL=ScopeUtils.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/TelemetryAdapter.js":
+/*!***************************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/TelemetryAdapter.js ***!
+  \***************************************************************************************/
+/*! exports provided: setLogger, trackErrorTrace, trackEventTrace */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setLogger", function() { return setLogger; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "trackErrorTrace", function() { return trackErrorTrace; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "trackEventTrace", function() { return trackEventTrace; });
+/* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Constants */ "../../../js/Player/Msal.Authentication/lib/Constants.js");
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+
+var currentLogger = null;
+function setLogger(logger) {
+    currentLogger = logger;
+}
+function trackErrorTrace(eventScope, eventName, eventData) {
+    if (eventScope === void 0) { eventScope = _Constants__WEBPACK_IMPORTED_MODULE_0__["AuthenticationScope"]; }
+    if (currentLogger) {
+        currentLogger.trackErrorTrace("".concat(eventScope, ".").concat(eventName), eventData);
+    }
+}
+function trackEventTrace(eventScope, eventName, eventData) {
+    if (eventScope === void 0) { eventScope = _Constants__WEBPACK_IMPORTED_MODULE_0__["AuthenticationScope"]; }
+    if (currentLogger) {
+        currentLogger.trackEventTrace("".concat(eventScope, ".").concat(eventName), eventData);
+    }
+}
+//# sourceMappingURL=TelemetryAdapter.js.map
+
+/***/ }),
+
+/***/ "../../../js/Player/Msal.Authentication/lib/index.js":
+/*!****************************************************************************!*\
+  !*** B:/_work/1/s/src/AppMagic/js/Player/Msal.Authentication/lib/index.js ***!
+  \****************************************************************************/
+/*! exports provided: acquireTokenAsync, enableConsoleLogs, getCurrentAccount, getMsalInstance, init, loginPopup, loginRedirect, logout, setLogger, setPromptForUserToResolveError, clearCache, getLoginHint, getResourceWithScopes, getResource, getScopes, checkCookies, clearAllMsalCache, isAuthError, isInteractionRequiredError, isMultipleMatchingTokensError */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./MsalPkceAuthenticationAdapter */ "../../../js/Player/Msal.Authentication/lib/MsalPkceAuthenticationAdapter.js");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "acquireTokenAsync", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["acquireTokenAsync"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "enableConsoleLogs", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["enableConsoleLogs"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getCurrentAccount", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["getCurrentAccount"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getMsalInstance", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["getMsalInstance"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "init", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["init"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "loginPopup", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["loginPopup"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "loginRedirect", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["loginRedirect"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "logout", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["logout"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "setLogger", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["setLogger"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "setPromptForUserToResolveError", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["setPromptForUserToResolveError"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "clearCache", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["clearCache"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getLoginHint", function() { return _MsalPkceAuthenticationAdapter__WEBPACK_IMPORTED_MODULE_0__["getLoginHint"]; });
+
+/* harmony import */ var _ScopeUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ScopeUtils */ "../../../js/Player/Msal.Authentication/lib/ScopeUtils.js");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getResourceWithScopes", function() { return _ScopeUtils__WEBPACK_IMPORTED_MODULE_1__["getResourceWithScopes"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getResource", function() { return _ScopeUtils__WEBPACK_IMPORTED_MODULE_1__["getResource"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getScopes", function() { return _ScopeUtils__WEBPACK_IMPORTED_MODULE_1__["getScopes"]; });
+
+/* harmony import */ var _Authentication_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Authentication/Utils/StorageAndCookieCheckers */ "../../../js/Player/Msal.Authentication/lib/Authentication/Utils/StorageAndCookieCheckers.js");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "checkCookies", function() { return _Authentication_Utils_StorageAndCookieCheckers__WEBPACK_IMPORTED_MODULE_2__["checkCookies"]; });
+
+/* harmony import */ var _Authentication_Errors__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Authentication/Errors */ "../../../js/Player/Msal.Authentication/lib/Authentication/Errors.js");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "clearAllMsalCache", function() { return _Authentication_Errors__WEBPACK_IMPORTED_MODULE_3__["clearAllMsalCache"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "isAuthError", function() { return _Authentication_Errors__WEBPACK_IMPORTED_MODULE_3__["isAuthError"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "isInteractionRequiredError", function() { return _Authentication_Errors__WEBPACK_IMPORTED_MODULE_3__["isInteractionRequiredError"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "isMultipleMatchingTokensError", function() { return _Authentication_Errors__WEBPACK_IMPORTED_MODULE_3__["isMultipleMatchingTokensError"]; });
+
+﻿/*!
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ */
+/**
+ * Below static exports are generated using support-static-imports (https://msazure.visualstudio.com/OneAgile/_git/PowerApps-Tools?path=%2Fsrc%2FES6ConvertTool%2Fsupport-static-imports.md) tool
+ * We are in process of migrating projects to ES Modules.
+ * As part of incremental approach we need to make sure we support both global namespaces and static exports.
+ * For that *-export.ts file and static exports section of index.ts file must be in sync. Any changes to *-export.ts file must be done below as well.
+ */
+
+
+
+
+//# sourceMappingURL=index.js.map
+
+/***/ })
+
+}]);
+//# sourceMappingURL=webplayer-authflow.1.chunk.js.map

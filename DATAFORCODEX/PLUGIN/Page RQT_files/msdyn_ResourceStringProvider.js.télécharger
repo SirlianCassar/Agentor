@@ -1,0 +1,1 @@
+var Sales;!function(e){var n,a;n=e.SalesCadence||(e.SalesCadence={}),a=function(){function a(){}return a.getResourceString=function(e){var n=Xrm.Utility.getResourceString(a.WebResourceName,e);return null==n&&(n=e),n},a.WebResourceName="SalesCadence/Localization/Languages/msdyn_SalesCadence",a}(),n.ResourceStringProvider=a}(Sales||(Sales={}));

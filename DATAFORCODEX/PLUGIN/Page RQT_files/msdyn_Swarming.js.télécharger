@@ -1,0 +1,148 @@
+var Swarming;
+(function (Swarming) {
+    var Constants = /** @class */ (function () {
+        function Constants() {
+        }
+        Constants.swarmEntityLogicalName = "msdyn_swarm";
+        Constants.msdyn_swarmingenabled = "msdyn_swarmingenabled";
+        Constants.isCustomizableSwarmingEnabled = "isCustomizableSwarmingEnabled";
+        Constants.swarmingHubHostControl = "swarmingHubHostControl";
+        Constants.swarmingHubControlUciActions = "swarmingHubHostControl.msdyn_MscrmControls.Swarm.SwarmingHubControl.swarm_uci_actions";
+        Constants.teamsURL = "https://teams.microsoft.com";
+        Constants.customizableSwarmingFCS = "CustomizableSwarming";
+        Constants.fcsNameSpace = "CS.Swarming";
+        Constants.oldSwarmFormID = "b864afd8-d593-42d2-a93d-36228d497055";
+        Constants.uciSwarmFormID = "a6d9e075-5993-4a1b-b003-4a8d091c5d8b";
+        return Constants;
+    }());
+    Swarming.Constants = Constants;
+})(Swarming || (Swarming = {}));
+/// <reference path="./Constants.ts" />
+var Swarming;
+(function (Swarming) {
+    var SwarmingLibrary = /** @class */ (function () {
+        function SwarmingLibrary() {
+        }
+        /**
+         * Invokes validation method exposed by swarminghubcontrol.
+         * @param executionContext
+         */
+        SwarmingLibrary.handleFormValidations = function (executionContext) {
+            executionContext
+                .getFormContext()
+                .getControl(Swarming.Constants.swarmingHubHostControl)
+                .getOutputs()[Swarming.Constants.swarmingHubControlUciActions].value.validateForm(executionContext);
+        };
+        /**
+         * Invokes postSaveOperations method exposed by swarminghubcontrol.
+         * @param executionContext
+         */
+        SwarmingLibrary.handlePostSaveOperations = function (executionContext) {
+            executionContext
+                .getFormContext()
+                .getControl(Swarming.Constants.swarmingHubHostControl)
+                .getOutputs()[Swarming.Constants.swarmingHubControlUciActions].value.executePostSaveOperations(executionContext);
+        };
+        SwarmingLibrary.swarmEntityLogicalName = "msdyn_swarm";
+        SwarmingLibrary.openCreateSwarm = function () {
+            var isCustomizableSwarmingEnabled = window.Xrm.Utility.getGlobalContext().getFeatureControlSetting(Swarming.Constants.fcsNameSpace, Swarming.Constants.customizableSwarmingFCS);
+            var createFrom = {
+                id: Xrm.Page.data.entity.getId(),
+                entityType: Xrm.Page.data.entity.getEntityName(),
+            };
+            var options = {
+                entityName: Swarming.Constants.swarmEntityLogicalName,
+                createFromEntity: createFrom,
+                formId: isCustomizableSwarmingEnabled ? Swarming.Constants.uciSwarmFormID : Swarming.Constants.oldSwarmFormID
+            };
+            Xrm.Navigation.openForm(options);
+        };
+        SwarmingLibrary.isSwarmingEnabled = function () {
+            return Xrm.Utility.getGlobalContext().getCurrentAppSetting(Swarming.Constants.msdyn_swarmingenabled);
+        };
+        SwarmingLibrary.showHideTimelineTab = function (executionContext) {
+            var isVisible = executionContext.getFormContext().ui.getFormType() !==
+                1 /* Create */
+                ? true
+                : false;
+            var timelineTab = executionContext
+                .getFormContext()
+                .ui.tabs.get("Timeline");
+            if (timelineTab) {
+                timelineTab.setVisible(isVisible);
+            }
+        };
+        /**
+         * Checks if redirect is needed based on current settings
+         * @returns true/false
+         */
+        SwarmingLibrary.isCustomizableSwarmingEnabled = function () {
+            var customizableSwarmingEnabled = sessionStorage.getItem(Swarming.Constants.isCustomizableSwarmingEnabled);
+            if (customizableSwarmingEnabled === null) {
+                var customizableSwarmingFcsValue = window.Xrm.Utility.getGlobalContext().getFeatureControlSetting(Swarming.Constants.fcsNameSpace, Swarming.Constants.customizableSwarmingFCS)
+                    ? "true"
+                    : "false";
+                sessionStorage.setItem(Swarming.Constants.isCustomizableSwarmingEnabled, customizableSwarmingFcsValue);
+                customizableSwarmingEnabled = customizableSwarmingFcsValue;
+            }
+            return JSON.parse(customizableSwarmingEnabled);
+        };
+        SwarmingLibrary.handleRedirection = function (executionContext) {
+            var targetFormId = SwarmingLibrary.isCustomizableSwarmingEnabled() ? Swarming.Constants.uciSwarmFormID : Swarming.Constants.oldSwarmFormID;
+            var currentFormId = Xrm.Page.ui.formContext.ui.formSelector.getCurrentItem().getId();
+            if (currentFormId !== targetFormId && executionContext.getFormContext().ui.formSelector.items.get(targetFormId)) {
+                executionContext.getFormContext().ui.formSelector.items.get(targetFormId).navigate();
+                return;
+            }
+        };
+        /**
+         * Registers presave and post handlers on swarm form
+         * @param executionContext
+         */
+        SwarmingLibrary.handleCustomizableSwarmingOnLoad = function (executionContext) {
+            SwarmingLibrary.showHideTimelineTab(executionContext);
+            // ensuring handlers are registered only once.
+            executionContext
+                .getFormContext()
+                .data.entity.removeOnSave(SwarmingLibrary.handleFormValidations);
+            executionContext.getFormContext().data.entity.removeOnPostSave(SwarmingLibrary.handlePostSaveOperations);
+            executionContext
+                .getFormContext()
+                .data.entity.addOnSave(SwarmingLibrary.handleFormValidations);
+            executionContext.getFormContext().data.entity.addOnPostSave(SwarmingLibrary.handlePostSaveOperations);
+        };
+        /**
+         * Saves any unsaved changes on the form and then invokes the resolution method exposed from swarminghubcontrol.
+         * @param formContext
+         */
+        SwarmingLibrary.resolveSwarm = function (formContext) {
+            Xrm.Page.data.save().then(function () {
+                formContext
+                    .getControl(Swarming.Constants.swarmingHubHostControl)
+                    .getOutputs()[Swarming.Constants.swarmingHubControlUciActions].value.resolve();
+            });
+        };
+        /**
+         * Saves any unsaved changes on the form and then invokes the cancel method exposed from swarminghubcontrol.
+         * @param formContext
+         */
+        SwarmingLibrary.cancelSwarm = function (formContext) {
+            Xrm.Page.data.save().then(function () {
+                formContext
+                    .getControl(Swarming.Constants.swarmingHubHostControl)
+                    .getOutputs()[Swarming.Constants.swarmingHubControlUciActions].value.cancel();
+            });
+        };
+        /**
+         * Invokes the reactivation method exposed from swarminghubcontrol.
+         * @param formContext
+         */
+        SwarmingLibrary.reactivateSwarm = function (formContext) {
+            formContext
+                .getControl(Swarming.Constants.swarmingHubHostControl)
+                .getOutputs()[Swarming.Constants.swarmingHubControlUciActions].value.reactivate();
+        };
+        return SwarmingLibrary;
+    }());
+    Swarming.SwarmingLibrary = SwarmingLibrary;
+})(Swarming || (Swarming = {}));

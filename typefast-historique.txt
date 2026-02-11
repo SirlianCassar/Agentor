@@ -1,0 +1,9 @@
+Bonjour *prenom* *nom*, 
+Cordialement,
+*prenom* 
+Pouvez-vous tester cette manipulation :
+1) Redémarrer l’appareil
+2) Mettre à jour le firmware
+3) Refaire un essai sur *platforme*.
+
+gg
