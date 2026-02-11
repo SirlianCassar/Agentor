@@ -13,6 +13,12 @@ dist-ssr
 dist-electron
 release
 *.local
+DATAFORCODEX
+Data TypeMail
+edge-extension
+typefast-historique.txt
+typefast-import.json
+typefast-snippets.csv
 
 # Editor directories and files
 .vscode/*
