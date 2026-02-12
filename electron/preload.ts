@@ -1,4 +1,4 @@
-import { clipboard, contextBridge, ipcRenderer } from 'electron'
+import { clipboard, contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 
 const api = {
   loadData: () => ipcRenderer.invoke('storage:load'),
@@ -16,6 +16,13 @@ const api = {
   },
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   openProcedure: () => ipcRenderer.invoke('procedure:open'),
+  getUpdateStatus: () => ipcRenderer.invoke('updates:get-status'),
+  checkForUpdatesNow: () => ipcRenderer.invoke('updates:check-now'),
+  onUpdateStatus: (callback: (status: unknown) => void) => {
+    const listener = (_event: IpcRendererEvent, payload: unknown) => callback(payload)
+    ipcRenderer.on('updates:status', listener)
+    return () => ipcRenderer.removeListener('updates:status', listener)
+  },
 }
 
 contextBridge.exposeInMainWorld('typefast', api)

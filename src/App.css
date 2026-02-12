@@ -97,6 +97,16 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.update-pill {
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 600;
+  color: #dff5ff;
+  border: 1px solid rgba(111, 210, 255, 0.45);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(19, 122, 168, 0.25);
+}
+
 .brand__title {
   font-size: calc(18px * var(--text-scale));
   font-weight: 600;
@@ -2740,6 +2750,10 @@ button.ghost.confirm {
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-option--column {
+  align-items: flex-start;
 }
 
 .settings-option__info {

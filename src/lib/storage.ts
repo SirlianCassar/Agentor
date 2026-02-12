@@ -2,6 +2,24 @@ import type { AppData } from './types'
 import { defaultData } from './defaults'
 import { normalizeData } from './utils'
 
+export type UpdatePhase =
+  | 'idle'
+  | 'disabled'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'not-available'
+  | 'error'
+
+export type UpdateStatus = {
+  phase: UpdatePhase
+  message: string
+  version?: string
+  progress?: number
+  checkedAt?: string
+}
+
 export async function loadData(): Promise<AppData> {
   const raw = (await window.typefast.loadData()) as Partial<AppData>
   return normalizeData(raw, defaultData)
@@ -82,4 +100,16 @@ export function openProcedure() {
   const popup = window.open(`${window.location.pathname}#procedure`, '_blank', 'width=980,height=720')
   if (!popup) return false
   return true
+}
+
+export function getUpdateStatus(): Promise<UpdateStatus> {
+  return window.typefast.getUpdateStatus() as Promise<UpdateStatus>
+}
+
+export function checkForUpdatesNow(): Promise<{ ok: boolean; reason: string }> {
+  return window.typefast.checkForUpdatesNow()
+}
+
+export function onUpdateStatus(callback: (status: UpdateStatus) => void) {
+  return window.typefast.onUpdateStatus((status) => callback(status as UpdateStatus))
 }
