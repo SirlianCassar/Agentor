@@ -83,23 +83,6 @@ jobs:
             throw "No .blockmap file found in $releaseDir"
           }
 
-      - name: Create stable installer alias
-        shell: pwsh
-        run: |
-          $version = "${{ steps.normalize_version.outputs.semver }}"
-          $releaseDir = "release/$version"
-          $stableInstaller = Join-Path $releaseDir "TypeFast-Windows-latest.exe"
-
-          $installer = Get-ChildItem -Path $releaseDir -File -Filter "*.exe" |
-            Where-Object { $_.Name -ne "TypeFast-Windows-latest.exe" } |
-            Select-Object -First 1
-
-          if (-not $installer) {
-            throw "No installer .exe found to create stable alias"
-          }
-
-          Copy-Item -Path $installer.FullName -Destination $stableInstaller -Force
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:

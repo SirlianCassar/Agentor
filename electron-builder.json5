@@ -34,6 +34,11 @@
     "icon": "build/icons/icon.ico",
     "artifactName": "${productName}-Windows-${version}.${ext}"
   },
+  "nsis": {
+    "installerIcon": "build/icons/icon.ico",
+    "uninstallerIcon": "build/icons/icon.ico",
+    "installerHeaderIcon": "build/icons/icon.ico"
+  },
   "linux": {
     "target": ["AppImage"],
     "icon": "build/icons/icon.png",
