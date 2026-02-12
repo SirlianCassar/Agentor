@@ -4,7 +4,6 @@ import { SortableList } from './components/SortableList'
 import { defaultData } from './lib/defaults'
 import herculesLogo from './assets/hercules.svg'
 import thrustmasterLogo from './assets/thrustmaster.svg'
-import typefastMailLogo from './assets/typefast-mail-fast.svg'
 import {
   exportJson,
   exportHistory,
@@ -1631,11 +1630,10 @@ function App() {
           <div className="brand">
             <img
               className="logo-mark"
-              src={typefastMailLogo}
-              alt=""
-              aria-hidden="true"
+              src={assetUrl('/typefast/icon.png')}
+              alt="TypeFast"
             />
-            <p className="brand-name">TypeF@st</p>
+            <p className="brand-name">TypeFast</p>
             <span className="version-pill">v{APP_VERSION}</span>
           </div>
           <div className="sidebar-top-actions">

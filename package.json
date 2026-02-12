@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.10.6",
   "author": "Sirlian",
-  "description": "Typefast local email and task template composer",
+  "description": "TypeFast local email and task template composer",
   "type": "module",
   "scripts": {
     "dev": "vite",
