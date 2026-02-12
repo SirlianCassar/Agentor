@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell, Menu, type Rectangle } from
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
+import { autoUpdater } from 'electron-updater'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
@@ -119,6 +120,74 @@ function writeData(data: unknown) {
   fs.writeFileSync(DATA_FILE(), JSON.stringify(data ?? defaultData, null, 2))
 }
 
+const AUTO_UPDATE_LOG_PREFIX = '[auto-update]'
+const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin'])
+
+function isStartupAutoUpdateEnabled() {
+  return app.isPackaged && !VITE_DEV_SERVER_URL && AUTO_UPDATE_SUPPORTED_PLATFORMS.has(process.platform)
+}
+
+async function runStartupAutoUpdate() {
+  if (!isStartupAutoUpdateEnabled()) return true
+
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
+  return await new Promise<boolean>((resolve) => {
+    let settled = false
+    const timeout = setTimeout(() => {
+      console.warn(`${AUTO_UPDATE_LOG_PREFIX} timeout reached, starting app without update`)
+      settle(true)
+    }, 120_000)
+
+    const settle = (shouldStartApp: boolean) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      autoUpdater.removeListener('checking-for-update', onChecking)
+      autoUpdater.removeListener('update-available', onAvailable)
+      autoUpdater.removeListener('update-not-available', onNotAvailable)
+      autoUpdater.removeListener('update-downloaded', onDownloaded)
+      autoUpdater.removeListener('error', onError)
+      resolve(shouldStartApp)
+    }
+
+    const onChecking = () => {
+      console.log(`${AUTO_UPDATE_LOG_PREFIX} checking for updates`)
+    }
+
+    const onAvailable = (info: { version?: string }) => {
+      console.log(`${AUTO_UPDATE_LOG_PREFIX} update available${info.version ? `: ${info.version}` : ''}`)
+    }
+
+    const onNotAvailable = () => {
+      console.log(`${AUTO_UPDATE_LOG_PREFIX} no update available`)
+      settle(true)
+    }
+
+    const onDownloaded = (info: { version?: string }) => {
+      console.log(
+        `${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}, restarting`,
+      )
+      settle(false)
+      setImmediate(() => autoUpdater.quitAndInstall(false, true))
+    }
+
+    const onError = (error: Error) => {
+      console.error(`${AUTO_UPDATE_LOG_PREFIX} update failed`, error)
+      settle(true)
+    }
+
+    autoUpdater.on('checking-for-update', onChecking)
+    autoUpdater.on('update-available', onAvailable)
+    autoUpdater.on('update-not-available', onNotAvailable)
+    autoUpdater.on('update-downloaded', onDownloaded)
+    autoUpdater.on('error', onError)
+
+    autoUpdater.checkForUpdates().catch((error: Error) => onError(error))
+  })
+}
+
 function createWindow() {
   const saved = windowState.main
   const bounds = saved?.bounds
@@ -131,7 +200,7 @@ function createWindow() {
           height: bounds.height,
         }
       : { width: 1400, height: 900 }),
-    icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'app-icon.png'),
+    icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'icon.png'),
     title: 'Typefast',
     backgroundColor: '#15151a',
     minWidth: 1100,
@@ -179,7 +248,7 @@ function openProcedureWindow() {
     minHeight: 620,
     title: 'Tableau de bord',
     backgroundColor: '#15151a',
-    icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'app-icon.png'),
+    icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
@@ -221,11 +290,13 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(createWindow)
-
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   app.setAppUserModelId('com.typefast.app')
   Menu.setApplicationMenu(null)
+  const shouldStartApp = await runStartupAutoUpdate()
+  if (shouldStartApp) {
+    createWindow()
+  }
 })
 
 ipcMain.handle('storage:load', () => readData())
