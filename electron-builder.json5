@@ -7,14 +7,17 @@
   "directories": {
     "output": "release/${version}"
   },
-  "files": [
-    "dist",
-    "dist-electron"
+  "files": ["dist", "dist-electron"],
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "SirlianCassar",
+      "repo": "TypeFast",
+      "private": false
+    }
   ],
   "mac": {
-    "target": [
-      "dmg"
-    ],
+    "target": ["dmg", "zip"],
     "icon": "build/icons/icon.icns",
     "hardenedRuntime": false,
     "gatekeeperAssess": false,
@@ -25,19 +28,15 @@
     "target": [
       {
         "target": "nsis",
-        "arch": [
-          "x64"
-        ]
+        "arch": ["x64"]
       }
     ],
     "icon": "build/icons/icon.ico",
     "artifactName": "${productName}-Windows-${version}.${ext}"
   },
   "linux": {
-    "target": [
-      "AppImage"
-    ],
+    "target": ["AppImage"],
     "icon": "build/icons/icon.png",
     "artifactName": "${productName}-Linux-${buildVersion}.${ext}"
-}
+  }
 }

@@ -58,32 +58,56 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
-      - name: Create single ZIP release bundle
+      - name: Validate release files
         shell: pwsh
         run: |
           $version = "${{ steps.normalize_version.outputs.semver }}"
           $releaseDir = "release/$version"
-          $zipPath = "release/TypeFast-Windows-$version.zip"
 
-          $files = Get-ChildItem -Path $releaseDir -File | Where-Object {
-            $_.Extension -in @(".exe", ".yml", ".blockmap")
+          if (-not (Test-Path $releaseDir)) {
+            throw "Release directory not found: $releaseDir"
           }
 
-          if ($files.Count -eq 0) {
-            throw "No installer files found in $releaseDir"
+          $latest = Join-Path $releaseDir "latest.yml"
+          if (-not (Test-Path $latest)) {
+            throw "Missing $latest"
           }
 
-          if (Test-Path $zipPath) {
-            Remove-Item $zipPath -Force
+          $exeFiles = Get-ChildItem -Path $releaseDir -File -Filter "*.exe"
+          if ($exeFiles.Count -eq 0) {
+            throw "No setup .exe found in $releaseDir"
           }
 
-          Compress-Archive -Path $files.FullName -DestinationPath $zipPath -Force
+          $blockmapFiles = Get-ChildItem -Path $releaseDir -File -Filter "*.blockmap"
+          if ($blockmapFiles.Count -eq 0) {
+            throw "No .blockmap file found in $releaseDir"
+          }
+
+      - name: Create stable installer alias
+        shell: pwsh
+        run: |
+          $version = "${{ steps.normalize_version.outputs.semver }}"
+          $releaseDir = "release/$version"
+          $stableInstaller = Join-Path $releaseDir "TypeFast-Windows-latest.exe"
+
+          $installer = Get-ChildItem -Path $releaseDir -File -Filter "*.exe" |
+            Where-Object { $_.Name -ne "TypeFast-Windows-latest.exe" } |
+            Select-Object -First 1
+
+          if (-not $installer) {
+            throw "No installer .exe found to create stable alias"
+          }
+
+          Copy-Item -Path $installer.FullName -Destination $stableInstaller -Force
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}
-          path: release/TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}.zip
+          path: |
+            release/${{ steps.normalize_version.outputs.semver }}/latest*.yml
+            release/${{ steps.normalize_version.outputs.semver }}/*.exe
+            release/${{ steps.normalize_version.outputs.semver }}/*.blockmap
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -93,5 +117,8 @@ jobs:
           name: TypeF@st v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
           overwrite_files: true
+          fail_on_unmatched_files: true
           files: |
-            release/TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}.zip
+            release/${{ steps.normalize_version.outputs.semver }}/latest*.yml
+            release/${{ steps.normalize_version.outputs.semver }}/*.exe
+            release/${{ steps.normalize_version.outputs.semver }}/*.blockmap
