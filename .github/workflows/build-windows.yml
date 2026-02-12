@@ -97,7 +97,7 @@ jobs:
         with:
           tag_name: v${{ steps.normalize_version.outputs.semver }}
           target_commitish: ${{ github.sha }}
-          name: TypeF@st v${{ steps.normalize_version.outputs.semver }}
+          name: TypeFast v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
           overwrite_files: true
           fail_on_unmatched_files: true

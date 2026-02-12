@@ -201,7 +201,7 @@ function createWindow() {
         }
       : { width: 1400, height: 900 }),
     icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'icon.png'),
-    title: 'Typefast',
+    title: 'TypeFast',
     backgroundColor: '#15151a',
     minWidth: 1100,
     minHeight: 720,
