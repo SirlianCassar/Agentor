@@ -5,14 +5,18 @@ import { defaultData } from './lib/defaults'
 import herculesLogo from './assets/hercules.svg'
 import thrustmasterLogo from './assets/thrustmaster.svg'
 import {
+  checkForUpdatesNow,
   exportJson,
   exportHistory,
+  getUpdateStatus,
   importJson,
   loadData,
+  onUpdateStatus,
   openExternal,
   openProcedure,
   saveData,
   copyText,
+  type UpdateStatus,
 } from './lib/storage'
 import type {
   AppData,
@@ -97,6 +101,21 @@ const exportFontOptions = [
 const EXPORT_FONT_SIZE_MIN = 10
 const EXPORT_FONT_SIZE_MAX = 22
 
+function getUpdatePillText(status: UpdateStatus | null) {
+  if (!status) return null
+  if (status.phase === 'checking') return 'Recherche MAJ...'
+  if (status.phase === 'available') return 'MAJ trouvée...'
+  if (status.phase === 'downloading') return `MAJ ${Math.round(status.progress ?? 0)}%`
+  if (status.phase === 'downloaded') return 'Redémarrage...'
+  return null
+}
+
+function getUpdateSettingsLabel(status: UpdateStatus | null) {
+  if (!status) return 'Statut inconnu.'
+  if (status.phase === 'disabled') return 'Mises à jour auto disponibles sur l’application installée.'
+  return status.message
+}
+
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
   const map = new Map(current.map((item) => [item.id, item]))
   for (const item of incoming) map.set(item.id, item)
@@ -180,6 +199,8 @@ function App() {
   const [procedureQuery, setProcedureQuery] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
+  const [checkingUpdateManually, setCheckingUpdateManually] = useState(false)
   const [clearArmed, setClearArmed] = useState(false)
   const [clearAllArmed, setClearAllArmed] = useState(false)
   const [taskClearArmed, setTaskClearArmed] = useState(false)
@@ -253,6 +274,7 @@ function App() {
   const procedureStepsRef = useRef<HTMLTextAreaElement>(null)
   const templateSearchRef = useRef<HTMLDivElement>(null)
   const taskSearchRef = useRef<HTMLDivElement>(null)
+  const manualUpdateCheckRequestedRef = useRef(false)
 
   const closeTemplateSearch = useCallback(() => {
     setTemplateFocused(false)
@@ -403,6 +425,53 @@ function App() {
   }, [])
 
   useEffect(() => {
+    let active = true
+
+    getUpdateStatus()
+      .then((status) => {
+        if (!active) return
+        setUpdateStatus(status)
+      })
+      .catch(() => {
+        if (!active) return
+        setUpdateStatus({
+          phase: 'error',
+          message: 'Impossible de récupérer le statut de mise à jour.',
+        })
+      })
+
+    const unsubscribe = onUpdateStatus((status) => {
+      if (!active) return
+      setUpdateStatus(status)
+
+      if (!manualUpdateCheckRequestedRef.current) return
+
+      if (status.phase === 'not-available') {
+        setToast('Aucune mise à jour disponible.')
+        manualUpdateCheckRequestedRef.current = false
+        setCheckingUpdateManually(false)
+      } else if (status.phase === 'available' || status.phase === 'downloading') {
+        setToast('Mise à jour trouvée. Téléchargement en cours…')
+        manualUpdateCheckRequestedRef.current = false
+        setCheckingUpdateManually(false)
+      } else if (status.phase === 'downloaded') {
+        setToast('Mise à jour téléchargée. Redémarrage…')
+        manualUpdateCheckRequestedRef.current = false
+        setCheckingUpdateManually(false)
+      } else if (status.phase === 'error') {
+        setToast(status.message)
+        manualUpdateCheckRequestedRef.current = false
+        setCheckingUpdateManually(false)
+      }
+    })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
     if (!loaded) return
     const handle = window.setTimeout(() => saveData(data), 600)
     return () => window.clearTimeout(handle)
@@ -516,6 +585,12 @@ function App() {
   const exportFontSize = Number.isFinite(data.settings.exportFontSize)
     ? Math.min(EXPORT_FONT_SIZE_MAX, Math.max(EXPORT_FONT_SIZE_MIN, data.settings.exportFontSize))
     : defaultData.settings.exportFontSize
+  const updatePillText = getUpdatePillText(updateStatus)
+  const updateSettingsLabel = getUpdateSettingsLabel(updateStatus)
+  const isUpdateCheckRunning =
+    updateStatus?.phase === 'checking' ||
+    updateStatus?.phase === 'available' ||
+    updateStatus?.phase === 'downloading'
   const categoryIdSet = useMemo(
     () => new Set(data.categories.map((category) => category.id)),
     [data.categories],
@@ -533,6 +608,31 @@ function App() {
   const updateCustomerPortalCodes = useCallback((next: CustomerPortalCode[]) => {
     updateSettings({ customerPortalCodes: next })
   }, [updateSettings])
+
+  const handleCheckUpdatesNow = useCallback(async () => {
+    manualUpdateCheckRequestedRef.current = true
+    setCheckingUpdateManually(true)
+    try {
+      const result = await checkForUpdatesNow()
+      if (!result.ok) {
+        if (result.reason === 'disabled') {
+          setToast('Recherche de MAJ disponible uniquement sur l’application installée.')
+        } else if (result.reason === 'already-checking') {
+          setToast('Une recherche de MAJ est déjà en cours.')
+        } else if (result.reason === 'restart-pending') {
+          setToast('Mise à jour prête. Redémarrage imminent.')
+        } else {
+          setToast('Recherche de MAJ impossible.')
+        }
+        manualUpdateCheckRequestedRef.current = false
+        setCheckingUpdateManually(false)
+      }
+    } catch {
+      setToast('Recherche de MAJ impossible.')
+      manualUpdateCheckRequestedRef.current = false
+      setCheckingUpdateManually(false)
+    }
+  }, [])
 
   useEffect(() => {
     const safeZoom = zoomValue > 0 ? zoomValue : 1
@@ -1635,6 +1735,7 @@ function App() {
             />
             <p className="brand-name">TypeFast</p>
             <span className="version-pill">v{APP_VERSION}</span>
+            {updatePillText ? <span className="update-pill">{updatePillText}</span> : null}
           </div>
           <div className="sidebar-top-actions">
             <button
@@ -3386,6 +3487,22 @@ function App() {
                             </button>
                           ))}
                         </div>
+                      </div>
+                      <div className="settings-option settings-option--column">
+                        <div className="settings-option__info">
+                          <div className="settings-option__title">Mises à jour</div>
+                          <div className="settings-option__desc">{updateSettingsLabel}</div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--small"
+                          onClick={handleCheckUpdatesNow}
+                          disabled={checkingUpdateManually || isUpdateCheckRunning}
+                        >
+                          {checkingUpdateManually || isUpdateCheckRunning
+                            ? 'Recherche en cours...'
+                            : 'Rechercher une mise à jour'}
+                        </button>
                       </div>
                     </div>
                   </div>

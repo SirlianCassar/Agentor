@@ -24,6 +24,23 @@ declare namespace NodeJS {
 // Used in Renderer process, expose in `preload.ts`
 interface Window {
   typefast: {
+    getUpdateStatus: () => Promise<{
+      phase: string
+      message: string
+      version?: string
+      progress?: number
+      checkedAt?: string
+    }>
+    checkForUpdatesNow: () => Promise<{ ok: boolean; reason: string }>
+    onUpdateStatus: (
+      callback: (status: {
+        phase: string
+        message: string
+        version?: string
+        progress?: number
+        checkedAt?: string
+      }) => void,
+    ) => () => void
     loadData: () => Promise<unknown>
     saveData: (data: unknown) => Promise<boolean>
     exportJson: (data: unknown) => Promise<{ canceled: boolean }>

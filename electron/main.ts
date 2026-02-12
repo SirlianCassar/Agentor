@@ -122,70 +122,207 @@ function writeData(data: unknown) {
 
 const AUTO_UPDATE_LOG_PREFIX = '[auto-update]'
 const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin'])
+const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
+const AUTO_UPDATE_TIMEOUT_MS = 120_000
+
+type UpdatePhase =
+  | 'idle'
+  | 'disabled'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'not-available'
+  | 'error'
+
+type UpdateStatusPayload = {
+  phase: UpdatePhase
+  message: string
+  version?: string
+  progress?: number
+  checkedAt?: string
+}
+
+let updateStatus: UpdateStatusPayload = {
+  phase: 'idle',
+  message: 'En attente de vérification des mises à jour.',
+}
+let autoUpdaterConfigured = false
+let updateCheckInProgress = false
+let restartScheduled = false
+let updateCheckTimeout: ReturnType<typeof setTimeout> | null = null
 
 function isStartupAutoUpdateEnabled() {
   return app.isPackaged && !VITE_DEV_SERVER_URL && AUTO_UPDATE_SUPPORTED_PLATFORMS.has(process.platform)
 }
 
-async function runStartupAutoUpdate() {
-  if (!isStartupAutoUpdateEnabled()) return true
+function getUpdateErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message
+  return 'Erreur inconnue'
+}
+
+function pushUpdateStatus(status: UpdateStatusPayload) {
+  updateStatus = status
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) {
+      window.webContents.send(AUTO_UPDATE_STATUS_CHANNEL, updateStatus)
+    }
+  }
+}
+
+function clearUpdateTimeout() {
+  if (!updateCheckTimeout) return
+  clearTimeout(updateCheckTimeout)
+  updateCheckTimeout = null
+}
+
+function armUpdateTimeout() {
+  clearUpdateTimeout()
+  updateCheckTimeout = setTimeout(() => {
+    if (!updateCheckInProgress) return
+    updateCheckInProgress = false
+    pushUpdateStatus({
+      phase: 'error',
+      message: 'La recherche de mise à jour a expiré.',
+      checkedAt: new Date().toISOString(),
+    })
+    console.warn(`${AUTO_UPDATE_LOG_PREFIX} check timeout`)
+  }, AUTO_UPDATE_TIMEOUT_MS)
+}
+
+function configureAutoUpdater() {
+  if (autoUpdaterConfigured) return
+  autoUpdaterConfigured = true
+
+  if (!isStartupAutoUpdateEnabled()) {
+    pushUpdateStatus({
+      phase: 'disabled',
+      message: 'Mises à jour automatiques disponibles uniquement sur l’application installée.',
+    })
+    return
+  }
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
 
-  return await new Promise<boolean>((resolve) => {
-    let settled = false
-    const timeout = setTimeout(() => {
-      console.warn(`${AUTO_UPDATE_LOG_PREFIX} timeout reached, starting app without update`)
-      settle(true)
-    }, 120_000)
-
-    const settle = (shouldStartApp: boolean) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timeout)
-      autoUpdater.removeListener('checking-for-update', onChecking)
-      autoUpdater.removeListener('update-available', onAvailable)
-      autoUpdater.removeListener('update-not-available', onNotAvailable)
-      autoUpdater.removeListener('update-downloaded', onDownloaded)
-      autoUpdater.removeListener('error', onError)
-      resolve(shouldStartApp)
-    }
-
-    const onChecking = () => {
-      console.log(`${AUTO_UPDATE_LOG_PREFIX} checking for updates`)
-    }
-
-    const onAvailable = (info: { version?: string }) => {
-      console.log(`${AUTO_UPDATE_LOG_PREFIX} update available${info.version ? `: ${info.version}` : ''}`)
-    }
-
-    const onNotAvailable = () => {
-      console.log(`${AUTO_UPDATE_LOG_PREFIX} no update available`)
-      settle(true)
-    }
-
-    const onDownloaded = (info: { version?: string }) => {
-      console.log(
-        `${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}, restarting`,
-      )
-      settle(false)
-      setImmediate(() => autoUpdater.quitAndInstall(false, true))
-    }
-
-    const onError = (error: Error) => {
-      console.error(`${AUTO_UPDATE_LOG_PREFIX} update failed`, error)
-      settle(true)
-    }
-
-    autoUpdater.on('checking-for-update', onChecking)
-    autoUpdater.on('update-available', onAvailable)
-    autoUpdater.on('update-not-available', onNotAvailable)
-    autoUpdater.on('update-downloaded', onDownloaded)
-    autoUpdater.on('error', onError)
-
-    autoUpdater.checkForUpdates().catch((error: Error) => onError(error))
+  autoUpdater.on('checking-for-update', () => {
+    updateCheckInProgress = true
+    pushUpdateStatus({
+      phase: 'checking',
+      message: 'Recherche des mises à jour…',
+    })
+    console.log(`${AUTO_UPDATE_LOG_PREFIX} checking for updates`)
   })
+
+  autoUpdater.on('update-available', (info: { version?: string }) => {
+    pushUpdateStatus({
+      phase: 'available',
+      message: `Mise à jour disponible${info.version ? ` (${info.version})` : ''}. Téléchargement…`,
+      version: info.version,
+    })
+    console.log(`${AUTO_UPDATE_LOG_PREFIX} update available${info.version ? `: ${info.version}` : ''}`)
+  })
+
+  autoUpdater.on('download-progress', (progress: { percent: number }) => {
+    const rounded = Math.max(0, Math.min(100, Math.round(progress.percent ?? 0)))
+    pushUpdateStatus({
+      phase: 'downloading',
+      message: `Téléchargement de la mise à jour… ${rounded}%`,
+      progress: rounded,
+      version: updateStatus.version,
+    })
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    updateCheckInProgress = false
+    clearUpdateTimeout()
+    pushUpdateStatus({
+      phase: 'not-available',
+      message: 'Aucune mise à jour disponible.',
+      checkedAt: new Date().toISOString(),
+    })
+    console.log(`${AUTO_UPDATE_LOG_PREFIX} no update available`)
+  })
+
+  autoUpdater.on('update-downloaded', (info: { version?: string }) => {
+    updateCheckInProgress = false
+    clearUpdateTimeout()
+    pushUpdateStatus({
+      phase: 'downloaded',
+      message: 'Mise à jour téléchargée. Redémarrage…',
+      version: info.version,
+    })
+    console.log(
+      `${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}, restarting`,
+    )
+    if (!restartScheduled) {
+      restartScheduled = true
+      setTimeout(() => {
+        autoUpdater.quitAndInstall(false, true)
+      }, 600)
+    }
+  })
+
+  autoUpdater.on('error', (error: Error) => {
+    updateCheckInProgress = false
+    clearUpdateTimeout()
+    const message = getUpdateErrorMessage(error)
+    pushUpdateStatus({
+      phase: 'error',
+      message: `Mise à jour impossible: ${message}`,
+      checkedAt: new Date().toISOString(),
+    })
+    console.error(`${AUTO_UPDATE_LOG_PREFIX} update failed`, error)
+  })
+}
+
+async function checkForUpdates(reason: 'startup' | 'manual') {
+  if (!isStartupAutoUpdateEnabled()) {
+    pushUpdateStatus({
+      phase: 'disabled',
+      message: 'Mises à jour automatiques disponibles uniquement sur l’application installée.',
+    })
+    return { ok: false, reason: 'disabled' as const }
+  }
+
+  if (restartScheduled) {
+    return { ok: false, reason: 'restart-pending' as const }
+  }
+
+  if (updateCheckInProgress) {
+    return { ok: false, reason: 'already-checking' as const }
+  }
+
+  updateCheckInProgress = true
+  pushUpdateStatus({
+    phase: 'checking',
+    message: reason === 'startup' ? 'Recherche des mises à jour au lancement…' : 'Recherche des mises à jour…',
+  })
+  armUpdateTimeout()
+  try {
+    await autoUpdater.checkForUpdates()
+    if (updateStatus.phase === 'checking') {
+      updateCheckInProgress = false
+      clearUpdateTimeout()
+      pushUpdateStatus({
+        phase: 'not-available',
+        message: 'Aucune mise à jour disponible.',
+        checkedAt: new Date().toISOString(),
+      })
+    }
+    return { ok: true, reason }
+  } catch (error) {
+    updateCheckInProgress = false
+    clearUpdateTimeout()
+    const message = getUpdateErrorMessage(error)
+    pushUpdateStatus({
+      phase: 'error',
+      message: `Mise à jour impossible: ${message}`,
+      checkedAt: new Date().toISOString(),
+    })
+    console.error(`${AUTO_UPDATE_LOG_PREFIX} check failed`, error)
+    return { ok: false, reason: 'error' as const }
+  }
 }
 
 function createWindow() {
@@ -225,6 +362,9 @@ function createWindow() {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
+  win.webContents.on('did-finish-load', () => {
+    win?.webContents.send(AUTO_UPDATE_STATUS_CHANNEL, updateStatus)
+  })
 }
 
 function openProcedureWindow() {
@@ -264,6 +404,9 @@ function openProcedureWindow() {
   } else {
     procedureWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'procedure' })
   }
+  procedureWin.webContents.on('did-finish-load', () => {
+    procedureWin?.webContents.send(AUTO_UPDATE_STATUS_CHANNEL, updateStatus)
+  })
   procedureWin.on('close', () => persistWindowState('procedure', procedureWin))
   procedureWin.on('closed', () => {
     procedureWin = null
@@ -293,10 +436,9 @@ app.on('activate', () => {
 app.whenReady().then(async () => {
   app.setAppUserModelId('com.typefast.app')
   Menu.setApplicationMenu(null)
-  const shouldStartApp = await runStartupAutoUpdate()
-  if (shouldStartApp) {
-    createWindow()
-  }
+  createWindow()
+  configureAutoUpdater()
+  await checkForUpdates('startup')
 })
 
 ipcMain.handle('storage:load', () => readData())
@@ -345,3 +487,8 @@ ipcMain.handle('shell:open-external', async (_event, url) => {
   return true
 })
 ipcMain.handle('procedure:open', () => openProcedureWindow())
+ipcMain.handle('updates:get-status', () => updateStatus)
+ipcMain.handle('updates:check-now', async () => {
+  configureAutoUpdater()
+  return checkForUpdates('manual')
+})
