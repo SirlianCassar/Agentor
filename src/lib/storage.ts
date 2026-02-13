@@ -46,7 +46,7 @@ export async function copyText(text: string, html?: string) {
     try {
       return window.typefast.copyText(text, html)
     } catch {
-      // Fall through to browser clipboard fallback.
+      void window.typefast
     }
   }
 
@@ -59,7 +59,7 @@ export async function copyText(text: string, html?: string) {
       await navigator.clipboard.write([item])
       return true
     } catch {
-      // Fall through to plain text copy fallback.
+      void navigator.clipboard
     }
   }
 
@@ -68,7 +68,7 @@ export async function copyText(text: string, html?: string) {
       await navigator.clipboard.writeText(text)
       return true
     } catch {
-      // Fall through to legacy copy fallback.
+      void navigator.clipboard
     }
   }
 
@@ -108,6 +108,10 @@ export function getUpdateStatus(): Promise<UpdateStatus> {
 
 export function checkForUpdatesNow(): Promise<{ ok: boolean; reason: string }> {
   return window.typefast.checkForUpdatesNow()
+}
+
+export function installDownloadedUpdate(): Promise<{ ok: boolean; reason: string }> {
+  return window.typefast.installDownloadedUpdate()
 }
 
 export function onUpdateStatus(callback: (status: UpdateStatus) => void) {

@@ -8,8 +8,6 @@ const packageJson = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'),
 ) as { version?: string }
 const appVersion = process.env.VITE_APP_VERSION ?? packageJson.version ?? '1.10.6'
-
-// https://vitejs.dev/config/
 export default defineConfig({
   base: './',
   define: {
