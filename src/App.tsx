@@ -1928,6 +1928,12 @@ function App() {
                 <button className="ghost procedure-btn" onClick={handleOpenProcedure}>
                   Tableau de bord
                 </button>
+                <button
+                  className="ghost procedure-btn"
+                  onClick={() => window.alert('UPDATE FONCTIONELLE OMG BRAVO')}
+                >
+                  Test update
+                </button>
               </div>
               <div className="actions">
                 {emailTags ? <span className="tag-warning">⚠️</span> : null}
