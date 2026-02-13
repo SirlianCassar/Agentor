@@ -4,19 +4,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { autoUpdater } from 'electron-updater'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
 process.env.APP_ROOT = path.join(__dirname, '..')
 
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
@@ -50,6 +39,7 @@ const defaultData = {
     defaultSnippetInsertMode: 'line',
     snippetCategoryDisplay: 'dropdown',
     customerPortalCodes: [],
+    dashboardProducts: [],
   },
 }
 
@@ -71,7 +61,7 @@ function readWindowState(): WindowState {
       return parsed as WindowState
     }
   } catch {
-    // Ignore and fall back to defaults.
+    return {}
   }
   return {}
 }
@@ -80,7 +70,7 @@ function writeWindowState(state: WindowState) {
   try {
     fs.writeFileSync(WINDOW_STATE_FILE(), JSON.stringify(state, null, 2))
   } catch {
-    // Ignore persistence errors.
+    return
   }
 }
 
@@ -111,7 +101,7 @@ function readData() {
       return shouldUseSeed(parsed) ? defaultData : parsed
     }
   } catch {
-    // Ignore and fall back to defaults.
+    return defaultData
   }
   return defaultData
 }
@@ -206,7 +196,7 @@ function configureAutoUpdater() {
   }
 
   autoUpdater.autoDownload = true
-  autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.setFeedURL({
     provider: 'github',
     owner: AUTO_UPDATE_OWNER,
@@ -270,18 +260,10 @@ function configureAutoUpdater() {
     clearUpdateTimeout()
     pushUpdateStatus({
       phase: 'downloaded',
-      message: 'Mise à jour téléchargée. Redémarrage…',
+      message: 'Mise à jour prête. Clique sur l’indicateur MAJ pour installer.',
       version: info.version,
     })
-    console.log(
-      `${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}, restarting`,
-    )
-    if (!restartScheduled) {
-      restartScheduled = true
-      setTimeout(() => {
-        autoUpdater.quitAndInstall(false, true)
-      }, 600)
-    }
+    console.log(`${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}`)
   })
 
   autoUpdater.on('error', (error: Error) => {
@@ -355,6 +337,37 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
   }
 }
 
+function installDownloadedUpdate() {
+  if (!isStartupAutoUpdateEnabled()) {
+    return { ok: false, reason: 'disabled' as const }
+  }
+
+  if (!AUTO_UPDATE_GH_TOKEN) {
+    return { ok: false, reason: 'missing-token' as const }
+  }
+
+  if (restartScheduled) {
+    return { ok: false, reason: 'restart-pending' as const }
+  }
+
+  if (updateStatus.phase !== 'downloaded') {
+    return { ok: false, reason: 'not-downloaded' as const }
+  }
+
+  restartScheduled = true
+  pushUpdateStatus({
+    phase: 'downloaded',
+    message: 'Redémarrage pour installer la mise à jour…',
+    version: updateStatus.version,
+  })
+
+  setTimeout(() => {
+    autoUpdater.quitAndInstall(false, true)
+  }, 300)
+
+  return { ok: true, reason: 'installing' as const }
+}
+
 function createWindow() {
   const saved = windowState.main
   const bounds = saved?.bounds
@@ -389,7 +402,6 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
   win.webContents.on('did-finish-load', () => {
@@ -416,7 +428,7 @@ function openProcedureWindow() {
       : { width: 980, height: 720 }),
     minWidth: 860,
     minHeight: 620,
-    title: 'Tableau de bord',
+    title: 'Dashboard',
     backgroundColor: '#15151a',
     icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'icon.png'),
     webPreferences: {
@@ -445,9 +457,6 @@ function openProcedureWindow() {
   return true
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
@@ -456,8 +465,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
@@ -522,3 +529,4 @@ ipcMain.handle('updates:check-now', async () => {
   configureAutoUpdater()
   return checkForUpdates('manual')
 })
+ipcMain.handle('updates:install-downloaded', () => installDownloadedUpdate())

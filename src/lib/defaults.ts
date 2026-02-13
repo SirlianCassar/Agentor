@@ -334,5 +334,6 @@ Ajout multi-ligne :
       { id: 'portal-3', procedureName: 'Thrustmaster - Pédalier instable', code: 'CP-THR-101' },
       { id: 'portal-4', procedureName: 'Thrustmaster - Volant non centré', code: 'CP-THR-102' },
     ],
+    dashboardProducts: [],
   },
 }

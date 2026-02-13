@@ -82,6 +82,13 @@ export interface CustomerPortalCode {
   code: string
 }
 
+export interface DashboardProduct {
+  id: string
+  name: string
+  sheet: string
+  supportUrl?: string
+}
+
 export interface AppSettings {
   language: Language
   zoom: number
@@ -95,6 +102,7 @@ export interface AppSettings {
   defaultSnippetInsertMode: InsertMode
   snippetCategoryDisplay: SnippetCategoryDisplay
   customerPortalCodes: CustomerPortalCode[]
+  dashboardProducts: DashboardProduct[]
 }
 
 export interface AppData {

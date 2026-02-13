@@ -18,6 +18,7 @@ const api = {
   openProcedure: () => ipcRenderer.invoke('procedure:open'),
   getUpdateStatus: () => ipcRenderer.invoke('updates:get-status'),
   checkForUpdatesNow: () => ipcRenderer.invoke('updates:check-now'),
+  installDownloadedUpdate: () => ipcRenderer.invoke('updates:install-downloaded'),
   onUpdateStatus: (callback: (status: unknown) => void) => {
     const listener = (_event: IpcRendererEvent, payload: unknown) => callback(payload)
     ipcRenderer.on('updates:status', listener)

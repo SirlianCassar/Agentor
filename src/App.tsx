@@ -6,6 +6,7 @@ import herculesLogo from './assets/hercules.svg'
 import thrustmasterLogo from './assets/thrustmaster.svg'
 import {
   checkForUpdatesNow,
+  installDownloadedUpdate,
   exportJson,
   exportHistory,
   getUpdateStatus,
@@ -23,6 +24,7 @@ import type {
   AppSettings,
   Category,
   CustomerPortalCode,
+  DashboardProduct,
   InsertMode,
   Language,
   MailTemplate,
@@ -55,6 +57,7 @@ const PROCEDURE_CHECK_MARKER = '[ ]'
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '1.10.6').trim()
 const VAT_DIVISOR = 1.2
+const DEFAULT_SUPPORT_SITE_URL = 'https://support.guillemot.com/'
 
 const quickLinks = [
   {
@@ -104,9 +107,9 @@ const EXPORT_FONT_SIZE_MAX = 22
 function getUpdatePillText(status: UpdateStatus | null) {
   if (!status) return null
   if (status.phase === 'checking') return 'Recherche MAJ...'
-  if (status.phase === 'available') return 'MAJ trouvée...'
+  if (status.phase === 'available') return 'MAJ dispo...'
   if (status.phase === 'downloading') return `MAJ ${Math.round(status.progress ?? 0)}%`
-  if (status.phase === 'downloaded') return 'Redémarrage...'
+  if (status.phase === 'downloaded') return 'Installer MAJ'
   return null
 }
 
@@ -168,6 +171,14 @@ const convertLegacyTokensInData = (payload: AppData): AppData => ({
     steps: convertLegacyTokens(procedure.steps),
     taskText: convertLegacyTokensMaybe(procedure.taskText),
   })),
+  settings: {
+    ...payload.settings,
+    dashboardProducts: payload.settings.dashboardProducts.map((product) => ({
+      ...product,
+      name: convertLegacyTokens(product.name),
+      sheet: convertLegacyTokens(product.sheet),
+    })),
+  },
 })
 
 function mergeData(current: AppData, incoming: AppData) {
@@ -196,11 +207,13 @@ function App() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('all')
   const [templateQuery, setTemplateQuery] = useState('')
   const [taskQuery, setTaskQuery] = useState('')
+  const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [procedureQuery, setProcedureQuery] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
   const [checkingUpdateManually, setCheckingUpdateManually] = useState(false)
+  const [installingDownloadedUpdate, setInstallingDownloadedUpdate] = useState(false)
   const [clearArmed, setClearArmed] = useState(false)
   const [clearAllArmed, setClearAllArmed] = useState(false)
   const [taskClearArmed, setTaskClearArmed] = useState(false)
@@ -210,18 +223,21 @@ function App() {
   const [taskClearPulse, setTaskClearPulse] = useState(false)
   const [templateFocused, setTemplateFocused] = useState(false)
   const [taskFocused, setTaskFocused] = useState(false)
+  const [dashboardProductFocused, setDashboardProductFocused] = useState(false)
   const [templateListKey, setTemplateListKey] = useState(0)
   const [taskListKey, setTaskListKey] = useState(0)
+  const [dashboardProductListKey, setDashboardProductListKey] = useState(0)
   const [emailCopied, setEmailCopied] = useState(false)
   const [taskCopied, setTaskCopied] = useState(false)
   const [procedureLanguage] = useState<Language>('fr')
   const [procedureBrand, setProcedureBrand] = useState<ProcedureBrand>('hercules')
   const [procedureCoverage, setProcedureCoverage] = useState<ProcedureCoverage>('oow')
   const [activeProcedureId, setActiveProcedureId] = useState<string | null>(null)
+  const [activeDashboardProductId, setActiveDashboardProductId] = useState<string | null>(null)
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<
-    'categories' | 'snippets' | 'templates' | 'tasks' | 'procedure' | 'settings'
+    'categories' | 'snippets' | 'templates' | 'tasks' | 'procedure' | 'settings' | 'dashboard' | 'updates'
   >(
     'categories',
   )
@@ -236,6 +252,7 @@ function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [selectedProcedureId, setSelectedProcedureId] = useState<string | null>(null)
+  const [selectedDashboardProductId, setSelectedDashboardProductId] = useState<string | null>(null)
   const [snippetActiveField, setSnippetActiveField] = useState<'title' | 'content' | 'task'>(
     'content',
   )
@@ -256,6 +273,7 @@ function App() {
   const isTemplateSelectionEmpty = selectedTemplateId === null
   const isTaskSelectionEmpty = selectedTaskId === null
   const isProcedureSelectionEmpty = selectedProcedureId === null
+  const isDashboardProductSelectionEmpty = selectedDashboardProductId === null
 
   const emailEditorRef = useRef<TextEditorHandle>(null)
   const taskEditorRef = useRef<TextEditorHandle>(null)
@@ -274,6 +292,8 @@ function App() {
   const procedureStepsRef = useRef<HTMLTextAreaElement>(null)
   const templateSearchRef = useRef<HTMLDivElement>(null)
   const taskSearchRef = useRef<HTMLDivElement>(null)
+  const dashboardProductSearchRef = useRef<HTMLDivElement>(null)
+  const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
   const manualUpdateCheckRequestedRef = useRef(false)
 
   const closeTemplateSearch = useCallback(() => {
@@ -288,10 +308,17 @@ function App() {
     setTaskListKey((prev) => prev + 1)
   }, [])
 
+  const closeDashboardProductSearch = useCallback(() => {
+    setDashboardProductFocused(false)
+    setDashboardProductQuery('')
+    setDashboardProductListKey((prev) => prev + 1)
+  }, [])
+
   const closeSearchMenus = useCallback(() => {
     closeTemplateSearch()
     closeTaskSearch()
-  }, [closeTemplateSearch, closeTaskSearch])
+    closeDashboardProductSearch()
+  }, [closeDashboardProductSearch, closeTemplateSearch, closeTaskSearch])
 
   const triggerPulse = useCallback((setPulse: (value: boolean) => void) => {
     setPulse(false)
@@ -340,6 +367,12 @@ function App() {
     taskCustom: false,
     taskText: '',
   })
+  const [dashboardProductDraft, setDashboardProductDraft] = useState<DashboardProduct>({
+    id: '',
+    name: '',
+    sheet: '',
+    supportUrl: '',
+  })
 
   const getEmptyCategoryDraft = useCallback(
     () => ({ id: '', name: '', color: 'violet' } as Category),
@@ -362,6 +395,16 @@ function App() {
       code: item?.code ?? '',
     }))
   }, [data.settings.customerPortalCodes])
+  const dashboardProducts = useMemo(() => {
+    const raw = data.settings.dashboardProducts
+    if (!Array.isArray(raw)) return [] as DashboardProduct[]
+    return raw.map((item, index) => ({
+      id: item?.id?.trim() || `product-${index + 1}`,
+      name: item?.name ?? '',
+      sheet: item?.sheet ?? '',
+      supportUrl: item?.supportUrl ?? '',
+    }))
+  }, [data.settings.dashboardProducts])
 
   const getEmptySnippetDraft = useCallback(
     () =>
@@ -411,6 +454,16 @@ function App() {
       }) as Procedure,
     [],
   )
+  const getEmptyDashboardProductDraft = useCallback(
+    () =>
+      ({
+        id: '',
+        name: '',
+        sheet: '',
+        supportUrl: '',
+      }) as DashboardProduct,
+    [],
+  )
 
   useEffect(() => {
     let active = true
@@ -455,7 +508,7 @@ function App() {
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
       } else if (status.phase === 'downloaded') {
-        setToast('Mise à jour téléchargée. Redémarrage…')
+        setToast('Mise à jour prête. Clique sur l’indicateur MAJ pour installer.')
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
       } else if (status.phase === 'error') {
@@ -499,12 +552,14 @@ function App() {
     setSelectedTemplateId(null)
     setSelectedTaskId(null)
     setSelectedProcedureId(null)
+    setSelectedDashboardProductId(null)
     setClearAllArmed(false)
     setCategoryDraft(getEmptyCategoryDraft())
     setSnippetDraft(getEmptySnippetDraft())
     setTemplateDraft(getEmptyTemplateDraft())
     setTaskDraft(getEmptyTaskDraft())
     setProcedureDraft(getEmptyProcedureDraft())
+    setDashboardProductDraft(getEmptyDashboardProductDraft())
   }, [
     editOpen,
     editTab,
@@ -513,6 +568,7 @@ function App() {
     getEmptyTemplateDraft,
     getEmptyTaskDraft,
     getEmptyProcedureDraft,
+    getEmptyDashboardProductDraft,
   ])
 
   useEffect(() => {
@@ -561,6 +617,7 @@ function App() {
       if (!target) return
       if (templateSearchRef.current?.contains(target)) return
       if (taskSearchRef.current?.contains(target)) return
+      if (dashboardProductSearchRef.current?.contains(target)) return
       closeSearchMenus()
     }
     window.addEventListener('pointerdown', handlePointerDown, true)
@@ -587,6 +644,12 @@ function App() {
     : defaultData.settings.exportFontSize
   const updatePillText = getUpdatePillText(updateStatus)
   const updateSettingsLabel = getUpdateSettingsLabel(updateStatus)
+  const isUpdateReadyToInstall = updateStatus?.phase === 'downloaded'
+  const showUpdateInAppName =
+    updateStatus?.phase === 'available' ||
+    updateStatus?.phase === 'downloading' ||
+    isUpdateReadyToInstall
+  const appNameLabel = showUpdateInAppName ? 'TypeFast (MAJ dispo)' : 'TypeFast'
   const isUpdateCheckRunning =
     updateStatus?.phase === 'checking' ||
     updateStatus?.phase === 'available' ||
@@ -608,6 +671,9 @@ function App() {
   const updateCustomerPortalCodes = useCallback((next: CustomerPortalCode[]) => {
     updateSettings({ customerPortalCodes: next })
   }, [updateSettings])
+  const updateDashboardProducts = useCallback((next: DashboardProduct[]) => {
+    updateSettings({ dashboardProducts: next })
+  }, [updateSettings])
 
   const handleCheckUpdatesNow = useCallback(async () => {
     manualUpdateCheckRequestedRef.current = true
@@ -622,7 +688,7 @@ function App() {
         } else if (result.reason === 'already-checking') {
           setToast('Une recherche de MAJ est déjà en cours.')
         } else if (result.reason === 'restart-pending') {
-          setToast('Mise à jour prête. Redémarrage imminent.')
+          setToast('Redémarrage déjà en cours pour installer la MAJ.')
         } else {
           setToast('Recherche de MAJ impossible.')
         }
@@ -635,6 +701,39 @@ function App() {
       setCheckingUpdateManually(false)
     }
   }, [])
+
+  const handleInstallDownloadedUpdate = useCallback(async () => {
+    if (updateStatus?.phase !== 'downloaded') return
+    const confirmed = window.confirm(
+      'Une mise à jour est prête. Voulez-vous redémarrer maintenant pour l’installer ?',
+    )
+    if (!confirmed) return
+
+    setInstallingDownloadedUpdate(true)
+    try {
+      const result = await installDownloadedUpdate()
+      if (!result.ok) {
+        if (result.reason === 'not-downloaded') {
+          setToast('La mise à jour n’est pas encore prête.')
+        } else if (result.reason === 'disabled') {
+          setToast('Installation MAJ disponible uniquement sur l’application installée.')
+        } else if (result.reason === 'missing-token') {
+          setToast('GH_TOKEN/GITHUB_TOKEN manquant pour installer la MAJ.')
+        } else if (result.reason === 'restart-pending') {
+          setToast('Redémarrage déjà en cours pour installer la MAJ.')
+        } else {
+          setToast('Installation de la MAJ impossible.')
+        }
+        setInstallingDownloadedUpdate(false)
+        return
+      }
+      setToast('Redémarrage pour installer la mise à jour…')
+      window.setTimeout(() => setInstallingDownloadedUpdate(false), 5000)
+    } catch {
+      setToast('Installation de la MAJ impossible.')
+      setInstallingDownloadedUpdate(false)
+    }
+  }, [updateStatus])
 
   useEffect(() => {
     const safeZoom = zoomValue > 0 ? zoomValue : 1
@@ -661,6 +760,12 @@ function App() {
     setEditSnippetCategoryId('all')
   }, [editSnippetCategoryId, categoryIdSet])
 
+  useEffect(() => {
+    if (!activeDashboardProductId) return
+    if (dashboardProducts.some((product) => product.id === activeDashboardProductId)) return
+    setActiveDashboardProductId(null)
+  }, [activeDashboardProductId, dashboardProducts])
+
   const visibleSnippets = useMemo(() => {
     if (activeCategoryId === 'all') {
       const categoryOrder = new Map(data.categories.map((category, index) => [category.id, index]))
@@ -683,6 +788,13 @@ function App() {
     return base.filter((template) => template.name.toLowerCase().includes(query))
   }, [templateQuery, data.templates, templateFocused])
 
+  const dashboardProductResults = useMemo(() => {
+    const query = dashboardProductQuery.trim().toLowerCase()
+    if (!dashboardProductFocused && !query) return []
+    if (!query) return dashboardProducts
+    return dashboardProducts.filter((product) => product.name.toLowerCase().includes(query))
+  }, [dashboardProductFocused, dashboardProductQuery, dashboardProducts])
+
   const procedureList = useMemo(() => {
     const query = procedureQuery.trim().toLowerCase()
     const base = data.procedures.filter(
@@ -704,6 +816,10 @@ function App() {
   const activeProcedure = useMemo(
     () => data.procedures.find((procedure) => procedure.id === activeProcedureId) ?? null,
     [data.procedures, activeProcedureId],
+  )
+  const activeDashboardProduct = useMemo(
+    () => dashboardProducts.find((product) => product.id === activeDashboardProductId) ?? null,
+    [dashboardProducts, activeDashboardProductId],
   )
 
   const editSnippets = useMemo(() => {
@@ -903,6 +1019,39 @@ function App() {
     })
   }
 
+  const insertDashboardProductSheetWrap = (before: string, after: string, placeholder: string) => {
+    const target = dashboardProductSheetRef.current
+    const value = dashboardProductDraft.sheet
+    const start = target?.selectionStart ?? value.length
+    const end = target?.selectionEnd ?? value.length
+    const selection = value.slice(start, end) || placeholder
+    const next = `${value.slice(0, start)}${before}${selection}${after}${value.slice(end)}`
+    setDashboardProductDraft((prev) => ({ ...prev, sheet: next }))
+    requestAnimationFrame(() => {
+      const selectionStart = start + before.length
+      const selectionEnd = selectionStart + selection.length
+      target?.setSelectionRange(selectionStart, selectionEnd)
+      target?.focus()
+    })
+  }
+
+  const insertDashboardProductSheetLink = () => {
+    const target = dashboardProductSheetRef.current
+    const value = dashboardProductDraft.sheet
+    const start = target?.selectionStart ?? value.length
+    const end = target?.selectionEnd ?? value.length
+    const selection = value.slice(start, end) || 'texte'
+    const urlPlaceholder = 'https://...'
+    const next = `${value.slice(0, start)}[${selection}](${urlPlaceholder})${value.slice(end)}`
+    setDashboardProductDraft((prev) => ({ ...prev, sheet: next }))
+    requestAnimationFrame(() => {
+      const urlStart = start + selection.length + 3
+      const urlEnd = urlStart + urlPlaceholder.length
+      target?.setSelectionRange(urlStart, urlEnd)
+      target?.focus()
+    })
+  }
+
   const insertTaskText = (text: string) => {
     if (!text.trim()) return
     const base = data.taskDraft
@@ -1057,6 +1206,49 @@ function App() {
     }
   }
 
+  const handleSaveDashboardProduct = () => {
+    const name = dashboardProductDraft.name.trim()
+    if (!name) return
+    const payload: DashboardProduct = {
+      id: dashboardProductDraft.id,
+      name,
+      sheet: dashboardProductDraft.sheet,
+      supportUrl: dashboardProductDraft.supportUrl?.trim() ?? '',
+    }
+
+    const exists = dashboardProducts.some((product) => product.id === payload.id)
+    const id = exists ? payload.id : createId('product')
+    const next = exists
+      ? dashboardProducts.map((product) => (product.id === id ? { ...payload, id } : product))
+      : [...dashboardProducts, { ...payload, id }]
+    updateDashboardProducts(next)
+    setSelectedDashboardProductId(null)
+    setDashboardProductDraft(getEmptyDashboardProductDraft())
+  }
+
+  const handleDeleteDashboardProduct = (product: DashboardProduct) => {
+    if (!window.confirm(`Supprimer le produit "${product.name}" ?`)) return
+    const next = dashboardProducts.filter((entry) => entry.id !== product.id)
+    updateDashboardProducts(next)
+    if (selectedDashboardProductId === product.id) {
+      setSelectedDashboardProductId(null)
+      setDashboardProductDraft(getEmptyDashboardProductDraft())
+    }
+    if (activeDashboardProductId === product.id) {
+      setActiveDashboardProductId(null)
+    }
+  }
+
+  const handlePullSupportSite = () => {
+    const productUrl = activeDashboardProduct?.supportUrl?.trim()
+    const targetUrl = productUrl || DEFAULT_SUPPORT_SITE_URL
+    if (!targetUrl.startsWith('http')) {
+      setToast('URL support invalide.')
+      return
+    }
+    openExternal(targetUrl)
+  }
+
   const handleOpenProcedure = () => {
     openProcedure()
   }
@@ -1096,6 +1288,7 @@ function App() {
     setSelectedTemplateId(null)
     setSelectedTaskId(null)
     setSelectedProcedureId(null)
+    setSelectedDashboardProductId(null)
     setCategoryDraft({ id: '', name: '', color: 'violet' })
     setSnippetDraft({
       id: '',
@@ -1131,8 +1324,12 @@ function App() {
       taskText: '',
     })
     setProcedureInfoDraft('')
+    setDashboardProductDraft(getEmptyDashboardProductDraft())
     setProcedureChecks({})
     setActiveProcedureId(null)
+    setActiveDashboardProductId(null)
+    setDashboardProductQuery('')
+    setDashboardProductFocused(false)
     setSnippetTooltip(null)
     setClearAllArmed(false)
     setToast('Données effacées.')
@@ -1396,8 +1593,7 @@ function App() {
           <div className="dashboard-main">
             <header className="dashboard-header">
               <div>
-                <div className="dashboard-header__title">Tableau de bord</div>
-                <div className="dashboard-header__subtitle">Outils rapides et codes customer portal</div>
+                <div className="dashboard-header__title">Dashboard</div>
               </div>
               <button
                 className="ghost"
@@ -1437,8 +1633,83 @@ function App() {
                 )}
               </section>
 
-              <section className="dashboard-panel">
-                <div className="dashboard-panel__title">Formatage nom client</div>
+              <section className="dashboard-panel dashboard-panel--versions">
+                <div className="dashboard-panel__title">Versions produits</div>
+                <div className="dashboard-versions-tools">
+                  <div className="template-search-wrap dashboard-products-search" ref={dashboardProductSearchRef}>
+                    <input
+                      value={dashboardProductQuery}
+                      onChange={(event) => setDashboardProductQuery(event.target.value)}
+                      placeholder="Rechercher un produit..."
+                      onFocus={() => {
+                        setDashboardProductFocused(true)
+                        setDashboardProductListKey((prev) => prev + 1)
+                      }}
+                      onBlur={() => {
+                        closeDashboardProductSearch()
+                      }}
+                    />
+                    {dashboardProductResults.length ? (
+                      <div
+                        className="search-results visible"
+                        key={dashboardProductListKey}
+                        onMouseDown={(event) => event.preventDefault()}
+                      >
+                        {dashboardProductResults.map((product) => (
+                          <div
+                            key={product.id}
+                            className="search-result-item"
+                            onClick={() => {
+                              setActiveDashboardProductId(product.id)
+                              closeDashboardProductSearch()
+                            }}
+                          >
+                            <div className="result-name">
+                              <span className="result-name__text">
+                                {product.name.trim() || 'Produit sans nom'}
+                              </span>
+                            </div>
+                            <div
+                              className="result-preview"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightTextPreview(product.sheet.split('\n')[0] ?? ''),
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <button
+                    className="ghost dashboard-support-btn"
+                    type="button"
+                    onClick={handlePullSupportSite}
+                  >
+                    Pull site support
+                  </button>
+                </div>
+
+                {activeDashboardProduct ? (
+                  <div className="dashboard-product-sheet" onClick={handleProcedureLinkClick}>
+                    <div className="dashboard-product-sheet__title">{activeDashboardProduct.name}</div>
+                    <div
+                      className="dashboard-product-sheet__content"
+                      dangerouslySetInnerHTML={{
+                        __html: formatProcedureText(activeDashboardProduct.sheet || 'Fiche vide.'),
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="dashboard-wip">
+                    <strong>Recherche produit</strong>
+                    <span>Sélectionne un produit pour afficher sa fiche version.</span>
+                  </div>
+                )}
+              </section>
+
+              <section className="dashboard-panel dashboard-panel--formatter">
+                <div className="dashboard-panel__title">Name formatter</div>
                 <div className="dashboard-formatter">
                   <div className="dashboard-formatter__input-wrap">
                     <span className="dashboard-formatter__icon" aria-hidden="true">
@@ -1480,8 +1751,8 @@ function App() {
                 </div>
               </section>
 
-              <section className="dashboard-panel">
-                <div className="dashboard-panel__title">Calcul prix HT (TVA 20%)</div>
+              <section className="dashboard-panel dashboard-panel--vat">
+                <div className="dashboard-panel__title">Calculateur TVA</div>
                 <div className="dashboard-calculator">
                   <label className="dashboard-calculator__label" htmlFor="dashboard-price-ttc">
                     Prix TTC
@@ -1500,9 +1771,12 @@ function App() {
                 </div>
               </section>
 
-              <section className="dashboard-panel">
-                <div className="dashboard-panel__title">Rappels</div>
-                <div className="dashboard-reminder">WIP</div>
+              <section className="dashboard-panel dashboard-panel--wip">
+                <div className="dashboard-panel__title">Encart WIP</div>
+                <div className="dashboard-wip">
+                  <strong>WIP</strong>
+                  <span>Zone non définie pour le moment.</span>
+                </div>
               </section>
             </div>
           </div>
@@ -1735,9 +2009,25 @@ function App() {
               src={assetUrl('/typefast/icon.png')}
               alt="TypeFast"
             />
-            <p className="brand-name">TypeFast</p>
+            <p className="brand-name">{appNameLabel}</p>
             <span className="version-pill">v{APP_VERSION}</span>
-            {updatePillText ? <span className="update-pill">{updatePillText}</span> : null}
+            {updatePillText ? (
+              <button
+                type="button"
+                className={`update-pill${isUpdateReadyToInstall ? ' update-pill--action' : ''}`}
+                onClick={() => void handleInstallDownloadedUpdate()}
+                disabled={!isUpdateReadyToInstall || installingDownloadedUpdate}
+                title={
+                  isUpdateReadyToInstall
+                    ? 'Installer la mise à jour'
+                    : 'La mise à jour sera installable une fois téléchargée'
+                }
+              >
+                {installingDownloadedUpdate && isUpdateReadyToInstall
+                  ? 'Installation...'
+                  : updatePillText}
+              </button>
+            ) : null}
           </div>
           <div className="sidebar-top-actions">
             <button
@@ -1926,13 +2216,7 @@ function App() {
             <div className="composer-actions">
               <div className="composer-actions__left">
                 <button className="ghost procedure-btn" onClick={handleOpenProcedure}>
-                  Tableau de bord
-                </button>
-                <button
-                  className="ghost procedure-btn"
-                  onClick={() => window.alert('UPDATE FONCTIONELLE OMG BRAVO')}
-                >
-                  Test update
+                  Dashboard
                 </button>
               </div>
               <div className="actions">
@@ -2200,6 +2484,8 @@ function App() {
                 { id: 'snippets', label: 'Snippets' },
                 { id: 'templates', label: 'Templates mail' },
                 { id: 'tasks', label: 'Templates de tâche' },
+                { id: 'dashboard', label: 'Dashboard' },
+                { id: 'updates', label: 'Mise à jour' },
                 { id: 'settings', label: 'Paramètres' },
               ].map((tab) => (
                 <button
@@ -3496,22 +3782,6 @@ function App() {
                           ))}
                         </div>
                       </div>
-                      <div className="settings-option settings-option--column">
-                        <div className="settings-option__info">
-                          <div className="settings-option__title">Mises à jour</div>
-                          <div className="settings-option__desc">{updateSettingsLabel}</div>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn btn--ghost btn--small"
-                          onClick={handleCheckUpdatesNow}
-                          disabled={checkingUpdateManually || isUpdateCheckRunning}
-                        >
-                          {checkingUpdateManually || isUpdateCheckRunning
-                            ? 'Recherche en cours...'
-                            : 'Rechercher une mise à jour'}
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -3591,93 +3861,6 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Codes customer portal</div>
-                      <div className="list-card__subtitle">
-                        Liste affichée dans le tableau de bord.
-                      </div>
-                    </div>
-                    <div className="list-card__tools">
-                      <button
-                        className="btn btn--ghost btn--small"
-                        type="button"
-                        onClick={() =>
-                          updateCustomerPortalCodes([
-                            ...customerPortalCodes,
-                            { id: createId('portal'), procedureName: '', code: '' },
-                          ])
-                        }
-                      >
-                        Ajouter
-                      </button>
-                    </div>
-                  </div>
-                  <div className="list-card__body">
-                    <div className="portal-code-editor">
-                      {customerPortalCodes.length ? (
-                        customerPortalCodes.map((item) => (
-                          <div className="portal-code-editor__row" key={item.id}>
-                            <input
-                              className="input"
-                              value={item.procedureName}
-                              placeholder="Nom de procédure"
-                              onChange={(event) =>
-                                updateCustomerPortalCodes(
-                                  customerPortalCodes.map((entry) =>
-                                    entry.id === item.id
-                                      ? { ...entry, procedureName: event.target.value }
-                                      : entry,
-                                  ),
-                                )
-                              }
-                            />
-                            <input
-                              className="input"
-                              value={item.code}
-                              placeholder="Code portal"
-                              onChange={(event) =>
-                                updateCustomerPortalCodes(
-                                  customerPortalCodes.map((entry) =>
-                                    entry.id === item.id ? { ...entry, code: event.target.value } : entry,
-                                  ),
-                                )
-                              }
-                            />
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer"
-                              onClick={() =>
-                                updateCustomerPortalCodes(
-                                  customerPortalCodes.filter((entry) => entry.id !== item.id),
-                                )
-                              }
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="empty-state">Aucun code configuré.</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
                       <div className="list-card__title">Historique</div>
                       <div className="list-card__subtitle">Mémoire de copie.</div>
                     </div>
@@ -3723,6 +3906,292 @@ function App() {
                             updateSettings({ historyLimit })
                           }}
                         />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'dashboard' ? (
+              <div className="modal__grid modal__grid--settings">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Codes customer portal</div>
+                      <div className="list-card__subtitle">
+                        Liste affichée dans le dashboard.
+                      </div>
+                    </div>
+                    <div className="list-card__tools">
+                      <button
+                        className="btn btn--ghost btn--small"
+                        type="button"
+                        onClick={() =>
+                          updateCustomerPortalCodes([
+                            ...customerPortalCodes,
+                            { id: createId('portal'), procedureName: '', code: '' },
+                          ])
+                        }
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="portal-code-editor">
+                      {customerPortalCodes.length ? (
+                        customerPortalCodes.map((item) => (
+                          <div className="portal-code-editor__row" key={item.id}>
+                            <input
+                              className="input"
+                              value={item.procedureName}
+                              placeholder="Nom de procédure"
+                              onChange={(event) =>
+                                updateCustomerPortalCodes(
+                                  customerPortalCodes.map((entry) =>
+                                    entry.id === item.id
+                                      ? { ...entry, procedureName: event.target.value }
+                                      : entry,
+                                  ),
+                                )
+                              }
+                            />
+                            <input
+                              className="input"
+                              value={item.code}
+                              placeholder="Code portal"
+                              onChange={(event) =>
+                                updateCustomerPortalCodes(
+                                  customerPortalCodes.map((entry) =>
+                                    entry.id === item.id
+                                      ? { ...entry, code: event.target.value }
+                                      : entry,
+                                  ),
+                                )
+                              }
+                            />
+                            <button
+                              className="icon-btn-sm danger"
+                              type="button"
+                              title="Supprimer"
+                              onClick={() =>
+                                updateCustomerPortalCodes(
+                                  customerPortalCodes.filter((entry) => entry.id !== item.id),
+                                )
+                              }
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-state">Aucun code configuré.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Produits versions</div>
+                      <div className="list-card__subtitle">Fiches affichées dans le dashboard.</div>
+                    </div>
+                    <div className="list-card__tools">
+                      <button
+                        className="btn btn--ghost btn--small"
+                        type="button"
+                        onClick={() => {
+                          setDashboardProductDraft(getEmptyDashboardProductDraft())
+                          setSelectedDashboardProductId('new')
+                        }}
+                      >
+                        Nouveau
+                      </button>
+                      <button
+                        className="btn btn--primary btn--small"
+                        type="button"
+                        onClick={handleSaveDashboardProduct}
+                      >
+                        Sauver
+                      </button>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="dashboard-product-editor">
+                      <div className="dashboard-product-editor__list">
+                        {dashboardProducts.length ? (
+                          dashboardProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              className={`list-item list-item--compact${
+                                selectedDashboardProductId === product.id ? ' is-selected' : ''
+                              }`}
+                              onClick={() => {
+                                setDashboardProductDraft(product)
+                                setSelectedDashboardProductId(product.id)
+                              }}
+                            >
+                              <div className="list-item__content">
+                                <div className="list-item__title">{product.name}</div>
+                                <div className="list-item__meta">
+                                  {product.sheet.split('\n')[0] || 'Fiche vide'}
+                                </div>
+                              </div>
+                              <div className="list-item__actions">
+                                <button
+                                  className="icon-btn-sm danger"
+                                  type="button"
+                                  title="Supprimer"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleDeleteDashboardProduct(product)
+                                  }}
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-state">Aucun produit configuré.</div>
+                        )}
+                      </div>
+
+                      <div className="dashboard-product-editor__form">
+                        {isDashboardProductSelectionEmpty ? (
+                          <div className="empty-state">
+                            Sélectionnez un produit pour éditer sa fiche ou appuyez sur Nouveau.
+                          </div>
+                        ) : (
+                          <div className="form">
+                            <input
+                              className="input"
+                              placeholder="Nom du produit"
+                              value={dashboardProductDraft.name}
+                              onChange={(event) =>
+                                setDashboardProductDraft((prev) => ({
+                                  ...prev,
+                                  name: event.target.value,
+                                }))
+                              }
+                            />
+
+                            <input
+                              className="input"
+                              placeholder="URL support (optionnel)"
+                              value={dashboardProductDraft.supportUrl ?? ''}
+                              onChange={(event) =>
+                                setDashboardProductDraft((prev) => ({
+                                  ...prev,
+                                  supportUrl: event.target.value,
+                                }))
+                              }
+                            />
+
+                            <div className="token-buttons">
+                              <button
+                                type="button"
+                                className="token-btn token-btn--bold"
+                                title="Gras"
+                                onClick={() => insertDashboardProductSheetWrap('[b]', '[/b]', 'texte')}
+                              >
+                                B
+                              </button>
+                              <button
+                                type="button"
+                                className="token-btn token-btn--italic"
+                                title="Italique"
+                                onClick={() => insertDashboardProductSheetWrap('[i]', '[/i]', 'texte')}
+                              >
+                                I
+                              </button>
+                              <button
+                                type="button"
+                                className="token-btn token-btn--link"
+                                title="Lien"
+                                onClick={insertDashboardProductSheetLink}
+                              >
+                                L
+                              </button>
+                            </div>
+
+                            <textarea
+                              className="textarea textarea--tall"
+                              ref={dashboardProductSheetRef}
+                              placeholder="Fiche produit (versions, firmware, notes, liens...)"
+                              value={dashboardProductDraft.sheet}
+                              onChange={(event) =>
+                                setDashboardProductDraft((prev) => ({
+                                  ...prev,
+                                  sheet: event.target.value,
+                                }))
+                              }
+                            />
+
+                            <div className="list-item__meta">
+                              Mise en forme supportée: [b][/b], [i][/i], [texte](https://...)
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'updates' ? (
+              <div className="modal__grid modal__grid--single">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Mise à jour</div>
+                      <div className="list-card__subtitle">Vérification et statut de l’application.</div>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="settings-block">
+                      <div className="settings-option settings-option--column">
+                        <div className="settings-option__info">
+                          <div className="settings-option__title">Statut actuel</div>
+                          <div className="settings-option__desc">{updateSettingsLabel}</div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--small"
+                          onClick={handleCheckUpdatesNow}
+                          disabled={checkingUpdateManually || isUpdateCheckRunning}
+                        >
+                          {checkingUpdateManually || isUpdateCheckRunning
+                            ? 'Recherche en cours...'
+                            : 'Rechercher une mise à jour'}
+                        </button>
                       </div>
                     </div>
                   </div>
