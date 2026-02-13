@@ -124,6 +124,9 @@ const AUTO_UPDATE_LOG_PREFIX = '[auto-update]'
 const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin'])
 const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
+const AUTO_UPDATE_OWNER = 'SirlianCassar'
+const AUTO_UPDATE_REPO = 'TypeFast'
+const AUTO_UPDATE_GH_TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
 
 type UpdatePhase =
   | 'idle'
@@ -204,6 +207,24 @@ function configureAutoUpdater() {
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: AUTO_UPDATE_OWNER,
+    repo: AUTO_UPDATE_REPO,
+    private: true,
+  })
+
+  if (!AUTO_UPDATE_GH_TOKEN) {
+    pushUpdateStatus({
+      phase: 'error',
+      message:
+        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub (repo private) pour activer les mises à jour.',
+    })
+    console.warn(`${AUTO_UPDATE_LOG_PREFIX} missing GH_TOKEN/GITHUB_TOKEN for private repository`)
+    return
+  }
+
+  console.log(`${AUTO_UPDATE_LOG_PREFIX} private GitHub feed configured: ${AUTO_UPDATE_OWNER}/${AUTO_UPDATE_REPO}`)
 
   autoUpdater.on('checking-for-update', () => {
     updateCheckInProgress = true
@@ -283,6 +304,15 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
       message: 'Mises à jour automatiques disponibles uniquement sur l’application installée.',
     })
     return { ok: false, reason: 'disabled' as const }
+  }
+
+  if (!AUTO_UPDATE_GH_TOKEN) {
+    pushUpdateStatus({
+      phase: 'error',
+      message:
+        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub (repo private) pour activer les mises à jour.',
+    })
+    return { ok: false, reason: 'missing-token' as const }
   }
 
   if (restartScheduled) {

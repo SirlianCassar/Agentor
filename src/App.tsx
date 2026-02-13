@@ -617,6 +617,8 @@ function App() {
       if (!result.ok) {
         if (result.reason === 'disabled') {
           setToast('Recherche de MAJ disponible uniquement sur l’application installée.')
+        } else if (result.reason === 'missing-token') {
+          setToast('GH_TOKEN/GITHUB_TOKEN manquant pour accéder au repo privé.')
         } else if (result.reason === 'already-checking') {
           setToast('Une recherche de MAJ est déjà en cours.')
         } else if (result.reason === 'restart-pending') {
