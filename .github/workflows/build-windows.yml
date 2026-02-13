@@ -99,6 +99,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: TypeFast v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
+          make_latest: true
           overwrite_files: true
           fail_on_unmatched_files: true
           files: |
