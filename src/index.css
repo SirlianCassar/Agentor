@@ -6,15 +6,15 @@
   --panel-hover: rgba(36, 40, 49, 0.98);
   --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.16);
-  --border-active: rgba(95, 134, 184, 0.42);
+  --border-active: rgba(83, 169, 255, 0.68);
   --text: #f3f5f8;
   --text-secondary: #dde1e8;
   --muted: #a5acb9;
   --muted-light: #7f8797;
-  --accent: #5f86b8;
-  --accent-light: #6f93bf;
-  --accent-dark: #3f628a;
-  --accent-glow: rgba(95, 134, 184, 0.14);
+  --accent: #53a9ff;
+  --accent-light: #7fc1ff;
+  --accent-dark: #1f89ef;
+  --accent-glow: rgba(83, 169, 255, 0.42);
   --danger: #ff7c7c;
   --danger-light: #ff9a9a;
   --success: #72da9a;
@@ -29,11 +29,11 @@
   --shadow-md: 0 16px 36px rgba(8, 10, 18, 0.5);
   --shadow-lg: 0 26px 60px rgba(6, 8, 16, 0.58);
   --shadow-xl: 0 34px 86px rgba(6, 8, 16, 0.62);
-  --shadow-glow: 0 0 12px rgba(95, 134, 184, 0.05);
-  --gradient-primary: linear-gradient(135deg, #6a8fbe 0%, #5478a8 45%, #6085b4 100%);
-  --gradient-secondary: linear-gradient(135deg, #3f628a 0%, #557aa9 100%);
+  --shadow-glow: none;
+  --gradient-primary: linear-gradient(135deg, #7fc1ff 0%, #53a9ff 45%, #3499ff 100%);
+  --gradient-secondary: linear-gradient(135deg, #1f89ef 0%, #4ba7ff 100%);
   --gradient-bg: radial-gradient(1100px 720px at 8% 4%, rgba(255, 255, 255, 0.06), transparent 60%),
-    radial-gradient(980px 680px at 92% 0%, rgba(95, 134, 184, 0.04), transparent 60%),
+    radial-gradient(980px 680px at 92% 0%, rgba(83, 169, 255, 0.1), transparent 60%),
     linear-gradient(140deg, #0f1116 0%, #141820 45%, #1b2028 100%);
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -152,7 +152,7 @@ input[type='checkbox']::after {
 
 input[type='checkbox']:checked {
   border-color: var(--accent);
-  background: rgba(95, 134, 184, 0.1);
+  background: rgba(126, 177, 255, 0.18);
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
