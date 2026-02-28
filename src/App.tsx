@@ -710,9 +710,7 @@ function App() {
     updateStatus?.phase === 'available' ||
     updateStatus?.phase === 'downloading' ||
     isUpdateReadyToInstall
-  const editButtonLabel = showUpdateIndicator
-    ? 'Édition (mise à jour disponible)'
-    : 'Édition'
+  const editButtonLabel = 'Édition'
   const settingsPanels = [
     { id: 'display', label: 'Affichage' },
     { id: 'export', label: 'Texte exporté' },
