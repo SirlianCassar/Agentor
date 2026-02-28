@@ -2260,9 +2260,9 @@ button.ghost.confirm {
 }
 
 .note-panel-workspace:focus-within {
-  border-color: var(--accent);
-  background: var(--surface-soft-hover);
-  box-shadow: 0 0 0 2px var(--accent-glow), 0 0 16px rgba(126, 177, 255, 0.2);
+  border-color: var(--border);
+  background: var(--surface-soft);
+  box-shadow: none;
 }
 
 .note-editor-wrapper {
