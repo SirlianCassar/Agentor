@@ -302,7 +302,7 @@ function configureAutoUpdater() {
     clearUpdateTimeout()
     pushUpdateStatus({
       phase: 'downloaded',
-      message: 'Mise à jour prête. Clique sur l’alerte MAJ pour installer.',
+      message: 'Mise à jour prête. Ouvre Paramètres > Mise à jour pour l’installer.',
       version: info.version,
     })
     console.log(`${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}`)

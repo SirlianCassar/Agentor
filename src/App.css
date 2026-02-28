@@ -71,13 +71,13 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: block;
   object-fit: cover;
-  box-shadow: var(--shadow-sm), 0 0 20px rgba(126, 177, 255, 0.22);
+  box-shadow: var(--shadow-sm), 0 0 12px rgba(95, 134, 184, 0.12);
   transition: transform var(--transition-base), box-shadow var(--transition-base), filter var(--transition-base);
 }
 
 .brand:hover .logo-mark {
   transform: scale(1.02);
-  box-shadow: var(--shadow-md), 0 0 30px rgba(126, 177, 255, 0.35);
+  box-shadow: var(--shadow-md), 0 0 16px rgba(95, 134, 184, 0.16);
   filter: saturate(1.05);
 }
 
@@ -131,7 +131,7 @@
   border-color: var(--border-hover);
   background: var(--surface-soft-hover);
   transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 0 12px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.1);
 }
 
 .update-notification-dot {
@@ -143,8 +143,9 @@
   border-radius: 999px;
   background: #ff5d69;
   border: 2px solid var(--panel-strong);
-  box-shadow: 0 0 0 1px rgba(255, 93, 105, 0.45), 0 0 8px rgba(255, 93, 105, 0.45);
-  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(255, 93, 105, 0.3), 0 0 4px rgba(255, 93, 105, 0.28);
+  pointer-events: auto;
+  cursor: default;
 }
 
 .filter-block {
@@ -229,7 +230,7 @@ select optgroup {
 .select:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px rgba(143, 192, 255, 0.32), 0 0 16px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--accent-glow);
   background: var(--field-bg-focus);
 }
 
@@ -261,7 +262,7 @@ select optgroup {
 .select-wrap select:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px rgba(143, 192, 255, 0.32), 0 0 12px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--accent-glow);
   background: var(--field-bg-focus);
 }
 
@@ -319,7 +320,7 @@ select optgroup {
   border-color: var(--border-hover);
   background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
-  box-shadow: 0 0 10px rgba(126, 177, 255, 0.14);
+  box-shadow: 0 0 10px rgba(95, 134, 184, 0.14);
 }
 
 .category-tab:focus-visible {
@@ -329,10 +330,10 @@ select optgroup {
 }
 
 .category-tab.is-active {
-  border-color: rgba(126, 177, 255, 0.6);
-  background: rgba(126, 177, 255, 0.15);
+  border-color: rgba(95, 134, 184, 0.6);
+  background: rgba(95, 134, 184, 0.15);
   color: #f4f4f4;
-  box-shadow: 0 0 10px rgba(126, 177, 255, 0.16);
+  box-shadow: 0 0 10px rgba(95, 134, 184, 0.16);
 }
 
 .category-tab.is-active .category-tab__dot {
@@ -445,13 +446,13 @@ select optgroup {
   border-radius: 2px;
   min-height: 44px;
   align-self: stretch;
-  box-shadow: 0 0 8px rgba(126, 177, 255, 0.35);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.35);
   transition: width var(--transition-base), opacity var(--transition-base),
     box-shadow var(--transition-base);
 }
 
 .bullet-item:hover .bullet-color-indicator {
-  box-shadow: 0 0 12px rgba(126, 177, 255, 0.55);
+  box-shadow: 0 0 12px rgba(95, 134, 184, 0.55);
 }
 
 .bullet-meta {
@@ -466,7 +467,7 @@ select optgroup {
 
 .bullet-item:hover .bullet-title {
   color: #f7fbff;
-  text-shadow: 0 0 8px rgba(126, 177, 255, 0.22);
+  text-shadow: 0 0 8px rgba(95, 134, 184, 0.22);
 }
 
 .bullet-sub {
@@ -484,7 +485,7 @@ select optgroup {
   max-height: 300px;
   overflow-y: auto;
   background: #252525;
-  border: 1px solid rgba(126, 177, 255, 0.4);
+  border: 1px solid rgba(95, 134, 184, 0.4);
   border-radius: var(--radius-sm);
   padding: 16px;
   font-size: calc(14px * var(--text-scale));
@@ -771,15 +772,15 @@ select optgroup {
 }
 
 button.dashboard-copy-btn.is-success {
-  border-color: rgba(126, 177, 255, 0.55);
-  background: rgba(126, 177, 255, 0.22);
+  border-color: rgba(95, 134, 184, 0.55);
+  background: rgba(95, 134, 184, 0.22);
   color: #f4f4f4;
-  box-shadow: 0 0 10px rgba(126, 177, 255, 0.24);
+  box-shadow: 0 0 10px rgba(95, 134, 184, 0.24);
 }
 
 button.dashboard-copy-btn.is-success:hover {
   border-color: rgba(138, 156, 255, 0.65);
-  background: rgba(126, 177, 255, 0.3);
+  background: rgba(95, 134, 184, 0.3);
 }
 
 .dashboard-formatter {
@@ -823,8 +824,8 @@ button.dashboard-copy-btn.is-success:hover {
 
 .dashboard-calculator__result {
   margin-top: 2px;
-  border: 1px solid rgba(126, 177, 255, 0.26);
-  background: rgba(126, 177, 255, 0.12);
+  border: 1px solid rgba(95, 134, 184, 0.26);
+  background: rgba(95, 134, 184, 0.12);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   color: var(--text);
@@ -977,7 +978,7 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .procedure-filter-btn.is-active {
-  background: rgba(126, 177, 255, 0.18);
+  background: rgba(95, 134, 184, 0.18);
   color: var(--text);
 }
 
@@ -1004,7 +1005,7 @@ button.dashboard-copy-btn.is-success:hover {
 .procedure-search-wrap input:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px rgba(143, 192, 255, 0.32), 0 0 12px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--accent-glow);
   background: var(--field-bg-focus);
 }
 
@@ -1044,14 +1045,14 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .procedure-item:hover {
-  border-color: rgba(126, 177, 255, 0.5);
+  border-color: rgba(95, 134, 184, 0.5);
   background: var(--surface-soft-hover);
   transform: translateY(-1px);
 }
 
 .procedure-item.is-active {
   border-color: var(--accent);
-  background: rgba(126, 177, 255, 0.2);
+  background: rgba(95, 134, 184, 0.2);
 }
 
 .procedure-item__row {
@@ -1317,7 +1318,7 @@ button.dashboard-copy-btn.is-success:hover {
 .template-search-wrap input:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 3px rgba(143, 192, 255, 0.32), 0 0 16px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--accent-glow);
   background: var(--field-bg-focus);
 }
 
@@ -1332,7 +1333,7 @@ button.dashboard-copy-btn.is-success:hover {
   padding: 6px;
   max-height: 280px;
   overflow-y: auto;
-  box-shadow: var(--shadow-md), 0 0 16px rgba(126, 177, 255, 0.1);
+  box-shadow: var(--shadow-md), 0 0 16px rgba(95, 134, 184, 0.1);
   z-index: 20;
   display: none;
 }
@@ -1409,7 +1410,7 @@ button.dashboard-copy-btn.is-success:hover {
 .quick-link:hover {
   border-color: var(--border-hover);
   transform: translateY(-1px) scale(1.03);
-  box-shadow: 0 0 14px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.1);
 }
 
 .quick-link img {
@@ -1554,7 +1555,7 @@ button.dashboard-copy-btn.is-success:hover {
 
 .editor:focus-within {
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px rgba(143, 192, 255, 0.32), 0 0 24px rgba(126, 177, 255, 0.24);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 .editor--email {
@@ -1648,7 +1649,7 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__input::selection {
-  background: rgba(126, 177, 255, 0.38);
+  background: rgba(95, 134, 184, 0.38);
 }
 
 .editor__placeholder {
@@ -1773,8 +1774,8 @@ button.dashboard-copy-btn.is-success:hover {
 .token-wrap--selector::before {
   content: '';
   position: absolute;
-  left: -0.22ch;
-  right: -0.22ch;
+  left: -0.1ch;
+  right: -0.1ch;
   top: 50%;
   bottom: auto;
   height: 68%;
@@ -1787,9 +1788,9 @@ button.dashboard-copy-btn.is-success:hover {
 .token-wrap--addition-inline {
   display: inline;
   vertical-align: baseline;
-  padding: 0 0.14ch;
-  background: rgba(255, 212, 59, 0.3);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.36), 0 0 12px rgba(255, 212, 59, 0.28);
+  padding: 0 0.1ch;
+  background: rgba(255, 212, 59, 0.46);
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.56), 0 0 13px rgba(255, 212, 59, 0.38);
   border-radius: 2px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
@@ -1798,11 +1799,11 @@ button.dashboard-copy-btn.is-success:hover {
 .token-wrap--addition {
   display: inline;
   white-space: pre-wrap;
-  padding: 0 0.14ch;
+  padding: 0 0.1ch;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  background: rgba(255, 212, 59, 0.24);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.35), 0 0 10px rgba(255, 212, 59, 0.2);
+  background: rgba(255, 212, 59, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.52), 0 0 11px rgba(255, 212, 59, 0.32);
   border-radius: 4px;
 }
 
@@ -1812,13 +1813,13 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .token-wrap--tag::before {
-  background: rgba(255, 107, 107, 0.3);
-  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.38), 0 0 12px rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.44);
+  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.56), 0 0 13px rgba(255, 107, 107, 0.42);
 }
 
 .token-wrap--selector::before {
-  background: rgba(125, 222, 156, 0.26);
-  box-shadow: 0 0 0 1px rgba(125, 222, 156, 0.36), 0 0 12px rgba(125, 222, 156, 0.24);
+  background: rgba(125, 222, 156, 0.4);
+  box-shadow: 0 0 0 1px rgba(125, 222, 156, 0.5), 0 0 13px rgba(125, 222, 156, 0.36);
 }
 
 .token-marker {
@@ -1831,15 +1832,15 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__highlight .token--tag {
-  color: rgba(255, 144, 144, 0.96);
+  color: rgba(255, 171, 171, 1);
 }
 
 .editor__highlight .token--selector {
-  color: rgba(152, 237, 178, 0.95);
+  color: rgba(170, 248, 194, 1);
 }
 
 .editor__highlight .token--addition {
-  color: rgba(255, 224, 128, 0.95);
+  color: rgba(255, 233, 149, 1);
 }
 
 .token-marker--addition {
@@ -2015,8 +2016,8 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .dashboard-toggle-btn.is-open {
-  border-color: rgba(126, 177, 255, 0.5);
-  background: rgba(126, 177, 255, 0.16);
+  border-color: rgba(95, 134, 184, 0.5);
+  background: rgba(95, 134, 184, 0.16);
 }
 
 .name-formatter {
@@ -2090,7 +2091,7 @@ button.primary {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 24px rgba(126, 177, 255, 0.28), 0 0 18px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 7px 16px rgba(95, 134, 184, 0.16), 0 0 8px rgba(95, 134, 184, 0.08);
   transition: transform var(--transition-base), box-shadow var(--transition-base),
     filter var(--transition-base);
   text-shadow: 0 1px 2px rgba(8, 12, 24, 0.45);
@@ -2101,17 +2102,17 @@ button.primary {
 
 button.primary:hover {
   transform: translateY(-1px) scale(1.01);
-  box-shadow: 0 14px 30px rgba(126, 177, 255, 0.34), 0 0 24px rgba(126, 177, 255, 0.28);
+  box-shadow: 0 10px 20px rgba(95, 134, 184, 0.2), 0 0 10px rgba(95, 134, 184, 0.1);
   filter: saturate(1.04);
 }
 
 button.primary.copy-btn {
   background: var(--gradient-primary);
-  box-shadow: 0 10px 22px rgba(126, 177, 255, 0.3), 0 0 16px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 7px 15px rgba(95, 134, 184, 0.16), 0 0 8px rgba(95, 134, 184, 0.08);
 }
 
 button.primary.copy-btn:hover {
-  box-shadow: 0 14px 28px rgba(126, 177, 255, 0.38), 0 0 22px rgba(126, 177, 255, 0.28);
+  box-shadow: 0 10px 20px rgba(95, 134, 184, 0.2), 0 0 10px rgba(95, 134, 184, 0.1);
 }
 
 button.primary:active {
@@ -2120,11 +2121,11 @@ button.primary:active {
 
 button.primary.is-success {
   background: var(--gradient-secondary);
-  box-shadow: 0 10px 22px rgba(126, 177, 255, 0.32), 0 0 18px rgba(126, 177, 255, 0.24);
+  box-shadow: 0 7px 15px rgba(95, 134, 184, 0.17), 0 0 8px rgba(95, 134, 184, 0.09);
 }
 
 button.primary.is-success:hover {
-  box-shadow: 0 14px 28px rgba(126, 177, 255, 0.4), 0 0 24px rgba(126, 177, 255, 0.3);
+  box-shadow: 0 10px 20px rgba(95, 134, 184, 0.22), 0 0 10px rgba(95, 134, 184, 0.1);
 }
 
 @keyframes btnPulse {
@@ -2175,7 +2176,7 @@ button.ghost:hover {
   border-color: var(--border-hover);
   background: var(--surface-soft-hover);
   transform: translateY(-1px);
-  box-shadow: 0 0 14px rgba(126, 177, 255, 0.16);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.08);
 }
 
 button.ghost.confirm {
@@ -2261,7 +2262,7 @@ button.ghost.confirm {
 .note-panel-workspace textarea:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px rgba(143, 192, 255, 0.32), 0 0 16px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--accent-glow);
   background: var(--field-bg-focus);
 }
 
@@ -2317,7 +2318,7 @@ button.ghost.confirm {
 .task-builder:hover {
   border-color: var(--border-hover);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 16px rgba(126, 177, 255, 0.18);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.08);
 }
 
 .task-template-search {
@@ -2350,7 +2351,7 @@ button.ghost.confirm {
 .task-search-wrap input:focus {
   outline: none;
   border-color: var(--accent-light);
-  box-shadow: 0 0 0 2px rgba(143, 192, 255, 0.32), 0 0 16px rgba(126, 177, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--accent-glow);
   background: var(--field-bg-focus);
 }
 
@@ -2425,7 +2426,7 @@ button.ghost.confirm {
   padding: 12px 16px;
   border-radius: 6px;
   color: var(--text);
-  box-shadow: var(--shadow-md), 0 0 18px rgba(126, 177, 255, 0.16);
+  box-shadow: var(--shadow-md), 0 0 18px rgba(95, 134, 184, 0.16);
   z-index: 60;
 }
 
@@ -2449,7 +2450,7 @@ button.ghost.confirm {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: var(--shadow-lg), 0 0 30px rgba(126, 177, 255, 0.18);
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(95, 134, 184, 0.18);
 }
 
 .modal__header {
@@ -2483,10 +2484,10 @@ button.ghost.confirm {
 }
 
 .icon-btn:hover {
-  background: rgba(126, 177, 255, 0.2);
+  background: rgba(95, 134, 184, 0.2);
   border-color: var(--accent);
   transform: translateY(-1px) scale(1.02);
-  box-shadow: var(--shadow-sm), 0 0 14px rgba(126, 177, 255, 0.2);
+  box-shadow: var(--shadow-sm), 0 0 8px rgba(95, 134, 184, 0.1);
 }
 
 .icon-btn.danger {
@@ -2536,7 +2537,7 @@ button.ghost.confirm {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(126, 177, 255, 0.4);
+  box-shadow: 0 2px 6px rgba(95, 134, 184, 0.4);
 }
 
 .close-modal {
@@ -2588,9 +2589,9 @@ button.ghost.confirm {
 
 .tab.active {
   color: var(--text);
-  background: rgba(126, 177, 255, 0.18);
-  border-color: rgba(126, 177, 255, 0.4);
-  box-shadow: 0 0 8px rgba(126, 177, 255, 0.16);
+  background: rgba(95, 134, 184, 0.18);
+  border-color: rgba(95, 134, 184, 0.4);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.16);
 }
 
 .tab:hover {
@@ -2772,7 +2773,7 @@ button.ghost.confirm {
   border-radius: 6px;
   padding: 10px 12px;
   width: 260px;
-  box-shadow: var(--shadow-md), 0 0 18px rgba(126, 177, 255, 0.15);
+  box-shadow: var(--shadow-md), 0 0 18px rgba(95, 134, 184, 0.15);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2822,9 +2823,9 @@ button.ghost.confirm {
 }
 
 .list-item.is-selected {
-  border-color: rgba(126, 177, 255, 0.55);
-  background: rgba(126, 177, 255, 0.16);
-  box-shadow: 0 0 8px rgba(126, 177, 255, 0.16);
+  border-color: rgba(95, 134, 184, 0.55);
+  background: rgba(95, 134, 184, 0.16);
+  box-shadow: 0 0 8px rgba(95, 134, 184, 0.16);
 }
 
 .list-item--compact {
@@ -2936,15 +2937,15 @@ button.ghost.confirm {
 }
 
 .insert-icon--badge.is-line {
-  border-color: rgba(126, 177, 255, 0.5);
+  border-color: rgba(95, 134, 184, 0.5);
   color: var(--accent);
-  background: rgba(126, 177, 255, 0.18);
+  background: rgba(95, 134, 184, 0.18);
 }
 
 .insert-icon--badge.is-cursor {
-  border-color: rgba(126, 177, 255, 0.45);
-  color: #8fc0ff;
-  background: rgba(126, 177, 255, 0.16);
+  border-color: rgba(95, 134, 184, 0.45);
+  color: #7399c8;
+  background: rgba(95, 134, 184, 0.16);
 }
 
 .list-item__title {
@@ -3064,9 +3065,9 @@ button.ghost.confirm {
 }
 
 .settings-layout__nav-btn.is-active {
-  border-color: rgba(126, 177, 255, 0.55);
-  background: rgba(126, 177, 255, 0.18);
-  box-shadow: 0 0 10px rgba(126, 177, 255, 0.2);
+  border-color: rgba(95, 134, 184, 0.55);
+  background: rgba(95, 134, 184, 0.18);
+  box-shadow: 0 0 10px rgba(95, 134, 184, 0.2);
 }
 
 .settings-layout__content {
@@ -3161,15 +3162,15 @@ button.ghost.confirm {
 }
 
 .settings-toggle input:checked + .settings-toggle__track {
-  background: rgba(126, 177, 255, 0.4);
-  border-color: rgba(126, 177, 255, 0.7);
-  box-shadow: 0 0 10px rgba(126, 177, 255, 0.35);
+  background: rgba(95, 134, 184, 0.4);
+  border-color: rgba(95, 134, 184, 0.7);
+  box-shadow: 0 0 10px rgba(95, 134, 184, 0.35);
 }
 
 .settings-toggle input:checked + .settings-toggle__track .settings-toggle__thumb {
   transform: translateX(20px);
   background: #f4f4f4;
-  box-shadow: 0 6px 14px rgba(126, 177, 255, 0.3);
+  box-shadow: 0 6px 14px rgba(95, 134, 184, 0.3);
 }
 
 .settings-segment {
@@ -3226,14 +3227,14 @@ button.ghost.confirm {
   border-color: var(--border-hover);
   background: rgba(255, 255, 255, 0.08);
   transform: translateY(-1px);
-  box-shadow: 0 0 12px rgba(126, 177, 255, 0.18);
+  box-shadow: 0 0 12px rgba(95, 134, 184, 0.18);
 }
 
 .settings-pill.is-active {
-  background: rgba(126, 177, 255, 0.3);
-  border-color: rgba(126, 177, 255, 0.6);
+  background: rgba(95, 134, 184, 0.3);
+  border-color: rgba(95, 134, 184, 0.6);
   color: #f4f4f4;
-  box-shadow: 0 0 12px rgba(126, 177, 255, 0.25);
+  box-shadow: 0 0 12px rgba(95, 134, 184, 0.25);
 }
 
 .settings-label {
@@ -3252,7 +3253,7 @@ button.ghost.confirm {
   appearance: none;
   height: 6px;
   border-radius: 999px;
-  background: rgba(126, 177, 255, 0.25);
+  background: rgba(95, 134, 184, 0.25);
   outline: none;
   accent-color: var(--accent);
   transition: box-shadow var(--transition-base), background var(--transition-base);
@@ -3265,14 +3266,14 @@ button.ghost.confirm {
   height: 18px;
   border-radius: 50%;
   background: #f4f4f4;
-  border: 1px solid rgba(126, 177, 255, 0.5);
-  box-shadow: 0 4px 10px rgba(126, 177, 255, 0.35);
+  border: 1px solid rgba(95, 134, 184, 0.5);
+  box-shadow: 0 4px 10px rgba(95, 134, 184, 0.35);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .range::-webkit-slider-thumb:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 14px rgba(126, 177, 255, 0.45);
+  box-shadow: 0 6px 14px rgba(95, 134, 184, 0.45);
 }
 
 .range::-moz-range-thumb {
@@ -3280,14 +3281,14 @@ button.ghost.confirm {
   height: 18px;
   border-radius: 50%;
   background: #f4f4f4;
-  border: 1px solid rgba(126, 177, 255, 0.5);
-  box-shadow: 0 4px 10px rgba(126, 177, 255, 0.35);
+  border: 1px solid rgba(95, 134, 184, 0.5);
+  box-shadow: 0 4px 10px rgba(95, 134, 184, 0.35);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .range::-moz-range-thumb:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 14px rgba(126, 177, 255, 0.45);
+  box-shadow: 0 6px 14px rgba(95, 134, 184, 0.45);
 }
 
 .range:disabled {
@@ -3328,7 +3329,7 @@ button.ghost.confirm {
 
 .color-swatch.active {
   border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 2px rgba(126, 177, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(95, 134, 184, 0.4);
 }
 
 .btn {
@@ -3356,7 +3357,7 @@ button.ghost.confirm {
 
 .btn--primary {
   background: var(--gradient-primary);
-  border-color: rgba(126, 177, 255, 0.6);
+  border-color: rgba(95, 134, 184, 0.6);
   color: white;
 }
 
