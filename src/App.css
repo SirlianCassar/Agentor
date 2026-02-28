@@ -1795,6 +1795,8 @@ button.dashboard-copy-btn.is-success:hover {
   display: inline-flex;
   align-items: baseline;
   flex-wrap: nowrap;
+  position: relative;
+  z-index: 0;
   vertical-align: baseline;
   white-space: nowrap;
   max-width: 100%;
@@ -1802,10 +1804,25 @@ button.dashboard-copy-btn.is-success:hover {
   overflow-wrap: normal;
 }
 
+.token-wrap--tag::before,
+.token-wrap--selector::before {
+  content: '';
+  position: absolute;
+  left: -0.22ch;
+  right: -0.22ch;
+  top: 50%;
+  bottom: auto;
+  height: 68%;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  z-index: -1;
+  pointer-events: none;
+}
+
 .token-wrap--addition-inline {
   display: inline;
   vertical-align: baseline;
-  padding: 0 0.08ch;
+  padding: 0 0.14ch;
   background: rgba(255, 212, 59, 0.2);
   box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.25), 0 0 10px rgba(255, 212, 59, 0.2);
   border-radius: 2px;
@@ -1816,7 +1833,7 @@ button.dashboard-copy-btn.is-success:hover {
 .token-wrap--addition {
   display: inline;
   white-space: pre-wrap;
-  padding: 0 0.08ch;
+  padding: 0 0.14ch;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   background: rgba(255, 212, 59, 0.16);
@@ -1826,24 +1843,15 @@ button.dashboard-copy-btn.is-success:hover {
 
 .token--tag::before,
 .token--selector::before {
-  content: '';
-  position: absolute;
-  left: -0.58ch;
-  right: -0.58ch;
-  top: 50%;
-  bottom: auto;
-  height: 68%;
-  transform: translateY(-50%);
-  border-radius: 2px;
-  z-index: -1;
+  display: none;
 }
 
-.token--tag::before {
+.token-wrap--tag::before {
   background: rgba(255, 107, 107, 0.2);
   box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.25), 0 0 10px rgba(255, 107, 107, 0.2);
 }
 
-.token--selector::before {
+.token-wrap--selector::before {
   background: rgba(125, 222, 156, 0.16);
   box-shadow: 0 0 0 1px rgba(125, 222, 156, 0.24), 0 0 10px rgba(125, 222, 156, 0.14);
 }
@@ -1853,8 +1861,8 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__highlight .token-marker {
-  opacity: 0.48;
-  color: currentColor;
+  opacity: 0.68;
+  color: rgba(86, 96, 115, 0.86);
 }
 
 .editor__highlight .token--tag {
