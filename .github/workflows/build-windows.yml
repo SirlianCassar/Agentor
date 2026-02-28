@@ -106,3 +106,38 @@ jobs:
             release/${{ steps.normalize_version.outputs.semver }}/latest*.yml
             release/${{ steps.normalize_version.outputs.semver }}/*.exe
             release/${{ steps.normalize_version.outputs.semver }}/*.blockmap
+
+      - name: Sync workflow default version
+        if: ${{ github.ref == 'refs/heads/main' }}
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $workflowPath = ".github/workflows/build-windows.yml"
+          $newVersion = "${{ steps.normalize_version.outputs.semver }}"
+          $content = Get-Content -Path $workflowPath -Raw
+
+          $updated = [System.Text.RegularExpressions.Regex]::Replace(
+            $content,
+            '(?m)^(\s*default:\s*")([^"]*)(")$',
+            '${1}' + $newVersion + '${3}',
+            1
+          )
+
+          if ($updated -eq $content) {
+            Write-Host "No workflow default version line updated."
+            exit 0
+          }
+
+          Set-Content -Path $workflowPath -Value $updated -Encoding UTF8
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $workflowPath
+
+          if (git diff --cached --quiet) {
+            Write-Host "No changes to commit."
+            exit 0
+          }
+
+          git commit -m "chore(ci): set windows workflow default version to $newVersion"
+          git push
