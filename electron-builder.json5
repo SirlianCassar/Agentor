@@ -13,7 +13,7 @@
       "provider": "github",
       "owner": "SirlianCassar",
       "repo": "SpeedMail",
-      "private": true
+      "private": false
     }
   ],
   "mac": {

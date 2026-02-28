@@ -761,8 +761,6 @@ function App() {
       if (!result.ok) {
         if (result.reason === 'disabled') {
           setToast('Recherche de MAJ disponible uniquement sur l’application installée.')
-        } else if (result.reason === 'missing-token') {
-          setToast('GH_TOKEN/GITHUB_TOKEN manquant pour accéder au repo privé.')
         } else if (result.reason === 'already-checking') {
           setToast('Une recherche de MAJ est déjà en cours.')
         } else if (result.reason === 'restart-pending') {
@@ -795,8 +793,6 @@ function App() {
           setToast('La mise à jour n’est pas encore prête.')
         } else if (result.reason === 'disabled') {
           setToast('Installation MAJ disponible uniquement sur l’application installée.')
-        } else if (result.reason === 'missing-token') {
-          setToast('GH_TOKEN/GITHUB_TOKEN manquant pour installer la MAJ.')
         } else if (result.reason === 'restart-pending') {
           setToast('Redémarrage déjà en cours pour installer la MAJ.')
         } else {
