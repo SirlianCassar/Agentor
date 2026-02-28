@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version à publier (ex: 1.10.6)"
+        description: "Version à publier (ex: 2.0.0)"
         required: true
-        default: "1.10.6"
+        default: "2.0.0"
 
 jobs:
   release:
@@ -51,7 +51,7 @@ jobs:
           "semver=$semver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Set app version
-        run: npm version "${{ steps.normalize_version.outputs.semver }}" --no-git-tag-version
+        run: npm version "${{ steps.normalize_version.outputs.semver }}" --no-git-tag-version --allow-same-version
 
       - name: Build Windows EXE
         run: npm run build:win -- --publish never
@@ -86,7 +86,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TypeFast-Windows-${{ steps.normalize_version.outputs.semver }}
+          name: SpeedMail-Windows-${{ steps.normalize_version.outputs.semver }}
           path: |
             release/${{ steps.normalize_version.outputs.semver }}/latest*.yml
             release/${{ steps.normalize_version.outputs.semver }}/*.exe
@@ -97,7 +97,7 @@ jobs:
         with:
           tag_name: v${{ steps.normalize_version.outputs.semver }}
           target_commitish: ${{ github.sha }}
-          name: TypeFast v${{ steps.normalize_version.outputs.semver }}
+          name: SpeedMail v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
           make_latest: true
           overwrite_files: true
