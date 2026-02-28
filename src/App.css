@@ -19,7 +19,7 @@
 }
 
 .app-shell > .right-sidebar {
-  flex: 0 0 380px;
+  flex: 0 0 404px;
 }
 
 .sidebar {
@@ -326,7 +326,7 @@ select optgroup {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.06);
   color: var(--text);
-  font-size: calc(12px * var(--text-scale));
+  font-size: calc(11.5px * var(--text-scale));
   cursor: pointer;
   min-width: 0;
   transition: transform var(--transition-base), border-color var(--transition-base),
@@ -497,6 +497,13 @@ select optgroup {
 
 .bullet-title {
   font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.bullet-item:hover .bullet-title {
+  color: #f7fbff;
+  text-shadow: 0 0 8px rgba(126, 177, 255, 0.22);
 }
 
 .bullet-sub {
