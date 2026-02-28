@@ -21,32 +21,32 @@ export type UpdateStatus = {
 }
 
 export async function loadData(): Promise<AppData> {
-  const raw = (await window.typefast.loadData()) as Partial<AppData>
+  const raw = (await window.speedmail.loadData()) as Partial<AppData>
   return normalizeData(raw, defaultData)
 }
 
 export async function saveData(data: AppData) {
-  return window.typefast.saveData(data)
+  return window.speedmail.saveData(data)
 }
 
 export async function exportJson(data: AppData) {
-  return window.typefast.exportJson(data)
+  return window.speedmail.exportJson(data)
 }
 
 export async function exportHistory(text: string) {
-  return window.typefast.exportHistory(text)
+  return window.speedmail.exportHistory(text)
 }
 
 export async function importJson() {
-  return window.typefast.importJson()
+  return window.speedmail.importJson()
 }
 
 export async function copyText(text: string, html?: string) {
-  if (window.typefast?.copyText) {
+  if (window.speedmail?.copyText) {
     try {
-      return window.typefast.copyText(text, html)
+      return window.speedmail.copyText(text, html)
     } catch {
-      void window.typefast
+      void window.speedmail
     }
   }
 
@@ -90,12 +90,12 @@ export async function copyText(text: string, html?: string) {
 }
 
 export function openExternal(url: string) {
-  return window.typefast.openExternal(url)
+  return window.speedmail.openExternal(url)
 }
 
 export function openProcedure() {
-  if (window.typefast?.openProcedure) {
-    return window.typefast.openProcedure()
+  if (window.speedmail?.openProcedure) {
+    return window.speedmail.openProcedure()
   }
   const popup = window.open(`${window.location.pathname}#procedure`, '_blank', 'width=980,height=720')
   if (!popup) return false
@@ -103,17 +103,17 @@ export function openProcedure() {
 }
 
 export function getUpdateStatus(): Promise<UpdateStatus> {
-  return window.typefast.getUpdateStatus() as Promise<UpdateStatus>
+  return window.speedmail.getUpdateStatus() as Promise<UpdateStatus>
 }
 
 export function checkForUpdatesNow(): Promise<{ ok: boolean; reason: string }> {
-  return window.typefast.checkForUpdatesNow()
+  return window.speedmail.checkForUpdatesNow()
 }
 
 export function installDownloadedUpdate(): Promise<{ ok: boolean; reason: string }> {
-  return window.typefast.installDownloadedUpdate()
+  return window.speedmail.installDownloadedUpdate()
 }
 
 export function onUpdateStatus(callback: (status: UpdateStatus) => void) {
-  return window.typefast.onUpdateStatus((status) => callback(status as UpdateStatus))
+  return window.speedmail.onUpdateStatus((status) => callback(status as UpdateStatus))
 }

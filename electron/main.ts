@@ -15,7 +15,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null
 let procedureWin: BrowserWindow | null
 
-const DATA_FILE = () => path.join(app.getPath('userData'), 'typefast-data.json')
+const DATA_FILE = () => path.join(app.getPath('userData'), 'speedmail-data.json')
 const WINDOW_STATE_FILE = () => path.join(app.getPath('userData'), 'window-state.json')
 const defaultData = {
   version: 2,
@@ -115,7 +115,7 @@ const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin'])
 const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
-const AUTO_UPDATE_REPO = 'TypeFast'
+const AUTO_UPDATE_REPO = 'SpeedMail'
 const AUTO_UPDATE_GH_TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
 
 type UpdatePhase =
@@ -380,8 +380,8 @@ function createWindow() {
           height: bounds.height,
         }
       : { width: 1400, height: 900 }),
-    icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'icon.png'),
-    title: 'TypeFast',
+    icon: path.join(process.env.VITE_PUBLIC, 'speedmail', 'icon.png'),
+    title: 'SpeedMail',
     backgroundColor: '#15151a',
     minWidth: 1100,
     minHeight: 720,
@@ -430,7 +430,7 @@ function openProcedureWindow() {
     minHeight: 620,
     title: 'Dashboard',
     backgroundColor: '#15151a',
-    icon: path.join(process.env.VITE_PUBLIC, 'typefast', 'icon.png'),
+    icon: path.join(process.env.VITE_PUBLIC, 'speedmail', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
@@ -471,7 +471,7 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(async () => {
-  app.setAppUserModelId('com.typefast.app')
+  app.setAppUserModelId('com.speedmail.app')
   Menu.setApplicationMenu(null)
   createWindow()
   configureAutoUpdater()
@@ -485,8 +485,8 @@ ipcMain.handle('storage:save', (_event, data) => {
 })
 ipcMain.handle('storage:export-json', async (_event, data) => {
   const { canceled, filePath } = await dialog.showSaveDialog(win!, {
-    title: 'Exporter les données TypeFast',
-    defaultPath: 'typefast-export.json',
+    title: 'Exporter les données SpeedMail',
+    defaultPath: 'speedmail-export.json',
     filters: [{ name: 'JSON', extensions: ['json'] }],
   })
   if (canceled || !filePath) return { canceled: true }
@@ -496,8 +496,8 @@ ipcMain.handle('storage:export-json', async (_event, data) => {
 ipcMain.handle('storage:export-history', async (_event, text) => {
   const parent = win ?? BrowserWindow.getFocusedWindow()
   const dialogOptions = {
-    title: 'Exporter l’historique TypeFast',
-    defaultPath: 'typefast-historique.txt',
+    title: 'Exporter l’historique SpeedMail',
+    defaultPath: 'speedmail-historique.txt',
     filters: [{ name: 'Texte', extensions: ['txt'] }],
   }
   const { canceled, filePath } = parent
@@ -509,7 +509,7 @@ ipcMain.handle('storage:export-history', async (_event, text) => {
 })
 ipcMain.handle('storage:import-json', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog(win!, {
-    title: 'Importer des données TypeFast',
+    title: 'Importer des données SpeedMail',
     filters: [{ name: 'JSON', extensions: ['json'] }],
     properties: ['openFile'],
   })

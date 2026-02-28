@@ -26,4 +26,4 @@ const api = {
   },
 }
 
-contextBridge.exposeInMainWorld('typefast', api)
+contextBridge.exposeInMainWorld('speedmail', api)

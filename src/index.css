@@ -4,44 +4,45 @@
 @import '@fontsource/space-grotesk/700.css';
 
 :root {
-  --bg: #111318;
-  --bg-secondary: #181a22;
-  --panel: rgba(26, 28, 36, 0.96);
-  --panel-strong: rgba(32, 35, 44, 0.98);
-  --panel-hover: rgba(38, 41, 52, 0.98);
+  --bg: #0f1116;
+  --bg-secondary: #15181f;
+  --panel: rgba(24, 27, 34, 0.96);
+  --panel-strong: rgba(30, 34, 42, 0.98);
+  --panel-hover: rgba(36, 40, 49, 0.98);
   --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.16);
-  --border-active: rgba(122, 140, 255, 0.55);
-  --text: #f4f6ff;
-  --text-secondary: #dfe2ee;
-  --muted: #a4a9ba;
-  --muted-light: #7f8596;
-  --accent: #7a8cff;
-  --accent-light: #a6b6ff;
-  --accent-dark: #5b6fe0;
-  --accent-glow: rgba(122, 140, 255, 0.35);
-  --danger: #ff6b6b;
-  --danger-light: #ff8787;
-  --success: #51cf66;
-  --warning: #ffd43b;
-  --info: #4dabf7;
-  --tag: #ff6b6b;
+  --border-active: rgba(204, 168, 106, 0.55);
+  --text: #f3f5f8;
+  --text-secondary: #dde1e8;
+  --muted: #a5acb9;
+  --muted-light: #7f8797;
+  --accent: #c89f64;
+  --accent-light: #d7b07a;
+  --accent-dark: #a9834f;
+  --accent-glow: rgba(200, 159, 100, 0.34);
+  --danger: #ff7c7c;
+  --danger-light: #ff9a9a;
+  --success: #c89f64;
+  --warning: #ffd45f;
+  --info: #8da0b8;
+  --tag: #ff7c7c;
   --shadow-sm: 0 6px 16px rgba(8, 10, 18, 0.4);
   --shadow-md: 0 16px 36px rgba(8, 10, 18, 0.5);
   --shadow-lg: 0 26px 60px rgba(6, 8, 16, 0.58);
   --shadow-xl: 0 34px 86px rgba(6, 8, 16, 0.62);
-  --shadow-glow: 0 0 30px rgba(122, 140, 255, 0.18);
-  --gradient-primary: linear-gradient(135deg, #8ea2ff 0%, #6f86ff 45%, #a6b6ff 100%);
-  --gradient-secondary: linear-gradient(135deg, #5b6fe0 0%, #7a8cff 100%);
-  --gradient-bg: radial-gradient(1200px 760px at 10% 6%, rgba(122, 140, 255, 0.12), transparent 60%),
-    radial-gradient(1000px 700px at 92% 0%, rgba(104, 170, 255, 0.08), transparent 60%),
-    linear-gradient(135deg, #111318 0%, #171a22 45%, #1e212a 100%);
+  --shadow-glow: 0 0 24px rgba(200, 159, 100, 0.14);
+  --gradient-primary: linear-gradient(135deg, #d5b17a 0%, #bd945e 45%, #d7b684 100%);
+  --gradient-secondary: linear-gradient(135deg, #a9834f 0%, #c89f64 100%);
+  --gradient-bg: radial-gradient(1100px 720px at 8% 4%, rgba(255, 255, 255, 0.06), transparent 60%),
+    radial-gradient(980px 680px at 92% 0%, rgba(176, 149, 109, 0.08), transparent 60%),
+    linear-gradient(140deg, #0f1116 0%, #141820 45%, #1b2028 100%);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --surface-soft: rgba(255, 255, 255, 0.04);
   --surface-soft-hover: rgba(255, 255, 255, 0.07);
   --surface-strong: rgba(255, 255, 255, 0.12);
+  --font-ui: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -66,7 +67,7 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Space Grotesk', 'Segoe UI Rounded', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-ui);
   background: var(--gradient-bg);
   color: var(--text);
   font-size: calc(16px * var(--text-scale));
@@ -108,7 +109,7 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.24);
   border-radius: 999px;
   border: 1px solid transparent;
   background-clip: padding-box;
@@ -116,12 +117,12 @@ select {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.34);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.32) rgba(255, 255, 255, 0.02);
+  scrollbar-color: rgba(255, 255, 255, 0.34) rgba(255, 255, 255, 0.02);
 }
 
 input[type='checkbox'] {
@@ -152,7 +153,7 @@ input[type='checkbox']::after {
 
 input[type='checkbox']:checked {
   border-color: var(--accent);
-  background: rgba(122, 140, 255, 0.18);
+  background: rgba(200, 159, 100, 0.18);
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
