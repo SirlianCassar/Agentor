@@ -116,6 +116,7 @@ const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
 const AUTO_UPDATE_REPO = 'SpeedMail'
+const AUTO_UPDATE_GH_TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
 
 type UpdatePhase =
   | 'idle'
@@ -200,10 +201,20 @@ function configureAutoUpdater() {
     provider: 'github',
     owner: AUTO_UPDATE_OWNER,
     repo: AUTO_UPDATE_REPO,
-    private: false,
+    private: true,
   })
 
-  console.log(`${AUTO_UPDATE_LOG_PREFIX} public GitHub feed configured: ${AUTO_UPDATE_OWNER}/${AUTO_UPDATE_REPO}`)
+  if (!AUTO_UPDATE_GH_TOKEN) {
+    pushUpdateStatus({
+      phase: 'error',
+      message:
+        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub (repo private) pour activer les mises à jour.',
+    })
+    console.warn(`${AUTO_UPDATE_LOG_PREFIX} missing GH_TOKEN/GITHUB_TOKEN for private repository`)
+    return
+  }
+
+  console.log(`${AUTO_UPDATE_LOG_PREFIX} private GitHub feed configured: ${AUTO_UPDATE_OWNER}/${AUTO_UPDATE_REPO}`)
 
   autoUpdater.on('checking-for-update', () => {
     updateCheckInProgress = true
@@ -277,6 +288,15 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
     return { ok: false, reason: 'disabled' as const }
   }
 
+  if (!AUTO_UPDATE_GH_TOKEN) {
+    pushUpdateStatus({
+      phase: 'error',
+      message:
+        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub (repo private) pour activer les mises à jour.',
+    })
+    return { ok: false, reason: 'missing-token' as const }
+  }
+
   if (restartScheduled) {
     return { ok: false, reason: 'restart-pending' as const }
   }
@@ -320,6 +340,10 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
 function installDownloadedUpdate() {
   if (!isStartupAutoUpdateEnabled()) {
     return { ok: false, reason: 'disabled' as const }
+  }
+
+  if (!AUTO_UPDATE_GH_TOKEN) {
+    return { ok: false, reason: 'missing-token' as const }
   }
 
   if (restartScheduled) {
