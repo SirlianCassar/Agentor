@@ -509,11 +509,17 @@ function App() {
 
   useEffect(() => {
     let active = true
-    loadData().then((loadedData) => {
-      if (!active) return
-      setData(loadedData)
-      setLoaded(true)
-    })
+    loadData()
+      .then((loadedData) => {
+        if (!active) return
+        setData(loadedData)
+        setLoaded(true)
+      })
+      .catch(() => {
+        if (!active) return
+        setData(JSON.parse(JSON.stringify(defaultData)) as AppData)
+        setLoaded(true)
+      })
     return () => {
       active = false
     }
@@ -1676,6 +1682,16 @@ function App() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(dashboardHtPrice)
+
+  if (!loaded) {
+    return (
+      <div className={`app-loading${isProcedureWindow ? ' app-loading--procedure' : ''}`}>
+        <div className="app-loading__card">
+          <div className="app-loading__title">Chargement des données…</div>
+        </div>
+      </div>
+    )
+  }
 
   if (isProcedureWindow) {
     return (
