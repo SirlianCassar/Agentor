@@ -114,19 +114,18 @@ const exportFontOptions = [
 const EXPORT_FONT_SIZE_MIN = 10
 const EXPORT_FONT_SIZE_MAX = 22
 
-function getUpdatePillText(status: UpdateStatus | null) {
-  if (!status) return null
-  if (status.phase === 'checking') return 'Recherche MAJ...'
-  if (status.phase === 'available') return 'MAJ dispo...'
-  if (status.phase === 'downloading') return `MAJ ${Math.round(status.progress ?? 0)}%`
-  if (status.phase === 'downloaded') return 'Installer MAJ'
-  return null
-}
-
 function getUpdateSettingsLabel(status: UpdateStatus | null) {
   if (!status) return 'Statut inconnu.'
   if (status.phase === 'disabled') return 'Mises à jour auto disponibles sur l’application installée.'
   return status.message
+}
+
+function getUpdateWarningTitle(status: UpdateStatus | null) {
+  if (!status) return ''
+  if (status.phase === 'downloaded') return 'Mise à jour prête. Clique pour l’appliquer.'
+  if (status.phase === 'downloading') return 'Mise à jour en téléchargement. Clique pour planifier l’installation.'
+  if (status.phase === 'available') return 'Mise à jour disponible. Clique pour planifier l’installation.'
+  return ''
 }
 
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
@@ -314,6 +313,7 @@ function App() {
   const dashboardProductSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
   const manualUpdateCheckRequestedRef = useRef(false)
+  const installUpdateWhenReadyRef = useRef(false)
   const dashboardOpenFrameRef = useRef<number | null>(null)
 
   const closeTemplateSearch = useCallback(() => {
@@ -551,6 +551,7 @@ function App() {
       if (!manualUpdateCheckRequestedRef.current) return
 
       if (status.phase === 'not-available') {
+        installUpdateWhenReadyRef.current = false
         setToast('Aucune mise à jour disponible.')
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
@@ -559,10 +560,11 @@ function App() {
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
       } else if (status.phase === 'downloaded') {
-        setToast('Mise à jour prête. Clique sur l’indicateur MAJ pour installer.')
+        setToast('Mise à jour prête. Clique sur l’alerte MAJ pour installer.')
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
       } else if (status.phase === 'error') {
+        installUpdateWhenReadyRef.current = false
         setToast(status.message)
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
@@ -713,14 +715,13 @@ function App() {
   const exportFontSize = Number.isFinite(data.settings.exportFontSize)
     ? Math.min(EXPORT_FONT_SIZE_MAX, Math.max(EXPORT_FONT_SIZE_MIN, data.settings.exportFontSize))
     : defaultData.settings.exportFontSize
-  const updatePillText = getUpdatePillText(updateStatus)
   const updateSettingsLabel = getUpdateSettingsLabel(updateStatus)
   const isUpdateReadyToInstall = updateStatus?.phase === 'downloaded'
-  const showUpdateInAppName =
+  const showUpdateWarning =
     updateStatus?.phase === 'available' ||
     updateStatus?.phase === 'downloading' ||
     isUpdateReadyToInstall
-  const appNameLabel = showUpdateInAppName ? 'SpeedMail (MAJ dispo)' : 'SpeedMail'
+  const updateWarningTitle = getUpdateWarningTitle(updateStatus)
   const settingsPanels = [
     { id: 'display', label: 'Affichage' },
     { id: 'export', label: 'Texte exporté' },
@@ -780,12 +781,14 @@ function App() {
     }
   }, [])
 
-  const handleInstallDownloadedUpdate = useCallback(async () => {
+  const handleInstallDownloadedUpdate = useCallback(async (skipConfirmation = false) => {
     if (updateStatus?.phase !== 'downloaded') return
-    const confirmed = window.confirm(
-      'Une mise à jour est prête. Voulez-vous redémarrer maintenant pour l’installer ?',
-    )
-    if (!confirmed) return
+    if (!skipConfirmation) {
+      const confirmed = window.confirm(
+        'Une mise à jour est prête. Voulez-vous redémarrer maintenant pour l’installer ?',
+      )
+      if (!confirmed) return
+    }
 
     setInstallingDownloadedUpdate(true)
     try {
@@ -812,6 +815,30 @@ function App() {
       setInstallingDownloadedUpdate(false)
     }
   }, [updateStatus])
+
+  const handleUpdateWarningClick = useCallback(async () => {
+    if (!updateStatus) return
+    if (updateStatus.phase === 'downloaded') {
+      await handleInstallDownloadedUpdate()
+      return
+    }
+    if (updateStatus.phase === 'available' || updateStatus.phase === 'downloading') {
+      const confirmed = window.confirm(
+        'Une mise à jour est disponible. Voulez-vous l’appliquer automatiquement dès que le téléchargement est terminé ?',
+      )
+      if (!confirmed) return
+      installUpdateWhenReadyRef.current = true
+      setToast('Mise à jour planifiée: installation automatique dès que prête.')
+    }
+  }, [handleInstallDownloadedUpdate, updateStatus])
+
+  useEffect(() => {
+    if (updateStatus?.phase !== 'downloaded') return
+    if (!installUpdateWhenReadyRef.current) return
+    if (installingDownloadedUpdate) return
+    installUpdateWhenReadyRef.current = false
+    void handleInstallDownloadedUpdate(true)
+  }, [handleInstallDownloadedUpdate, installingDownloadedUpdate, updateStatus])
 
   useEffect(() => {
     const safeZoom = zoomValue > 0 ? zoomValue : 1
@@ -2122,25 +2149,28 @@ function App() {
               src={assetUrl('/speedmail/icon.png')}
               alt="SpeedMail"
             />
-            <p className="brand-name">{appNameLabel}</p>
+            <p className="brand-name">SpeedMail</p>
             <span className="version-pill">v{APP_VERSION_LABEL}</span>
-            {updatePillText ? (
-              <button
-                type="button"
-                className={`update-pill${isUpdateReadyToInstall ? ' update-pill--action' : ''}`}
-                onClick={() => void handleInstallDownloadedUpdate()}
-                disabled={!isUpdateReadyToInstall || installingDownloadedUpdate}
-                title={
-                  isUpdateReadyToInstall
-                    ? 'Installer la mise à jour'
-                    : 'La mise à jour sera installable une fois téléchargée'
-                }
-              >
-                {installingDownloadedUpdate && isUpdateReadyToInstall
-                  ? 'Installation...'
-                  : updatePillText}
-              </button>
-            ) : null}
+            <span className="brand-update-slot">
+              {showUpdateWarning ? (
+                <button
+                  type="button"
+                  className={`update-warning${isUpdateReadyToInstall ? ' update-warning--ready' : ''}`}
+                  onClick={() => void handleUpdateWarningClick()}
+                  disabled={installingDownloadedUpdate}
+                  title={updateWarningTitle}
+                  aria-label={updateWarningTitle}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path d="M12 3 2.8 19a1 1 0 0 0 .86 1.5h16.68A1 1 0 0 0 21.2 19L12 3Z" />
+                    <path d="M12 8.6v6.6" />
+                    <circle cx="12" cy="17.6" r="1" fill="currentColor" stroke="none" />
+                  </svg>
+                </button>
+              ) : (
+                <span className="update-warning update-warning--placeholder" aria-hidden="true" />
+              )}
+            </span>
           </div>
           <div className="sidebar-top-actions">
             <button

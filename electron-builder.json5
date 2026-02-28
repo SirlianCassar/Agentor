@@ -37,7 +37,9 @@
   "nsis": {
     "installerIcon": "build/icons/icon.ico",
     "uninstallerIcon": "build/icons/icon.ico",
-    "installerHeaderIcon": "build/icons/icon.ico"
+    "installerHeaderIcon": "build/icons/icon.ico",
+    "allowToChangeInstallationDirectory": false,
+    "deleteAppDataOnUninstall": false
   },
   "linux": {
     "target": ["AppImage"],

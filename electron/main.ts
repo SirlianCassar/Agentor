@@ -17,6 +17,8 @@ let procedureWin: BrowserWindow | null
 
 const DATA_FILE = () => path.join(app.getPath('userData'), 'speedmail-data.json')
 const WINDOW_STATE_FILE = () => path.join(app.getPath('userData'), 'window-state.json')
+const LEGACY_APP_DATA_DIR_NAMES = ['TypeFast', 'MailOTron', 'Mailotron']
+const LEGACY_DATA_FILE_NAMES = ['typefast-data.json', 'mailotron-data.json']
 const defaultData = {
   version: 2,
   categories: [],
@@ -53,6 +55,46 @@ type WindowState = {
   procedure?: SavedWindowState
 }
 
+function copyFirstExistingFile(targetPath: string, sourcePaths: string[]) {
+  if (fs.existsSync(targetPath)) return null
+  for (const sourcePath of sourcePaths) {
+    if (!sourcePath || sourcePath === targetPath) continue
+    if (!fs.existsSync(sourcePath)) continue
+    try {
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+      fs.copyFileSync(sourcePath, targetPath)
+      return sourcePath
+    } catch (error) {
+      console.warn('[storage-migration] copy failed', sourcePath, '->', targetPath, error)
+    }
+  }
+  return null
+}
+
+function migrateLegacyStorageIfNeeded() {
+  const userDataDir = app.getPath('userData')
+  const appDataDir = app.getPath('appData')
+  const legacyDirs = LEGACY_APP_DATA_DIR_NAMES.map((name) => path.join(appDataDir, name)).filter(
+    (dir) => dir !== userDataDir,
+  )
+  const dataCandidates = [
+    ...LEGACY_DATA_FILE_NAMES.map((fileName) => path.join(userDataDir, fileName)),
+    ...legacyDirs.flatMap((dir) =>
+      ['speedmail-data.json', ...LEGACY_DATA_FILE_NAMES].map((fileName) => path.join(dir, fileName)),
+    ),
+  ]
+  const windowStateCandidates = legacyDirs.map((dir) => path.join(dir, 'window-state.json'))
+  const copiedDataFrom = copyFirstExistingFile(DATA_FILE(), dataCandidates)
+  const copiedWindowStateFrom = copyFirstExistingFile(WINDOW_STATE_FILE(), windowStateCandidates)
+
+  if (copiedDataFrom) {
+    console.log(`[storage-migration] data imported from ${copiedDataFrom}`)
+  }
+  if (copiedWindowStateFrom) {
+    console.log(`[storage-migration] window state imported from ${copiedWindowStateFrom}`)
+  }
+}
+
 function readWindowState(): WindowState {
   try {
     const raw = fs.readFileSync(WINDOW_STATE_FILE(), 'utf-8')
@@ -74,7 +116,7 @@ function writeWindowState(state: WindowState) {
   }
 }
 
-let windowState = readWindowState()
+let windowState: WindowState = {}
 function persistWindowState(key: 'main' | 'procedure', window: BrowserWindow | null) {
   if (!window) return
   const bounds = window.isMaximized() ? window.getNormalBounds() : window.getBounds()
@@ -260,7 +302,7 @@ function configureAutoUpdater() {
     clearUpdateTimeout()
     pushUpdateStatus({
       phase: 'downloaded',
-      message: 'Mise à jour prête. Clique sur l’indicateur MAJ pour installer.',
+      message: 'Mise à jour prête. Clique sur l’alerte MAJ pour installer.',
       version: info.version,
     })
     console.log(`${AUTO_UPDATE_LOG_PREFIX} update downloaded${info.version ? `: ${info.version}` : ''}`)
@@ -472,6 +514,8 @@ app.on('activate', () => {
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('com.speedmail.app')
+  migrateLegacyStorageIfNeeded()
+  windowState = readWindowState()
   Menu.setApplicationMenu(null)
   createWindow()
   configureAutoUpdater()
