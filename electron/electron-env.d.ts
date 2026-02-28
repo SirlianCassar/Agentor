@@ -7,7 +7,7 @@ declare namespace NodeJS {
   }
 }
 interface Window {
-  typefast: {
+  speedmail: {
     getUpdateStatus: () => Promise<{
       phase: string
       message: string

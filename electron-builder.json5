@@ -1,9 +1,9 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "com.typefast.app",
+  "appId": "com.speedmail.app",
   "asar": true,
-  "productName": "TypeFast",
+  "productName": "SpeedMail",
   "directories": {
     "output": "release/${version}"
   },
@@ -12,7 +12,7 @@
     {
       "provider": "github",
       "owner": "SirlianCassar",
-      "repo": "TypeFast",
+      "repo": "SpeedMail",
       "private": true
     }
   ],
