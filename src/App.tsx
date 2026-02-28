@@ -120,14 +120,6 @@ function getUpdateSettingsLabel(status: UpdateStatus | null) {
   return status.message
 }
 
-function getUpdateWarningTitle(status: UpdateStatus | null) {
-  if (!status) return ''
-  if (status.phase === 'downloaded') return 'Mise à jour prête. Clique pour l’appliquer.'
-  if (status.phase === 'downloading') return 'Mise à jour en téléchargement. Clique pour planifier l’installation.'
-  if (status.phase === 'available') return 'Mise à jour disponible. Clique pour planifier l’installation.'
-  return ''
-}
-
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
   const map = new Map(current.map((item) => [item.id, item]))
   for (const item of incoming) map.set(item.id, item)
@@ -313,7 +305,6 @@ function App() {
   const dashboardProductSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
   const manualUpdateCheckRequestedRef = useRef(false)
-  const installUpdateWhenReadyRef = useRef(false)
   const dashboardOpenFrameRef = useRef<number | null>(null)
 
   const closeTemplateSearch = useCallback(() => {
@@ -551,7 +542,6 @@ function App() {
       if (!manualUpdateCheckRequestedRef.current) return
 
       if (status.phase === 'not-available') {
-        installUpdateWhenReadyRef.current = false
         setToast('Aucune mise à jour disponible.')
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
@@ -560,11 +550,10 @@ function App() {
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
       } else if (status.phase === 'downloaded') {
-        setToast('Mise à jour prête. Clique sur l’alerte MAJ pour installer.')
+        setToast('Mise à jour prête. Ouvre Paramètres > Mise à jour pour l’installer.')
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
       } else if (status.phase === 'error') {
-        installUpdateWhenReadyRef.current = false
         setToast(status.message)
         manualUpdateCheckRequestedRef.current = false
         setCheckingUpdateManually(false)
@@ -717,11 +706,13 @@ function App() {
     : defaultData.settings.exportFontSize
   const updateSettingsLabel = getUpdateSettingsLabel(updateStatus)
   const isUpdateReadyToInstall = updateStatus?.phase === 'downloaded'
-  const showUpdateWarning =
+  const showUpdateIndicator =
     updateStatus?.phase === 'available' ||
     updateStatus?.phase === 'downloading' ||
     isUpdateReadyToInstall
-  const updateWarningTitle = getUpdateWarningTitle(updateStatus)
+  const editButtonLabel = showUpdateIndicator
+    ? 'Édition (mise à jour disponible)'
+    : 'Édition'
   const settingsPanels = [
     { id: 'display', label: 'Affichage' },
     { id: 'export', label: 'Texte exporté' },
@@ -815,30 +806,6 @@ function App() {
       setInstallingDownloadedUpdate(false)
     }
   }, [updateStatus])
-
-  const handleUpdateWarningClick = useCallback(async () => {
-    if (!updateStatus) return
-    if (updateStatus.phase === 'downloaded') {
-      await handleInstallDownloadedUpdate()
-      return
-    }
-    if (updateStatus.phase === 'available' || updateStatus.phase === 'downloading') {
-      const confirmed = window.confirm(
-        'Une mise à jour est disponible. Voulez-vous l’appliquer automatiquement dès que le téléchargement est terminé ?',
-      )
-      if (!confirmed) return
-      installUpdateWhenReadyRef.current = true
-      setToast('Mise à jour planifiée: installation automatique dès que prête.')
-    }
-  }, [handleInstallDownloadedUpdate, updateStatus])
-
-  useEffect(() => {
-    if (updateStatus?.phase !== 'downloaded') return
-    if (!installUpdateWhenReadyRef.current) return
-    if (installingDownloadedUpdate) return
-    installUpdateWhenReadyRef.current = false
-    void handleInstallDownloadedUpdate(true)
-  }, [handleInstallDownloadedUpdate, installingDownloadedUpdate, updateStatus])
 
   useEffect(() => {
     const safeZoom = zoomValue > 0 ? zoomValue : 1
@@ -2151,48 +2118,36 @@ function App() {
             />
             <p className="brand-name">SpeedMail</p>
             <span className="version-pill">v{APP_VERSION_LABEL}</span>
-            <span className="brand-update-slot">
-              {showUpdateWarning ? (
-                <button
-                  type="button"
-                  className={`update-warning${isUpdateReadyToInstall ? ' update-warning--ready' : ''}`}
-                  onClick={() => void handleUpdateWarningClick()}
-                  disabled={installingDownloadedUpdate}
-                  title={updateWarningTitle}
-                  aria-label={updateWarningTitle}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                    <path d="M12 3 2.8 19a1 1 0 0 0 .86 1.5h16.68A1 1 0 0 0 21.2 19L12 3Z" />
-                    <path d="M12 8.6v6.6" />
-                    <circle cx="12" cy="17.6" r="1" fill="currentColor" stroke="none" />
-                  </svg>
-                </button>
-              ) : (
-                <span className="update-warning update-warning--placeholder" aria-hidden="true" />
-              )}
-            </span>
           </div>
           <div className="sidebar-top-actions">
-            <button
-              className="sidebar-icon-btn"
-              onClick={() => setEditOpen(true)}
-              title="Édition"
-              aria-label="Édition"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="sidebar-icon-btn-wrap">
+              <button
+                className="sidebar-icon-btn"
+                onClick={() => setEditOpen(true)}
+                title={editButtonLabel}
+                aria-label={editButtonLabel}
               >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+              {showUpdateIndicator ? (
+                <span
+                  className="update-notification-dot"
+                  aria-hidden="true"
+                />
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -4485,6 +4440,18 @@ function App() {
                             ? 'Recherche en cours...'
                             : 'Rechercher une mise à jour'}
                         </button>
+                        {isUpdateReadyToInstall ? (
+                          <button
+                            type="button"
+                            className="btn btn--small"
+                            onClick={() => void handleInstallDownloadedUpdate()}
+                            disabled={installingDownloadedUpdate}
+                          >
+                            {installingDownloadedUpdate
+                              ? 'Installation...'
+                              : 'Appliquer la mise à jour'}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </div>

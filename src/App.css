@@ -97,61 +97,6 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-.brand-update-slot {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.update-warning {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 1px solid rgba(126, 177, 255, 0.54);
-  border-radius: 999px;
-  background: rgba(126, 177, 255, 0.16);
-  color: #eaf3ff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-    border-color var(--transition-fast), background var(--transition-fast);
-}
-
-.update-warning svg {
-  width: 12px;
-  height: 12px;
-  stroke-width: 2.1;
-}
-
-.update-warning:hover:not(:disabled) {
-  transform: translateY(-1px);
-  border-color: rgba(143, 192, 255, 0.72);
-  background: rgba(126, 177, 255, 0.25);
-  box-shadow: 0 0 12px rgba(126, 177, 255, 0.25);
-}
-
-.update-warning--ready {
-  border-color: rgba(143, 192, 255, 0.82);
-  background: rgba(126, 177, 255, 0.34);
-  box-shadow: 0 0 14px rgba(126, 177, 255, 0.26);
-}
-
-.update-warning:disabled {
-  opacity: 0.65;
-  cursor: progress;
-}
-
-.update-warning--placeholder {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .brand__title {
   font-size: calc(18px * var(--text-scale));
   font-weight: 600;
@@ -161,6 +106,11 @@
   display: flex;
   gap: 6px;
   align-items: center;
+}
+
+.sidebar-icon-btn-wrap {
+  position: relative;
+  display: inline-flex;
 }
 
 .sidebar-icon-btn {
@@ -182,6 +132,19 @@
   background: var(--surface-soft-hover);
   transform: translateY(-1px) scale(1.02);
   box-shadow: 0 0 12px rgba(126, 177, 255, 0.2);
+}
+
+.update-notification-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ff5d69;
+  border: 2px solid var(--panel-strong);
+  box-shadow: 0 0 0 1px rgba(255, 93, 105, 0.45), 0 0 8px rgba(255, 93, 105, 0.45);
+  pointer-events: none;
 }
 
 .filter-block {
@@ -1685,7 +1648,7 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__input::selection {
-  background: rgba(126, 177, 255, 0.28);
+  background: rgba(126, 177, 255, 0.38);
 }
 
 .editor__placeholder {
@@ -1825,8 +1788,8 @@ button.dashboard-copy-btn.is-success:hover {
   display: inline;
   vertical-align: baseline;
   padding: 0 0.14ch;
-  background: rgba(255, 212, 59, 0.2);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.25), 0 0 10px rgba(255, 212, 59, 0.2);
+  background: rgba(255, 212, 59, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.36), 0 0 12px rgba(255, 212, 59, 0.28);
   border-radius: 2px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
@@ -1838,8 +1801,8 @@ button.dashboard-copy-btn.is-success:hover {
   padding: 0 0.14ch;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  background: rgba(255, 212, 59, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.25);
+  background: rgba(255, 212, 59, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.35), 0 0 10px rgba(255, 212, 59, 0.2);
   border-radius: 4px;
 }
 
@@ -1849,13 +1812,13 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .token-wrap--tag::before {
-  background: rgba(255, 107, 107, 0.2);
-  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.25), 0 0 10px rgba(255, 107, 107, 0.2);
+  background: rgba(255, 107, 107, 0.3);
+  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.38), 0 0 12px rgba(255, 107, 107, 0.3);
 }
 
 .token-wrap--selector::before {
-  background: rgba(125, 222, 156, 0.16);
-  box-shadow: 0 0 0 1px rgba(125, 222, 156, 0.24), 0 0 10px rgba(125, 222, 156, 0.14);
+  background: rgba(125, 222, 156, 0.26);
+  box-shadow: 0 0 0 1px rgba(125, 222, 156, 0.36), 0 0 12px rgba(125, 222, 156, 0.24);
 }
 
 .token-marker {
@@ -1868,15 +1831,15 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__highlight .token--tag {
-  color: rgba(255, 124, 124, 0.86);
+  color: rgba(255, 144, 144, 0.96);
 }
 
 .editor__highlight .token--selector {
-  color: rgba(125, 222, 156, 0.84);
+  color: rgba(152, 237, 178, 0.95);
 }
 
 .editor__highlight .token--addition {
-  color: rgba(255, 212, 95, 0.82);
+  color: rgba(255, 224, 128, 0.95);
 }
 
 .token-marker--addition {
@@ -1898,7 +1861,7 @@ button.dashboard-copy-btn.is-success:hover {
   right: 0;
   top: 50%;
   height: 1px;
-  background: rgba(255, 212, 59, 0.55);
+  background: rgba(255, 212, 59, 0.72);
   transform: translateY(-50%);
 }
 
