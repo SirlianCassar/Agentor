@@ -1209,6 +1209,12 @@ function App() {
   )
 
   const handleCopyEmail = async () => {
+    if (emailCopyTimeoutRef.current) {
+      window.clearTimeout(emailCopyTimeoutRef.current)
+    }
+    setEmailCopied(true)
+    emailCopyTimeoutRef.current = window.setTimeout(() => setEmailCopied(false), 1600)
+
     if (!data.emailDraft.trim()) return
     const cleaned = stripTokenSpacing(data.emailDraft)
     const didCopy = await copyText(cleaned, buildExportHtml(cleaned))
@@ -1227,14 +1233,15 @@ function App() {
         history: [newItem, ...prev.history].slice(0, historyLimit),
       }))
     }
-    if (emailCopyTimeoutRef.current) {
-      window.clearTimeout(emailCopyTimeoutRef.current)
-    }
-    setEmailCopied(true)
-    emailCopyTimeoutRef.current = window.setTimeout(() => setEmailCopied(false), 1600)
   }
 
   const handleCopyTask = async () => {
+    if (taskCopyTimeoutRef.current) {
+      window.clearTimeout(taskCopyTimeoutRef.current)
+    }
+    setTaskCopied(true)
+    taskCopyTimeoutRef.current = window.setTimeout(() => setTaskCopied(false), 1600)
+
     if (!data.taskDraft.trim()) return
     const cleaned = stripTokenSpacing(data.taskDraft)
     const didCopy = await copyText(cleaned, buildExportHtml(cleaned))
@@ -1242,11 +1249,6 @@ function App() {
       setToast('Copie impossible.')
       return
     }
-    if (taskCopyTimeoutRef.current) {
-      window.clearTimeout(taskCopyTimeoutRef.current)
-    }
-    setTaskCopied(true)
-    taskCopyTimeoutRef.current = window.setTimeout(() => setTaskCopied(false), 1600)
   }
 
   const formatNameValue = (value: string) => {
