@@ -796,15 +796,15 @@ select optgroup {
 }
 
 button.dashboard-copy-btn.is-success {
-  border-color: rgba(83, 169, 255, 0.55);
-  background: rgba(83, 169, 255, 0.22);
-  color: #f4f4f4;
+  border-color: rgba(114, 218, 154, 0.66);
+  background: rgba(66, 191, 124, 0.26);
+  color: #ecfff3;
   box-shadow: none;
 }
 
 button.dashboard-copy-btn.is-success:hover {
-  border-color: rgba(138, 156, 255, 0.65);
-  background: rgba(83, 169, 255, 0.3);
+  border-color: rgba(143, 230, 177, 0.76);
+  background: rgba(66, 191, 124, 0.35);
 }
 
 .dashboard-formatter {
@@ -1634,8 +1634,8 @@ button.dashboard-copy-btn.is-success:hover {
 
 .task-editor .token-wrap--tag .token-marker,
 .task-editor .token-wrap--selector .token-marker {
-  opacity: 0.66;
-  color: rgba(82, 92, 110, 0.84);
+  opacity: 0.74;
+  color: rgba(118, 128, 146, 0.9);
 }
 
 .editor__highlight,
@@ -1751,7 +1751,7 @@ button.dashboard-copy-btn.is-success:hover {
 .token--selector {
   position: relative;
   display: inline;
-  font-weight: inherit;
+  font-weight: 600;
   padding: 0;
   border: none;
   border-radius: 2px;
@@ -1769,13 +1769,12 @@ button.dashboard-copy-btn.is-success:hover {
 .token--addition {
   position: relative;
   display: inline;
-  font-weight: inherit;
+  font-weight: 600;
   padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
-  color: rgba(30, 22, 0, 0.96);
-  font-weight: 600;
+  color: var(--warning);
 }
 
 .token--addition-inline {
@@ -1817,24 +1816,39 @@ button.dashboard-copy-btn.is-success:hover {
 
 .token-wrap--addition-inline {
   display: inline;
+  position: relative;
+  z-index: 0;
   vertical-align: baseline;
-  padding: 0.16em 0.24em;
-  background: rgba(255, 212, 59, 0.78);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.92);
-  border-radius: 0;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  white-space: nowrap;
+}
+
+.token-wrap--addition-inline::before {
+  content: '';
+  position: absolute;
+  left: -0.1ch;
+  right: -0.1ch;
+  top: 50%;
+  bottom: auto;
+  height: 80%;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(255, 227, 143, 0.62);
+  box-shadow: 0 0 0 1px rgba(255, 227, 143, 0.86);
 }
 
 .token-wrap--addition {
   display: inline;
+  position: relative;
+  z-index: 0;
   white-space: pre-wrap;
   padding: 0.16em 0.24em;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  background: rgba(255, 212, 59, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 59, 0.9);
-  border-radius: 0;
+  background: rgba(255, 227, 143, 0.62);
+  box-shadow: 0 0 0 1px rgba(255, 227, 143, 0.86);
+  border-radius: 2px;
 }
 
 .token--tag::before,
@@ -1843,13 +1857,13 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .token-wrap--tag::before {
-  background: rgba(255, 86, 86, 0.58);
-  box-shadow: 0 0 0 1px rgba(255, 86, 86, 0.82);
+  background: rgba(255, 86, 86, 0.62);
+  box-shadow: 0 0 0 1px rgba(255, 86, 86, 0.86);
 }
 
 .token-wrap--selector::before {
-  background: rgba(96, 243, 154, 0.5);
-  box-shadow: 0 0 0 1px rgba(96, 243, 154, 0.72);
+  background: rgba(96, 243, 154, 0.62);
+  box-shadow: 0 0 0 1px rgba(96, 243, 154, 0.86);
 }
 
 .token-marker {
@@ -1857,8 +1871,8 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__highlight .token-marker {
-  opacity: 0.66;
-  color: rgba(82, 92, 110, 0.84);
+  opacity: 0.74;
+  color: rgba(118, 128, 146, 0.9);
 }
 
 .editor__highlight .token--tag {
@@ -1870,7 +1884,7 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .editor__highlight .token--addition {
-  color: rgba(30, 22, 0, 0.96);
+  color: rgba(255, 227, 143, 1);
 }
 
 .token-marker--addition {
@@ -1892,7 +1906,7 @@ button.dashboard-copy-btn.is-success:hover {
   right: 0;
   top: 50%;
   height: 1px;
-  background: rgba(255, 212, 59, 0.72);
+  background: rgba(255, 227, 143, 0.82);
   transform: translateY(-50%);
 }
 
@@ -1939,12 +1953,18 @@ button.dashboard-copy-btn.is-success:hover {
   box-shadow: none;
 }
 
+.bullet-tooltip .token-wrap--addition-inline::before,
+.result-preview .token-wrap--addition-inline::before {
+  display: none;
+}
+
 .result-preview .token--tag,
 .result-preview .token--selector {
   font-weight: 600;
 }
 
 .result-preview .token--addition {
+  color: var(--warning);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -2150,12 +2170,14 @@ button.primary:active {
 }
 
 button.primary.is-success {
-  background: var(--gradient-secondary);
-  box-shadow: 0 8px 16px rgba(7, 14, 25, 0.5);
+  background: linear-gradient(135deg, #86e3b0 0%, #59cc8f 48%, #3db97a 100%);
+  border-color: rgba(130, 227, 174, 0.85);
+  color: #f6fff9;
+  box-shadow: 0 8px 16px rgba(10, 28, 19, 0.52);
 }
 
 button.primary.is-success:hover {
-  box-shadow: 0 10px 20px rgba(7, 14, 25, 0.58);
+  box-shadow: 0 10px 20px rgba(10, 28, 19, 0.62);
 }
 
 @keyframes btnPulse {
@@ -2758,14 +2780,14 @@ button.ghost.confirm {
 
 .token-btn--addition {
   color: var(--warning);
-  border-color: rgba(255, 212, 59, 0.45);
-  background: rgba(255, 212, 59, 0.16);
+  border-color: rgba(255, 233, 138, 0.62);
+  background: rgba(255, 233, 138, 0.24);
 }
 
 .token-btn--color {
   color: var(--warning);
-  border-color: rgba(255, 212, 59, 0.45);
-  background: rgba(255, 212, 59, 0.16);
+  border-color: rgba(255, 233, 138, 0.62);
+  background: rgba(255, 233, 138, 0.24);
 }
 
 .token-btn--link {
