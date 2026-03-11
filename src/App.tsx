@@ -1293,7 +1293,7 @@ function App() {
 
   const handleCopyDashboardHt = async () => {
     if (dashboardHtPrice === null) return
-    const didCopy = await copyText(`${formattedDashboardHtPrice} EUR`)
+    const didCopy = await copyText(formattedDashboardHtPrice)
     if (!didCopy) {
       setToast('Copie impossible.')
       return
