@@ -8,6 +8,7 @@ import {
   type RefObject,
   type TransitionEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { TextEditor, type TextEditorHandle } from './components/TextEditor'
 import { SortableList } from './components/SortableList'
 import { defaultData } from './lib/defaults'
@@ -200,6 +201,82 @@ function mergeData(current: AppData, incoming: AppData) {
   }
 }
 
+interface PortalCodeListProps {
+  items: CustomerPortalCode[]
+  copiedId: string | null
+  onCopy: (id: string, code: string) => void
+  title: string
+  onInfoEnter: (text: string, anchor: HTMLElement) => void
+  onInfoLeave: () => void
+}
+
+function PortalCodeList({
+  items,
+  copiedId,
+  onCopy,
+  title,
+  onInfoEnter,
+  onInfoLeave,
+}: PortalCodeListProps) {
+  return items.length ? (
+    <div className="portal-code-list-scroll">
+      <div className="portal-code-list" aria-label={title}>
+        {items.map((item) => {
+          const procedureName = item.procedureName.trim() || 'Procédure sans nom'
+          const code = item.code.trim()
+          const forwardTarget = item.forwardTarget?.trim() ?? ''
+          const infoNote = item.infoNote?.trim() ?? ''
+          const showForward = Boolean(item.showForward && forwardTarget)
+
+          return (
+            <div className="portal-code-item" key={item.id}>
+              <div className="portal-code-item__content">
+                <div className="portal-code-item__line">
+                  <span className="portal-code-item__name">{procedureName}</span>
+                  <code className="portal-code-item__code">{code || '—'}</code>
+                  {item.showDraft ? <span className="portal-code-item__badge">Draft</span> : null}
+                  {showForward ? (
+                    <span className="portal-code-item__badge portal-code-item__badge--accent">
+                      Forward to {forwardTarget}
+                    </span>
+                  ) : null}
+                  {infoNote ? (
+                    <span className="portal-code-item__info">
+                      <button
+                        className="portal-code-item__info-btn"
+                        type="button"
+                        aria-label={`Note pour ${procedureName}`}
+                        onMouseEnter={(event) => onInfoEnter(infoNote, event.currentTarget)}
+                        onMouseLeave={onInfoLeave}
+                        onFocus={(event) => onInfoEnter(infoNote, event.currentTarget)}
+                        onBlur={onInfoLeave}
+                      >
+                        i
+                      </button>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="portal-code-item__actions">
+                <button
+                  className={`ghost dashboard-copy-btn${copiedId === item.id ? ' is-success' : ''}`}
+                  type="button"
+                  onClick={() => onCopy(item.id, item.code)}
+                  disabled={!code}
+                >
+                  {copiedId === item.id ? 'Copié !' : 'Copier'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  ) : (
+    <div className="dashboard-empty">Aucun code configuré dans Paramètres.</div>
+  )
+}
+
 function App() {
   const [data, setData] = useState<AppData>(defaultData)
   const isProcedureWindow =
@@ -246,6 +323,11 @@ function App() {
   )
   const [editSnippetCategoryId, setEditSnippetCategoryId] = useState('all')
   const [snippetTooltip, setSnippetTooltip] = useState<{
+    text: string
+    x: number
+    y: number
+  } | null>(null)
+  const [portalInfoTooltip, setPortalInfoTooltip] = useState<{
     text: string
     x: number
     y: number
@@ -435,6 +517,10 @@ function App() {
       id: item?.id?.trim() || `portal-${index + 1}`,
       procedureName: item?.procedureName ?? '',
       code: item?.code ?? '',
+      showDraft: Boolean(item?.showDraft),
+      showForward: Boolean(item?.showForward),
+      forwardTarget: item?.forwardTarget ?? '',
+      infoNote: item?.infoNote ?? '',
     }))
   }, [data.settings.customerPortalCodes])
   const dashboardProducts = useMemo(() => {
@@ -745,6 +831,21 @@ function App() {
   const updateCustomerPortalCodes = useCallback((next: CustomerPortalCode[]) => {
     updateSettings({ customerPortalCodes: next })
   }, [updateSettings])
+  const updateCustomerPortalCodeItem = useCallback(
+    (id: string, patch: Partial<CustomerPortalCode>) => {
+      updateCustomerPortalCodes(
+        customerPortalCodes.map((entry) => {
+          if (entry.id !== id) return entry
+          const nextEntry = { ...entry, ...patch }
+          if (!nextEntry.showForward) {
+            nextEntry.forwardTarget = ''
+          }
+          return nextEntry
+        }),
+      )
+    },
+    [customerPortalCodes, updateCustomerPortalCodes],
+  )
   const updateDashboardProducts = useCallback((next: DashboardProduct[]) => {
     updateSettings({ dashboardProducts: next })
   }, [updateSettings])
@@ -1640,6 +1741,27 @@ function App() {
 
   const hideSnippetTooltip = () => setSnippetTooltip(null)
 
+  const showPortalInfoTooltip = (text: string, anchor: HTMLElement) => {
+    const rect = anchor.getBoundingClientRect()
+    const tooltipWidth = 320
+    const gutter = 2
+    const tooltipHeight = Math.min(220, window.innerHeight - 12)
+    let x = rect.right + gutter
+    let y = rect.top - 8
+
+    if (x + tooltipWidth > window.innerWidth - gutter) {
+      x = rect.left - tooltipWidth - gutter
+    }
+    if (x < gutter) {
+      x = gutter
+    }
+    y = Math.max(6, Math.min(y, window.innerHeight - tooltipHeight - 6))
+
+    setPortalInfoTooltip({ text, x, y })
+  }
+
+  const hidePortalInfoTooltip = () => setPortalInfoTooltip(null)
+
   const openLink = (url: string) => {
     if (!url.startsWith('http')) return
     openExternal(url)
@@ -1715,33 +1837,15 @@ function App() {
 
             <div className="dashboard-grid">
               <section className="dashboard-panel dashboard-panel--codes">
-                <div className="dashboard-panel__title">Codes customer portal</div>
-                {customerPortalCodes.length ? (
-                  <div className="portal-code-list">
-                    {customerPortalCodes.map((item) => (
-                      <div className="portal-code-item" key={item.id}>
-                        <div className="portal-code-item__name">
-                          {item.procedureName.trim() || 'Procédure sans nom'}
-                        </div>
-                        <div className="portal-code-item__actions">
-                          <code className="portal-code-item__code">{item.code.trim() || '—'}</code>
-                          <button
-                            className={`ghost dashboard-copy-btn${
-                              portalCopiedId === item.id ? ' is-success' : ''
-                            }`}
-                            type="button"
-                            onClick={() => void handleCopyPortalCode(item.id, item.code)}
-                            disabled={!item.code.trim()}
-                          >
-                            {portalCopiedId === item.id ? 'Copié !' : 'Copier'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="dashboard-empty">Aucun code configuré dans Paramètres.</div>
-                )}
+                <div className="dashboard-panel__title">Portal Procédure</div>
+                <PortalCodeList
+                  items={customerPortalCodes}
+                  copiedId={portalCopiedId}
+                  onCopy={(id, code) => void handleCopyPortalCode(id, code)}
+                  title="Portal Procédure"
+                  onInfoEnter={showPortalInfoTooltip}
+                  onInfoLeave={hidePortalInfoTooltip}
+                />
               </section>
 
               <section className="dashboard-panel dashboard-panel--versions">
@@ -2456,33 +2560,15 @@ function App() {
                   </article>
                 </div>
                 <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
-                  <div className="workspace-dashboard__panel-title">PORTAL CODES</div>
-                  {customerPortalCodes.length ? (
-                    <div className="portal-code-list">
-                      {customerPortalCodes.map((item) => (
-                        <div className="portal-code-item" key={item.id}>
-                          <div className="portal-code-item__name">
-                            {item.procedureName.trim() || 'Procédure sans nom'}
-                          </div>
-                          <div className="portal-code-item__actions">
-                            <code className="portal-code-item__code">{item.code.trim() || '—'}</code>
-                            <button
-                              className={`ghost dashboard-copy-btn${
-                                portalCopiedId === item.id ? ' is-success' : ''
-                              }`}
-                              type="button"
-                              onClick={() => void handleCopyPortalCode(item.id, item.code)}
-                              disabled={!item.code.trim()}
-                            >
-                              {portalCopiedId === item.id ? 'Copié !' : 'Copier'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="dashboard-empty">Aucun code configuré dans Paramètres.</div>
-                  )}
+                  <div className="workspace-dashboard__panel-title">PORTAL PROCÉDURE</div>
+                  <PortalCodeList
+                    items={customerPortalCodes}
+                    copiedId={portalCopiedId}
+                    onCopy={(id, code) => void handleCopyPortalCode(id, code)}
+                    title="Portal Procédure"
+                    onInfoEnter={showPortalInfoTooltip}
+                    onInfoLeave={hidePortalInfoTooltip}
+                  />
                 </article>
               </div>
             </section>
@@ -2611,13 +2697,27 @@ function App() {
     </div>
 
     {toast ? <div className="toast">{toast}</div> : null}
-    {snippetTooltip ? (
-      <div
-        className="bullet-tooltip visible"
-        style={{ top: snippetTooltip.y, left: snippetTooltip.x }}
-        dangerouslySetInnerHTML={{ __html: highlightTextPreview(snippetTooltip.text) }}
-      />
-    ) : null}
+    {typeof document !== 'undefined' && snippetTooltip
+      ? createPortal(
+          <div
+            className="bullet-tooltip visible"
+            style={{ top: snippetTooltip.y, left: snippetTooltip.x }}
+            dangerouslySetInnerHTML={{ __html: highlightTextPreview(snippetTooltip.text) }}
+          />,
+          document.body,
+        )
+      : null}
+    {typeof document !== 'undefined' && portalInfoTooltip
+      ? createPortal(
+          <div
+            className="bullet-tooltip bullet-tooltip--portal visible"
+            style={{ top: portalInfoTooltip.y, left: portalInfoTooltip.x }}
+          >
+            {portalInfoTooltip.text}
+          </div>,
+          document.body,
+        )
+      : null}
 
     {editOpen ? (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
@@ -4182,9 +4282,9 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Codes customer portal</div>
+                      <div className="list-card__title">Portal Procédure</div>
                       <div className="list-card__subtitle">
-                        Liste affichée dans le dashboard.
+                        Nom, code, draft, forward et note affichés dans le dashboard.
                       </div>
                     </div>
                     <div className="list-card__tools">
@@ -4194,7 +4294,15 @@ function App() {
                         onClick={() =>
                           updateCustomerPortalCodes([
                             ...customerPortalCodes,
-                            { id: createId('portal'), procedureName: '', code: '' },
+                            {
+                              id: createId('portal'),
+                              procedureName: '',
+                              code: '',
+                              showDraft: false,
+                              showForward: false,
+                              forwardTarget: '',
+                              infoNote: '',
+                            },
                           ])
                         }
                       >
@@ -4206,59 +4314,105 @@ function App() {
                     <div className="portal-code-editor">
                       {customerPortalCodes.length ? (
                         customerPortalCodes.map((item) => (
-                          <div className="portal-code-editor__row" key={item.id}>
-                            <input
-                              className="input"
-                              value={item.procedureName}
-                              placeholder="Nom de procédure"
-                              onChange={(event) =>
-                                updateCustomerPortalCodes(
-                                  customerPortalCodes.map((entry) =>
-                                    entry.id === item.id
-                                      ? { ...entry, procedureName: event.target.value }
-                                      : entry,
-                                  ),
-                                )
-                              }
-                            />
-                            <input
-                              className="input"
-                              value={item.code}
-                              placeholder="Code portal"
-                              onChange={(event) =>
-                                updateCustomerPortalCodes(
-                                  customerPortalCodes.map((entry) =>
-                                    entry.id === item.id
-                                      ? { ...entry, code: event.target.value }
-                                      : entry,
-                                  ),
-                                )
-                              }
-                            />
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer"
-                              onClick={() =>
-                                updateCustomerPortalCodes(
-                                  customerPortalCodes.filter((entry) => entry.id !== item.id),
-                                )
-                              }
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                          <div className="portal-code-editor__card" key={item.id}>
+                            <div className="portal-code-editor__row">
+                              <input
+                                className="input"
+                                value={item.procedureName}
+                                placeholder="Nom de procédure"
+                                onChange={(event) =>
+                                  updateCustomerPortalCodeItem(item.id, {
+                                    procedureName: event.target.value,
+                                  })
+                                }
+                              />
+                              <input
+                                className="input"
+                                value={item.code}
+                                placeholder="Code portal"
+                                onChange={(event) =>
+                                  updateCustomerPortalCodeItem(item.id, {
+                                    code: event.target.value,
+                                  })
+                                }
+                              />
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer"
+                                onClick={() =>
+                                  updateCustomerPortalCodes(
+                                    customerPortalCodes.filter((entry) => entry.id !== item.id),
+                                  )
+                                }
                               >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            <div className="portal-code-editor__options">
+                              <label className="portal-code-editor__check">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(item.showDraft)}
+                                  onChange={(event) =>
+                                    updateCustomerPortalCodeItem(item.id, {
+                                      showDraft: event.target.checked,
+                                    })
+                                  }
+                                />
+                                <span>Afficher Draft</span>
+                              </label>
+
+                              <label className="portal-code-editor__check">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(item.showForward)}
+                                  onChange={(event) =>
+                                    updateCustomerPortalCodeItem(item.id, {
+                                      showForward: event.target.checked,
+                                    })
+                                  }
+                                />
+                                <span>Afficher Forward to</span>
+                              </label>
+                            </div>
+
+                            {item.showForward ? (
+                              <input
+                                className="input"
+                                value={item.forwardTarget ?? ''}
+                                placeholder="Nom à afficher après Forward to"
+                                onChange={(event) =>
+                                  updateCustomerPortalCodeItem(item.id, {
+                                    forwardTarget: event.target.value,
+                                  })
+                                }
+                              />
+                            ) : null}
+
+                            <textarea
+                              className="textarea portal-code-editor__note"
+                              value={item.infoNote ?? ''}
+                              placeholder="Note affichée au survol du bouton i"
+                              onChange={(event) =>
+                                updateCustomerPortalCodeItem(item.id, {
+                                  infoNote: event.target.value,
+                                })
+                              }
+                            />
                           </div>
                         ))
                       ) : (
