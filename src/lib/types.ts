@@ -80,6 +80,10 @@ export interface CustomerPortalCode {
   id: string
   procedureName: string
   code: string
+  showDraft?: boolean
+  showForward?: boolean
+  forwardTarget?: string
+  infoNote?: string
 }
 
 export interface DashboardProduct {

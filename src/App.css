@@ -516,11 +516,20 @@ select optgroup {
   line-height: 1.6;
   color: var(--text);
   white-space: pre-wrap;
-  z-index: 50;
+  z-index: 5000;
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity 0.15s ease, transform 0.15s ease;
   pointer-events: none;
+}
+
+.bullet-tooltip--portal {
+  width: 320px;
+  max-width: min(320px, calc(100vw - 24px));
+  max-height: 220px;
+  padding: 10px 12px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: 1.5;
 }
 
 .bullet-tooltip.visible {
@@ -673,6 +682,7 @@ select optgroup {
 
 .dashboard-panel--codes {
   grid-area: codes;
+  overflow: visible;
 }
 
 .dashboard-panel--versions {
@@ -739,13 +749,19 @@ select optgroup {
   line-height: 1.5;
 }
 
+.portal-code-list-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
 .portal-code-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
+  min-height: min-content;
+  overflow: visible;
+  padding: 2px 0;
 }
 
 .portal-code-item {
@@ -757,6 +773,21 @@ select optgroup {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  position: relative;
+  z-index: 0;
+}
+
+.portal-code-item__content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.portal-code-item__line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .portal-code-item__name {
@@ -766,6 +797,7 @@ select optgroup {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .portal-code-item__actions {
@@ -783,6 +815,49 @@ select optgroup {
   color: var(--text-secondary);
   font-size: calc(11px * var(--text-scale));
   white-space: nowrap;
+}
+
+.portal-code-item__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: calc(11px * var(--text-scale));
+  white-space: nowrap;
+}
+
+.portal-code-item__badge--accent {
+  border-color: rgba(83, 169, 255, 0.34);
+  background: rgba(83, 169, 255, 0.14);
+  color: #dceeff;
+}
+
+.portal-code-item__info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.portal-code-item__info-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(83, 169, 255, 0.34);
+  background: rgba(83, 169, 255, 0.14);
+  color: #dceeff;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.portal-code-item:hover,
+.portal-code-item:focus-within {
+  z-index: 6;
 }
 
 .dashboard-copy-btn {
@@ -1542,10 +1617,10 @@ button.dashboard-copy-btn.is-success:hover {
 
 .workspace-dashboard__panel--portal {
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.workspace-dashboard__panel--portal .portal-code-list {
+.workspace-dashboard__panel--portal .portal-code-list-scroll {
   max-height: none;
   flex: 1 1 auto;
   min-height: 0;
@@ -3237,11 +3312,43 @@ button.ghost.confirm {
   gap: 10px;
 }
 
+.portal-code-editor__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .portal-code-editor__row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 240px) auto;
   gap: 10px;
   align-items: center;
+}
+
+.portal-code-editor__options {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.portal-code-editor__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: calc(13px * var(--text-scale));
+}
+
+.portal-code-editor__check input {
+  accent-color: var(--accent);
+}
+
+.portal-code-editor__note {
+  min-height: 96px;
 }
 
 .dashboard-product-editor {
@@ -3475,6 +3582,19 @@ button.ghost.confirm {
 
   .portal-code-editor__row {
     grid-template-columns: 1fr;
+  }
+
+  .portal-code-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .portal-code-item__actions {
+    width: 100%;
+  }
+
+  .dashboard-copy-btn {
+    width: 100%;
   }
 
   .dashboard-product-editor {
