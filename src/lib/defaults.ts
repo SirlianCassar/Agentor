@@ -1,7 +1,7 @@
 import type { AppData } from './types'
 
 export const defaultData: AppData = {
-  version: 2,
+  version: 3,
   categories: [
     { id: 'cat-general', name: 'Général', color: 'violet' },
     { id: 'cat-tech', name: 'Technique', color: 'bleu' },
@@ -316,6 +316,7 @@ Ajout multi-ligne :
       createdAt: '2024-01-18T14:12:00.000Z',
     },
   ],
+  callHistory: [],
   settings: {
     language: 'fr',
     zoom: 1,

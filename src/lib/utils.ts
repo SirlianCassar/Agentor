@@ -373,6 +373,7 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
     taskTemplates: Array.isArray(raw.taskTemplates) ? raw.taskTemplates : fallback.taskTemplates,
     procedures: Array.isArray(raw.procedures) ? raw.procedures : fallback.procedures,
     history: Array.isArray(raw.history) ? raw.history : fallback.history,
+    callHistory: Array.isArray(raw.callHistory) ? raw.callHistory : fallback.callHistory,
     settings: {
       ...fallback.settings,
       ...(raw.settings ?? {}),

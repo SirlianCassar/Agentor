@@ -120,5 +120,6 @@ export interface AppData {
   emailDraft: string
   taskDraft: string
   history: HistoryItem[]
+  callHistory: HistoryItem[]
   settings: AppSettings
 }

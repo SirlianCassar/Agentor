@@ -1,7 +1,7 @@
 {
   "name": "speedmail-app",
   "private": true,
-  "version": "2.0.8",
+  "version": "2.0.10",
   "author": "Sirlian",
   "description": "SpeedMail local email and task template composer",
   "type": "module",
