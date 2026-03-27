@@ -84,6 +84,7 @@ jobs:
           }
 
       - name: Upload build artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: SpeedMail-Windows-${{ steps.normalize_version.outputs.semver }}
