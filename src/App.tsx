@@ -69,6 +69,33 @@ const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
 const APP_VERSION_LABEL = APP_VERSION.replace(/\.0$/, '')
 const VAT_DIVISOR = 1.2
 const DEFAULT_SUPPORT_SITE_URL = 'https://support.guillemot.com/'
+const PHONE_CALL_TEMPLATE = `// Please Assign to Niels Cassar-Gaisne //
+// Regarding RTQ -   //
+
+
+CU called about :
+`
+const CALL_HISTORY_LIMIT = 3
+type WorkspaceDashboardPage =
+  | 'overview'
+  | 'portal'
+  | 'versions'
+  | 'formatter'
+  | 'vat'
+  | 'wip'
+
+const workspaceDashboardPageOptions: Array<{
+  id: WorkspaceDashboardPage
+  label: string
+  title: string
+}> = [
+  { id: 'overview', label: '1', title: 'Dashboard actuel' },
+  { id: 'portal', label: '2', title: 'Portal Procédure' },
+  { id: 'versions', label: '3', title: 'Versions produits' },
+  { id: 'formatter', label: '4', title: 'Name formatter' },
+  { id: 'vat', label: '5', title: 'Calculateur TVA' },
+  { id: 'wip', label: '6', title: 'Page WIP' },
+]
 
 const quickLinks = [
   {
@@ -114,11 +141,32 @@ const exportFontOptions = [
 ]
 const EXPORT_FONT_SIZE_MIN = 10
 const EXPORT_FONT_SIZE_MAX = 22
+const historyTimestampFormatter = new Intl.DateTimeFormat('fr-FR', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
 
 function getUpdateSettingsLabel(status: UpdateStatus | null) {
   if (!status) return 'Statut inconnu.'
   if (status.phase === 'disabled') return 'Mises à jour auto disponibles sur l’application installée.'
   return status.message
+}
+
+function formatHistoryTimestamp(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return historyTimestampFormatter.format(date)
+}
+
+function normalizeCallDraft(value: string) {
+  return value.replace(/\r\n/g, '\n').trimEnd()
+}
+
+function getMeaningfulCallDraft(value: string) {
+  const normalized = normalizeCallDraft(value)
+  if (!normalized.trim()) return null
+  if (normalized.trim() === PHONE_CALL_TEMPLATE.trim()) return null
+  return normalized
 }
 
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
@@ -145,6 +193,10 @@ const convertLegacyTokensInData = (payload: AppData): AppData => ({
   emailDraft: convertLegacyTokens(payload.emailDraft),
   taskDraft: convertLegacyTokens(payload.taskDraft),
   history: payload.history.map((item) => ({
+    ...item,
+    content: convertLegacyTokens(item.content),
+  })),
+  callHistory: payload.callHistory.map((item) => ({
     ...item,
     content: convertLegacyTokens(item.content),
   })),
@@ -192,6 +244,9 @@ function mergeData(current: AppData, incoming: AppData) {
     taskTemplates: mergeById(current.taskTemplates, incoming.taskTemplates),
     procedures: mergeById(current.procedures, incoming.procedures),
     history: mergeById(current.history, incoming.history).sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    ),
+    callHistory: mergeById(current.callHistory, incoming.callHistory).sort((a, b) =>
       b.createdAt.localeCompare(a.createdAt),
     ),
     settings: {
@@ -309,6 +364,12 @@ function App() {
   const [taskCopied, setTaskCopied] = useState(false)
   const [portalCopiedId, setPortalCopiedId] = useState<string | null>(null)
   const [dashboardHtCopied, setDashboardHtCopied] = useState(false)
+  const [callModalOpen, setCallModalOpen] = useState(false)
+  const [callDraft, setCallDraft] = useState(PHONE_CALL_TEMPLATE)
+  const [callCopied, setCallCopied] = useState(false)
+  const [callHistoryCopiedId, setCallHistoryCopiedId] = useState<string | null>(null)
+  const [callEntryId, setCallEntryId] = useState<string | null>(null)
+  const [callOpenedAt, setCallOpenedAt] = useState<string | null>(null)
   const [procedureLanguage] = useState<Language>('fr')
   const [procedureBrand, setProcedureBrand] = useState<ProcedureBrand>('hercules')
   const [procedureCoverage, setProcedureCoverage] = useState<ProcedureCoverage>('oow')
@@ -317,7 +378,19 @@ function App() {
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<
-    'categories' | 'snippets' | 'templates' | 'tasks' | 'procedure' | 'settings' | 'dashboard' | 'updates'
+    | 'categories'
+    | 'snippets'
+    | 'templates'
+    | 'tasks'
+    | 'calls'
+    | 'procedure'
+    | 'dashboard'
+    | 'updates'
+    | 'display'
+    | 'export'
+    | 'general'
+    | 'snippetSettings'
+    | 'history'
   >(
     'categories',
   )
@@ -355,9 +428,8 @@ function App() {
   const [dashboardTtcPrice, setDashboardTtcPrice] = useState('')
   const [dashboardSectionOpen, setDashboardSectionOpen] = useState(true)
   const [dashboardSectionMounted, setDashboardSectionMounted] = useState(true)
-  const [settingsPanel, setSettingsPanel] = useState<
-    'display' | 'export' | 'general' | 'snippets' | 'history'
-  >('display')
+  const [workspaceDashboardPage, setWorkspaceDashboardPage] =
+    useState<WorkspaceDashboardPage>('overview')
   const isCategorySelectionEmpty = selectedCategoryId === null
   const isSnippetSelectionEmpty = selectedSnippetId === null
   const isTemplateSelectionEmpty = selectedTemplateId === null
@@ -371,6 +443,8 @@ function App() {
   const taskCopyTimeoutRef = useRef<number | null>(null)
   const portalCopyTimeoutRef = useRef<number | null>(null)
   const dashboardHtCopyTimeoutRef = useRef<number | null>(null)
+  const callCopyTimeoutRef = useRef<number | null>(null)
+  const callHistoryCopyTimeoutRef = useRef<number | null>(null)
   const snippetTitleRef = useRef<HTMLInputElement>(null)
   const snippetContentRef = useRef<HTMLTextAreaElement>(null)
   const snippetTaskRef = useRef<HTMLTextAreaElement>(null)
@@ -386,8 +460,32 @@ function App() {
   const taskSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
+  const callTextareaRef = useRef<HTMLTextAreaElement>(null)
   const manualUpdateCheckRequestedRef = useRef(false)
   const dashboardOpenFrameRef = useRef<number | null>(null)
+
+  const persistCallDraft = useCallback(() => {
+    const content = getMeaningfulCallDraft(callDraft)
+    if (!content) return null
+
+    const id = callEntryId ?? createId('call')
+    const createdAt = callOpenedAt ?? new Date().toISOString()
+    const entry = { id, content, createdAt }
+
+    setData((prev) => ({
+      ...prev,
+      callHistory: [entry, ...prev.callHistory.filter((item) => item.id !== id)].slice(
+        0,
+        CALL_HISTORY_LIMIT,
+      ),
+    }))
+
+    if (!callEntryId) {
+      setCallEntryId(id)
+    }
+
+    return content
+  }, [callDraft, callEntryId, callOpenedAt])
 
   const closeTemplateSearch = useCallback(() => {
     setTemplateFocused(false)
@@ -432,6 +530,14 @@ function App() {
       setDashboardSectionOpen(true)
     })
   }, [dashboardSectionOpen])
+
+  const handleSelectWorkspaceDashboardPage = useCallback(
+    (page: WorkspaceDashboardPage) => {
+      setWorkspaceDashboardPage(page)
+      closeSearchMenus()
+    },
+    [closeSearchMenus],
+  )
 
   const handleDashboardTransitionEnd = useCallback(
     (event: TransitionEvent<HTMLElement>) => {
@@ -687,17 +793,47 @@ function App() {
       if (dashboardHtCopyTimeoutRef.current !== null) {
         window.clearTimeout(dashboardHtCopyTimeoutRef.current)
       }
+      if (callCopyTimeoutRef.current !== null) {
+        window.clearTimeout(callCopyTimeoutRef.current)
+      }
+      if (callHistoryCopyTimeoutRef.current !== null) {
+        window.clearTimeout(callHistoryCopyTimeoutRef.current)
+      }
     }
   }, [])
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      if (callModalOpen) {
+        persistCallDraft()
+      }
+      if (callCopyTimeoutRef.current !== null) {
+        window.clearTimeout(callCopyTimeoutRef.current)
+        callCopyTimeoutRef.current = null
+      }
+      setCallModalOpen(false)
+      setCallCopied(false)
+      setCallHistoryCopiedId(null)
+      setCallEntryId(null)
+      setCallOpenedAt(null)
       setEditOpen(false)
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [])
+  }, [callModalOpen, persistCallDraft])
+
+  useEffect(() => {
+    if (!callModalOpen) return
+    const handle = window.requestAnimationFrame(() => {
+      const target = callTextareaRef.current
+      if (!target) return
+      target.focus()
+      const cursor = target.value.length
+      target.setSelectionRange(cursor, cursor)
+    })
+    return () => window.cancelAnimationFrame(handle)
+  }, [callModalOpen])
 
   useEffect(() => {
     if (!editOpen) return
@@ -802,12 +938,23 @@ function App() {
     updateStatus?.phase === 'available' ||
     updateStatus?.phase === 'downloading' ||
     isUpdateReadyToInstall
+  const callHistory = useMemo(
+    () => [...data.callHistory].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [data.callHistory],
+  )
   const editButtonLabel = 'Édition'
-  const settingsPanels = [
+  const editPanels = [
+    { id: 'categories', label: 'Catégories' },
+    { id: 'snippets', label: 'Snippets' },
+    { id: 'templates', label: 'Templates mail' },
+    { id: 'tasks', label: 'Templates de tâche' },
+    { id: 'calls', label: 'Appels' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'updates', label: 'Mise à jour' },
     { id: 'display', label: 'Affichage' },
     { id: 'export', label: 'Texte exporté' },
     { id: 'general', label: 'Général' },
-    { id: 'snippets', label: 'Snippets' },
+    { id: 'snippetSettings', label: 'Réglages snippets' },
     { id: 'history', label: 'Historique' },
   ] as const
   const isUpdateCheckRunning =
@@ -1406,6 +1553,65 @@ function App() {
     dashboardHtCopyTimeoutRef.current = window.setTimeout(() => setDashboardHtCopied(false), 1600)
   }
 
+  const openCallModal = () => {
+    setCallDraft(PHONE_CALL_TEMPLATE)
+    setCallCopied(false)
+    setCallEntryId(createId('call'))
+    setCallOpenedAt(new Date().toISOString())
+    if (callCopyTimeoutRef.current !== null) {
+      window.clearTimeout(callCopyTimeoutRef.current)
+      callCopyTimeoutRef.current = null
+    }
+    setCallModalOpen(true)
+  }
+
+  const closeCallModal = () => {
+    persistCallDraft()
+    if (callCopyTimeoutRef.current !== null) {
+      window.clearTimeout(callCopyTimeoutRef.current)
+      callCopyTimeoutRef.current = null
+    }
+    setCallModalOpen(false)
+    setCallCopied(false)
+    setCallEntryId(null)
+    setCallOpenedAt(null)
+  }
+
+  const handleCopyCall = async () => {
+    const content = normalizeCallDraft(callDraft)
+    if (!content.trim()) return
+    if (callCopyTimeoutRef.current !== null) {
+      window.clearTimeout(callCopyTimeoutRef.current)
+    }
+
+    persistCallDraft()
+    const didCopy = await copyText(content)
+    if (!didCopy) {
+      setToast('Copie impossible.')
+      return
+    }
+
+    setCallCopied(true)
+    callCopyTimeoutRef.current = window.setTimeout(() => setCallCopied(false), 1600)
+  }
+
+  const handleCopyHistoryCall = async (id: string, content: string) => {
+    const value = content.trim()
+    if (!value) return
+    if (callHistoryCopyTimeoutRef.current !== null) {
+      window.clearTimeout(callHistoryCopyTimeoutRef.current)
+    }
+    const didCopy = await copyText(value)
+    if (!didCopy) {
+      setToast('Copie impossible.')
+      return
+    }
+    setCallHistoryCopiedId(id)
+    callHistoryCopyTimeoutRef.current = window.setTimeout(() => {
+      setCallHistoryCopiedId((current) => (current === id ? null : current))
+    }, 1600)
+  }
+
   const handleSaveDashboardProduct = () => {
     const name = dashboardProductDraft.name.trim()
     if (!name) return
@@ -1806,6 +2012,125 @@ function App() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         }).format(dashboardHtPrice)
+
+  const renderWorkspaceDashboardNameFormatter = (title: string) => (
+    <article className="workspace-dashboard__panel">
+      <div className="workspace-dashboard__panel-title">{title}</div>
+      <div className="dashboard-formatter">
+        <div className="dashboard-formatter__input-wrap">
+          <span className="dashboard-formatter__icon" aria-hidden="true">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c1.7-4 5-6 8-6s6.3 2 8 6" />
+            </svg>
+          </span>
+          <input
+            className="input dashboard-formatter__input"
+            value={nameFormatterValue}
+            onChange={(event) => setNameFormatterValue(event.target.value)}
+            placeholder="Nom prenom"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                void handleFormatName()
+              }
+            }}
+          />
+        </div>
+        <button
+          className="primary dashboard-formatter__action"
+          type="button"
+          onClick={() => void handleFormatName()}
+          disabled={!nameFormatterValue.trim()}
+        >
+          Formater & copier
+        </button>
+      </div>
+    </article>
+  )
+
+  const renderWorkspaceDashboardVatPanel = (title: string) => (
+    <article className="workspace-dashboard__panel">
+      <div className="workspace-dashboard__panel-title">{title}</div>
+      <div className="dashboard-calculator">
+        <label className="dashboard-calculator__label" htmlFor="dashboard-price-ttc">
+          Prix TTC
+        </label>
+        <input
+          id="dashboard-price-ttc"
+          className="input"
+          value={dashboardTtcPrice}
+          onChange={(event) => setDashboardTtcPrice(event.target.value)}
+          placeholder="Ex: 119,99"
+          inputMode="decimal"
+        />
+        <div className="dashboard-calculator__result">
+          <span>
+            HT: <strong>{formattedDashboardHtPrice} EUR</strong>
+          </span>
+          <button
+            className={`ghost dashboard-copy-btn dashboard-copy-btn--inline${
+              dashboardHtCopied ? ' is-success' : ''
+            }`}
+            type="button"
+            onClick={() => void handleCopyDashboardHt()}
+            disabled={dashboardHtPrice === null}
+          >
+            {dashboardHtCopied ? 'Copié !' : 'Copier'}
+          </button>
+        </div>
+      </div>
+    </article>
+  )
+
+  const renderWorkspaceDashboardPortalPanel = (title: string) => (
+    <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
+      <div className="workspace-dashboard__panel-title">{title}</div>
+      <PortalCodeList
+        items={customerPortalCodes}
+        copiedId={portalCopiedId}
+        onCopy={(id, code) => void handleCopyPortalCode(id, code)}
+        title="Portal Procédure"
+        onInfoEnter={showPortalInfoTooltip}
+        onInfoLeave={hidePortalInfoTooltip}
+      />
+    </article>
+  )
+
+  const renderWorkspaceDashboardContent = () => {
+    if (workspaceDashboardPage === 'overview') {
+      return (
+        <div className="workspace-dashboard__inner">
+          <div className="workspace-dashboard__left">
+            {renderWorkspaceDashboardNameFormatter('Name format')}
+            {renderWorkspaceDashboardVatPanel('TVA Calculator')}
+          </div>
+          {renderWorkspaceDashboardPortalPanel('PORTAL PROCÉDURE')}
+        </div>
+      )
+    }
+
+    const activePage =
+      workspaceDashboardPageOptions.find((page) => page.id === workspaceDashboardPage) ??
+      workspaceDashboardPageOptions[0]
+
+    return (
+      <div className="workspace-dashboard__single">
+        <article className="workspace-dashboard__panel workspace-dashboard__panel--empty">
+          <div className="workspace-dashboard__panel-title">{activePage.title}</div>
+        </article>
+      </div>
+    )
+  }
 
   if (!loaded) {
     return (
@@ -2353,72 +2678,96 @@ function App() {
       <main className="workspace">
         <header className="workspace-head">
           <p className="workspace-title">Compose template</p>
-          <div className="template-controls">
-            <div className="template-search-wrap" ref={templateSearchRef}>
-              <input
-                value={templateQuery}
-                onChange={(event) => setTemplateQuery(event.target.value)}
-                placeholder="Rechercher un template..."
-                onFocus={() => {
-                  setTemplateFocused(true)
-                  setTemplateListKey((prev) => prev + 1)
-                }}
-                onBlur={() => {
-                  closeTemplateSearch()
-                }}
-              />
-              {templateResults.length ? (
-                <div
-                  className="search-results visible"
-                  key={templateListKey}
-                  onMouseDown={(event) => event.preventDefault()}
-                >
-                  {templateResults.map((template) => (
-                    <div
-                      key={template.id}
-                      className="search-result-item"
-                      onClick={() => {
-                        applyTemplate(template)
-                        closeTemplateSearch()
-                      }}
-                    >
-                      <div className="result-name">
-                        <span className="result-name__text">{template.name}</span>
-                        <img
-                          className="result-flag"
-                          src={
-                            template.language === 'fr'
-                              ? assetUrl('/speedmail/fr.svg')
-                              : assetUrl('/speedmail/gb.svg')
-                          }
-                          alt={template.language === 'fr' ? 'FR' : 'EN'}
+          <div className="workspace-head__actions">
+            <div className="template-controls">
+              <div className="template-search-wrap" ref={templateSearchRef}>
+                <input
+                  value={templateQuery}
+                  onChange={(event) => setTemplateQuery(event.target.value)}
+                  placeholder="Rechercher un template..."
+                  onFocus={() => {
+                    setTemplateFocused(true)
+                    setTemplateListKey((prev) => prev + 1)
+                  }}
+                  onBlur={() => {
+                    closeTemplateSearch()
+                  }}
+                />
+                {templateResults.length ? (
+                  <div
+                    className="search-results visible"
+                    key={templateListKey}
+                    onMouseDown={(event) => event.preventDefault()}
+                  >
+                    {templateResults.map((template) => (
+                      <div
+                        key={template.id}
+                        className="search-result-item"
+                        onClick={() => {
+                          applyTemplate(template)
+                          closeTemplateSearch()
+                        }}
+                      >
+                        <div className="result-name">
+                          <span className="result-name__text">{template.name}</span>
+                          <img
+                            className="result-flag"
+                            src={
+                              template.language === 'fr'
+                                ? assetUrl('/speedmail/fr.svg')
+                                : assetUrl('/speedmail/gb.svg')
+                            }
+                            alt={template.language === 'fr' ? 'FR' : 'EN'}
+                          />
+                        </div>
+                        <div
+                          className="result-preview"
+                          dangerouslySetInnerHTML={{
+                            __html: highlightTextPreview(template.content.split('\n')[0] ?? ''),
+                          }}
                         />
                       </div>
-                      <div
-                        className="result-preview"
-                        dangerouslySetInnerHTML={{
-                          __html: highlightTextPreview(template.content.split('\n')[0] ?? ''),
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : null}
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-          <div className="quick-links-inline">
-            {quickLinks.map((link) => (
-              <button
-                key={link.id}
-                className="quick-link"
-                title={link.label}
-                aria-label={link.label}
-                onClick={() => openLink(link.url)}
+            <button
+              className="primary call-trigger-btn"
+              type="button"
+              title="Appel téléphonique"
+              aria-label="Appel téléphonique"
+              onClick={openCallModal}
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.15"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <img src={link.icon} alt={link.label} width={22} height={22} />
-                <span className="quick-link-label">{link.label}</span>
-              </button>
-            ))}
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.99a16 16 0 0 0 6 6l1.53-1.28a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z" />
+                <path d="M15 4.5a4.5 4.5 0 0 1 4.5 4.5" />
+                <path d="M15 1.5A7.5 7.5 0 0 1 22.5 9" />
+              </svg>
+            </button>
+            <div className="quick-links-inline">
+              {quickLinks.map((link) => (
+                <button
+                  key={link.id}
+                  className="quick-link"
+                  title={link.label}
+                  aria-label={link.label}
+                  onClick={() => openLink(link.url)}
+                >
+                  <img src={link.icon} alt={link.label} width={22} height={22} />
+                  <span className="quick-link-label">{link.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </header>
 
@@ -2433,17 +2782,39 @@ function App() {
             />
             <div className="composer-actions">
               <div className="composer-actions__left">
-                <button
-                  type="button"
-                  className={`ghost dashboard-toggle-btn${dashboardSectionOpen ? ' is-open' : ''}`}
-                  onClick={toggleDashboardSection}
-                  title={dashboardSectionOpen ? 'Masquer le dashboard' : 'Afficher le dashboard'}
-                  aria-label={dashboardSectionOpen ? 'Masquer le dashboard' : 'Afficher le dashboard'}
-                  aria-expanded={dashboardSectionOpen}
-                  aria-controls="workspace-dashboard"
-                >
-                  {dashboardSectionOpen ? '▾' : '▴'}
-                </button>
+                <div className={`dashboard-toggle-cluster${dashboardSectionOpen ? ' is-open' : ''}`}>
+                  <button
+                    type="button"
+                    className={`ghost dashboard-toggle-btn${dashboardSectionOpen ? ' is-open' : ''}`}
+                    onClick={toggleDashboardSection}
+                    title={dashboardSectionOpen ? 'Masquer le dashboard' : 'Afficher le dashboard'}
+                    aria-label={dashboardSectionOpen ? 'Masquer le dashboard' : 'Afficher le dashboard'}
+                    aria-expanded={dashboardSectionOpen}
+                    aria-controls="workspace-dashboard"
+                  >
+                    {dashboardSectionOpen ? '▾' : '▴'}
+                  </button>
+                  <div
+                    className={`dashboard-page-strip${dashboardSectionOpen ? ' is-open' : ''}`}
+                    aria-hidden={!dashboardSectionOpen}
+                  >
+                    {workspaceDashboardPageOptions.map((page) => (
+                      <button
+                        key={page.id}
+                        type="button"
+                        className={`dashboard-page-btn${
+                          workspaceDashboardPage === page.id ? ' is-active' : ''
+                        }`}
+                        title={page.title}
+                        aria-label={page.title}
+                        tabIndex={dashboardSectionOpen ? 0 : -1}
+                        onClick={() => handleSelectWorkspaceDashboardPage(page.id)}
+                      >
+                        {page.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="actions">
                 {emailTags ? <span className="tag-warning">⚠️</span> : null}
@@ -2483,94 +2854,7 @@ function App() {
               aria-hidden={!dashboardSectionOpen}
               onTransitionEnd={handleDashboardTransitionEnd}
             >
-              <div className="workspace-dashboard__inner">
-                <div className="workspace-dashboard__left">
-                  <article className="workspace-dashboard__panel">
-                    <div className="workspace-dashboard__panel-title">Name format</div>
-                    <div className="dashboard-formatter">
-                      <div className="dashboard-formatter__input-wrap">
-                        <span className="dashboard-formatter__icon" aria-hidden="true">
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <circle cx="12" cy="8" r="4" />
-                            <path d="M4 20c1.7-4 5-6 8-6s6.3 2 8 6" />
-                          </svg>
-                        </span>
-                        <input
-                          className="input dashboard-formatter__input"
-                          value={nameFormatterValue}
-                          onChange={(event) => setNameFormatterValue(event.target.value)}
-                          placeholder="Nom prenom"
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault()
-                              void handleFormatName()
-                            }
-                          }}
-                        />
-                      </div>
-                      <button
-                        className="primary dashboard-formatter__action"
-                        type="button"
-                        onClick={() => void handleFormatName()}
-                        disabled={!nameFormatterValue.trim()}
-                      >
-                        Formater & copier
-                      </button>
-                    </div>
-                  </article>
-                  <article className="workspace-dashboard__panel">
-                    <div className="workspace-dashboard__panel-title">TVA Calculator</div>
-                    <div className="dashboard-calculator">
-                      <label className="dashboard-calculator__label" htmlFor="dashboard-price-ttc">
-                        Prix TTC
-                      </label>
-                      <input
-                        id="dashboard-price-ttc"
-                        className="input"
-                        value={dashboardTtcPrice}
-                        onChange={(event) => setDashboardTtcPrice(event.target.value)}
-                        placeholder="Ex: 119,99"
-                        inputMode="decimal"
-                      />
-                      <div className="dashboard-calculator__result">
-                        <span>
-                          HT: <strong>{formattedDashboardHtPrice} EUR</strong>
-                        </span>
-                        <button
-                          className={`ghost dashboard-copy-btn dashboard-copy-btn--inline${
-                            dashboardHtCopied ? ' is-success' : ''
-                          }`}
-                          type="button"
-                          onClick={() => void handleCopyDashboardHt()}
-                          disabled={dashboardHtPrice === null}
-                        >
-                          {dashboardHtCopied ? 'Copié !' : 'Copier'}
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                </div>
-                <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
-                  <div className="workspace-dashboard__panel-title">PORTAL PROCÉDURE</div>
-                  <PortalCodeList
-                    items={customerPortalCodes}
-                    copiedId={portalCopiedId}
-                    onCopy={(id, code) => void handleCopyPortalCode(id, code)}
-                    title="Portal Procédure"
-                    onInfoEnter={showPortalInfoTooltip}
-                    onInfoLeave={hidePortalInfoTooltip}
-                  />
-                </article>
-              </div>
+              {renderWorkspaceDashboardContent()}
             </section>
           ) : null}
         </div>
@@ -2719,6 +3003,40 @@ function App() {
         )
       : null}
 
+    {callModalOpen ? (
+        <div className="modal-backdrop" onClick={closeCallModal}>
+          <div className="modal call-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal__header">
+              <div className="brand__title">Appel téléphonique</div>
+              <button className="close-modal" type="button" onClick={closeCallModal}>
+                ×
+              </button>
+            </div>
+            <div className="call-modal__body">
+              <label className="call-modal__label" htmlFor="call-draft">
+                Appel téléphonique
+              </label>
+              <textarea
+                id="call-draft"
+                ref={callTextareaRef}
+                className="textarea call-modal__textarea"
+                value={callDraft}
+                onChange={(event) => setCallDraft(event.target.value)}
+              />
+              <div className="call-modal__footer">
+                <button
+                  className={`primary copy-btn${callCopied ? ' is-success' : ''}`}
+                  type="button"
+                  onClick={() => void handleCopyCall()}
+                >
+                  {callCopied ? 'Copié !' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
     {editOpen ? (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
           <div className="modal" onClick={(event) => event.stopPropagation()}>
@@ -2815,26 +3133,23 @@ function App() {
               </div>
             </div>
 
-            <div className="modal__tabs">
-              {[
-                { id: 'categories', label: 'Catégories' },
-                { id: 'snippets', label: 'Snippets' },
-                { id: 'templates', label: 'Templates mail' },
-                { id: 'tasks', label: 'Templates de tâche' },
-                { id: 'dashboard', label: 'Dashboard' },
-                { id: 'updates', label: 'Mise à jour' },
-                { id: 'settings', label: 'Paramètres' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`tab${editTab === tab.id ? ' active' : ''}`}
-                  onClick={() => setEditTab(tab.id as typeof editTab)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <div className="settings-layout edit-layout">
+              <aside className="settings-layout__nav">
+                {editPanels.map((panel) => (
+                  <button
+                    key={panel.id}
+                    type="button"
+                    className={`settings-layout__nav-btn${
+                      editTab === panel.id ? ' is-active' : ''
+                    }`}
+                    onClick={() => setEditTab(panel.id)}
+                  >
+                    {panel.label}
+                  </button>
+                ))}
+              </aside>
 
+              <div className="settings-layout__content">
             {editTab === 'categories' ? (
               <div className="modal__grid">
                 <div className="list-card">
@@ -3941,338 +4256,362 @@ function App() {
               </div>
             ) : null}
 
-            {editTab === 'settings' ? (
-              <div className="settings-layout">
-                <aside className="settings-layout__nav">
-                  {settingsPanels.map((panel) => (
-                    <button
-                      key={panel.id}
-                      type="button"
-                      className={`settings-layout__nav-btn${
-                        settingsPanel === panel.id ? ' is-active' : ''
-                      }`}
-                      onClick={() => setSettingsPanel(panel.id)}
-                    >
-                      {panel.label}
-                    </button>
-                  ))}
-                </aside>
-
-                <div className="settings-layout__content">
-                  {settingsPanel === 'display' ? (
-                    <div className="list-card list-card--form">
-                      <div className="list-card__header">
-                        <div className="list-card__title-group">
-                          <div className="list-card__title">Affichage</div>
-                          <div className="list-card__subtitle">Confort visuel et densité.</div>
-                        </div>
-                      </div>
-                      <div className="list-card__body">
-                        <div className="settings-block">
-                          <div>
-                            <div className="settings-row">
-                              <div className="settings-label">Taille du texte</div>
-                              <div className="settings-value">{Math.round(textScale * 100)}%</div>
-                            </div>
-                            <input
-                              className="range"
-                              type="range"
-                              min="0.85"
-                              max="1.4"
-                              step="0.05"
-                              value={textScale}
-                              onChange={(event) => {
-                                const nextScale = Number(event.target.value)
-                                const textScale = Math.min(1.4, Math.max(0.85, nextScale))
-                                updateSettings({ textScale })
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <div className="settings-row">
-                              <div className="settings-label">Niveau de zoom</div>
-                              <div className="settings-value">{Math.round(zoomValue * 100)}%</div>
-                            </div>
-                            <input
-                              className="range"
-                              type="range"
-                              min="0.8"
-                              max="1.3"
-                              step="0.05"
-                              value={zoomValue}
-                              onChange={(event) => {
-                                const nextZoom = Number(event.target.value)
-                                const zoom = Math.min(1.3, Math.max(0.8, nextZoom))
-                                updateSettings({ zoom })
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <div className="settings-row">
-                              <div className="settings-label">Interligne éditeur</div>
-                              <div className="settings-value">{editorLineHeight.toFixed(2)}x</div>
-                            </div>
-                            <input
-                              className="range"
-                              type="range"
-                              min="1.3"
-                              max="2"
-                              step="0.05"
-                              value={editorLineHeight}
-                              onChange={(event) => {
-                                const nextHeight = Number(event.target.value)
-                                const editorLineHeight = Math.min(2, Math.max(1.3, nextHeight))
-                                updateSettings({ editorLineHeight })
-                              }}
-                            />
-                          </div>
-                        </div>
+            {editTab === 'calls' ? (
+              <div className="modal__grid modal__grid--single">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Historique des appels</div>
+                      <div className="list-card__subtitle">
+                        Appels enregistrés depuis le bouton téléphone.
                       </div>
                     </div>
-                  ) : null}
-
-                  {settingsPanel === 'export' ? (
-                    <div className="list-card list-card--form">
-                      <div className="list-card__header">
-                        <div className="list-card__title-group">
-                          <div className="list-card__title">Texte exporté</div>
-                          <div className="list-card__subtitle">
-                            Police et taille lors de la copie.
-                          </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="settings-history-section">
+                      <div className="settings-row">
+                        <div className="settings-label">Appels sauvegardés</div>
+                        <div className="settings-value">
+                          {callHistory.length} entrée{callHistory.length > 1 ? 's' : ''}
                         </div>
                       </div>
-                      <div className="list-card__body">
-                        <div className="settings-block">
-                          <div>
-                            <div className="settings-row">
-                              <div className="settings-label">Police</div>
-                            </div>
-                            <select
-                              className="select select--roomy"
-                              value={exportFont}
-                              onChange={(event) => updateSettings({ exportFont: event.target.value })}
-                            >
-                              {exportFontOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <div className="settings-row">
-                              <div className="settings-label">Taille</div>
-                              <div className="settings-value">{exportFontSize}px</div>
-                            </div>
-                            <input
-                              className="range"
-                              type="range"
-                              min={EXPORT_FONT_SIZE_MIN}
-                              max={EXPORT_FONT_SIZE_MAX}
-                              step="1"
-                              value={exportFontSize}
-                              onChange={(event) => {
-                                const nextSize = Number(event.target.value)
-                                const exportFontSize = Math.min(
-                                  EXPORT_FONT_SIZE_MAX,
-                                  Math.max(EXPORT_FONT_SIZE_MIN, nextSize),
-                                )
-                                updateSettings({ exportFontSize })
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {settingsPanel === 'general' ? (
-                    <div className="list-card list-card--form">
-                      <div className="list-card__header">
-                        <div className="list-card__title-group">
-                          <div className="list-card__title">Général</div>
-                          <div className="list-card__subtitle">Comportements et langue.</div>
-                        </div>
-                      </div>
-                      <div className="list-card__body">
-                        <div className="settings-block">
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">Focus auto sur l'éditeur</div>
-                              <div className="settings-option__desc">
-                                Revient dans l'email après fermeture de l'édition.
-                              </div>
-                            </div>
-                            <label className="settings-toggle">
-                              <input
-                                type="checkbox"
-                                checked={autoFocusEditor}
-                                onChange={(event) =>
-                                  updateSettings({ autoFocusEditor: event.target.checked })
-                                }
-                              />
-                              <span className="settings-toggle__track">
-                                <span className="settings-toggle__thumb" />
-                              </span>
-                            </label>
-                          </div>
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">Langue des templates</div>
-                              <div className="settings-option__desc">
-                                Filtre par défaut des templates mail.
-                              </div>
-                            </div>
-                            <div className="settings-segment">
-                              {(['fr', 'en'] as Language[]).map((lang) => (
+                      {callHistory.length ? (
+                        <div className="settings-history-list">
+                          {callHistory.map((item) => (
+                            <article className="settings-history-item" key={item.id}>
+                              <div className="settings-history-item__header">
+                                <div className="settings-history-item__meta">
+                                  {formatHistoryTimestamp(item.createdAt)}
+                                </div>
                                 <button
-                                  key={lang}
-                                  type="button"
-                                  className={`settings-pill${
-                                    data.settings.language === lang ? ' is-active' : ''
+                                  className={`ghost dashboard-copy-btn settings-history-item__copy${
+                                    callHistoryCopiedId === item.id ? ' is-success' : ''
                                   }`}
-                                  onClick={() => updateSettings({ language: lang })}
+                                  type="button"
+                                  onClick={() => void handleCopyHistoryCall(item.id, item.content)}
                                 >
-                                  {lang.toUpperCase()}
+                                  {callHistoryCopiedId === item.id ? 'Copié !' : 'Copier'}
                                 </button>
-                              ))}
-                            </div>
-                          </div>
+                              </div>
+                              <div className="settings-history-item__content">{item.content}</div>
+                            </article>
+                          ))}
                         </div>
-                      </div>
+                      ) : (
+                        <div className="empty-state">Aucun appel enregistré pour le moment.</div>
+                      )}
                     </div>
-                  ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
-                  {settingsPanel === 'snippets' ? (
-                    <div className="list-card list-card--form">
-                      <div className="list-card__header">
-                        <div className="list-card__title-group">
-                          <div className="list-card__title">Snippets</div>
-                          <div className="list-card__subtitle">Règles de création rapide.</div>
-                        </div>
+            {editTab === 'display' ? (
+              <div className="list-card list-card--form">
+                <div className="list-card__header">
+                  <div className="list-card__title-group">
+                    <div className="list-card__title">Affichage</div>
+                    <div className="list-card__subtitle">Confort visuel et densité.</div>
+                  </div>
+                </div>
+                <div className="list-card__body">
+                  <div className="settings-block">
+                    <div>
+                      <div className="settings-row">
+                        <div className="settings-label">Taille du texte</div>
+                        <div className="settings-value">{Math.round(textScale * 100)}%</div>
                       </div>
-                      <div className="list-card__body">
-                        <div className="settings-block">
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">
-                                Mode d'insertion par défaut
-                              </div>
-                              <div className="settings-option__desc">
-                                Appliqué aux nouveaux snippets.
-                              </div>
-                            </div>
-                            <div className="settings-segment">
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  defaultSnippetInsertMode === 'line' ? ' is-active' : ''
-                                }`}
-                                onClick={() => updateSettings({ defaultSnippetInsertMode: 'line' })}
-                              >
-                                À la ligne
-                              </button>
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  defaultSnippetInsertMode === 'cursor' ? ' is-active' : ''
-                                }`}
-                                onClick={() => updateSettings({ defaultSnippetInsertMode: 'cursor' })}
-                              >
-                                Au curseur
-                              </button>
-                            </div>
-                          </div>
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">Affichage des catégories</div>
-                              <div className="settings-option__desc">
-                                Affiche les catégories des snippets en 7 boutons ou en liste
-                                déroulante.
-                              </div>
-                            </div>
-                            <div className="settings-segment">
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  snippetCategoryDisplay === 'buttons' ? ' is-active' : ''
-                                }`}
-                                onClick={() => updateSettings({ snippetCategoryDisplay: 'buttons' })}
-                              >
-                                7 boutons
-                              </button>
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  snippetCategoryDisplay === 'dropdown' ? ' is-active' : ''
-                                }`}
-                                onClick={() =>
-                                  updateSettings({ snippetCategoryDisplay: 'dropdown' })
-                                }
-                              >
-                                Liste déroulante
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <input
+                        className="range"
+                        type="range"
+                        min="0.85"
+                        max="1.4"
+                        step="0.05"
+                        value={textScale}
+                        onChange={(event) => {
+                          const nextScale = Number(event.target.value)
+                          const textScale = Math.min(1.4, Math.max(0.85, nextScale))
+                          updateSettings({ textScale })
+                        }}
+                      />
                     </div>
-                  ) : null}
+                    <div>
+                      <div className="settings-row">
+                        <div className="settings-label">Niveau de zoom</div>
+                        <div className="settings-value">{Math.round(zoomValue * 100)}%</div>
+                      </div>
+                      <input
+                        className="range"
+                        type="range"
+                        min="0.8"
+                        max="1.3"
+                        step="0.05"
+                        value={zoomValue}
+                        onChange={(event) => {
+                          const nextZoom = Number(event.target.value)
+                          const zoom = Math.min(1.3, Math.max(0.8, nextZoom))
+                          updateSettings({ zoom })
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <div className="settings-row">
+                        <div className="settings-label">Interligne éditeur</div>
+                        <div className="settings-value">{editorLineHeight.toFixed(2)}x</div>
+                      </div>
+                      <input
+                        className="range"
+                        type="range"
+                        min="1.3"
+                        max="2"
+                        step="0.05"
+                        value={editorLineHeight}
+                        onChange={(event) => {
+                          const nextHeight = Number(event.target.value)
+                          const editorLineHeight = Math.min(2, Math.max(1.3, nextHeight))
+                          updateSettings({ editorLineHeight })
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
-                  {settingsPanel === 'history' ? (
-                    <div className="list-card list-card--form">
-                      <div className="list-card__header">
-                        <div className="list-card__title-group">
-                          <div className="list-card__title">Historique</div>
-                          <div className="list-card__subtitle">Mémoire de copie.</div>
+            {editTab === 'export' ? (
+              <div className="list-card list-card--form">
+                <div className="list-card__header">
+                  <div className="list-card__title-group">
+                    <div className="list-card__title">Texte exporté</div>
+                    <div className="list-card__subtitle">Police et taille lors de la copie.</div>
+                  </div>
+                </div>
+                <div className="list-card__body">
+                  <div className="settings-block">
+                    <div>
+                      <div className="settings-row">
+                        <div className="settings-label">Police</div>
+                      </div>
+                      <select
+                        className="select select--roomy"
+                        value={exportFont}
+                        onChange={(event) => updateSettings({ exportFont: event.target.value })}
+                      >
+                        {exportFontOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <div className="settings-row">
+                        <div className="settings-label">Taille</div>
+                        <div className="settings-value">{exportFontSize}px</div>
+                      </div>
+                      <input
+                        className="range"
+                        type="range"
+                        min={EXPORT_FONT_SIZE_MIN}
+                        max={EXPORT_FONT_SIZE_MAX}
+                        step="1"
+                        value={exportFontSize}
+                        onChange={(event) => {
+                          const nextSize = Number(event.target.value)
+                          const exportFontSize = Math.min(
+                            EXPORT_FONT_SIZE_MAX,
+                            Math.max(EXPORT_FONT_SIZE_MIN, nextSize),
+                          )
+                          updateSettings({ exportFontSize })
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'general' ? (
+              <div className="list-card list-card--form">
+                <div className="list-card__header">
+                  <div className="list-card__title-group">
+                    <div className="list-card__title">Général</div>
+                    <div className="list-card__subtitle">Comportements et langue.</div>
+                  </div>
+                </div>
+                <div className="list-card__body">
+                  <div className="settings-block">
+                    <div className="settings-option">
+                      <div className="settings-option__info">
+                        <div className="settings-option__title">Focus auto sur l'éditeur</div>
+                        <div className="settings-option__desc">
+                          Revient dans l'email après fermeture de l'édition.
                         </div>
                       </div>
-                      <div className="list-card__body">
-                        <div className="settings-block">
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">Sauvegarder les copies</div>
-                              <div className="settings-option__desc">
-                                Ajoute l'email copié dans l'historique.
-                              </div>
-                            </div>
-                            <label className="settings-toggle">
-                              <input
-                                type="checkbox"
-                                checked={historyOnCopy}
-                                onChange={(event) =>
-                                  updateSettings({ historyOnCopy: event.target.checked })
-                                }
-                              />
-                              <span className="settings-toggle__track">
-                                <span className="settings-toggle__thumb" />
-                              </span>
-                            </label>
-                          </div>
-                          <div>
-                            <div className="settings-row">
-                              <div className="settings-label">Taille max</div>
-                              <div className="settings-value">{historyLimit} entrées</div>
-                            </div>
-                            <input
-                              className="range"
-                              type="range"
-                              min="50"
-                              max="400"
-                              step="10"
-                              value={historyLimit}
-                              disabled={!historyOnCopy}
-                              onChange={(event) => {
-                                const nextLimit = Number(event.target.value)
-                                const historyLimit = Math.min(400, Math.max(50, nextLimit))
-                                updateSettings({ historyLimit })
-                              }}
-                            />
-                          </div>
+                      <label className="settings-toggle">
+                        <input
+                          type="checkbox"
+                          checked={autoFocusEditor}
+                          onChange={(event) =>
+                            updateSettings({ autoFocusEditor: event.target.checked })
+                          }
+                        />
+                        <span className="settings-toggle__track">
+                          <span className="settings-toggle__thumb" />
+                        </span>
+                      </label>
+                    </div>
+                    <div className="settings-option">
+                      <div className="settings-option__info">
+                        <div className="settings-option__title">Langue des templates</div>
+                        <div className="settings-option__desc">
+                          Filtre par défaut des templates mail.
                         </div>
+                      </div>
+                      <div className="settings-segment">
+                        {(['fr', 'en'] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            type="button"
+                            className={`settings-pill${
+                              data.settings.language === lang ? ' is-active' : ''
+                            }`}
+                            onClick={() => updateSettings({ language: lang })}
+                          >
+                            {lang.toUpperCase()}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'snippetSettings' ? (
+              <div className="list-card list-card--form">
+                <div className="list-card__header">
+                  <div className="list-card__title-group">
+                    <div className="list-card__title">Réglages snippets</div>
+                    <div className="list-card__subtitle">Règles de création rapide.</div>
+                  </div>
+                </div>
+                <div className="list-card__body">
+                  <div className="settings-block">
+                    <div className="settings-option">
+                      <div className="settings-option__info">
+                        <div className="settings-option__title">Mode d'insertion par défaut</div>
+                        <div className="settings-option__desc">
+                          Appliqué aux nouveaux snippets.
+                        </div>
+                      </div>
+                      <div className="settings-segment">
+                        <button
+                          type="button"
+                          className={`settings-pill${
+                            defaultSnippetInsertMode === 'line' ? ' is-active' : ''
+                          }`}
+                          onClick={() => updateSettings({ defaultSnippetInsertMode: 'line' })}
+                        >
+                          À la ligne
+                        </button>
+                        <button
+                          type="button"
+                          className={`settings-pill${
+                            defaultSnippetInsertMode === 'cursor' ? ' is-active' : ''
+                          }`}
+                          onClick={() => updateSettings({ defaultSnippetInsertMode: 'cursor' })}
+                        >
+                          Au curseur
+                        </button>
+                      </div>
+                    </div>
+                    <div className="settings-option">
+                      <div className="settings-option__info">
+                        <div className="settings-option__title">Affichage des catégories</div>
+                        <div className="settings-option__desc">
+                          Affiche les catégories des snippets en 7 boutons ou en liste déroulante.
+                        </div>
+                      </div>
+                      <div className="settings-segment">
+                        <button
+                          type="button"
+                          className={`settings-pill${
+                            snippetCategoryDisplay === 'buttons' ? ' is-active' : ''
+                          }`}
+                          onClick={() => updateSettings({ snippetCategoryDisplay: 'buttons' })}
+                        >
+                          7 boutons
+                        </button>
+                        <button
+                          type="button"
+                          className={`settings-pill${
+                            snippetCategoryDisplay === 'dropdown' ? ' is-active' : ''
+                          }`}
+                          onClick={() => updateSettings({ snippetCategoryDisplay: 'dropdown' })}
+                        >
+                          Liste déroulante
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'history' ? (
+              <div className="list-card list-card--form">
+                <div className="list-card__header">
+                  <div className="list-card__title-group">
+                    <div className="list-card__title">Historique</div>
+                    <div className="list-card__subtitle">Mémoire de copie.</div>
+                  </div>
+                </div>
+                <div className="list-card__body">
+                  <div className="settings-block">
+                    <div className="settings-option">
+                      <div className="settings-option__info">
+                        <div className="settings-option__title">
+                          Sauvegarder les copies email
+                        </div>
+                        <div className="settings-option__desc">
+                          Ajoute l'email copié dans l'historique.
+                        </div>
+                      </div>
+                      <label className="settings-toggle">
+                        <input
+                          type="checkbox"
+                          checked={historyOnCopy}
+                          onChange={(event) =>
+                            updateSettings({ historyOnCopy: event.target.checked })
+                          }
+                        />
+                        <span className="settings-toggle__track">
+                          <span className="settings-toggle__thumb" />
+                        </span>
+                      </label>
+                    </div>
+                    <div>
+                      <div className="settings-row">
+                        <div className="settings-label">Taille max</div>
+                        <div className="settings-value">{historyLimit} entrées</div>
+                      </div>
+                      <input
+                        className="range"
+                        type="range"
+                        min="50"
+                        max="400"
+                        step="10"
+                        value={historyLimit}
+                        disabled={!historyOnCopy}
+                        onChange={(event) => {
+                          const nextLimit = Number(event.target.value)
+                          const historyLimit = Math.min(400, Math.max(50, nextLimit))
+                          updateSettings({ historyLimit })
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -4628,6 +4967,8 @@ function App() {
                 </div>
               </div>
             ) : null}
+              </div>
+            </div>
 
           </div>
         </div>
