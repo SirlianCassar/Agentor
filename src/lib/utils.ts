@@ -377,6 +377,15 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
     settings: {
       ...fallback.settings,
       ...(raw.settings ?? {}),
+      predefinedTags: Array.isArray(raw.settings?.predefinedTags)
+        ? raw.settings.predefinedTags
+        : fallback.settings.predefinedTags,
+      products: Array.isArray(raw.settings?.products)
+        ? raw.settings.products
+        : fallback.settings.products,
+      dashboardNews: Array.isArray(raw.settings?.dashboardNews)
+        ? raw.settings.dashboardNews
+        : fallback.settings.dashboardNews,
     },
   }
 }
