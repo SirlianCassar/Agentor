@@ -59,6 +59,7 @@ export type ProcedureCoverage = 'oow' | 'uw'
 export interface Procedure {
   id: string
   name: string
+  productName?: string
   language: Language
   brand: ProcedureBrand
   coverage: ProcedureCoverage
@@ -79,6 +80,12 @@ export interface HistoryItem {
 export interface CustomerPortalCode {
   id: string
   procedureName: string
+  codes: CustomerPortalCodeLine[]
+}
+
+export interface CustomerPortalCodeLine {
+  id: string
+  title?: string
   code: string
   showDraft?: boolean
   showForward?: boolean
@@ -86,11 +93,38 @@ export interface CustomerPortalCode {
   infoNote?: string
 }
 
+export type DashboardProductCategory = 'software' | 'firmware' | 'driver' | 'product'
+
 export interface DashboardProduct {
   id: string
   name: string
+  category: DashboardProductCategory
+  latestVersion: string
   sheet: string
   supportUrl?: string
+  compatibleProductIds?: string[]
+  softwareIds?: string[]
+  driverIds?: string[]
+}
+
+export interface SparePart {
+  id: string
+  name: string
+  sku: string
+  guideAvailable: boolean
+}
+
+export interface ProductCatalogItem {
+  id: string
+  name: string
+  spareParts: SparePart[]
+}
+
+export interface DashboardNewsItem {
+  id: string
+  date: string
+  title: string
+  content: string
 }
 
 export interface AppSettings {
@@ -102,11 +136,15 @@ export interface AppSettings {
   exportFontSize: number
   historyOnCopy: boolean
   historyLimit: number
+  callTemplate: string
   autoFocusEditor: boolean
   defaultSnippetInsertMode: InsertMode
   snippetCategoryDisplay: SnippetCategoryDisplay
+  predefinedTags: string[]
   customerPortalCodes: CustomerPortalCode[]
   dashboardProducts: DashboardProduct[]
+  products: ProductCatalogItem[]
+  dashboardNews: DashboardNewsItem[]
 }
 
 export interface AppData {

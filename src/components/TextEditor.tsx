@@ -44,7 +44,11 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
     const [autoHeight, setAutoHeight] = useState<number | null>(null)
     const isEmpty = !value.trim()
 
-    const highlighted = useMemo(() => highlightText(value), [value])
+    const highlighted = useMemo(() => {
+      const html = highlightText(value)
+      if (!value) return ' '
+      return value.endsWith('\n') ? `${html}\n ` : html
+    }, [value])
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
@@ -181,6 +185,10 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       textarea.setSelectionRange(start, end)
       pendingSelectionRef.current = null
     }, [value])
+
+    useLayoutEffect(() => {
+      syncScroll()
+    }, [activeSelector, autoHeight, highlighted])
 
     const handleClick = () => {
       if (readOnly) return

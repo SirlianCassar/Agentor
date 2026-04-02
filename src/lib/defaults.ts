@@ -1,7 +1,7 @@
 import type { AppData } from './types'
 
 export const defaultData: AppData = {
-  version: 3,
+  version: 8,
   categories: [
     { id: 'cat-general', name: 'Général', color: 'violet' },
     { id: 'cat-tech', name: 'Technique', color: 'bleu' },
@@ -196,6 +196,7 @@ Tag : <TAG>
     {
       id: 'proc-hercules-oow',
       name: 'Hercules - Aucun son',
+      productName: 'DJControl Inpulse 500',
       language: 'fr',
       brand: 'hercules',
       coverage: 'oow',
@@ -220,6 +221,7 @@ Si le problème persiste, proposer [Échange/Remboursement].
     {
       id: 'proc-hercules-uw',
       name: 'Hercules - Micro non reconnu',
+      productName: 'Stream 200 XLR',
       language: 'fr',
       brand: 'hercules',
       coverage: 'uw',
@@ -237,6 +239,7 @@ Numéro de série : <SN>`,
     {
       id: 'proc-thrust-oow',
       name: 'Thrustmaster - Pédalier instable',
+      productName: 'T-LCM Pedals',
       language: 'fr',
       brand: 'thrustmaster',
       coverage: 'oow',
@@ -260,6 +263,7 @@ Si le souci persiste, proposer [Réparation/Devis].`,
     {
       id: 'proc-thrust-uw',
       name: 'Thrustmaster - Volant non centré',
+      productName: 'T300 RS GT',
       language: 'fr',
       brand: 'thrustmaster',
       coverage: 'uw',
@@ -281,6 +285,7 @@ Firmware : <VERSION>`,
 Merci pour votre retour sur <PRODUIT>.
 Voici un récapitulatif rapide :
 - Dossier : <DOSSIER>
+- Référence RQT : RTQ-240145
 - Statut : [Ouvert/Fermé]
 
 §Nous pouvons proposer une solution commerciale.§
@@ -326,47 +331,97 @@ Ajout multi-ligne :
     exportFontSize: 12,
     historyOnCopy: true,
     historyLimit: 200,
+    callTemplate: `// Please Assign to Niels Cassar-Gaisne //
+// Regarding RTQ -   //
+
+
+CU called about :
+`,
     autoFocusEditor: true,
     defaultSnippetInsertMode: 'line',
     snippetCategoryDisplay: 'dropdown',
+    predefinedTags: [
+      '<CLIENT>',
+      '<PRODUIT>',
+      '<AGENT>',
+      '<VERSION>',
+      '<SN>',
+      '<DATE>',
+      '<DOSSIER>',
+      '<RMA>',
+      '<LINK>',
+      '<LIEN>',
+      '<COLIS>',
+      '<FACTURE>',
+      '<MONTANT>',
+      '<MODELE>',
+      '<ADRESSE>',
+      '<TAG>',
+      '<RESUME>',
+      '<REVENDEUR>',
+      '<CAPTURE>',
+      '<PRODUCT>',
+    ],
     customerPortalCodes: [
       {
         id: 'portal-1',
         procedureName: 'Hercules - Aucun son',
-        code: 'CP-HER-001',
-        showDraft: false,
-        showForward: false,
-        forwardTarget: '',
-        infoNote: '',
+        codes: [
+          {
+            id: 'portal-1-code-1',
+            code: 'CP-HER-001',
+            showDraft: false,
+            showForward: false,
+            forwardTarget: '',
+            infoNote: '',
+          },
+        ],
       },
       {
         id: 'portal-2',
         procedureName: 'Hercules - Micro non reconnu',
-        code: 'CP-HER-002',
-        showDraft: false,
-        showForward: false,
-        forwardTarget: '',
-        infoNote: '',
+        codes: [
+          {
+            id: 'portal-2-code-1',
+            code: 'CP-HER-002',
+            showDraft: false,
+            showForward: false,
+            forwardTarget: '',
+            infoNote: '',
+          },
+        ],
       },
       {
         id: 'portal-3',
         procedureName: 'Thrustmaster - Pédalier instable',
-        code: 'CP-THR-101',
-        showDraft: false,
-        showForward: false,
-        forwardTarget: '',
-        infoNote: '',
+        codes: [
+          {
+            id: 'portal-3-code-1',
+            code: 'CP-THR-101',
+            showDraft: false,
+            showForward: false,
+            forwardTarget: '',
+            infoNote: '',
+          },
+        ],
       },
       {
         id: 'portal-4',
         procedureName: 'Thrustmaster - Volant non centré',
-        code: 'CP-THR-102',
-        showDraft: false,
-        showForward: false,
-        forwardTarget: '',
-        infoNote: '',
+        codes: [
+          {
+            id: 'portal-4-code-1',
+            code: 'CP-THR-102',
+            showDraft: false,
+            showForward: false,
+            forwardTarget: '',
+            infoNote: '',
+          },
+        ],
       },
     ],
     dashboardProducts: [],
+    products: [],
+    dashboardNews: [],
   },
 }
