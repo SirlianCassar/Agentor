@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { KeyboardEvent } from 'react'
+import type { KeyboardEvent, MouseEventHandler } from 'react'
 import type { Token } from '../lib/utils'
 import { findTokenAt, highlightText, parseTokens, stripTokenSpacing } from '../lib/utils'
 
@@ -28,10 +28,14 @@ interface TextEditorProps {
   autoGrow?: boolean
   minHeight?: number
   readOnly?: boolean
+  onContextMenu?: MouseEventHandler<HTMLDivElement>
 }
 
 export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
-  ({ value, onChange, placeholder, className, autoGrow = false, minHeight, readOnly }, ref) => {
+  (
+    { value, onChange, placeholder, className, autoGrow = false, minHeight, readOnly, onContextMenu },
+    ref,
+  ) => {
     const editorRef = useRef<HTMLDivElement>(null)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const highlightRef = useRef<HTMLPreElement>(null)
@@ -61,24 +65,6 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
         textareaRef.current?.setSelectionRange(start, end)
       },
     }))
-
-    const syncScroll = () => {
-      if (!textareaRef.current || !highlightRef.current) return
-      highlightRef.current.scrollTop = textareaRef.current.scrollTop
-      highlightRef.current.scrollLeft = textareaRef.current.scrollLeft
-      updateSelectorBubblePosition(activeSelector)
-    }
-
-    const updateActiveSelector = () => {
-      if (readOnly) return
-      if (!textareaRef.current) return
-      const position = textareaRef.current.selectionStart ?? 0
-      const token = findTokenAt(value, position)
-      const selector =
-        token && (token.type === 'selector' || token.type === 'addition') ? token : null
-      setActiveSelector(selector)
-      updateSelectorBubblePosition(selector)
-    }
 
     const getCaretCoordinates = useCallback((textarea: HTMLTextAreaElement, position: number) => {
       const div = document.createElement('div')
@@ -138,6 +124,24 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       setSelectorBubblePos({ top, left })
     }, [getCaretCoordinates])
 
+    const syncScroll = useCallback(() => {
+      if (!textareaRef.current || !highlightRef.current) return
+      highlightRef.current.scrollTop = textareaRef.current.scrollTop
+      highlightRef.current.scrollLeft = textareaRef.current.scrollLeft
+      updateSelectorBubblePosition(activeSelector)
+    }, [activeSelector, updateSelectorBubblePosition])
+
+    const updateActiveSelector = () => {
+      if (readOnly) return
+      if (!textareaRef.current) return
+      const position = textareaRef.current.selectionStart ?? 0
+      const token = findTokenAt(value, position)
+      const selector =
+        token && (token.type === 'selector' || token.type === 'addition') ? token : null
+      setActiveSelector(selector)
+      updateSelectorBubblePosition(selector)
+    }
+
     useEffect(() => {
       if (!activeSelector) {
         setSelectorBubblePos(null)
@@ -188,7 +192,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
 
     useLayoutEffect(() => {
       syncScroll()
-    }, [activeSelector, autoHeight, highlighted])
+    }, [activeSelector, autoHeight, highlighted, syncScroll])
 
     const handleClick = () => {
       if (readOnly) return
@@ -275,6 +279,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
           className={`editor ${className ?? ''}`}
           ref={editorRef}
           style={editorStyle}
+          onContextMenu={onContextMenu}
         >
           <pre
             className="editor__highlight"

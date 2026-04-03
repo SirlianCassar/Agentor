@@ -223,6 +223,11 @@ const settingsNavigation: SettingsNavSection[] = [
     label: 'Dashboard',
     items: [
       {
+        id: 'products',
+        label: 'Produits',
+        description: 'Catalogue des produits utilisés dans les compatibilités et spare parts.',
+      },
+      {
         id: 'dashboardPortal',
         label: 'Procédure Portal',
         description: 'Configuration des codes Portal et de leurs variantes.',
@@ -231,11 +236,6 @@ const settingsNavigation: SettingsNavSection[] = [
         id: 'dashboardVersions',
         label: 'Catalogue de versions',
         description: 'Catalogue logiciels, drivers et firmwares avec produits compatibles.',
-      },
-      {
-        id: 'products',
-        label: 'Produits',
-        description: 'Catalogue des produits utilisés dans les compatibilités et spare parts.',
       },
       {
         id: 'dashboardSpareParts',
@@ -536,19 +536,6 @@ function getTagAutocompleteContext(value: string, cursor: number | null | undefi
   const query = stripTokenSpacing(value.slice(start + 1, cursor)).trim().toUpperCase()
 
   return { start, end, query }
-}
-
-function extractRqtNumber(value: string) {
-  const match = value.match(/\b(RQT|RTQ)\s*[-:#/]?\s*([A-Z0-9-]{3,})\b/i)
-  if (!match) return null
-  return `${match[1].toUpperCase()}-${match[2].toUpperCase()}`
-}
-
-function appendNoteBlock(current: string, block: string) {
-  const trimmedBlock = block.trim()
-  if (!trimmedBlock) return current
-  const trimmedCurrent = current.trimEnd()
-  return trimmedCurrent ? `${trimmedCurrent}\n\n${trimmedBlock}` : trimmedBlock
 }
 
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
@@ -897,7 +884,9 @@ interface PortalCodeListProps {
   items: CustomerPortalCode[]
   copiedId: string | null
   onCopy: (id: string, code: string) => void
+  onToggle: (id: string) => void
   title: string
+  expandedIds: Record<string, boolean>
   onInfoEnter: (text: string, anchor: HTMLElement) => void
   onInfoLeave: () => void
 }
@@ -906,7 +895,9 @@ function PortalCodeList({
   items,
   copiedId,
   onCopy,
+  onToggle,
   title,
+  expandedIds,
   onInfoEnter,
   onInfoLeave,
 }: PortalCodeListProps) {
@@ -915,74 +906,87 @@ function PortalCodeList({
       <div className="portal-code-list" aria-label={title}>
         {items.map((item) => {
           const procedureName = item.procedureName.trim() || 'Procédure sans nom'
+          const isOpen = expandedIds[item.id] ?? false
 
           return (
-            <div className="portal-code-item" key={item.id}>
-              <div className="portal-code-item__header">
+            <div className={`portal-code-item${isOpen ? ' is-open' : ''}`} key={item.id}>
+              <button
+                className="portal-code-item__summary"
+                type="button"
+                onClick={() => onToggle(item.id)}
+                aria-expanded={isOpen}
+              >
                 <span className="portal-code-item__name">{procedureName}</span>
-              </div>
-              <div className="portal-code-item__rows">
-                {item.codes.map((entry, index) => {
-                  const title = entry.title?.trim() ?? ''
-                  const code = entry.code.trim()
-                  const forwardTarget = entry.forwardTarget?.trim() ?? ''
-                  const infoNote = entry.infoNote?.trim() ?? ''
-                  const showForward = Boolean(entry.showForward && forwardTarget)
-                  const lineLabel =
-                    item.codes.length > 1 ? `${procedureName} - étape ${index + 1}` : procedureName
+                <span className={`portal-code-item__toggle${isOpen ? ' is-open' : ''}`} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 6 15 12 9 18" />
+                  </svg>
+                </span>
+              </button>
+              {isOpen ? (
+                <div className="portal-code-item__rows">
+                  {item.codes.map((entry, index) => {
+                    const title = entry.title?.trim() ?? ''
+                    const code = entry.code.trim()
+                    const forwardTarget = entry.forwardTarget?.trim() ?? ''
+                    const infoNote = entry.infoNote?.trim() ?? ''
+                    const showForward = Boolean(entry.showForward && forwardTarget)
+                    const lineLabel =
+                      item.codes.length > 1 ? `${procedureName} - étape ${index + 1}` : procedureName
 
-                  return (
-                    <div className="portal-code-item__row" key={entry.id}>
-                      <div className="portal-code-item__step">
-                        <span className="portal-code-item__index">{index + 1}</span>
-                      </div>
-                      <div className="portal-code-item__row-main">
-                        <div className="portal-code-item__line">
-                          {title ? (
-                            <span className="portal-code-item__line-title">{title}</span>
-                          ) : null}
-                          {entry.showDraft ? (
-                            <span className="portal-code-item__badge">Draft</span>
-                          ) : null}
-                          {showForward ? (
-                            <span className="portal-code-item__badge portal-code-item__badge--accent">
-                              Forward to {forwardTarget}
-                            </span>
-                          ) : null}
-                          {infoNote ? (
-                            <span className="portal-code-item__info">
-                              <button
-                                className="portal-code-item__info-btn"
-                                type="button"
-                                aria-label={`Note pour ${lineLabel}`}
-                                onMouseEnter={(event) => onInfoEnter(infoNote, event.currentTarget)}
-                                onMouseLeave={onInfoLeave}
-                                onFocus={(event) => onInfoEnter(infoNote, event.currentTarget)}
-                                onBlur={onInfoLeave}
-                              >
-                                i
-                              </button>
-                            </span>
-                          ) : null}
+                    return (
+                      <div className="portal-code-item__row" key={entry.id}>
+                        <div className="portal-code-item__step">
+                          <span className="portal-code-item__index">{index + 1}</span>
                         </div>
-                        <div className="portal-code-item__actions">
-                          <code className="portal-code-item__code">{code || '—'}</code>
-                          <button
-                            className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
-                              copiedId === entry.id ? ' is-success' : ''
-                            }`}
-                            type="button"
-                            onClick={() => onCopy(entry.id, entry.code)}
-                            disabled={!code}
-                          >
-                            {copiedId === entry.id ? 'Copié !' : 'Copier'}
-                          </button>
+                        <div className="portal-code-item__row-main">
+                          <div className="portal-code-item__line">
+                            {title ? (
+                              <span className="portal-code-item__line-title">{title}</span>
+                            ) : null}
+                            {entry.showDraft ? (
+                              <span className="portal-code-item__badge">Draft</span>
+                            ) : null}
+                            {showForward ? (
+                              <span className="portal-code-item__badge portal-code-item__badge--accent">
+                                Forward to {forwardTarget}
+                              </span>
+                            ) : null}
+                            {infoNote ? (
+                              <span className="portal-code-item__info">
+                                <button
+                                  className="portal-code-item__info-btn"
+                                  type="button"
+                                  aria-label={`Note pour ${lineLabel}`}
+                                  onMouseEnter={(event) => onInfoEnter(infoNote, event.currentTarget)}
+                                  onMouseLeave={onInfoLeave}
+                                  onFocus={(event) => onInfoEnter(infoNote, event.currentTarget)}
+                                  onBlur={onInfoLeave}
+                                >
+                                  i
+                                </button>
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="portal-code-item__actions">
+                            <code className="portal-code-item__code">{code || '—'}</code>
+                            <button
+                              className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
+                                copiedId === entry.id ? ' is-success' : ''
+                              }`}
+                              type="button"
+                              onClick={() => onCopy(entry.id, entry.code)}
+                              disabled={!code}
+                            >
+                              {copiedId === entry.id ? 'Copié !' : 'Copier'}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              ) : null}
             </div>
           )
         })}
@@ -1084,7 +1088,10 @@ function App() {
   const [dashboardSectionMounted, setDashboardSectionMounted] = useState(true)
   const [predefinedTagDraft, setPredefinedTagDraft] = useState('')
   const [tagSuggestionState, setTagSuggestionState] = useState<TagSuggestionState | null>(null)
-  const [noteImportMenuOpen, setNoteImportMenuOpen] = useState(false)
+  const [mailInsertMode, setMailInsertMode] = useState<InsertMode>('line')
+  const [noteImportFeedbackVisible, setNoteImportFeedbackVisible] = useState(false)
+  const [portalDashboardOpenIds, setPortalDashboardOpenIds] = useState<Record<string, boolean>>({})
+  const [portalEditorOpenIds, setPortalEditorOpenIds] = useState<Record<string, boolean>>({})
   const [workspaceDashboardPage, setWorkspaceDashboardPage] =
     useState<WorkspaceDashboardPage>('tools')
   const isCategorySelectionEmpty = selectedCategoryId === null
@@ -1105,6 +1112,7 @@ function App() {
   const dashboardCalculatorCopyTimeoutRef = useRef<number | null>(null)
   const callCopyTimeoutRef = useRef<number | null>(null)
   const callHistoryCopyTimeoutRef = useRef<number | null>(null)
+  const noteImportFeedbackTimeoutRef = useRef<number | null>(null)
   const snippetTitleRef = useRef<HTMLInputElement>(null)
   const snippetContentRef = useRef<HTMLTextAreaElement>(null)
   const snippetTaskRef = useRef<HTMLTextAreaElement>(null)
@@ -1123,7 +1131,7 @@ function App() {
   const templateSearchRef = useRef<HTMLDivElement>(null)
   const taskSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
-  const noteImportMenuRef = useRef<HTMLDivElement>(null)
+  const callModalBackdropPointerDownRef = useRef(false)
   const manualUpdateCheckRequestedRef = useRef(false)
   const dashboardOpenFrameRef = useRef<number | null>(null)
   const undoStackRef = useRef<AppData[]>([])
@@ -1132,6 +1140,8 @@ function App() {
   const historyReadyRef = useRef(false)
   const skipNextHistoryRef = useRef(false)
   const isApplyingHistoryRef = useRef(false)
+  const previousLoadedRef = useRef(loaded)
+  const legacyProcedureEditorEnabled = false
 
   const persistCallDraft = useCallback(() => {
     const content = getMeaningfulCallDraft(callDraft, callTemplate)
@@ -1464,6 +1474,9 @@ function App() {
   }, [data, loaded])
 
   useEffect(() => {
+    const wasLoaded = previousLoadedRef.current
+    previousLoadedRef.current = loaded
+
     if (!loaded) {
       undoStackRef.current = []
       redoStackRef.current = []
@@ -1472,10 +1485,12 @@ function App() {
       return
     }
 
+    if (wasLoaded === loaded) return
+
     lastCommittedDataRef.current = cloneAppData(data)
     historyReadyRef.current = true
     skipNextHistoryRef.current = true
-  }, [loaded])
+  }, [data, loaded])
 
   useEffect(() => {
     if (!historyReadyRef.current) {
@@ -1530,6 +1545,9 @@ function App() {
       }
       if (callHistoryCopyTimeoutRef.current !== null) {
         window.clearTimeout(callHistoryCopyTimeoutRef.current)
+      }
+      if (noteImportFeedbackTimeoutRef.current !== null) {
+        window.clearTimeout(noteImportFeedbackTimeoutRef.current)
       }
     }
   }, [])
@@ -1673,20 +1691,9 @@ function App() {
     return () => window.removeEventListener('pointerdown', handlePointerDown, true)
   }, [])
 
-  useEffect(() => {
-    if (!noteImportMenuOpen) return
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null
-      if (!target) return
-      if (noteImportMenuRef.current?.contains(target)) return
-      setNoteImportMenuOpen(false)
-    }
-    window.addEventListener('pointerdown', handlePointerDown, true)
-    return () => window.removeEventListener('pointerdown', handlePointerDown, true)
-  }, [noteImportMenuOpen])
-
   const emailTags = useMemo(() => countTokens(data.emailDraft), [data.emailDraft])
   const taskTags = useMemo(() => countTokens(data.taskDraft), [data.taskDraft])
+  const mailInsertModeLabel = mailInsertMode === 'line' ? 'À la ligne' : 'Au curseur'
   const zoomValue = Number.isFinite(data.settings.zoom) ? data.settings.zoom : 1
   const textScale = Number.isFinite(data.settings.textScale) ? data.settings.textScale : 1
   const editorLineHeight = Number.isFinite(data.settings.editorLineHeight)
@@ -1991,6 +1998,18 @@ function App() {
     },
     [customerPortalCodes, updateCustomerPortalCodes],
   )
+  const handleAddPortalProcedure = useCallback(() => {
+    const id = createId('portal')
+    updateCustomerPortalCodes([
+      ...customerPortalCodes,
+      {
+        id,
+        procedureName: '',
+        codes: [createEmptyPortalCodeLine()],
+      },
+    ])
+    setPortalEditorOpenIds((prev) => ({ ...prev, [id]: true }))
+  }, [customerPortalCodes, updateCustomerPortalCodes])
   const updateDashboardProducts = useCallback(
     (next: DashboardProduct[]) => {
       const legacyProductEntries = dashboardProducts.filter((product) => product.category === 'product')
@@ -2412,7 +2431,7 @@ function App() {
   }
 
   const insertCallTemplateToken = (token: string) => {
-    insertTokenAtCursor(callTemplateRef, callTemplate, updateCallTemplate, token)
+    insertTokenAtCursor(callTemplateRef, callTemplate, updateCallTemplate, token, true)
   }
 
   const insertProcedureStepsWrap = (before: string, after: string, placeholder: string) => {
@@ -2479,33 +2498,95 @@ function App() {
     return data.taskTemplates.filter((task) => task.name.toLowerCase().includes(query))
   }, [taskQuery, data.taskTemplates, taskFocused])
 
+  const normalizeDraftWithCursor = useCallback((value: string, cursor: number) => {
+    const marker = '\uE000'
+    const safeCursor = Math.max(0, Math.min(cursor, value.length))
+    const markedValue = `${value.slice(0, safeCursor)}${marker}${value.slice(safeCursor)}`
+    const normalizedMarkedValue = normalizeTokenSpacing(markedValue)
+    const nextCursor = normalizedMarkedValue.indexOf(marker)
+    return {
+      value: normalizedMarkedValue.replace(marker, ''),
+      cursor: nextCursor === -1 ? safeCursor : nextCursor,
+    }
+  }, [])
+
   const updateEmailDraft = useCallback((next: string, cursor?: number) => {
+    if (cursor !== undefined) {
+      const normalized = normalizeDraftWithCursor(next, cursor)
+      setData((prev) => ({ ...prev, emailDraft: normalized.value }))
+      requestAnimationFrame(() =>
+        emailEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
+      )
+      return
+    }
     const normalized = normalizeTokenSpacing(next)
     setData((prev) => ({ ...prev, emailDraft: normalized }))
-    if (cursor !== undefined) {
-      requestAnimationFrame(() => emailEditorRef.current?.setSelection(cursor, cursor))
-    }
-  }, [])
+  }, [normalizeDraftWithCursor])
 
   const updateTaskDraft = useCallback((next: string, cursor?: number) => {
+    if (cursor !== undefined) {
+      const normalized = normalizeDraftWithCursor(next, cursor)
+      setData((prev) => ({ ...prev, taskDraft: normalized.value }))
+      requestAnimationFrame(() =>
+        taskEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
+      )
+      return
+    }
     const normalized = normalizeTokenSpacing(next)
     setData((prev) => ({ ...prev, taskDraft: normalized }))
-    if (cursor !== undefined) {
-      requestAnimationFrame(() => taskEditorRef.current?.setSelection(cursor, cursor))
-    }
-  }, [])
+  }, [normalizeDraftWithCursor])
 
   const updateCallDraft = useCallback((next: string, cursor?: number) => {
+    if (cursor !== undefined) {
+      const normalized = normalizeDraftWithCursor(next, cursor)
+      setCallDraft(normalized.value)
+      requestAnimationFrame(() =>
+        callEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
+      )
+      return
+    }
     const normalized = normalizeTokenSpacing(next)
     setCallDraft(normalized)
-    if (cursor !== undefined) {
-      requestAnimationFrame(() => callEditorRef.current?.setSelection(cursor, cursor))
-    }
-  }, [])
+  }, [normalizeDraftWithCursor])
 
   const updateCallTemplate = useCallback((next: string) => {
     updateSettings({ callTemplate: normalizeTokenSpacing(next) })
   }, [updateSettings])
+
+  const toggleMailInsertMode = useCallback(() => {
+    setMailInsertMode((current) => (current === 'line' ? 'cursor' : 'line'))
+  }, [])
+
+  const triggerNoteImportFeedback = useCallback(() => {
+    if (noteImportFeedbackTimeoutRef.current !== null) {
+      window.clearTimeout(noteImportFeedbackTimeoutRef.current)
+    }
+    setNoteImportFeedbackVisible(true)
+    noteImportFeedbackTimeoutRef.current = window.setTimeout(() => {
+      setNoteImportFeedbackVisible(false)
+      noteImportFeedbackTimeoutRef.current = null
+    }, 900)
+  }, [])
+
+  const togglePortalDashboardItem = useCallback((id: string) => {
+    setPortalDashboardOpenIds((prev) => ({ ...prev, [id]: !prev[id] }))
+  }, [])
+
+  const togglePortalEditorItem = useCallback((id: string) => {
+    setPortalEditorOpenIds((prev) => ({ ...prev, [id]: !prev[id] }))
+  }, [])
+
+  useEffect(() => {
+    if (editOpen || isProcedureWindow) return
+
+    const handleContextMenu = (event: PointerEvent) => {
+      event.preventDefault()
+      toggleMailInsertMode()
+    }
+
+    window.addEventListener('contextmenu', handleContextMenu, true)
+    return () => window.removeEventListener('contextmenu', handleContextMenu, true)
+  }, [editOpen, isProcedureWindow, toggleMailInsertMode])
 
   useEffect(() => {
     if (isProcedureWindow) return
@@ -2535,14 +2616,18 @@ function App() {
     value: string,
     setValue: (next: string) => void,
     token: string,
+    normalizeInsertedValue = false,
   ) => {
     const target = ref.current
     const start = target?.selectionStart ?? value.length
     const end = target?.selectionEnd ?? value.length
-    const next = `${value.slice(0, start)}${token}${value.slice(end)}`
+    const rawNext = `${value.slice(0, start)}${token}${value.slice(end)}`
+    const next = normalizeInsertedValue ? normalizeTokenSpacing(rawNext) : rawNext
     setValue(next)
     requestAnimationFrame(() => {
-      const pos = start + token.length
+      const pos = normalizeInsertedValue
+        ? normalizeDraftWithCursor(rawNext, start + token.length).cursor
+        : start + token.length
       target?.setSelectionRange(pos, pos)
       target?.focus()
     })
@@ -2598,7 +2683,7 @@ function App() {
     }
     const base = data.emailDraft
     const insertContent = padEmptySelectors(snippet.content.trimEnd())
-    if (snippet.insertMode === 'line') {
+    if (mailInsertMode === 'line') {
       const cursor = selection.start
       const lineBreakIndex = base.indexOf('\n', cursor)
       const insertAt = lineBreakIndex === -1 ? base.length : lineBreakIndex + 1
@@ -2786,6 +2871,7 @@ function App() {
   }
 
   const openCallModal = () => {
+    callModalBackdropPointerDownRef.current = false
     setCallDraft(normalizeTokenSpacing(callTemplate))
     setCallCopied(false)
     setCallEntryId(createId('call'))
@@ -2798,6 +2884,7 @@ function App() {
   }
 
   const closeCallModal = () => {
+    callModalBackdropPointerDownRef.current = false
     persistCallDraft()
     if (callCopyTimeoutRef.current !== null) {
       window.clearTimeout(callCopyTimeoutRef.current)
@@ -2844,32 +2931,8 @@ function App() {
     }, 1600)
   }
 
-  const handleImportRqtToNotes = () => {
-    setNoteImportMenuOpen(false)
-    const detected = extractRqtNumber([data.emailDraft, data.taskDraft, data.notes].join('\n'))
-    if (!detected) {
-      setToast('Aucun numéro RQT détecté.')
-      return
-    }
-    setData((prev) => ({
-      ...prev,
-      notes: appendNoteBlock(prev.notes, `RQT: ${detected}`),
-    }))
-    setToast('Numéro RQT importé dans Notes.')
-  }
-
-  const handleImportEmailToNotes = () => {
-    setNoteImportMenuOpen(false)
-    const emailContent = stripTokenSpacing(data.emailDraft).trim()
-    if (!emailContent) {
-      setToast('Email vide.')
-      return
-    }
-    setData((prev) => ({
-      ...prev,
-      notes: appendNoteBlock(prev.notes, `Email importé :\n${emailContent}`),
-    }))
-    setToast('Email importé dans Notes.')
+  const handleNoteImportClick = () => {
+    triggerNoteImportFeedback()
   }
 
   const handleSaveDashboardProduct = () => {
@@ -3017,6 +3080,200 @@ function App() {
       productDraft.spareParts.filter((sparePart) => sparePart.id !== sparePartId),
     )
   }
+
+  const renderPortalCodeEditorSettings = () => (
+    <div className="portal-code-editor">
+      {customerPortalCodes.length ? (
+        customerPortalCodes.map((item) => {
+          const isOpen = portalEditorOpenIds[item.id] ?? !item.procedureName.trim()
+
+          return (
+            <div className={`portal-code-editor__card${isOpen ? ' is-open' : ''}`} key={item.id}>
+              <button
+                className="portal-code-editor__summary"
+                type="button"
+                onClick={() => togglePortalEditorItem(item.id)}
+                aria-expanded={isOpen}
+              >
+                <span className="portal-code-editor__summary-name">
+                  {item.procedureName.trim() || 'Procédure sans nom'}
+                </span>
+                <span
+                  className={`portal-code-editor__summary-arrow${isOpen ? ' is-open' : ''}`}
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 6 15 12 9 18" />
+                  </svg>
+                </span>
+              </button>
+
+              {isOpen ? (
+                <>
+                  <div className="portal-code-editor__header">
+                    <input
+                      className="input"
+                      value={item.procedureName}
+                      placeholder="Nom de procédure"
+                      onChange={(event) =>
+                        updateCustomerPortalProcedure(item.id, {
+                          procedureName: event.target.value,
+                        })
+                      }
+                    />
+                    <div className="portal-code-editor__header-actions">
+                      {item.codes.length < 2 ? (
+                        <button
+                          className="btn btn--ghost btn--small"
+                          type="button"
+                          onClick={() => addCustomerPortalCodeLine(item.id)}
+                        >
+                          Ajouter un code
+                        </button>
+                      ) : null}
+                      <button
+                        className="icon-btn-sm danger"
+                        type="button"
+                        title="Supprimer"
+                        onClick={() =>
+                          updateCustomerPortalCodes(
+                            customerPortalCodes.filter((entry) => entry.id !== item.id),
+                          )
+                        }
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="portal-code-editor__codes">
+                    {item.codes.map((codeLine, index) => (
+                      <div className="portal-code-editor__code-card" key={codeLine.id}>
+                        <div className="portal-code-editor__row">
+                          {item.codes.length > 1 ? (
+                            <span className="portal-code-editor__index">{index + 1}</span>
+                          ) : null}
+                          <input
+                            className="input"
+                            value={codeLine.code}
+                            placeholder={`Code portal ${index + 1}`}
+                            onChange={(event) =>
+                              updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                                code: event.target.value,
+                              })
+                            }
+                          />
+                          {item.codes.length > 1 ? (
+                            <button
+                              className="icon-btn-sm danger"
+                              type="button"
+                              title="Supprimer ce code"
+                              onClick={() => removeCustomerPortalCodeLine(item.id, codeLine.id)}
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <input
+                          className="input"
+                          value={codeLine.title ?? ''}
+                          placeholder={`Titre de l'étape ${index + 1}`}
+                          onChange={(event) =>
+                            updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                              title: event.target.value,
+                            })
+                          }
+                        />
+
+                        <div className="portal-code-editor__options">
+                          <label className="portal-code-editor__check">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(codeLine.showDraft)}
+                              onChange={(event) =>
+                                updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                                  showDraft: event.target.checked,
+                                })
+                              }
+                            />
+                            <span>Afficher Draft</span>
+                          </label>
+
+                          <label className="portal-code-editor__check">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(codeLine.showForward)}
+                              onChange={(event) =>
+                                updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                                  showForward: event.target.checked,
+                                })
+                              }
+                            />
+                            <span>Afficher Forward to</span>
+                          </label>
+                        </div>
+
+                        {codeLine.showForward ? (
+                          <input
+                            className="input"
+                            value={codeLine.forwardTarget ?? ''}
+                            placeholder="Nom à afficher après Forward to"
+                            onChange={(event) =>
+                              updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                                forwardTarget: event.target.value,
+                              })
+                            }
+                          />
+                        ) : null}
+
+                        <textarea
+                          className="textarea portal-code-editor__note"
+                          value={codeLine.infoNote ?? ''}
+                          placeholder="Note affichée au survol du bouton i"
+                          onChange={(event) =>
+                            updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                              infoNote: event.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          )
+        })
+      ) : (
+        <div className="empty-state">Aucun code configuré.</div>
+      )}
+    </div>
+  )
 
   const renderDashboardCatalogEditor = ({
     title,
@@ -3382,7 +3639,10 @@ function App() {
     setDashboardSparePartQuery('')
     setDashboardProcedureQuery('')
     setSnippetTooltip(null)
-    setNoteImportMenuOpen(false)
+    setMailInsertMode('line')
+    setNoteImportFeedbackVisible(false)
+    setPortalDashboardOpenIds({})
+    setPortalEditorOpenIds({})
     setClearAllArmed(false)
     setToast('Données effacées.')
   }
@@ -3764,6 +4024,16 @@ function App() {
     </article>
   )
 
+  const renderWorkspaceDashboardToolsFiller = () => (
+    <article className="workspace-dashboard__panel workspace-dashboard__panel--filler">
+      <div className="workspace-dashboard__panel-title">Zone libre</div>
+      <div className="dashboard-placeholder">
+        <span>Espace réservé</span>
+        <strong>WIP</strong>
+      </div>
+    </article>
+  )
+
   const renderWorkspaceDashboardVatPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--calculator">
       <div className="workspace-dashboard__panel-title">{title}</div>
@@ -3772,44 +4042,22 @@ function App() {
           <div className="dashboard-calculator__list">
             {dashboardCalculatorItems.map((item, index) => (
               <div className="dashboard-calculator__item" key={item.id}>
-                <div className="dashboard-calculator__item-header">
-                  <div className="dashboard-calculator__item-title">Ligne {index + 1}</div>
-                  <button
-                    className="icon-btn-sm danger"
-                    type="button"
-                    title="Supprimer cette ligne"
-                    onClick={() => removeDashboardCalculatorItem(item.id)}
-                    disabled={dashboardCalculatorItems.length === 1}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
                 <div className="dashboard-calculator__item-grid">
-                  <label className="dashboard-calculator__field">
-                    <span className="dashboard-calculator__label">Prix de vente TTC</span>
+                  <span className="dashboard-calculator__item-index">{index + 1}</span>
+                  <label className="dashboard-calculator__field dashboard-calculator__field--inline">
+                    <span className="dashboard-calculator__label">Produit TTC</span>
                     <input
                       className="input"
                       value={item.productPrice}
                       onChange={(event) =>
                         updateDashboardCalculatorItem(item.id, 'productPrice', event.target.value)
                       }
-                      placeholder="Ex: 119,99"
+                      placeholder="119,99"
                       inputMode="decimal"
+                      aria-label={`Produit TTC ligne ${index + 1}`}
                     />
                   </label>
-                  <label className="dashboard-calculator__field">
+                  <label className="dashboard-calculator__field dashboard-calculator__field--inline">
                     <span className="dashboard-calculator__label">Livraison TTC</span>
                     <input
                       className="input"
@@ -3817,10 +4065,26 @@ function App() {
                       onChange={(event) =>
                         updateDashboardCalculatorItem(item.id, 'shippingPrice', event.target.value)
                       }
-                      placeholder="Ex: 14,99"
+                      placeholder="14,99"
                       inputMode="decimal"
+                      aria-label={`Livraison TTC ligne ${index + 1}`}
                     />
                   </label>
+                  <button
+                    className="icon-btn-sm danger dashboard-calculator__remove"
+                    type="button"
+                    title="Supprimer cette ligne"
+                    onClick={() => removeDashboardCalculatorItem(item.id)}
+                    disabled={dashboardCalculatorItems.length === 1}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4h8v2" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             ))}
@@ -4169,7 +4433,9 @@ function App() {
         items={customerPortalCodes}
         copiedId={portalCopiedId}
         onCopy={(id, code) => void handleCopyPortalCode(id, code)}
+        onToggle={togglePortalDashboardItem}
         title="Portal Procédure"
+        expandedIds={portalDashboardOpenIds}
         onInfoEnter={showPortalInfoTooltip}
         onInfoLeave={hidePortalInfoTooltip}
       />
@@ -4218,7 +4484,10 @@ function App() {
     if (workspaceDashboardPage === 'tools') {
       return (
         <div className="workspace-dashboard__single workspace-dashboard__single--tools">
-          {renderWorkspaceDashboardNameFormatter('Name format')}
+          <div className="workspace-dashboard__left">
+            {renderWorkspaceDashboardNameFormatter('Name format')}
+            {renderWorkspaceDashboardToolsFiller()}
+          </div>
           {renderWorkspaceDashboardVatPanel('Price calculator')}
         </div>
       )
@@ -4662,7 +4931,7 @@ function App() {
 
       <main className="workspace">
         <header className="workspace-head">
-          <p className="workspace-title">Compose template</p>
+          <p className="workspace-title">Compose</p>
           <div className="workspace-head__actions">
             <div className="template-controls">
               <div className="template-search-wrap" ref={templateSearchRef}>
@@ -4763,7 +5032,7 @@ function App() {
               value={data.emailDraft}
               onChange={(value) => updateEmailDraft(value)}
               placeholder="Rédigez votre email..."
-              className="editor--email"
+              className={`editor--email editor--email--${mailInsertMode}`}
             />
             <div className="composer-actions">
               <div className="composer-actions__left">
@@ -4803,6 +5072,12 @@ function App() {
               </div>
               <div className="actions">
                 {emailTags ? <span className="tag-warning">⚠️</span> : null}
+                <span
+                  className={`composer-insert-mode composer-insert-mode--${mailInsertMode}`}
+                  title="Clic droit dans l’éditeur mail pour changer le mode d’insertion"
+                >
+                  {mailInsertModeLabel}
+                </span>
                 <button
                   className={`primary copy-btn${emailCopied ? ' is-success' : ''}${
                     emailCopyPulse ? ' btn-pulse' : ''
@@ -4816,7 +5091,7 @@ function App() {
                   {emailCopied ? 'Copié !' : 'Copy Email'}
                 </button>
                 <button
-                  className={`ghost clear-btn${clearArmed ? ' confirm' : ''}${
+                  className={`ghost clear-btn clear-btn--icon${clearArmed ? ' confirm' : ''}${
                     emailClearPulse ? ' btn-pulse' : ''
                   }`}
                   onClick={() => {
@@ -4824,10 +5099,16 @@ function App() {
                     handleClearEmail()
                   }}
                   onAnimationEnd={() => setEmailClearPulse(false)}
-                  title={clearArmed ? 'Confirmer' : 'Clear'}
-                  aria-label={clearArmed ? 'Confirmer' : 'Clear'}
+                  title={clearArmed ? 'Confirmer la suppression' : 'Effacer le mail'}
+                  aria-label={clearArmed ? 'Confirmer la suppression' : 'Effacer le mail'}
                 >
-                  {clearArmed ? '?' : 'Clear'}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -4848,14 +5129,14 @@ function App() {
       <aside className="right-sidebar">
         <div className="note-panel-workspace">
           <div className="note-panel-workspace__header">
-            <p className="section-label section-label--tight">Notes personnelles</p>
-            <div className="note-panel-workspace__actions" ref={noteImportMenuRef}>
+            <p className="section-label section-label--tight">Notes</p>
+            <div className="note-panel-workspace__actions">
               <button
-                className="note-import-btn"
+                className={`note-import-btn${noteImportFeedbackVisible ? ' is-success' : ''}`}
                 type="button"
-                onClick={() => setNoteImportMenuOpen((prev) => !prev)}
-                title="Importer"
-                aria-label="Importer"
+                onClick={handleNoteImportClick}
+                title="Importer (WIP)"
+                aria-label="Importer (WIP)"
               >
                 <svg
                   width="16"
@@ -4872,24 +5153,6 @@ function App() {
                   <path d="M5 21h14" />
                 </svg>
               </button>
-              {noteImportMenuOpen ? (
-                <div className="note-import-menu">
-                  <button
-                    className="note-import-menu__item"
-                    type="button"
-                    onClick={handleImportRqtToNotes}
-                  >
-                    Import RQT
-                  </button>
-                  <button
-                    className="note-import-menu__item"
-                    type="button"
-                    onClick={handleImportEmailToNotes}
-                  >
-                    Import email
-                  </button>
-                </div>
-              ) : null}
             </div>
           </div>
           <div className="note-editor-wrapper">
@@ -4903,25 +5166,19 @@ function App() {
               onClick={() => setData((prev) => ({ ...prev, notes: '' }))}
               title="Effacer la note"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18" />
+                <path d="M8 6V4h8v2" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
               </svg>
             </button>
           </div>
         </div>
 
         <section className="task-builder">
-          <p className="section-label section-label--tight">Task Builder</p>
+          <p className="section-label section-label--tight">Task</p>
           <div className="task-template-search">
             <div className="task-search-wrap" ref={taskSearchRef}>
               <input
@@ -4974,7 +5231,6 @@ function App() {
             />
           </div>
           <div className="task-actions">
-            <p className="task-title">Task</p>
             <div className="task-actions-buttons">
               {taskTags ? <span className="tag-warning">⚠️</span> : null}
               <button
@@ -4990,7 +5246,9 @@ function App() {
                 {taskCopied ? 'Copié !' : 'Copy'}
               </button>
               <button
-                className={`ghost task-clear-btn${taskClearArmed ? ' confirm' : ''}${
+                className={`ghost task-clear-btn task-clear-btn--icon${
+                  taskClearArmed ? ' confirm' : ''
+                }${
                   taskClearPulse ? ' btn-pulse' : ''
                 }`}
                 onClick={() => {
@@ -4998,10 +5256,16 @@ function App() {
                   handleClearTask()
                 }}
                 onAnimationEnd={() => setTaskClearPulse(false)}
-                title={taskClearArmed ? 'Confirmer' : 'Clear'}
-                aria-label={taskClearArmed ? 'Confirmer' : 'Clear'}
+                title={taskClearArmed ? 'Confirmer la suppression' : 'Effacer la task'}
+                aria-label={taskClearArmed ? 'Confirmer la suppression' : 'Effacer la task'}
               >
-                {taskClearArmed ? '?' : 'Clear'}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                </svg>
               </button>
             </div>
           </div>
@@ -5033,7 +5297,17 @@ function App() {
       : null}
 
     {callModalOpen ? (
-        <div className="modal-backdrop" onClick={closeCallModal}>
+        <div
+          className="modal-backdrop"
+          onPointerDown={(event) => {
+            callModalBackdropPointerDownRef.current = event.target === event.currentTarget
+          }}
+          onClick={(event) => {
+            if (!callModalBackdropPointerDownRef.current) return
+            if (event.target !== event.currentTarget) return
+            closeCallModal()
+          }}
+        >
           <div className="modal call-modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal__header">
               <div className="brand__title">Appel téléphonique</div>
@@ -5184,11 +5458,26 @@ function App() {
 
               <div className="settings-layout__content">
                 <div className="settings-layout__content-header">
-                  <div className="settings-layout__eyebrow">{activeSettingsTab.sectionLabel}</div>
-                  <div className="settings-layout__content-title">{activeSettingsTab.label}</div>
-                  <div className="settings-layout__content-subtitle">
-                    {activeSettingsTab.description}
+                  <div className="settings-layout__content-title-group">
+                    <div className="settings-layout__eyebrow">{activeSettingsTab.sectionLabel}</div>
+                    <div className="settings-layout__content-title">{activeSettingsTab.label}</div>
+                    <div className="settings-layout__content-subtitle">
+                      {activeSettingsTab.description}
+                    </div>
                   </div>
+                  {editTab === 'tags' ? (
+                    <div className="tag-examples-inline tag-examples-inline--header">
+                      {tokenReferenceItems.map((item) => (
+                        <article className="tag-example-chip" key={item.token}>
+                          <span className="tag-example-chip__label">{item.title}</span>
+                          <span
+                            className="tag-example-chip__token settings-token-preview"
+                            dangerouslySetInnerHTML={{ __html: highlightText(item.token) }}
+                          />
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="settings-layout__content-body">
             {editTab === 'categories' ? (
@@ -5372,23 +5661,7 @@ function App() {
                             ↕
                           </button>
                           <div className="list-item__content">
-                            <div className="list-item__title">
-                              {snippet.title}
-                              <span className="insert-icons">
-                                <span
-                                  className={`insert-icon insert-icon--badge${
-                                    snippet.insertMode === 'line' ? ' is-line' : ' is-cursor'
-                                  }`}
-                                  title={
-                                    snippet.insertMode === 'line'
-                                      ? 'Insertion à la ligne'
-                                      : 'Insertion au curseur'
-                                  }
-                                >
-                                  {snippet.insertMode === 'line' ? 'L' : 'C'}
-                                </span>
-                              </span>
-                            </div>
+                            <div className="list-item__title">{snippet.title}</div>
                             <div className="list-item__meta">{snippet.content.split('\n')[0]}</div>
                           </div>
                           <div className="list-item__actions">
@@ -5576,20 +5849,7 @@ function App() {
                             tag,
                           ),
                         )}
-                        <div className="form__row two">
-                          <select
-                            className="select select--roomy"
-                            value={snippetDraft.insertMode}
-                            onChange={(event) =>
-                              setSnippetDraft((prev) => ({
-                                ...prev,
-                                insertMode: event.target.value as InsertMode,
-                              }))
-                            }
-                          >
-                            <option value="line">À la ligne</option>
-                            <option value="cursor">Au curseur</option>
-                          </select>
+                        <div className="form__row">
                           <select
                             className="select select--roomy"
                             value={snippetDraft.categoryId}
@@ -6257,35 +6517,10 @@ function App() {
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Tags</div>
-                      <div className="list-card__subtitle">
-                        Rappel des syntaxes utilisables dans les emails, tasks, templates et
-                        procédures.
-                      </div>
-                    </div>
+                    <div className="list-card__title">Tags prédéfinis</div>
                   </div>
                   <div className="list-card__body">
-                    <div className="settings-reference-grid">
-                      {tokenReferenceItems.map((item) => (
-                        <article className="settings-reference-card" key={item.token}>
-                          <div className="settings-reference-card__title">{item.title}</div>
-                          <div
-                            className="settings-reference-card__token settings-token-preview"
-                            dangerouslySetInnerHTML={{ __html: highlightText(item.token) }}
-                          />
-                          <div className="settings-reference-card__desc">{item.description}</div>
-                        </article>
-                      ))}
-                    </div>
                     <div className="tag-settings">
-                      <div className="tag-settings__header">
-                        <div className="settings-group__title">Tags prédéfinis</div>
-                        <div className="settings-note">
-                          Ces tags sont proposés automatiquement dès que vous tapez `&lt;` dans les
-                          champs des paramètres.
-                        </div>
-                      </div>
                       <div className="tag-settings__composer">
                         <input
                           className="input"
@@ -6340,10 +6575,6 @@ function App() {
                           <div className="empty-state">Aucun tag prédéfini enregistré.</div>
                         )}
                       </div>
-                    </div>
-                    <div className="settings-note">
-                      Les boutons `T`, `S` et `A` restent disponibles pour insérer rapidement un
-                      tag, un sélecteur ou un ajout.
                     </div>
                   </div>
                 </div>
@@ -6487,7 +6718,7 @@ function App() {
                   </div>
                 </div>
               </div>
-            ) : false ? (
+            ) : legacyProcedureEditorEnabled ? (
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
@@ -7219,11 +7450,6 @@ function App() {
                           tag,
                         ),
                       )}
-                      <div className="settings-note">
-                        Le contenu de ce champ est injecté automatiquement quand vous ouvrez la
-                        fenêtre d’appel. Les tags, sélecteurs et ajouts sont conservés dans le
-                        popup.
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -7413,38 +7639,10 @@ function App() {
                   </div>
                 </div>
                 <div className="list-card__body">
-                  <div className="settings-block">
-                    <div className="settings-option">
-                      <div className="settings-option__info">
-                        <div className="settings-option__title">Mode d'insertion par défaut</div>
-                        <div className="settings-option__desc">
-                          Appliqué aux nouveaux snippets.
-                        </div>
-                      </div>
-                      <div className="settings-segment">
-                        <button
-                          type="button"
-                          className={`settings-pill${
-                            defaultSnippetInsertMode === 'line' ? ' is-active' : ''
-                          }`}
-                          onClick={() => updateSettings({ defaultSnippetInsertMode: 'line' })}
-                        >
-                          À la ligne
-                        </button>
-                        <button
-                          type="button"
-                          className={`settings-pill${
-                            defaultSnippetInsertMode === 'cursor' ? ' is-active' : ''
-                          }`}
-                          onClick={() => updateSettings({ defaultSnippetInsertMode: 'cursor' })}
-                        >
-                          Au curseur
-                        </button>
-                      </div>
-                    </div>
-                    <div className="settings-option">
-                      <div className="settings-option__info">
-                        <div className="settings-option__title">Affichage des catégories</div>
+                    <div className="settings-block">
+                      <div className="settings-option">
+                        <div className="settings-option__info">
+                          <div className="settings-option__title">Affichage des catégories</div>
                         <div className="settings-option__desc">
                           Affiche les catégories des snippets en 7 boutons ou en liste déroulante.
                         </div>
@@ -7599,40 +7797,6 @@ function App() {
                           <div className="settings-option">
                             <div className="settings-option__info">
                               <div className="settings-option__title">
-                                Mode d'insertion par défaut
-                              </div>
-                              <div className="settings-option__desc">
-                                Appliqué aux nouveaux snippets.
-                              </div>
-                            </div>
-                            <div className="settings-segment">
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  defaultSnippetInsertMode === 'line' ? ' is-active' : ''
-                                }`}
-                                onClick={() =>
-                                  updateSettings({ defaultSnippetInsertMode: 'line' })
-                                }
-                              >
-                                À la ligne
-                              </button>
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  defaultSnippetInsertMode === 'cursor' ? ' is-active' : ''
-                                }`}
-                                onClick={() =>
-                                  updateSettings({ defaultSnippetInsertMode: 'cursor' })
-                                }
-                              >
-                                Au curseur
-                              </button>
-                            </div>
-                          </div>
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">
                                 Affichage des catégories
                               </div>
                               <div className="settings-option__desc">
@@ -7728,187 +7892,14 @@ function App() {
                       <button
                         className="btn btn--ghost btn--small"
                         type="button"
-                        onClick={() =>
-                          updateCustomerPortalCodes([
-                            ...customerPortalCodes,
-                            {
-                              id: createId('portal'),
-                              procedureName: '',
-                              codes: [createEmptyPortalCodeLine()],
-                            },
-                          ])
-                        }
+                        onClick={handleAddPortalProcedure}
                       >
                         Ajouter
                       </button>
                     </div>
                   </div>
                   <div className="list-card__body">
-                    <div className="portal-code-editor">
-                      {customerPortalCodes.length ? (
-                        customerPortalCodes.map((item) => (
-                          <div className="portal-code-editor__card" key={item.id}>
-                            <div className="portal-code-editor__header">
-                              <input
-                                className="input"
-                                value={item.procedureName}
-                                placeholder="Nom de procédure"
-                                onChange={(event) =>
-                                  updateCustomerPortalProcedure(item.id, {
-                                    procedureName: event.target.value,
-                                  })
-                                }
-                              />
-                              <div className="portal-code-editor__header-actions">
-                                {item.codes.length < 2 ? (
-                                  <button
-                                    className="btn btn--ghost btn--small"
-                                    type="button"
-                                    onClick={() => addCustomerPortalCodeLine(item.id)}
-                                  >
-                                    Ajouter un code
-                                  </button>
-                                ) : null}
-                                <button
-                                  className="icon-btn-sm danger"
-                                  type="button"
-                                  title="Supprimer"
-                                  onClick={() =>
-                                    updateCustomerPortalCodes(
-                                      customerPortalCodes.filter((entry) => entry.id !== item.id),
-                                    )
-                                  }
-                                >
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                            <div className="portal-code-editor__codes">
-                              {item.codes.map((codeLine, index) => (
-                                <div className="portal-code-editor__code-card" key={codeLine.id}>
-                                  <div className="portal-code-editor__row">
-                                    {item.codes.length > 1 ? (
-                                      <span className="portal-code-editor__index">{index + 1}</span>
-                                    ) : null}
-                                    <input
-                                      className="input"
-                                      value={codeLine.code}
-                                      placeholder={`Code portal ${index + 1}`}
-                                      onChange={(event) =>
-                                        updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                          code: event.target.value,
-                                        })
-                                      }
-                                    />
-                                    {item.codes.length > 1 ? (
-                                      <button
-                                        className="icon-btn-sm danger"
-                                        type="button"
-                                        title="Supprimer ce code"
-                                        onClick={() =>
-                                          removeCustomerPortalCodeLine(item.id, codeLine.id)
-                                        }
-                                      >
-                                        <svg
-                                          width="14"
-                                          height="14"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        >
-                                          <line x1="18" y1="6" x2="6" y2="18" />
-                                          <line x1="6" y1="6" x2="18" y2="18" />
-                                        </svg>
-                                      </button>
-                                    ) : null}
-                                  </div>
-
-                                  <input
-                                    className="input"
-                                    value={codeLine.title ?? ''}
-                                    placeholder={`Titre de l'étape ${index + 1}`}
-                                    onChange={(event) =>
-                                      updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                        title: event.target.value,
-                                      })
-                                    }
-                                  />
-
-                                  <div className="portal-code-editor__options">
-                                    <label className="portal-code-editor__check">
-                                      <input
-                                        type="checkbox"
-                                        checked={Boolean(codeLine.showDraft)}
-                                        onChange={(event) =>
-                                          updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                            showDraft: event.target.checked,
-                                          })
-                                        }
-                                      />
-                                      <span>Afficher Draft</span>
-                                    </label>
-
-                                    <label className="portal-code-editor__check">
-                                      <input
-                                        type="checkbox"
-                                        checked={Boolean(codeLine.showForward)}
-                                        onChange={(event) =>
-                                          updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                            showForward: event.target.checked,
-                                          })
-                                        }
-                                      />
-                                      <span>Afficher Forward to</span>
-                                    </label>
-                                  </div>
-
-                                  {codeLine.showForward ? (
-                                    <input
-                                      className="input"
-                                      value={codeLine.forwardTarget ?? ''}
-                                      placeholder="Nom à afficher après Forward to"
-                                      onChange={(event) =>
-                                        updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                          forwardTarget: event.target.value,
-                                        })
-                                      }
-                                    />
-                                  ) : null}
-
-                                  <textarea
-                                    className="textarea portal-code-editor__note"
-                                    value={codeLine.infoNote ?? ''}
-                                    placeholder="Note affichée au survol du bouton i"
-                                    onChange={(event) =>
-                                      updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                        infoNote: event.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="empty-state">Aucun code configuré.</div>
-                      )}
-                    </div>
+                    {renderPortalCodeEditorSettings()}
                   </div>
                 </div>
               </div>
@@ -8235,187 +8226,14 @@ function App() {
                       <button
                         className="btn btn--ghost btn--small"
                         type="button"
-                        onClick={() =>
-                          updateCustomerPortalCodes([
-                            ...customerPortalCodes,
-                            {
-                              id: createId('portal'),
-                              procedureName: '',
-                              codes: [createEmptyPortalCodeLine()],
-                            },
-                          ])
-                        }
+                        onClick={handleAddPortalProcedure}
                       >
                         Ajouter
                       </button>
                     </div>
                   </div>
                   <div className="list-card__body">
-                    <div className="portal-code-editor">
-                      {customerPortalCodes.length ? (
-                        customerPortalCodes.map((item) => (
-                          <div className="portal-code-editor__card" key={item.id}>
-                            <div className="portal-code-editor__header">
-                              <input
-                                className="input"
-                                value={item.procedureName}
-                                placeholder="Nom de procédure"
-                                onChange={(event) =>
-                                  updateCustomerPortalProcedure(item.id, {
-                                    procedureName: event.target.value,
-                                  })
-                                }
-                              />
-                              <div className="portal-code-editor__header-actions">
-                                {item.codes.length < 2 ? (
-                                  <button
-                                    className="btn btn--ghost btn--small"
-                                    type="button"
-                                    onClick={() => addCustomerPortalCodeLine(item.id)}
-                                  >
-                                    Ajouter un code
-                                  </button>
-                                ) : null}
-                                <button
-                                  className="icon-btn-sm danger"
-                                  type="button"
-                                  title="Supprimer"
-                                  onClick={() =>
-                                    updateCustomerPortalCodes(
-                                      customerPortalCodes.filter((entry) => entry.id !== item.id),
-                                    )
-                                  }
-                                >
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                            <div className="portal-code-editor__codes">
-                              {item.codes.map((codeLine, index) => (
-                                <div className="portal-code-editor__code-card" key={codeLine.id}>
-                                  <div className="portal-code-editor__row">
-                                    {item.codes.length > 1 ? (
-                                      <span className="portal-code-editor__index">{index + 1}</span>
-                                    ) : null}
-                                    <input
-                                      className="input"
-                                      value={codeLine.code}
-                                      placeholder={`Code portal ${index + 1}`}
-                                      onChange={(event) =>
-                                        updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                          code: event.target.value,
-                                        })
-                                      }
-                                    />
-                                    {item.codes.length > 1 ? (
-                                      <button
-                                        className="icon-btn-sm danger"
-                                        type="button"
-                                        title="Supprimer ce code"
-                                        onClick={() =>
-                                          removeCustomerPortalCodeLine(item.id, codeLine.id)
-                                        }
-                                      >
-                                        <svg
-                                          width="14"
-                                          height="14"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        >
-                                          <line x1="18" y1="6" x2="6" y2="18" />
-                                          <line x1="6" y1="6" x2="18" y2="18" />
-                                        </svg>
-                                      </button>
-                                    ) : null}
-                                  </div>
-
-                                  <input
-                                    className="input"
-                                    value={codeLine.title ?? ''}
-                                    placeholder={`Titre de l'étape ${index + 1}`}
-                                    onChange={(event) =>
-                                      updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                        title: event.target.value,
-                                      })
-                                    }
-                                  />
-
-                                  <div className="portal-code-editor__options">
-                                    <label className="portal-code-editor__check">
-                                      <input
-                                        type="checkbox"
-                                        checked={Boolean(codeLine.showDraft)}
-                                        onChange={(event) =>
-                                          updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                            showDraft: event.target.checked,
-                                          })
-                                        }
-                                      />
-                                      <span>Afficher Draft</span>
-                                    </label>
-
-                                    <label className="portal-code-editor__check">
-                                      <input
-                                        type="checkbox"
-                                        checked={Boolean(codeLine.showForward)}
-                                        onChange={(event) =>
-                                          updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                            showForward: event.target.checked,
-                                          })
-                                        }
-                                      />
-                                      <span>Afficher Forward to</span>
-                                    </label>
-                                  </div>
-
-                                  {codeLine.showForward ? (
-                                    <input
-                                      className="input"
-                                      value={codeLine.forwardTarget ?? ''}
-                                      placeholder="Nom à afficher après Forward to"
-                                      onChange={(event) =>
-                                        updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                          forwardTarget: event.target.value,
-                                        })
-                                      }
-                                    />
-                                  ) : null}
-
-                                  <textarea
-                                    className="textarea portal-code-editor__note"
-                                    value={codeLine.infoNote ?? ''}
-                                    placeholder="Note affichée au survol du bouton i"
-                                    onChange={(event) =>
-                                      updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                        infoNote: event.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="empty-state">Aucun code configuré.</div>
-                      )}
-                    </div>
+                    {renderPortalCodeEditorSettings()}
                   </div>
                 </div>
 
