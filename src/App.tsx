@@ -113,6 +113,21 @@ const createDashboardCalculatorItem = (): DashboardCalculatorItem => ({
   shippingPrice: '',
 })
 
+const CloseIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M18 6L6 18" />
+    <path d="M6 6l12 12" />
+  </svg>
+)
+
 const PHONE_CALL_TEMPLATE = defaultData.settings.callTemplate
 const CALL_HISTORY_LIMIT = 5
 type WorkspaceDashboardPage =
@@ -391,6 +406,48 @@ function getUpdateSettingsLabel(status: UpdateStatus | null) {
   if (!status) return 'Statut inconnu.'
   if (status.phase === 'disabled') return 'Mises à jour auto disponibles sur l’application installée.'
   return status.message
+}
+
+function formatVersionLabel(value?: string | null) {
+  const normalized = value?.trim()
+  if (!normalized) return null
+  return normalized.replace(/\.0$/, '')
+}
+
+function getUpdateAvailableVersionLabel(status: UpdateStatus | null, currentVersion: string) {
+  const remoteVersion = formatVersionLabel(status?.version)
+  if (remoteVersion) return remoteVersion
+  switch (status?.phase) {
+    case 'not-available':
+      return currentVersion
+    case 'checking':
+      return 'Recherche...'
+    case 'error':
+      return 'Indisponible'
+    default:
+      return 'En attente'
+  }
+}
+
+function getUpdateAvailableVersionMeta(status: UpdateStatus | null) {
+  switch (status?.phase) {
+    case 'available':
+      return 'Nouvelle version détectée, téléchargement prêt à démarrer.'
+    case 'downloading':
+      return 'La nouvelle version est en cours de téléchargement.'
+    case 'downloaded':
+      return 'Le package est téléchargé et prêt à être installé.'
+    case 'not-available':
+      return 'Aucune nouvelle version détectée pour le moment.'
+    case 'checking':
+      return 'Recherche de la dernière version en cours.'
+    case 'error':
+      return 'Impossible de récupérer la version distante.'
+    case 'disabled':
+      return 'Les mises à jour sont gérées sur l’application installée.'
+    default:
+      return 'La prochaine vérification affichera ici la version distante.'
+  }
 }
 
 function formatHistoryTimestamp(value: string) {
@@ -1712,6 +1769,18 @@ function App() {
     : defaultData.settings.exportFontSize
   const updateSettingsLabel = getUpdateSettingsLabel(updateStatus)
   const isUpdateReadyToInstall = updateStatus?.phase === 'downloaded'
+  const availableUpdateVersionLabel = getUpdateAvailableVersionLabel(updateStatus, APP_VERSION_LABEL)
+  const availableUpdateVersionMeta = getUpdateAvailableVersionMeta(updateStatus)
+  const updateDownloadProgress =
+    updateStatus?.phase === 'downloaded'
+      ? 100
+      : typeof updateStatus?.progress === 'number'
+        ? Math.max(0, Math.min(100, Math.round(updateStatus.progress)))
+        : null
+  const showUpdateProgress =
+    updateStatus?.phase === 'available' ||
+    updateStatus?.phase === 'downloading' ||
+    updateStatus?.phase === 'downloaded'
   const showUpdateIndicator =
     updateStatus?.phase === 'available' ||
     updateStatus?.phase === 'downloading' ||
@@ -4026,9 +4095,7 @@ function App() {
 
   const renderWorkspaceDashboardToolsFiller = () => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--filler">
-      <div className="workspace-dashboard__panel-title">Zone libre</div>
       <div className="dashboard-placeholder">
-        <span>Espace réservé</span>
         <strong>WIP</strong>
       </div>
     </article>
@@ -4077,13 +4144,7 @@ function App() {
                     onClick={() => removeDashboardCalculatorItem(item.id)}
                     disabled={dashboardCalculatorItems.length === 1}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4h8v2" />
-                      <path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                    </svg>
+                    <CloseIcon />
                   </button>
                 </div>
               </div>
@@ -5091,24 +5152,19 @@ function App() {
                   {emailCopied ? 'Copié !' : 'Copy Email'}
                 </button>
                 <button
-                  className={`ghost clear-btn clear-btn--icon${clearArmed ? ' confirm' : ''}${
+                  className={`ghost clear-btn${clearArmed ? ' confirm' : ''}${
                     emailClearPulse ? ' btn-pulse' : ''
                   }`}
+                  type="button"
                   onClick={() => {
                     triggerPulse(setEmailClearPulse)
                     handleClearEmail()
                   }}
                   onAnimationEnd={() => setEmailClearPulse(false)}
-                  title={clearArmed ? 'Confirmer la suppression' : 'Effacer le mail'}
-                  aria-label={clearArmed ? 'Confirmer la suppression' : 'Effacer le mail'}
+                  title={clearArmed ? 'Confirmer' : 'Clear'}
+                  aria-label={clearArmed ? 'Confirmer' : 'Clear'}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4h8v2" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                    <path d="M10 11v6" />
-                    <path d="M14 11v6" />
-                  </svg>
+                  {clearArmed ? '?' : 'Clear'}
                 </button>
               </div>
             </div>
@@ -5163,16 +5219,12 @@ function App() {
             />
             <button
               className="note-clear-btn"
+              type="button"
               onClick={() => setData((prev) => ({ ...prev, notes: '' }))}
               title="Effacer la note"
+              aria-label="Effacer la note"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 6h18" />
-                <path d="M8 6V4h8v2" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-              </svg>
+              <CloseIcon />
             </button>
           </div>
         </div>
@@ -5246,26 +5298,19 @@ function App() {
                 {taskCopied ? 'Copié !' : 'Copy'}
               </button>
               <button
-                className={`ghost task-clear-btn task-clear-btn--icon${
-                  taskClearArmed ? ' confirm' : ''
-                }${
+                className={`ghost task-clear-btn${taskClearArmed ? ' confirm' : ''}${
                   taskClearPulse ? ' btn-pulse' : ''
                 }`}
+                type="button"
                 onClick={() => {
                   triggerPulse(setTaskClearPulse)
                   handleClearTask()
                 }}
                 onAnimationEnd={() => setTaskClearPulse(false)}
-                title={taskClearArmed ? 'Confirmer la suppression' : 'Effacer la task'}
-                aria-label={taskClearArmed ? 'Confirmer la suppression' : 'Effacer la task'}
+                title={taskClearArmed ? 'Confirmer' : 'Clear'}
+                aria-label={taskClearArmed ? 'Confirmer' : 'Clear'}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18" />
-                  <path d="M8 6V4h8v2" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                  <path d="M10 11v6" />
-                  <path d="M14 11v6" />
-                </svg>
+                {taskClearArmed ? '?' : 'Clear'}
               </button>
             </div>
           </div>
@@ -8562,43 +8607,79 @@ function App() {
                         >
                           {getUpdatePhaseTitle(updateStatus)}
                         </div>
-                        <div className="settings-update__hero-title">SpeedMail {APP_VERSION_LABEL}</div>
+                        <div className="settings-update__hero-title">Mise à jour SpeedMail</div>
                         <div className="settings-update__hero-text">{updateSettingsLabel}</div>
                       </section>
 
                       <div className="settings-update__grid">
-                        <article className="settings-update__card">
+                        <article className="settings-update__card settings-update__card--current">
                           <div className="settings-update__card-label">Version actuelle</div>
-                          <div className="settings-update__card-value">{APP_VERSION_LABEL}</div>
+                          <div className="settings-update__card-value settings-update__card-value--version">
+                            {APP_VERSION_LABEL}
+                          </div>
                           <div className="settings-update__card-meta">
-                            Build local détecté dans l’application.
+                            Build installé sur cette application.
                           </div>
                         </article>
-                        <article className="settings-update__card">
-                          <div className="settings-update__card-label">Dernière vérification</div>
-                          <div className="settings-update__card-value">
-                            {formatUpdateCheckedAt(updateStatus?.checkedAt)}
+                        <article className="settings-update__card settings-update__card--available">
+                          <div className="settings-update__card-label">Version disponible</div>
+                          <div className="settings-update__card-value settings-update__card-value--version">
+                            {availableUpdateVersionLabel}
                           </div>
-                          <div className="settings-update__card-meta">
-                            {updateStatus?.version
-                              ? `Version distante: ${updateStatus.version}`
-                              : 'Aucune version distante signalée.'}
-                          </div>
+                          <div className="settings-update__card-meta">{availableUpdateVersionMeta}</div>
                         </article>
                       </div>
 
-                      {updateStatus?.phase === 'downloading' && typeof updateStatus.progress === 'number' ? (
+                      <div className="settings-update__details">
+                        <div className="settings-update__detail">
+                          <span>Dernière vérification</span>
+                          <strong>{formatUpdateCheckedAt(updateStatus?.checkedAt)}</strong>
+                        </div>
+                        <div className="settings-update__detail">
+                          <span>Statut</span>
+                          <strong>{getUpdatePhaseTitle(updateStatus)}</strong>
+                        </div>
+                      </div>
+
+                      {showUpdateProgress ? (
                         <div className="settings-update__progress">
                           <div className="settings-update__progress-head">
-                            <span>Téléchargement</span>
-                            <strong>{Math.round(updateStatus.progress)}%</strong>
+                            <span>
+                              {updateStatus?.phase === 'downloaded'
+                                ? 'Téléchargement terminé'
+                                : updateStatus?.phase === 'downloading'
+                                  ? 'Téléchargement en cours'
+                                  : 'Préparation du téléchargement'}
+                            </span>
+                            <strong>
+                              {typeof updateDownloadProgress === 'number'
+                                ? `${updateDownloadProgress}%`
+                                : 'En attente'}
+                            </strong>
                           </div>
-                          <div className="settings-update__progress-bar">
+                          <div
+                            className={`settings-update__progress-bar${
+                              typeof updateDownloadProgress === 'number'
+                                ? ''
+                                : ' is-indeterminate'
+                            }`}
+                          >
                             <span
                               style={{
-                                width: `${Math.max(0, Math.min(100, updateStatus.progress))}%`,
+                                width: `${
+                                  typeof updateDownloadProgress === 'number'
+                                    ? updateDownloadProgress
+                                    : 100
+                                }%`,
                               }}
                             />
+                          </div>
+                          <div className="settings-update__progress-meta">
+                            {updateStatus?.phase === 'downloaded'
+                              ? 'Le téléchargement est terminé. Tu peux lancer l’installation.'
+                              : updateStatus?.phase === 'downloading'
+                                ? 'La barre se met à jour en direct pendant le téléchargement.'
+                                : 'La mise à jour a été trouvée, le téléchargement se prépare.'}
                           </div>
                         </div>
                       ) : null}
