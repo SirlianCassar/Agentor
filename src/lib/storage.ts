@@ -1,6 +1,6 @@
 import type { AppData } from './types'
 import { defaultData } from './defaults'
-import { normalizeData } from './utils'
+import { createExportData, normalizeData } from './utils'
 
 export type UpdatePhase =
   | 'idle'
@@ -30,7 +30,7 @@ export async function saveData(data: AppData) {
 }
 
 export async function exportJson(data: AppData) {
-  return window.speedmail.exportJson(data)
+  return window.speedmail.exportJson(createExportData(data, defaultData))
 }
 
 export async function exportHistory(text: string) {
