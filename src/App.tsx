@@ -74,7 +74,6 @@ const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
 const APP_VERSION_LABEL = APP_VERSION.replace(/\.0$/, '')
 const VAT_DIVISOR = 1.2
-const DEFAULT_SUPPORT_SITE_URL = 'https://support.guillemot.com/'
 const DATA_HISTORY_LIMIT = 160
 const dashboardProductCategoryOrder: DashboardProductCategory[] = [
   'software',
@@ -1146,7 +1145,6 @@ function App() {
   const [predefinedTagDraft, setPredefinedTagDraft] = useState('')
   const [tagSuggestionState, setTagSuggestionState] = useState<TagSuggestionState | null>(null)
   const [mailInsertMode, setMailInsertMode] = useState<InsertMode>('line')
-  const [noteImportFeedbackVisible, setNoteImportFeedbackVisible] = useState(false)
   const [portalDashboardOpenIds, setPortalDashboardOpenIds] = useState<Record<string, boolean>>({})
   const [portalEditorOpenIds, setPortalEditorOpenIds] = useState<Record<string, boolean>>({})
   const [workspaceDashboardPage, setWorkspaceDashboardPage] =
@@ -1163,13 +1161,13 @@ function App() {
   const emailEditorRef = useRef<TextEditorHandle>(null)
   const taskEditorRef = useRef<TextEditorHandle>(null)
   const callEditorRef = useRef<TextEditorHandle>(null)
+  const callDraftLengthRef = useRef(callDraft.length)
   const emailCopyTimeoutRef = useRef<number | null>(null)
   const taskCopyTimeoutRef = useRef<number | null>(null)
   const portalCopyTimeoutRef = useRef<number | null>(null)
   const dashboardCalculatorCopyTimeoutRef = useRef<number | null>(null)
   const callCopyTimeoutRef = useRef<number | null>(null)
   const callHistoryCopyTimeoutRef = useRef<number | null>(null)
-  const noteImportFeedbackTimeoutRef = useRef<number | null>(null)
   const snippetTitleRef = useRef<HTMLInputElement>(null)
   const snippetContentRef = useRef<HTMLTextAreaElement>(null)
   const snippetTaskRef = useRef<HTMLTextAreaElement>(null)
@@ -1189,6 +1187,8 @@ function App() {
   const taskSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
   const callModalBackdropPointerDownRef = useRef(false)
+
+  callDraftLengthRef.current = callDraft.length
   const manualUpdateCheckRequestedRef = useRef(false)
   const dashboardOpenFrameRef = useRef<number | null>(null)
   const undoStackRef = useRef<AppData[]>([])
@@ -1406,6 +1406,39 @@ function App() {
     () => ({ id: '', name: '', content: '' } as TaskTemplate),
     [],
   )
+  const beginNewSnippetDraft = useCallback(
+    (focusField = true) => {
+      setTagSuggestionState(null)
+      setSnippetDraft(getEmptySnippetDraft())
+      setSelectedSnippetId('new')
+      if (focusField) {
+        requestAnimationFrame(() => snippetTitleRef.current?.focus())
+      }
+    },
+    [getEmptySnippetDraft],
+  )
+  const beginNewTemplateDraft = useCallback(
+    (focusField = true) => {
+      setTagSuggestionState(null)
+      setTemplateDraft(getEmptyTemplateDraft())
+      setSelectedTemplateId('new')
+      if (focusField) {
+        requestAnimationFrame(() => templateNameRef.current?.focus())
+      }
+    },
+    [getEmptyTemplateDraft],
+  )
+  const beginNewTaskDraft = useCallback(
+    (focusField = true) => {
+      setTagSuggestionState(null)
+      setTaskDraft(getEmptyTaskDraft())
+      setSelectedTaskId('new')
+      if (focusField) {
+        requestAnimationFrame(() => taskTemplateNameRef.current?.focus())
+      }
+    },
+    [getEmptyTaskDraft],
+  )
   const getEmptyProcedureDraft = useCallback(
     () =>
       ({
@@ -1603,9 +1636,6 @@ function App() {
       if (callHistoryCopyTimeoutRef.current !== null) {
         window.clearTimeout(callHistoryCopyTimeoutRef.current)
       }
-      if (noteImportFeedbackTimeoutRef.current !== null) {
-        window.clearTimeout(noteImportFeedbackTimeoutRef.current)
-      }
     }
   }, [])
 
@@ -1636,11 +1666,11 @@ function App() {
       const target = callEditorRef.current
       if (!target) return
       target.focus()
-      const cursor = callDraft.length
+      const cursor = callDraftLengthRef.current
       target.setSelection(cursor, cursor)
     })
     return () => window.cancelAnimationFrame(handle)
-  }, [callDraft.length, callModalOpen])
+  }, [callModalOpen])
 
   useEffect(() => {
     if (!editOpen) return
@@ -2626,17 +2656,6 @@ function App() {
     setMailInsertMode((current) => (current === 'line' ? 'cursor' : 'line'))
   }, [])
 
-  const triggerNoteImportFeedback = useCallback(() => {
-    if (noteImportFeedbackTimeoutRef.current !== null) {
-      window.clearTimeout(noteImportFeedbackTimeoutRef.current)
-    }
-    setNoteImportFeedbackVisible(true)
-    noteImportFeedbackTimeoutRef.current = window.setTimeout(() => {
-      setNoteImportFeedbackVisible(false)
-      noteImportFeedbackTimeoutRef.current = null
-    }, 900)
-  }, [])
-
   const togglePortalDashboardItem = useCallback((id: string) => {
     setPortalDashboardOpenIds((prev) => ({ ...prev, [id]: !prev[id] }))
   }, [])
@@ -2913,14 +2932,7 @@ function App() {
   }
 
   const removeDashboardCalculatorItem = (id: string) => {
-    setDashboardCalculatorItems((prev) => {
-      if (prev.length <= 1) {
-        return prev.map((item) =>
-          item.id === id ? { ...item, productPrice: '', shippingPrice: '' } : item,
-        )
-      }
-      return prev.filter((item) => item.id !== id)
-    })
+    setDashboardCalculatorItems((prev) => prev.filter((item) => item.id !== id))
   }
 
   const handleCopyDashboardAmount = async (key: DashboardCalculatorCopyKey, value: number) => {
@@ -2998,10 +3010,6 @@ function App() {
     callHistoryCopyTimeoutRef.current = window.setTimeout(() => {
       setCallHistoryCopiedId((current) => (current === id ? null : current))
     }, 1600)
-  }
-
-  const handleNoteImportClick = () => {
-    triggerNoteImportFeedback()
   }
 
   const handleSaveDashboardProduct = () => {
@@ -3604,16 +3612,6 @@ function App() {
     )
   }
 
-  const handlePullSupportSite = () => {
-    const productUrl = activeDashboardProduct?.supportUrl?.trim()
-    const targetUrl = productUrl || DEFAULT_SUPPORT_SITE_URL
-    if (!targetUrl.startsWith('http')) {
-      setToast('URL support invalide.')
-      return
-    }
-    openExternal(targetUrl)
-  }
-
   const handleOpenProcedure = () => {
     openProcedure()
   }
@@ -3709,7 +3707,6 @@ function App() {
     setDashboardProcedureQuery('')
     setSnippetTooltip(null)
     setMailInsertMode('line')
-    setNoteImportFeedbackVisible(false)
     setPortalDashboardOpenIds({})
     setPortalEditorOpenIds({})
     setClearAllArmed(false)
@@ -3880,19 +3877,21 @@ function App() {
   }
 
   const deleteTemplate = (template: MailTemplate) => {
-    if (!window.confirm(`Supprimer le template "${template.name}" ?`)) return
+    if (!window.confirm(`Supprimer le template "${template.name}" ?`)) return false
     setData((prev) => ({
       ...prev,
       templates: prev.templates.filter((item) => item.id !== template.id),
     }))
+    return true
   }
 
   const deleteTaskTemplate = (task: TaskTemplate) => {
-    if (!window.confirm(`Supprimer le template "${task.name}" ?`)) return
+    if (!window.confirm(`Supprimer le template "${task.name}" ?`)) return false
     setData((prev) => ({
       ...prev,
       taskTemplates: prev.taskTemplates.filter((item) => item.id !== task.id),
     }))
+    return true
   }
 
   const deleteProcedure = (procedure: Procedure) => {
@@ -4052,6 +4051,14 @@ function App() {
     <article className="workspace-dashboard__panel workspace-dashboard__panel--formatter">
       <div className="workspace-dashboard__panel-title">{title}</div>
       <div className="dashboard-formatter">
+        <button
+          className="btn btn--primary btn--small dashboard-formatter__action"
+          type="button"
+          onClick={() => void handleFormatName()}
+          disabled={!nameFormatterValue.trim()}
+        >
+          Formater & copier
+        </button>
         <div className="dashboard-formatter__input-wrap">
           <span className="dashboard-formatter__icon" aria-hidden="true">
             <svg
@@ -4081,14 +4088,6 @@ function App() {
             }}
           />
         </div>
-        <button
-          className="primary dashboard-formatter__action"
-          type="button"
-          onClick={() => void handleFormatName()}
-          disabled={!nameFormatterValue.trim()}
-        >
-          Formater & copier
-        </button>
       </div>
     </article>
   )
@@ -4142,7 +4141,6 @@ function App() {
                     type="button"
                     title="Supprimer cette ligne"
                     onClick={() => removeDashboardCalculatorItem(item.id)}
-                    disabled={dashboardCalculatorItems.length === 1}
                   >
                     <CloseIcon />
                   </button>
@@ -4329,15 +4327,6 @@ function App() {
             placeholder={searchPlaceholder}
           />
         </div>
-
-        <button
-          className="ghost dashboard-support-btn"
-          type="button"
-          onClick={handlePullSupportSite}
-          disabled={!activeDashboardProduct}
-        >
-          Ouvrir support
-        </button>
       </div>
 
       <div className="dashboard-version-browser">
@@ -5186,30 +5175,6 @@ function App() {
         <div className="note-panel-workspace">
           <div className="note-panel-workspace__header">
             <p className="section-label section-label--tight">Notes</p>
-            <div className="note-panel-workspace__actions">
-              <button
-                className={`note-import-btn${noteImportFeedbackVisible ? ' is-success' : ''}`}
-                type="button"
-                onClick={handleNoteImportClick}
-                title="Importer (WIP)"
-                aria-label="Importer (WIP)"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 3v12" />
-                  <path d="M7 10l5 5 5-5" />
-                  <path d="M5 21h14" />
-                </svg>
-              </button>
-            </div>
           </div>
           <div className="note-editor-wrapper">
             <textarea
@@ -5712,15 +5677,13 @@ function App() {
                           <div className="list-item__actions">
                             <button
                               className="icon-btn-sm danger"
+                              type="button"
                               onClick={(event) => {
                                 event.stopPropagation()
                                 const deleted = deleteSnippet(snippet)
                                 if (!deleted) return
-                                setSelectedSnippetId((prev) =>
-                                  prev === snippet.id ? null : prev,
-                                )
                                 if (selectedSnippetId === snippet.id) {
-                                  setSnippetDraft(getEmptySnippetDraft())
+                                  beginNewSnippetDraft()
                                 }
                               }}
                               title="Supprimer"
@@ -5779,15 +5742,17 @@ function App() {
                         </button>
                       </div>
                       <button
+                        type="button"
                         className="btn btn--ghost btn--small"
-                        onClick={() => {
-                          setSnippetDraft(getEmptySnippetDraft())
-                          setSelectedSnippetId('new')
-                        }}
+                        onClick={() => beginNewSnippetDraft()}
                       >
                         Nouveau
                       </button>
-                      <button className="btn btn--primary btn--small" onClick={handleSnippetSave}>
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--small"
+                        onClick={handleSnippetSave}
+                      >
                         Sauver
                       </button>
                     </div>
@@ -6028,14 +5993,13 @@ function App() {
                             />
                             <button
                               className="icon-btn-sm danger"
+                              type="button"
                               onClick={(event) => {
                                 event.stopPropagation()
-                                deleteTemplate(template)
-                                setSelectedTemplateId((prev) =>
-                                  prev === template.id ? null : prev,
-                                )
+                                const deleted = deleteTemplate(template)
+                                if (!deleted) return
                                 if (selectedTemplateId === template.id) {
-                                  setTemplateDraft(getEmptyTemplateDraft())
+                                  beginNewTemplateDraft()
                                 }
                               }}
                               title="Supprimer"
@@ -6094,15 +6058,17 @@ function App() {
                         </button>
                       </div>
                       <button
+                        type="button"
                         className="btn btn--ghost btn--small"
-                        onClick={() => {
-                          setTemplateDraft(getEmptyTemplateDraft())
-                          setSelectedTemplateId('new')
-                        }}
+                        onClick={() => beginNewTemplateDraft()}
                       >
                         Nouveau
                       </button>
-                      <button className="btn btn--primary btn--small" onClick={handleTemplateSave}>
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--small"
+                        onClick={handleTemplateSave}
+                      >
                         Sauver
                       </button>
                     </div>
@@ -6372,12 +6338,13 @@ function App() {
                           <div className="list-item__actions">
                             <button
                               className="icon-btn-sm danger"
+                              type="button"
                               onClick={(event) => {
                                 event.stopPropagation()
-                                deleteTaskTemplate(task)
-                                setSelectedTaskId((prev) => (prev === task.id ? null : prev))
+                                const deleted = deleteTaskTemplate(task)
+                                if (!deleted) return
                                 if (selectedTaskId === task.id) {
-                                  setTaskDraft(getEmptyTaskDraft())
+                                  beginNewTaskDraft()
                                 }
                               }}
                               title="Supprimer"
@@ -6436,15 +6403,17 @@ function App() {
                         </button>
                       </div>
                       <button
+                        type="button"
                         className="btn btn--ghost btn--small"
-                        onClick={() => {
-                          setTaskDraft(getEmptyTaskDraft())
-                          setSelectedTaskId('new')
-                        }}
+                        onClick={() => beginNewTaskDraft()}
                       >
                         Nouveau
                       </button>
-                      <button className="btn btn--primary btn--small" onClick={handleTaskTemplateSave}>
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--small"
+                        onClick={handleTaskTemplateSave}
+                      >
                         Sauver
                       </button>
                     </div>

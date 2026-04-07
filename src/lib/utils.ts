@@ -380,11 +380,43 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
       predefinedTags: Array.isArray(raw.settings?.predefinedTags)
         ? raw.settings.predefinedTags
         : fallback.settings.predefinedTags,
+      customerPortalCodes: Array.isArray(raw.settings?.customerPortalCodes)
+        ? raw.settings.customerPortalCodes
+        : fallback.settings.customerPortalCodes,
+      dashboardProducts: Array.isArray(raw.settings?.dashboardProducts)
+        ? raw.settings.dashboardProducts
+        : fallback.settings.dashboardProducts,
       products: Array.isArray(raw.settings?.products)
         ? raw.settings.products
         : fallback.settings.products,
       dashboardNews: Array.isArray(raw.settings?.dashboardNews)
         ? raw.settings.dashboardNews
+        : fallback.settings.dashboardNews,
+    },
+  }
+}
+
+export function createExportData(raw: Partial<AppData> | null | undefined, fallback: AppData) {
+  const normalized = normalizeData(raw, fallback)
+  return {
+    ...normalized,
+    history: [],
+    settings: {
+      ...normalized.settings,
+      predefinedTags: Array.isArray(normalized.settings.predefinedTags)
+        ? normalized.settings.predefinedTags
+        : fallback.settings.predefinedTags,
+      customerPortalCodes: Array.isArray(normalized.settings.customerPortalCodes)
+        ? normalized.settings.customerPortalCodes
+        : fallback.settings.customerPortalCodes,
+      dashboardProducts: Array.isArray(normalized.settings.dashboardProducts)
+        ? normalized.settings.dashboardProducts
+        : fallback.settings.dashboardProducts,
+      products: Array.isArray(normalized.settings.products)
+        ? normalized.settings.products
+        : fallback.settings.products,
+      dashboardNews: Array.isArray(normalized.settings.dashboardNews)
+        ? normalized.settings.dashboardNews
         : fallback.settings.dashboardNews,
     },
   }

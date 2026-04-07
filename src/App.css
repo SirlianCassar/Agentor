@@ -754,10 +754,6 @@ select optgroup {
   min-width: 220px;
 }
 
-.dashboard-support-btn {
-  white-space: nowrap;
-}
-
 .dashboard-version-browser {
   display: grid;
   grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.35fr);
@@ -1200,14 +1196,17 @@ button.dashboard-copy-btn.is-success:hover {
 
 .dashboard-formatter {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
-  justify-content: center;
   flex: 1;
 }
 
 .dashboard-formatter__input-wrap {
   position: relative;
+  flex: 1 1 220px;
+  min-width: 0;
 }
 
 .dashboard-formatter__icon {
@@ -1224,11 +1223,10 @@ button.dashboard-copy-btn.is-success:hover {
 }
 
 .dashboard-formatter__action {
-  width: fit-content;
-  align-self: center;
-  min-width: 0;
-  padding: 8px 14px;
-  font-size: calc(13px * var(--text-scale));
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 5px 9px;
+  font-size: calc(11px * var(--text-scale));
 }
 
 .dashboard-calculator {
