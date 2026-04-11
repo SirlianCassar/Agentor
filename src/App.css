@@ -951,6 +951,167 @@ select optgroup {
   line-height: 1.5;
 }
 
+.dashboard-portal-browser {
+  grid-template-columns: minmax(240px, 0.82fr) minmax(0, 1.45fr);
+}
+
+.dashboard-portal-detail {
+  gap: 12px;
+}
+
+.dashboard-portal-search {
+  flex: 0 0 auto;
+}
+
+.dashboard-portal-search .input {
+  width: 100%;
+}
+
+.dashboard-portal-recap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-portal-recap__item {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dashboard-portal-recap__content {
+  min-width: 0;
+}
+
+.dashboard-portal-recap__title {
+  color: var(--text);
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-portal-recap__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.dashboard-portal-recap__flags span {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dashboard-portal-recap__flags span.is-on {
+  border-color: rgba(83, 169, 255, 0.34);
+  background: rgba(83, 169, 255, 0.14);
+  color: #dceeff;
+}
+
+.dashboard-portal-code {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dashboard-portal-code__value {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  padding: 6px 10px;
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.dashboard-portal-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-portal-step {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dashboard-portal-step__index {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(83, 169, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(83, 169, 255, 0.16);
+  color: #eef6ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 900;
+}
+
+.dashboard-portal-step__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dashboard-portal-step__title {
+  color: var(--text);
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-portal-step__meta {
+  color: var(--text-secondary);
+  font-size: calc(12px * var(--text-scale));
+}
+
+.dashboard-portal-step__info {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 107, 107, 0.48);
+  border-radius: 999px;
+  background: rgba(255, 107, 107, 0.18);
+  color: #ffd5d5;
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 800;
+}
+
+.dashboard-portal-step__info:hover {
+  border-color: rgba(255, 148, 148, 0.68);
+  background: rgba(255, 107, 107, 0.26);
+}
+
 .portal-code-list-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -1337,6 +1498,33 @@ button.dashboard-copy-btn.is-success:hover {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.dashboard-calculator__import-fee {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(118px, 140px) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-calculator__import-fee .dashboard-calculator__label {
+  text-align: right;
+}
+
+.dashboard-calculator__import-fee .input {
+  min-height: 36px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.dashboard-calculator__import-fee-note {
+  color: var(--text-secondary);
+  font-size: calc(12px * var(--text-scale));
+  min-width: 0;
+}
+
 .dashboard-calculator__results {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1526,6 +1714,15 @@ button.dashboard-copy-icon.is-success {
     min-width: 0;
     text-align: right;
     justify-self: stretch;
+  }
+
+  .dashboard-calculator__import-fee {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .dashboard-calculator__import-fee .dashboard-calculator__label {
+    text-align: left;
   }
 
   .dashboard-calculator__results {
@@ -5585,6 +5782,16 @@ button.ghost.confirm {
 
   .dashboard-version-browser {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-portal-recap__item {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .dashboard-portal-code {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .dashboard-product-editor {

@@ -243,7 +243,7 @@ const settingsNavigation: SettingsNavSection[] = [
       },
       {
         id: 'dashboardPortal',
-        label: 'Procédure Portal',
+        label: 'Procédures Portal',
         description: 'Configuration des codes Portal et de leurs variantes.',
       },
       {
@@ -936,123 +936,6 @@ function mergeData(current: AppData, incoming: AppData) {
   }
 }
 
-interface PortalCodeListProps {
-  items: CustomerPortalCode[]
-  copiedId: string | null
-  onCopy: (id: string, code: string) => void
-  onToggle: (id: string) => void
-  title: string
-  expandedIds: Record<string, boolean>
-  onInfoEnter: (text: string, anchor: HTMLElement) => void
-  onInfoLeave: () => void
-}
-
-function PortalCodeList({
-  items,
-  copiedId,
-  onCopy,
-  onToggle,
-  title,
-  expandedIds,
-  onInfoEnter,
-  onInfoLeave,
-}: PortalCodeListProps) {
-  return items.length ? (
-    <div className="portal-code-list-scroll">
-      <div className="portal-code-list" aria-label={title}>
-        {items.map((item) => {
-          const procedureName = item.procedureName.trim() || 'Procédure sans nom'
-          const isOpen = expandedIds[item.id] ?? false
-
-          return (
-            <div className={`portal-code-item${isOpen ? ' is-open' : ''}`} key={item.id}>
-              <button
-                className="portal-code-item__summary"
-                type="button"
-                onClick={() => onToggle(item.id)}
-                aria-expanded={isOpen}
-              >
-                <span className="portal-code-item__name">{procedureName}</span>
-                <span className={`portal-code-item__toggle${isOpen ? ' is-open' : ''}`} aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="9 6 15 12 9 18" />
-                  </svg>
-                </span>
-              </button>
-              {isOpen ? (
-                <div className="portal-code-item__rows">
-                  {item.codes.map((entry, index) => {
-                    const title = entry.title?.trim() ?? ''
-                    const code = entry.code.trim()
-                    const forwardTarget = entry.forwardTarget?.trim() ?? ''
-                    const infoNote = entry.infoNote?.trim() ?? ''
-                    const showForward = Boolean(entry.showForward && forwardTarget)
-                    const lineLabel =
-                      item.codes.length > 1 ? `${procedureName} - étape ${index + 1}` : procedureName
-
-                    return (
-                      <div className="portal-code-item__row" key={entry.id}>
-                        <div className="portal-code-item__step">
-                          <span className="portal-code-item__index">{index + 1}</span>
-                        </div>
-                        <div className="portal-code-item__row-main">
-                          <div className="portal-code-item__line">
-                            {title ? (
-                              <span className="portal-code-item__line-title">{title}</span>
-                            ) : null}
-                            {entry.showDraft ? (
-                              <span className="portal-code-item__badge">Draft</span>
-                            ) : null}
-                            {showForward ? (
-                              <span className="portal-code-item__badge portal-code-item__badge--accent">
-                                Forward to {forwardTarget}
-                              </span>
-                            ) : null}
-                            {infoNote ? (
-                              <span className="portal-code-item__info">
-                                <button
-                                  className="portal-code-item__info-btn"
-                                  type="button"
-                                  aria-label={`Note pour ${lineLabel}`}
-                                  onMouseEnter={(event) => onInfoEnter(infoNote, event.currentTarget)}
-                                  onMouseLeave={onInfoLeave}
-                                  onFocus={(event) => onInfoEnter(infoNote, event.currentTarget)}
-                                  onBlur={onInfoLeave}
-                                >
-                                  i
-                                </button>
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="portal-code-item__actions">
-                            <code className="portal-code-item__code">{code || '—'}</code>
-                            <button
-                              className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
-                                copiedId === entry.id ? ' is-success' : ''
-                              }`}
-                              type="button"
-                              onClick={() => onCopy(entry.id, entry.code)}
-                              disabled={!code}
-                            >
-                              {copiedId === entry.id ? 'Copié !' : 'Copier'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : null}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  ) : (
-    <div className="dashboard-empty">Aucun code configuré dans Paramètres.</div>
-  )
-}
-
 function App() {
   const [data, setData] = useState<AppData>(defaultData)
   const callTemplate = data.settings.callTemplate
@@ -1098,9 +981,8 @@ function App() {
   const [procedureCoverage, setProcedureCoverage] = useState<ProcedureCoverage>('oow')
   const [activeProcedureId, setActiveProcedureId] = useState<string | null>(null)
   const [activeDashboardProductId, setActiveDashboardProductId] = useState<string | null>(null)
-  const [activeDashboardProcedureProduct, setActiveDashboardProcedureProduct] = useState<
-    string | null
-  >(null)
+  const [activeDashboardPortalProcedureId, setActiveDashboardPortalProcedureId] =
+    useState<string | null>(null)
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<SettingsTab>('categories')
@@ -1137,6 +1019,7 @@ function App() {
   )
   const [procedureFormatHelpOpen, setProcedureFormatHelpOpen] = useState(false)
   const [nameFormatterValue, setNameFormatterValue] = useState('')
+  const [dashboardImportFee, setDashboardImportFee] = useState('')
   const [dashboardCalculatorItems, setDashboardCalculatorItems] = useState<DashboardCalculatorItem[]>(
     () => [createDashboardCalculatorItem()],
   )
@@ -1145,7 +1028,6 @@ function App() {
   const [predefinedTagDraft, setPredefinedTagDraft] = useState('')
   const [tagSuggestionState, setTagSuggestionState] = useState<TagSuggestionState | null>(null)
   const [mailInsertMode, setMailInsertMode] = useState<InsertMode>('line')
-  const [portalDashboardOpenIds, setPortalDashboardOpenIds] = useState<Record<string, boolean>>({})
   const [portalEditorOpenIds, setPortalEditorOpenIds] = useState<Record<string, boolean>>({})
   const [workspaceDashboardPage, setWorkspaceDashboardPage] =
     useState<WorkspaceDashboardPage>('tools')
@@ -2386,37 +2268,36 @@ function App() {
     () => dashboardProductResults.filter((product) => product.category !== 'product'),
     [dashboardProductResults],
   )
-  const dashboardProcedureGroups = useMemo(() => {
+  const dashboardPortalProcedures = useMemo(() => {
     const query = dashboardProcedureQuery.trim().toLowerCase()
-    const groups = new Map<string, Procedure[]>()
+    if (!query) return customerPortalCodes
 
-    data.procedures.forEach((procedure) => {
-      const productName = (procedure.productName?.trim() || procedure.name.trim()).trim()
+    return customerPortalCodes.filter((item) => {
       const searchHaystack = [
-        productName,
-        procedure.name,
-        procedure.brand,
-        procedure.coverage,
-        procedure.infoText,
-        procedure.optionalNotes ?? '',
-        procedure.steps,
+        item.procedureName,
+        ...item.codes.flatMap((entry) => [
+          entry.title ?? '',
+          entry.code,
+          entry.showDraft ? 'draft brouillon' : 'sans draft',
+          entry.showForward ? 'forward transfert' : 'sans forward',
+          entry.showForward && !entry.forwardTarget?.trim() ? 'destinataire non renseigné' : '',
+          entry.forwardTarget ?? '',
+          entry.infoNote ?? '',
+        ]),
       ]
         .join(' ')
         .toLowerCase()
 
-      if (query && !searchHaystack.includes(query)) return
-
-      const existing = groups.get(productName) ?? []
-      groups.set(productName, [...existing, procedure])
+      return searchHaystack.includes(query)
     })
-
-    return Array.from(groups.entries())
-      .map(([productName, procedures]) => ({
-        productName,
-        procedures: [...procedures].sort((a, b) => a.name.localeCompare(b.name, 'fr')),
-      }))
-      .sort((a, b) => a.productName.localeCompare(b.productName, 'fr'))
-  }, [dashboardProcedureQuery, data.procedures])
+  }, [customerPortalCodes, dashboardProcedureQuery])
+  const activeDashboardPortalProcedure = useMemo(
+    () =>
+      dashboardPortalProcedures.find(
+        (procedure) => procedure.id === activeDashboardPortalProcedureId,
+      ) ?? null,
+    [activeDashboardPortalProcedureId, dashboardPortalProcedures],
+  )
 
   useEffect(() => {
     if (workspaceDashboardPage !== 'versions') return
@@ -2439,19 +2320,21 @@ function App() {
   ])
 
   useEffect(() => {
-    if (!dashboardProcedureGroups.length) {
-      if (activeDashboardProcedureProduct !== null) {
-        setActiveDashboardProcedureProduct(null)
+    if (workspaceDashboardPage !== 'portal') return
+
+    if (!dashboardPortalProcedures.length) {
+      if (activeDashboardPortalProcedureId !== null) {
+        setActiveDashboardPortalProcedureId(null)
       }
       return
     }
 
-    const hasVisibleActive = dashboardProcedureGroups.some(
-      (group) => group.productName === activeDashboardProcedureProduct,
+    const hasVisibleActive = dashboardPortalProcedures.some(
+      (procedure) => procedure.id === activeDashboardPortalProcedureId,
     )
     if (hasVisibleActive) return
-    setActiveDashboardProcedureProduct(dashboardProcedureGroups[0].productName)
-  }, [activeDashboardProcedureProduct, dashboardProcedureGroups])
+    setActiveDashboardPortalProcedureId(dashboardPortalProcedures[0].id)
+  }, [activeDashboardPortalProcedureId, dashboardPortalProcedures, workspaceDashboardPage])
 
   const editSnippets = useMemo(() => {
     if (editSnippetCategoryId === 'all') return data.snippets
@@ -2654,10 +2537,6 @@ function App() {
 
   const toggleMailInsertMode = useCallback(() => {
     setMailInsertMode((current) => (current === 'line' ? 'cursor' : 'line'))
-  }, [])
-
-  const togglePortalDashboardItem = useCallback((id: string) => {
-    setPortalDashboardOpenIds((prev) => ({ ...prev, [id]: !prev[id] }))
   }, [])
 
   const togglePortalEditorItem = useCallback((id: string) => {
@@ -3697,17 +3576,17 @@ function App() {
       dashboardCalculatorCopyTimeoutRef.current = null
     }
     setDashboardCalculatorItems([createDashboardCalculatorItem()])
+    setDashboardImportFee('')
     setDashboardCalculatorCopiedKey(null)
     setProcedureChecks({})
     setActiveProcedureId(null)
     setActiveDashboardProductId(null)
-    setActiveDashboardProcedureProduct(null)
+    setActiveDashboardPortalProcedureId(null)
     setDashboardProductQuery('')
     setDashboardSparePartQuery('')
     setDashboardProcedureQuery('')
     setSnippetTooltip(null)
     setMailInsertMode('line')
-    setPortalDashboardOpenIds({})
     setPortalEditorOpenIds({})
     setClearAllArmed(false)
     setToast('Données effacées.')
@@ -3989,11 +3868,13 @@ function App() {
     .map((item) => item.shippingAmount)
     .filter((value) => value > 0)
     .sort((left, right) => right - left)
-  const dashboardShippingTotalTtc =
+  const dashboardImportFeeTtc = parseDashboardAmount(dashboardImportFee) ?? 0
+  const dashboardBaseShippingTotalTtc =
     dashboardShippingValues.length > 0
       ? dashboardShippingValues[0] +
         dashboardShippingValues.slice(1).reduce((sum, value) => sum + value / 2, 0)
       : 0
+  const dashboardShippingTotalTtc = dashboardBaseShippingTotalTtc + dashboardImportFeeTtc
   const dashboardGrandTotalTtc = dashboardProductsTotalTtc + dashboardShippingTotalTtc
   const dashboardProductsTotalHt = dashboardProductsTotalTtc / VAT_DIVISOR
   const dashboardShippingTotalHt = dashboardShippingTotalTtc / VAT_DIVISOR
@@ -4157,6 +4038,21 @@ function App() {
             + Ajouter une ligne
           </button>
         </div>
+
+        <label className="dashboard-calculator__import-fee">
+          <span className="dashboard-calculator__label">Frais d’import TTC</span>
+          <input
+            className="input"
+            value={dashboardImportFee}
+            onChange={(event) => setDashboardImportFee(event.target.value)}
+            placeholder="0,00"
+            inputMode="decimal"
+            aria-label="Frais d'import TTC ajoutés à la livraison"
+          />
+          <span className="dashboard-calculator__import-fee-note">
+            Ajouté au total livraison
+          </span>
+        </label>
 
         <div className="dashboard-calculator__results">
           <div className="dashboard-calculator__result">
@@ -4476,21 +4372,169 @@ function App() {
     </article>
   )
 
-  const renderWorkspaceDashboardPortalPanel = (title: string) => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
-      <div className="workspace-dashboard__panel-title">{title}</div>
-      <PortalCodeList
-        items={customerPortalCodes}
-        copiedId={portalCopiedId}
-        onCopy={(id, code) => void handleCopyPortalCode(id, code)}
-        onToggle={togglePortalDashboardItem}
-        title="Portal Procédure"
-        expandedIds={portalDashboardOpenIds}
-        onInfoEnter={showPortalInfoTooltip}
-        onInfoLeave={hidePortalInfoTooltip}
-      />
-    </article>
-  )
+  const renderWorkspaceDashboardPortalPanel = (title: string) => {
+    const activePortalProcedureName =
+      activeDashboardPortalProcedure?.procedureName.trim() || 'Procédure sans nom'
+    const activePortalCodeCount =
+      activeDashboardPortalProcedure?.codes.filter((entry) => entry.code.trim()).length ?? 0
+
+    return (
+      <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
+        <div className="workspace-dashboard__panel-title">{title}</div>
+
+        <div className="dashboard-version-browser dashboard-portal-browser">
+          <div className="dashboard-version-browser__list">
+            <div className="dashboard-portal-search">
+              <input
+                className="input"
+                value={dashboardProcedureQuery}
+                onChange={(event) => setDashboardProcedureQuery(event.target.value)}
+                placeholder="Rechercher une procédure Portal, un code, un forward..."
+              />
+            </div>
+            {dashboardPortalProcedures.length ? (
+              dashboardPortalProcedures.map((procedure) => {
+                const procedureName = procedure.procedureName.trim() || 'Procédure sans nom'
+                const filledCodeCount = procedure.codes.filter((entry) => entry.code.trim()).length
+
+                return (
+                  <button
+                    key={procedure.id}
+                    className={`dashboard-version-item${
+                      activeDashboardPortalProcedureId === procedure.id ? ' is-active' : ''
+                    }`}
+                    type="button"
+                    onClick={() => setActiveDashboardPortalProcedureId(procedure.id)}
+                  >
+                    <span className="dashboard-version-item__name">{procedureName}</span>
+                    <span className="dashboard-version-item__meta">
+                      {procedure.codes.length} étape{procedure.codes.length > 1 ? 's' : ''} -{' '}
+                      {filledCodeCount} code{filledCodeCount > 1 ? 's' : ''}
+                    </span>
+                  </button>
+                )
+              })
+            ) : (
+              <div className="dashboard-empty">Aucune procédure configurée dans Paramètres.</div>
+            )}
+          </div>
+
+          <div className="dashboard-version-detail dashboard-portal-detail">
+            {activeDashboardPortalProcedure ? (
+              <>
+                <div className="dashboard-version-detail__header">
+                  <div>
+                    <div className="dashboard-version-detail__title">
+                      {activePortalProcedureName}
+                    </div>
+                    <div className="dashboard-version-detail__badges">
+                      <span className="dashboard-version-detail__badge">
+                        {activeDashboardPortalProcedure.codes.length} étape
+                        {activeDashboardPortalProcedure.codes.length > 1 ? 's' : ''}
+                      </span>
+                      <span className="dashboard-version-detail__badge dashboard-version-detail__badge--accent">
+                        {activePortalCodeCount} code{activePortalCodeCount > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dashboard-version-detail__section">
+                  <div className="dashboard-version-detail__label">Récap</div>
+                  <div className="dashboard-portal-recap">
+                    {activeDashboardPortalProcedure.codes.map((entry, index) => {
+                      const lineTitle = entry.title?.trim() || `Étape ${index + 1}`
+                      const code = entry.code.trim()
+                      const forwardTarget = entry.forwardTarget?.trim() ?? ''
+                      const forwardLabel = entry.showForward
+                        ? forwardTarget
+                          ? `Oui, à ${forwardTarget}`
+                          : 'Oui, destinataire non renseigné'
+                        : 'Non'
+
+                      return (
+                        <article className="dashboard-portal-recap__item" key={entry.id}>
+                          <div className="dashboard-portal-recap__content">
+                            <div className="dashboard-portal-recap__title">{lineTitle}</div>
+                            <div className="dashboard-portal-recap__flags">
+                              <span className={entry.showDraft ? 'is-on' : ''}>
+                                Draft: {entry.showDraft ? 'Oui' : 'Non'}
+                              </span>
+                              <span className={entry.showForward ? 'is-on' : ''}>
+                                Forward: {forwardLabel}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="dashboard-portal-code">
+                            <code className="dashboard-portal-code__value">{code || '-'}</code>
+                            <button
+                              className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
+                                portalCopiedId === entry.id ? ' is-success' : ''
+                              }`}
+                              type="button"
+                              onClick={() => void handleCopyPortalCode(entry.id, entry.code)}
+                              disabled={!code}
+                            >
+                              {portalCopiedId === entry.id ? 'Copié !' : 'Copier'}
+                            </button>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="dashboard-version-detail__section">
+                  <div className="dashboard-version-detail__label">Étapes</div>
+                  <div className="dashboard-portal-steps">
+                    {activeDashboardPortalProcedure.codes.map((entry, index) => {
+                      const lineTitle = entry.title?.trim() || `Étape ${index + 1}`
+                      const infoNote = entry.infoNote?.trim() ?? ''
+                      const lineLabel = `${activePortalProcedureName} - ${lineTitle}`
+
+                      return (
+                        <article className="dashboard-portal-step" key={entry.id}>
+                          <span className="dashboard-portal-step__index">{index + 1}</span>
+                          <div className="dashboard-portal-step__body">
+                            <div className="dashboard-portal-step__title">{lineTitle}</div>
+                            <div className="dashboard-portal-step__meta">
+                              {infoNote ? 'Note disponible' : 'Aucune note'}
+                            </div>
+                          </div>
+                          {infoNote ? (
+                            <button
+                              className="dashboard-portal-step__info"
+                              type="button"
+                              aria-label={`Note pour ${lineLabel}`}
+                              onMouseEnter={(event) =>
+                                showPortalInfoTooltip(infoNote, event.currentTarget)
+                              }
+                              onMouseLeave={hidePortalInfoTooltip}
+                              onFocus={(event) =>
+                                showPortalInfoTooltip(infoNote, event.currentTarget)
+                              }
+                              onBlur={hidePortalInfoTooltip}
+                            >
+                              i
+                            </button>
+                          ) : null}
+                        </article>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="dashboard-wip">
+                <strong>Portal procédures</strong>
+                <span>Sélectionnez une procédure pour afficher ses étapes.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </article>
+    )
+  }
 
   const renderWorkspaceDashboardTroubleshootingPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--troubleshooting">
@@ -7897,7 +7941,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Procédure Portal</div>
+                      <div className="list-card__title">Procédures Portal</div>
                       <div className="list-card__subtitle">
                         Une procédure peut contenir un ou deux codes, chacun avec ses attributs.
                       </div>
@@ -8231,7 +8275,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Portal Procédure</div>
+                      <div className="list-card__title">Procédures Portal</div>
                       <div className="list-card__subtitle">
                         Une procédure peut contenir un ou deux codes, chacun avec ses attributs.
                       </div>
