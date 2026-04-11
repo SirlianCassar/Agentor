@@ -4039,20 +4039,29 @@ function App() {
           </button>
         </div>
 
-        <label className="dashboard-calculator__import-fee">
-          <span className="dashboard-calculator__label">Frais d’import TTC</span>
-          <input
-            className="input"
-            value={dashboardImportFee}
-            onChange={(event) => setDashboardImportFee(event.target.value)}
-            placeholder="0,00"
-            inputMode="decimal"
-            aria-label="Frais d'import TTC ajoutés à la livraison"
-          />
-          <span className="dashboard-calculator__import-fee-note">
-            Ajouté au total livraison
-          </span>
-        </label>
+        <div className="dashboard-calculator__import-fee">
+          <label className="dashboard-calculator__import-fee-field">
+            <span className="dashboard-calculator__label">Frais d’import TTC</span>
+            <input
+              className="input"
+              value={dashboardImportFee}
+              onChange={(event) => setDashboardImportFee(event.target.value)}
+              placeholder="0,00"
+              inputMode="decimal"
+              aria-label="Frais d'import TTC ajoutés à la livraison"
+            />
+          </label>
+          <button
+            className="icon-btn-sm danger dashboard-calculator__import-fee-clear"
+            type="button"
+            title="Effacer les frais d’import"
+            aria-label="Effacer les frais d'import"
+            onClick={() => setDashboardImportFee('')}
+            disabled={!dashboardImportFee}
+          >
+            <CloseIcon />
+          </button>
+        </div>
 
         <div className="dashboard-calculator__results">
           <div className="dashboard-calculator__result">

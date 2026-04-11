@@ -1502,27 +1502,40 @@ button.dashboard-copy-btn.is-success:hover {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.035);
-  padding: 8px 10px;
-  display: grid;
-  grid-template-columns: minmax(120px, auto) minmax(118px, 140px) minmax(0, 1fr);
+  padding: 5px 6px 5px 9px;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  align-self: flex-end;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.dashboard-calculator__import-fee-field {
+  display: grid;
+  grid-template-columns: auto 108px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .dashboard-calculator__import-fee .dashboard-calculator__label {
   text-align: right;
+  font-size: calc(11px * var(--text-scale));
 }
 
 .dashboard-calculator__import-fee .input {
-  min-height: 36px;
-  padding: 8px 10px;
+  min-height: 30px;
+  padding: 5px 8px;
   width: 100%;
+  font-size: calc(12px * var(--text-scale));
 }
 
-.dashboard-calculator__import-fee-note {
-  color: var(--text-secondary);
-  font-size: calc(12px * var(--text-scale));
-  min-width: 0;
+.dashboard-calculator__import-fee-clear {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 8px;
 }
 
 .dashboard-calculator__results {
@@ -1717,8 +1730,13 @@ button.dashboard-copy-icon.is-success {
   }
 
   .dashboard-calculator__import-fee {
+    align-self: stretch;
+    width: auto;
+  }
+
+  .dashboard-calculator__import-fee-field {
     grid-template-columns: 1fr;
-    align-items: stretch;
+    flex: 1 1 auto;
   }
 
   .dashboard-calculator__import-fee .dashboard-calculator__label {
