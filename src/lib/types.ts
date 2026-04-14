@@ -114,9 +114,26 @@ export interface SparePart {
   guideAvailable: boolean
 }
 
+export type ProductEditionPlatform = 'pc' | 'xbox' | 'playstation' | 'custom'
+
+export interface ProductEdition {
+  id: string
+  platform: ProductEditionPlatform
+  name: string
+  firmwareIds: string[]
+  compatibleProductIds: string[]
+}
+
 export interface ProductCatalogItem {
   id: string
   name: string
+  productType?: string
+  tags?: string[]
+  compatibleProductIds?: string[]
+  softwareIds?: string[]
+  driverIds?: string[]
+  firmwareIds?: string[]
+  editions?: ProductEdition[]
   spareParts: SparePart[]
 }
 
@@ -140,6 +157,7 @@ export interface AppSettings {
   autoFocusEditor: boolean
   defaultSnippetInsertMode: InsertMode
   snippetCategoryDisplay: SnippetCategoryDisplay
+  quickLinkUrls: Record<string, string>
   predefinedTags: string[]
   customerPortalCodes: CustomerPortalCode[]
   dashboardProducts: DashboardProduct[]

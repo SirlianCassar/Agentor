@@ -20,33 +20,69 @@ export type UpdateStatus = {
   checkedAt?: string
 }
 
+const browserStorageKey = 'agentor:fallback-data'
+const disabledUpdateStatus: UpdateStatus = {
+  phase: 'disabled',
+  message: '',
+}
+
+function getBridge() {
+  return window.agentor
+}
+
 export async function loadData(): Promise<AppData> {
-  const raw = (await window.speedmail.loadData()) as Partial<AppData>
+  const bridge = getBridge()
+  if (!bridge?.loadData) {
+    const raw = window.localStorage.getItem(browserStorageKey)
+    if (!raw) return normalizeData({}, defaultData)
+    try {
+      return normalizeData(JSON.parse(raw) as Partial<AppData>, defaultData)
+    } catch {
+      return normalizeData({}, defaultData)
+    }
+  }
+
+  const raw = (await bridge.loadData()) as Partial<AppData>
   return normalizeData(raw, defaultData)
 }
 
 export async function saveData(data: AppData) {
-  return window.speedmail.saveData(data)
+  const bridge = getBridge()
+  if (!bridge?.saveData) {
+    window.localStorage.setItem(
+      browserStorageKey,
+      JSON.stringify(createExportData(data, defaultData)),
+    )
+    return true
+  }
+
+  return bridge.saveData(data)
 }
 
 export async function exportJson(data: AppData) {
-  return window.speedmail.exportJson(createExportData(data, defaultData))
+  const bridge = getBridge()
+  if (!bridge?.exportJson) return { canceled: true }
+  return bridge.exportJson(createExportData(data, defaultData))
 }
 
 export async function exportHistory(text: string) {
-  return window.speedmail.exportHistory(text)
+  const bridge = getBridge()
+  if (!bridge?.exportHistory) return { canceled: true }
+  return bridge.exportHistory(text)
 }
 
 export async function importJson() {
-  return window.speedmail.importJson()
+  const bridge = getBridge()
+  if (!bridge?.importJson) return { canceled: true }
+  return bridge.importJson()
 }
 
 export async function copyText(text: string, html?: string) {
-  if (window.speedmail?.copyText) {
+  if (window.agentor?.copyText) {
     try {
-      return window.speedmail.copyText(text, html)
+      return window.agentor.copyText(text, html)
     } catch {
-      void window.speedmail
+      void window.agentor
     }
   }
 
@@ -90,12 +126,19 @@ export async function copyText(text: string, html?: string) {
 }
 
 export function openExternal(url: string) {
-  return window.speedmail.openExternal(url)
+  const bridge = getBridge()
+  if (!bridge?.openExternal) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    return Promise.resolve(true)
+  }
+
+  return bridge.openExternal(url)
 }
 
 export function openProcedure() {
-  if (window.speedmail?.openProcedure) {
-    return window.speedmail.openProcedure()
+  const bridge = getBridge()
+  if (bridge?.openProcedure) {
+    return bridge.openProcedure()
   }
   const popup = window.open(`${window.location.pathname}#procedure`, '_blank', 'width=980,height=720')
   if (!popup) return false
@@ -103,17 +146,27 @@ export function openProcedure() {
 }
 
 export function getUpdateStatus(): Promise<UpdateStatus> {
-  return window.speedmail.getUpdateStatus() as Promise<UpdateStatus>
+  const bridge = getBridge()
+  if (!bridge?.getUpdateStatus) return Promise.resolve(disabledUpdateStatus)
+  return bridge.getUpdateStatus() as Promise<UpdateStatus>
 }
 
 export function checkForUpdatesNow(): Promise<{ ok: boolean; reason: string }> {
-  return window.speedmail.checkForUpdatesNow()
+  const bridge = getBridge()
+  if (!bridge?.checkForUpdatesNow) return Promise.resolve({ ok: false, reason: 'disabled' })
+  return bridge.checkForUpdatesNow()
 }
 
 export function installDownloadedUpdate(): Promise<{ ok: boolean; reason: string }> {
-  return window.speedmail.installDownloadedUpdate()
+  const bridge = getBridge()
+  if (!bridge?.installDownloadedUpdate) {
+    return Promise.resolve({ ok: false, reason: 'disabled' })
+  }
+  return bridge.installDownloadedUpdate()
 }
 
 export function onUpdateStatus(callback: (status: UpdateStatus) => void) {
-  return window.speedmail.onUpdateStatus((status) => callback(status as UpdateStatus))
+  const bridge = getBridge()
+  if (!bridge?.onUpdateStatus) return () => {}
+  return bridge.onUpdateStatus((status) => callback(status as UpdateStatus))
 }

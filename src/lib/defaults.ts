@@ -1,7 +1,7 @@
 import type { AppData } from './types'
 
 export const defaultData: AppData = {
-  version: 8,
+  version: 10,
   categories: [
     { id: 'cat-general', name: 'Général', color: 'violet' },
     { id: 'cat-tech', name: 'Technique', color: 'bleu' },
@@ -145,8 +145,8 @@ Best regards,
       taskOptional: true,
     },
     {
-      id: 'tmpl-en-troubleshoot',
-      name: 'Troubleshooting',
+      id: 'tmpl-en-diagnostic',
+      name: 'Diagnostic',
       content: `Hello <CLIENT>,
 
 Please try the steps below for <PRODUCT>:
@@ -159,7 +159,7 @@ Please try the steps below for <PRODUCT>:
 Kind regards,
 <AGENT>`,
       language: 'en',
-      taskText: 'Troubleshoot <PRODUCT> for <CLIENT> - §optional call§.',
+      taskText: 'Diagnostic <PRODUCT> for <CLIENT> - §optional call§.',
       taskCustom: true,
       taskOptional: false,
     },
@@ -340,6 +340,15 @@ CU called about :
     autoFocusEditor: true,
     defaultSnippetInsertMode: 'line',
     snippetCategoryDisplay: 'dropdown',
+    quickLinkUrls: {
+      crm: 'https://guillemot.crm4.dynamics.com/main.aspx?appid=2f4bd5ed-80df-ed11-a7c6-0022489fd23c&pagetype=dashboard&id=f320ce73-dad8-ef11-8eea-0022489b522b&type=system&_canOverride=true',
+      share: 'https://guillemot.sharepoint.com/sites/ShareConseiller/SitePages/ShareConseiller.aspx',
+      global:
+        'https://guillemot.sharepoint.com/:x:/r/sites/ShareConseiller/_layouts/15/Doc.aspx?sourcedoc=%7BB5FC152C-34B0-4CEB-A69E-561C60DF9272%7D&file=TS%20-%20Global%20actions%20for%20products.xlsx&action=default&mobileredirect=true',
+      portal: 'https://portal.guillemot.fr/portal3/',
+      assist:
+        'https://m365.cloud.microsoft/chat/?fromcode=cmmiadtp424&origindomain=Office&auth=2&client-request-id=f9582af1-e339-437f-9315-9e004f3716f4',
+    },
     predefinedTags: [
       '<CLIENT>',
       '<PRODUIT>',
