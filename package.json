@@ -1,9 +1,9 @@
 {
-  "name": "speedmail-app",
+  "name": "agentor",
   "private": true,
-  "version": "2.0.16",
+  "version": "2.0.17",
   "author": "Sirlian",
-  "description": "SpeedMail local email and task template composer",
+  "description": "Agentor local email and task template composer",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -26,4 +26,4 @@ const api = {
   },
 }
 
-contextBridge.exposeInMainWorld('speedmail', api)
+contextBridge.exposeInMainWorld('agentor', api)

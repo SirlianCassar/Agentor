@@ -7,7 +7,7 @@ declare namespace NodeJS {
   }
 }
 interface Window {
-  speedmail: {
+  agentor: {
     getUpdateStatus: () => Promise<{
       phase: string
       message: string

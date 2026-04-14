@@ -357,6 +357,18 @@ export function formatProcedureText(value: string) {
   return escaped
 }
 
+function normalizeStringRecord(value: unknown, fallback: Record<string, string>) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback
+
+  const normalized = { ...fallback }
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === 'string') {
+      normalized[key] = entry
+    }
+  }
+  return normalized
+}
+
 export function normalizeData(raw: Partial<AppData> | null | undefined, fallback: AppData) {
   if (!raw || typeof raw !== 'object') return fallback
   const legacyTemplates = (raw as Partial<AppData> & { mailTemplates?: unknown }).mailTemplates
@@ -383,6 +395,10 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
       customerPortalCodes: Array.isArray(raw.settings?.customerPortalCodes)
         ? raw.settings.customerPortalCodes
         : fallback.settings.customerPortalCodes,
+      quickLinkUrls: normalizeStringRecord(
+        raw.settings?.quickLinkUrls,
+        fallback.settings.quickLinkUrls,
+      ),
       dashboardProducts: Array.isArray(raw.settings?.dashboardProducts)
         ? raw.settings.dashboardProducts
         : fallback.settings.dashboardProducts,
@@ -409,6 +425,10 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
       customerPortalCodes: Array.isArray(normalized.settings.customerPortalCodes)
         ? normalized.settings.customerPortalCodes
         : fallback.settings.customerPortalCodes,
+      quickLinkUrls: normalizeStringRecord(
+        normalized.settings.quickLinkUrls,
+        fallback.settings.quickLinkUrls,
+      ),
       dashboardProducts: Array.isArray(normalized.settings.dashboardProducts)
         ? normalized.settings.dashboardProducts
         : fallback.settings.dashboardProducts,

@@ -41,6 +41,8 @@ import type {
   InsertMode,
   Language,
   MailTemplate,
+  ProductEdition,
+  ProductEditionPlatform,
   ProductCatalogItem,
   Procedure,
   ProcedureBrand,
@@ -70,6 +72,7 @@ const TAG_TOKEN = '<TAG>'
 const SELECTOR_TOKEN = '[Option1/Option2]'
 const ADDITION_TOKEN = '§texte§'
 const PROCEDURE_CHECK_MARKER = '[ ]'
+const PROCEDURE_CHANNEL = 'agentor-procedure'
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
 const APP_VERSION_LABEL = APP_VERSION.replace(/\.0$/, '')
@@ -87,11 +90,20 @@ const dashboardProductCategoryLabels: Record<DashboardProductCategory, string> =
   firmware: 'Firmware',
   product: 'Legacy',
 }
-const dashboardProductCategoryGroupLabels: Record<DashboardProductCategory, string> = {
-  software: 'Logiciels',
-  driver: 'Drivers',
-  firmware: 'Firmwares',
-  product: 'Legacy',
+const productEditionPlatformOptions: Array<{
+  value: ProductEditionPlatform
+  label: string
+}> = [
+  { value: 'pc', label: 'PC' },
+  { value: 'xbox', label: 'Xbox' },
+  { value: 'playstation', label: 'PlayStation' },
+  { value: 'custom', label: 'Autre' },
+]
+const productEditionPlatformLabels: Record<ProductEditionPlatform, string> = {
+  pc: 'PC',
+  xbox: 'Xbox',
+  playstation: 'PlayStation',
+  custom: 'Autre',
 }
 type DashboardCalculatorItem = {
   id: string
@@ -127,6 +139,259 @@ const CloseIcon = () => (
   </svg>
 )
 
+type AppIconName =
+  | 'archive'
+  | 'box'
+  | 'call'
+  | 'channels'
+  | 'dashboard'
+  | 'display'
+  | 'download'
+  | 'grid'
+  | 'history'
+  | 'inbox'
+  | 'list'
+  | 'mail'
+  | 'news'
+  | 'notes'
+  | 'palette'
+  | 'phone'
+  | 'portal'
+  | 'preferences'
+  | 'search'
+  | 'settings'
+  | 'shield'
+  | 'tag'
+  | 'template'
+  | 'tool'
+  | 'version'
+
+const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {
+  const common = {
+    className,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '2',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  }
+
+  switch (name) {
+    case 'archive':
+      return (
+        <svg {...common}>
+          <path d="M3 7h18" />
+          <path d="M5 7v12h14V7" />
+          <path d="M8 4h8l2 3H6z" />
+          <path d="M10 12h4" />
+        </svg>
+      )
+    case 'box':
+      return (
+        <svg {...common}>
+          <path d="M21 8l-9-5-9 5 9 5z" />
+          <path d="M3 8v8l9 5 9-5V8" />
+          <path d="M12 13v8" />
+        </svg>
+      )
+    case 'call':
+      return (
+        <svg {...common}>
+          <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.6-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z" />
+        </svg>
+      )
+    case 'channels':
+      return (
+        <svg {...common}>
+          <path d="M5 7h14" />
+          <path d="M5 12h14" />
+          <path d="M5 17h14" />
+          <path d="M8 4L6 20" />
+          <path d="M18 4l-2 16" />
+        </svg>
+      )
+    case 'dashboard':
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      )
+    case 'display':
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="18" height="12" rx="2" />
+          <path d="M8 20h8" />
+          <path d="M12 16v4" />
+        </svg>
+      )
+    case 'download':
+      return (
+        <svg {...common}>
+          <path d="M12 3v12" />
+          <path d="M7 10l5 5 5-5" />
+          <path d="M5 21h14" />
+        </svg>
+      )
+    case 'grid':
+      return (
+        <svg {...common}>
+          <path d="M4 4h6v6H4z" />
+          <path d="M14 4h6v6h-6z" />
+          <path d="M4 14h6v6H4z" />
+          <path d="M14 14h6v6h-6z" />
+        </svg>
+      )
+    case 'history':
+      return (
+        <svg {...common}>
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 4v6h6" />
+          <path d="M12 7v6l4 2" />
+        </svg>
+      )
+    case 'inbox':
+      return (
+        <svg {...common}>
+          <path d="M4 4h16v16H4z" />
+          <path d="M4 13h5l2 3h2l2-3h5" />
+        </svg>
+      )
+    case 'list':
+      return (
+        <svg {...common}>
+          <path d="M8 6h13" />
+          <path d="M8 12h13" />
+          <path d="M8 18h13" />
+          <path d="M3 6h.01" />
+          <path d="M3 12h.01" />
+          <path d="M3 18h.01" />
+        </svg>
+      )
+    case 'mail':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 7l9 6 9-6" />
+        </svg>
+      )
+    case 'news':
+      return (
+        <svg {...common}>
+          <path d="M4 5h14a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2z" />
+          <path d="M8 9h8" />
+          <path d="M8 13h8" />
+          <path d="M8 17h5" />
+        </svg>
+      )
+    case 'notes':
+      return (
+        <svg {...common}>
+          <path d="M6 3h9l3 3v15H6z" />
+          <path d="M14 3v4h4" />
+          <path d="M9 12h6" />
+          <path d="M9 16h6" />
+        </svg>
+      )
+    case 'palette':
+      return (
+        <svg {...common}>
+          <path d="M12 3a9 9 0 0 0 0 18h1.2a1.8 1.8 0 0 0 1.3-3l-.2-.2a1.8 1.8 0 0 1 1.3-3H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />
+          <path d="M7.5 10h.01" />
+          <path d="M10 7.5h.01" />
+          <path d="M14 7.5h.01" />
+        </svg>
+      )
+    case 'phone':
+      return (
+        <svg {...common}>
+          <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.6-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z" />
+          <path d="M15 5a4 4 0 0 1 4 4" />
+        </svg>
+      )
+    case 'portal':
+      return (
+        <svg {...common}>
+          <path d="M4 5h16v14H4z" />
+          <path d="M8 9h8" />
+          <path d="M8 13h5" />
+          <path d="M16 16l4-4-4-4" />
+        </svg>
+      )
+    case 'preferences':
+      return (
+        <svg {...common}>
+          <path d="M4 7h10" />
+          <path d="M18 7h2" />
+          <path d="M4 17h2" />
+          <path d="M10 17h10" />
+          <circle cx="16" cy="7" r="2" />
+          <circle cx="8" cy="17" r="2" />
+        </svg>
+      )
+    case 'search':
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
+      )
+    case 'settings':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.2.6.8 1 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+        </svg>
+      )
+    case 'shield':
+      return (
+        <svg {...common}>
+          <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      )
+    case 'tag':
+      return (
+        <svg {...common}>
+          <path d="M20 13l-7 7L4 11V4h7z" />
+          <path d="M8.5 8.5h.01" />
+        </svg>
+      )
+    case 'template':
+      return (
+        <svg {...common}>
+          <path d="M5 4h14v16H5z" />
+          <path d="M8 8h8" />
+          <path d="M8 12h8" />
+          <path d="M8 16h5" />
+        </svg>
+      )
+    case 'tool':
+      return (
+        <svg {...common}>
+          <path d="M14.7 6.3a4 4 0 0 0-5 5L4 17l3 3 5.7-5.7a4 4 0 0 0 5-5l-2.9 2.9-3-3z" />
+        </svg>
+      )
+    case 'version':
+      return (
+        <svg {...common}>
+          <path d="M4 6h16" />
+          <path d="M4 12h16" />
+          <path d="M4 18h16" />
+          <path d="M8 3v6" />
+          <path d="M16 9v6" />
+          <path d="M10 15v6" />
+        </svg>
+      )
+    default:
+      return null
+  }
+}
+
 const PHONE_CALL_TEMPLATE = defaultData.settings.callTemplate
 const CALL_HISTORY_LIMIT = 5
 type WorkspaceDashboardPage =
@@ -134,20 +399,18 @@ type WorkspaceDashboardPage =
   | 'portal'
   | 'versions'
   | 'parts'
-  | 'troubleshooting'
   | 'news'
 
 const workspaceDashboardPageOptions: Array<{
   id: WorkspaceDashboardPage
-  label: string
   title: string
+  icon: AppIconName
 }> = [
-  { id: 'tools', label: '1', title: 'Name format + price calculator' },
-  { id: 'portal', label: '2', title: 'Portal procédures' },
-  { id: 'versions', label: '3', title: 'Versions (soft / firm / driver)' },
-  { id: 'parts', label: '4', title: 'Spare parts' },
-  { id: 'troubleshooting', label: '5', title: 'Troubleshotgun (WIP)' },
-  { id: 'news', label: '6', title: 'News' },
+  { id: 'tools', title: 'Name format + price calculator', icon: 'tool' },
+  { id: 'portal', title: 'Portal procédures', icon: 'portal' },
+  { id: 'versions', title: 'Versions par produit', icon: 'version' },
+  { id: 'parts', title: 'Spare parts', icon: 'box' },
+  { id: 'news', title: 'News', icon: 'news' },
 ]
 
 type SettingsTab =
@@ -172,15 +435,18 @@ type SettingsTab =
   | 'general'
   | 'snippetSettings'
   | 'history'
+  | 'quickLinks'
   | 'preferences'
 
 type SettingsNavSection = {
   id: 'emails' | 'calls' | 'dashboard' | 'general'
   label: string
+  icon: AppIconName
   items: Array<{
     id: SettingsTab
     label: string
     description: string
+    icon: AppIconName
   }>
 }
 
@@ -188,109 +454,131 @@ const settingsNavigation: SettingsNavSection[] = [
   {
     id: 'emails',
     label: 'Emails',
+    icon: 'mail',
     items: [
       {
         id: 'categories',
         label: 'Catégories',
         description: 'Organisation des familles utilisées pour les snippets email.',
+        icon: 'channels',
       },
       {
         id: 'snippets',
         label: 'Snippets',
         description: 'Bibliothèque de snippets et comportements d’insertion.',
+        icon: 'list',
       },
       {
         id: 'templates',
         label: 'Templates de mails',
         description: 'Gestion des modèles email et de leurs tâches associées.',
+        icon: 'template',
       },
       {
         id: 'tasks',
         label: 'Templates de task',
         description: 'Modèles de tâches réutilisés dans l’application.',
+        icon: 'tool',
       },
       {
         id: 'tags',
         label: 'Tags',
         description: 'Rappel des syntaxes de tags et variables supportées.',
+        icon: 'tag',
       },
     ],
   },
   {
     id: 'calls',
     label: 'Appels',
+    icon: 'phone',
     items: [
       {
         id: 'callHistory',
         label: 'Historique des 5 derniers appels',
         description: 'Consultation et copie rapide des derniers appels sauvegardés.',
+        icon: 'history',
       },
       {
         id: 'callTemplate',
         label: 'Template d’appel',
         description: 'Template injecté automatiquement à l’ouverture d’un nouvel appel.',
+        icon: 'call',
       },
     ],
   },
   {
     id: 'dashboard',
     label: 'Dashboard',
+    icon: 'dashboard',
     items: [
       {
         id: 'products',
-        label: 'Produits',
-        description: 'Catalogue des produits utilisés dans les compatibilités et spare parts.',
+        label: 'Produits & relations',
+        description:
+          'Produits, types, tags, éditions, firmwares, logiciels, drivers et spare parts.',
+        icon: 'box',
       },
       {
         id: 'dashboardPortal',
         label: 'Procédures Portal',
         description: 'Configuration des codes Portal et de leurs variantes.',
+        icon: 'portal',
       },
       {
         id: 'dashboardVersions',
         label: 'Catalogue de versions',
         description: 'Catalogue logiciels, drivers et firmwares avec produits compatibles.',
+        icon: 'version',
       },
       {
         id: 'dashboardSpareParts',
         label: 'Catalogue des Spare Parts',
         description: 'Liste des spare parts organisées par produit.',
+        icon: 'archive',
       },
       {
         id: 'dashboardNews',
         label: 'News',
         description: 'Liste des news affichées dans la page 6 du dashboard.',
-      },
-      {
-        id: 'procedure',
-        label: 'Troubleshotgun',
-        description: 'Section temporairement vide pendant le rework.',
+        icon: 'news',
       },
     ],
   },
   {
     id: 'general',
     label: 'Générale',
+    icon: 'settings',
     items: [
       {
         id: 'updates',
         label: 'Mise à jour',
         description: 'Statut de l’application et recherche de nouvelles versions.',
+        icon: 'download',
       },
       {
         id: 'display',
         label: 'Affichage',
         description: 'Zoom global, densité et confort de lecture.',
+        icon: 'display',
       },
       {
         id: 'history',
         label: 'Paramètres d’historique',
         description: 'Comportement de sauvegarde des emails copiés.',
+        icon: 'history',
+      },
+      {
+        id: 'quickLinks',
+        label: 'Liens rapides',
+        description: 'URLs ouvertes par les boutons d’accès rapides.',
+        icon: 'grid',
       },
       {
         id: 'preferences',
         label: 'Préférences',
         description: 'Préférences globales, snippets et format d’export.',
+        icon: 'preferences',
       },
     ],
   },
@@ -326,32 +614,32 @@ const quickLinks = [
   {
     id: 'crm',
     label: 'CRM',
-    icon: assetUrl('/speedmail/crm.ico'),
-    url: 'https://guillemot.crm4.dynamics.com/main.aspx?appid=2f4bd5ed-80df-ed11-a7c6-0022489fd23c&pagetype=dashboard&id=f320ce73-dad8-ef11-8eea-0022489b522b&type=system&_canOverride=true',
+    icon: assetUrl('/agentor/assets/crm.ico'),
+    defaultUrl: defaultData.settings.quickLinkUrls.crm,
   },
   {
     id: 'share',
     label: 'ShareConseiller',
-    icon: assetUrl('/speedmail/share.ico'),
-    url: 'https://guillemot.sharepoint.com/sites/ShareConseiller/SitePages/ShareConseiller.aspx',
+    icon: assetUrl('/agentor/assets/share.ico'),
+    defaultUrl: defaultData.settings.quickLinkUrls.share,
   },
   {
     id: 'global',
     label: 'Global Action',
-    icon: assetUrl('/speedmail/global.ico'),
-    url: 'https://guillemot.sharepoint.com/:x:/r/sites/ShareConseiller/_layouts/15/Doc.aspx?sourcedoc=%7BB5FC152C-34B0-4CEB-A69E-561C60DF9272%7D&file=TS%20-%20Global%20actions%20for%20products.xlsx&action=default&mobileredirect=true',
+    icon: assetUrl('/agentor/assets/global.ico'),
+    defaultUrl: defaultData.settings.quickLinkUrls.global,
   },
   {
     id: 'portal',
     label: 'Portal',
-    icon: assetUrl('/speedmail/portal.png'),
-    url: 'https://portal.guillemot.fr/portal3/',
+    icon: assetUrl('/agentor/assets/portal.png'),
+    defaultUrl: defaultData.settings.quickLinkUrls.portal,
   },
   {
     id: 'assist',
     label: 'AssistBot',
-    icon: assetUrl('/speedmail/Bot.png'),
-    url: 'https://m365.cloud.microsoft/chat/?fromcode=cmmiadtp424&origindomain=Office&auth=2&client-request-id=f9582af1-e339-437f-9315-9e004f3716f4',
+    icon: assetUrl('/agentor/assets/Bot.png'),
+    defaultUrl: defaultData.settings.quickLinkUrls.assist,
   },
 ]
 
@@ -425,27 +713,6 @@ function getUpdateAvailableVersionLabel(status: UpdateStatus | null, currentVers
       return 'Indisponible'
     default:
       return 'En attente'
-  }
-}
-
-function getUpdateAvailableVersionMeta(status: UpdateStatus | null) {
-  switch (status?.phase) {
-    case 'available':
-      return 'Nouvelle version détectée, téléchargement prêt à démarrer.'
-    case 'downloading':
-      return 'La nouvelle version est en cours de téléchargement.'
-    case 'downloaded':
-      return 'Le package est téléchargé et prêt à être installé.'
-    case 'not-available':
-      return 'Aucune nouvelle version détectée pour le moment.'
-    case 'checking':
-      return 'Recherche de la dernière version en cours.'
-    case 'error':
-      return 'Impossible de récupérer la version distante.'
-    case 'disabled':
-      return 'Les mises à jour sont gérées sur l’application installée.'
-    default:
-      return 'La prochaine vérification affichera ici la version distante.'
   }
 }
 
@@ -539,6 +806,27 @@ function getUpdatePhaseTone(status: UpdateStatus | null) {
     default:
       return 'idle'
   }
+}
+
+type ProcedureStepItem = {
+  id: string
+  text: string
+  isCheckable: boolean
+}
+
+function parseProcedureStepItems(steps: string): ProcedureStepItem[] {
+  return steps
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim() !== '')
+    .map((line, index) => {
+      const trimmed = line.trimStart()
+      const isCheckable = trimmed.startsWith(PROCEDURE_CHECK_MARKER)
+      const text = isCheckable
+        ? trimmed.slice(PROCEDURE_CHECK_MARKER.length).trimStart()
+        : trimmed
+      return { id: `${index}-${text}`, text, isCheckable }
+    })
 }
 
 function normalizeCallDraft(value: string) {
@@ -639,8 +927,21 @@ type LegacySparePart = Partial<
     guideAvailable: unknown
   }
 >
+type LegacyProductEdition = Partial<
+  ProductEdition & {
+    platform: unknown
+    firmwareIds: unknown
+    compatibleProductIds: unknown
+  }
+>
 type LegacyProductCatalogItem = Partial<
   ProductCatalogItem & {
+    tags: unknown
+    compatibleProductIds: unknown
+    softwareIds: unknown
+    driverIds: unknown
+    firmwareIds: unknown
+    editions: unknown
     spareParts: unknown
   }
 >
@@ -737,6 +1038,20 @@ const normalizeIdList = (value: unknown): string[] => {
   )
 }
 
+const normalizeTextList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return Array.from(
+    new Set(
+      value
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
+const parseProductTags = (value: string) => normalizeTextList(value.split(/[,;\n]/))
+
 const normalizeDashboardProduct = (raw: unknown, index: number): DashboardProduct => {
   const item =
     raw && typeof raw === 'object'
@@ -783,6 +1098,64 @@ const normalizeSparePart = (raw: unknown, fallbackId: string): SparePart => {
   }
 }
 
+const normalizeProductEditionPlatform = (value: unknown): ProductEditionPlatform => {
+  if (value === 'pc' || value === 'xbox' || value === 'playstation' || value === 'custom') {
+    return value
+  }
+  if (typeof value !== 'string') return 'custom'
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'ps' || normalized === 'playstation' || normalized === 'playstation 5') {
+    return 'playstation'
+  }
+  if (normalized === 'windows' || normalized === 'mac' || normalized === 'pc') return 'pc'
+  if (normalized === 'xbox') return 'xbox'
+  return 'custom'
+}
+
+const normalizeProductEdition = (raw: unknown, fallbackId: string): ProductEdition => {
+  const item =
+    raw && typeof raw === 'object'
+      ? (raw as LegacyProductEdition)
+      : ({} as LegacyProductEdition)
+  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
+  const platform = normalizeProductEditionPlatform(item.platform)
+  return {
+    id,
+    platform,
+    name:
+      typeof item.name === 'string' && item.name.trim()
+        ? item.name
+        : productEditionPlatformLabels[platform],
+    firmwareIds: normalizeIdList(item.firmwareIds),
+    compatibleProductIds: normalizeIdList(item.compatibleProductIds),
+  }
+}
+
+const createProductEditionDraft = (
+  platform: ProductEditionPlatform = 'pc',
+): ProductEdition => ({
+  id: createId('edition'),
+  platform,
+  name: productEditionPlatformLabels[platform],
+  firmwareIds: [],
+  compatibleProductIds: [],
+})
+
+const getProductDashboardVersionIds = (
+  product: ProductCatalogItem,
+  category: DashboardProductCategory,
+) => {
+  if (category === 'software') return product.softwareIds ?? []
+  if (category === 'driver') return product.driverIds ?? []
+  if (category === 'firmware') {
+    return normalizeIdList([
+      ...(product.firmwareIds ?? []),
+      ...(product.editions ?? []).flatMap((edition) => edition.firmwareIds ?? []),
+    ])
+  }
+  return []
+}
+
 const normalizeProductCatalogItem = (raw: unknown, index: number): ProductCatalogItem => {
   const item =
     raw && typeof raw === 'object'
@@ -791,9 +1164,19 @@ const normalizeProductCatalogItem = (raw: unknown, index: number): ProductCatalo
   const id =
     typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `catalog-product-${index + 1}`
   const rawSpareParts = Array.isArray(item.spareParts) ? item.spareParts : []
+  const rawEditions = Array.isArray(item.editions) ? item.editions : []
   return {
     id,
     name: typeof item.name === 'string' ? item.name : '',
+    productType: typeof item.productType === 'string' ? item.productType : '',
+    tags: normalizeTextList(item.tags),
+    compatibleProductIds: normalizeIdList(item.compatibleProductIds),
+    softwareIds: normalizeIdList(item.softwareIds),
+    driverIds: normalizeIdList(item.driverIds),
+    firmwareIds: normalizeIdList(item.firmwareIds),
+    editions: rawEditions.map((entry, editionIndex) =>
+      normalizeProductEdition(entry, `${id}-edition-${editionIndex + 1}`),
+    ),
     spareParts: rawSpareParts.map((entry, spareIndex) =>
       normalizeSparePart(entry, `${id}-spare-${spareIndex + 1}`),
     ),
@@ -901,6 +1284,12 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
       products: normalizeProducts(payload.settings.products).map((product) => ({
         ...product,
         name: convertLegacyTokens(product.name),
+        productType: convertLegacyTokens(product.productType ?? ''),
+        tags: (product.tags ?? []).map((tag) => convertLegacyTokens(tag)),
+        editions: (product.editions ?? []).map((edition) => ({
+          ...edition,
+          name: convertLegacyTokens(edition.name),
+        })),
         spareParts: product.spareParts.map((sparePart) => ({
           ...sparePart,
           name: convertLegacyTokens(sparePart.name),
@@ -980,7 +1369,12 @@ function App() {
   const [procedureBrand, setProcedureBrand] = useState<ProcedureBrand>('hercules')
   const [procedureCoverage, setProcedureCoverage] = useState<ProcedureCoverage>('oow')
   const [activeProcedureId, setActiveProcedureId] = useState<string | null>(null)
-  const [activeDashboardProductId, setActiveDashboardProductId] = useState<string | null>(null)
+  const [activeDashboardCatalogProductId, setActiveDashboardCatalogProductId] = useState<
+    string | null
+  >(null)
+  const [activeDashboardSpareProductId, setActiveDashboardSpareProductId] = useState<
+    string | null
+  >(null)
   const [activeDashboardPortalProcedureId, setActiveDashboardPortalProcedureId] =
     useState<string | null>(null)
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
@@ -1005,6 +1399,7 @@ function App() {
   const [selectedDashboardProductId, setSelectedDashboardProductId] = useState<string | null>(null)
   const [selectedProductCatalogId, setSelectedProductCatalogId] = useState<string | null>(null)
   const [selectedDashboardNewsId, setSelectedDashboardNewsId] = useState<string | null>(null)
+  const [productTagsDraftText, setProductTagsDraftText] = useState('')
   const [snippetActiveField, setSnippetActiveField] = useState<'title' | 'content' | 'task'>(
     'content',
   )
@@ -1223,6 +1618,13 @@ function App() {
   const [productDraft, setProductDraft] = useState<ProductCatalogItem>({
     id: '',
     name: '',
+    productType: '',
+    tags: [],
+    compatibleProductIds: [],
+    softwareIds: [],
+    driverIds: [],
+    firmwareIds: [],
+    editions: [],
     spareParts: [],
   })
   const [dashboardNewsDraft, setDashboardNewsDraft] = useState<DashboardNewsItem>({
@@ -1359,6 +1761,13 @@ function App() {
       ({
         id: '',
         name: '',
+        productType: '',
+        tags: [],
+        compatibleProductIds: [],
+        softwareIds: [],
+        driverIds: [],
+        firmwareIds: [],
+        editions: [],
         spareParts: [],
       }) as ProductCatalogItem,
     [],
@@ -1573,6 +1982,7 @@ function App() {
     setProcedureDraft(getEmptyProcedureDraft())
     setDashboardProductDraft(getEmptyDashboardProductDraft())
     setProductDraft(getEmptyProductDraft())
+    setProductTagsDraftText('')
     setDashboardNewsDraft(getEmptyDashboardNewsDraft())
   }, [
     editOpen,
@@ -1673,6 +2083,19 @@ function App() {
     : 200
   const historyOnCopy = data.settings.historyOnCopy !== false
   const autoFocusEditor = data.settings.autoFocusEditor !== false
+  const quickLinkUrls = data.settings.quickLinkUrls ?? defaultData.settings.quickLinkUrls
+  const resolvedQuickLinks = useMemo(
+    () =>
+      quickLinks.map((link) => {
+        const configuredUrl = quickLinkUrls?.[link.id]
+        const url =
+          typeof configuredUrl === 'string' && configuredUrl.trim()
+            ? configuredUrl.trim()
+            : link.defaultUrl
+        return { ...link, url }
+      }),
+    [quickLinkUrls],
+  )
   const exportFont =
     exportFontOptions.find((option) => option.value === data.settings.exportFont)?.value ??
     defaultData.settings.exportFont
@@ -1682,7 +2105,6 @@ function App() {
   const updateSettingsLabel = getUpdateSettingsLabel(updateStatus)
   const isUpdateReadyToInstall = updateStatus?.phase === 'downloaded'
   const availableUpdateVersionLabel = getUpdateAvailableVersionLabel(updateStatus, APP_VERSION_LABEL)
-  const availableUpdateVersionMeta = getUpdateAvailableVersionMeta(updateStatus)
   const updateDownloadProgress =
     updateStatus?.phase === 'downloaded'
       ? 100
@@ -1723,13 +2145,6 @@ function App() {
     })
     return map
   }, [data.categories])
-  const productCatalogById = useMemo(() => {
-    const map = new Map<string, ProductCatalogItem>()
-    productCatalog.forEach((product) => {
-      map.set(product.id, product)
-    })
-    return map
-  }, [productCatalog])
   const predefinedTags = useMemo(
     () => normalizePredefinedTags(data.settings.predefinedTags ?? defaultData.settings.predefinedTags),
     [data.settings.predefinedTags],
@@ -1756,6 +2171,32 @@ function App() {
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }, [])
+  const updateQuickLinkUrl = useCallback(
+    (id: string, url: string) => {
+      updateSettings({
+        quickLinkUrls: {
+          ...defaultData.settings.quickLinkUrls,
+          ...(data.settings.quickLinkUrls ?? {}),
+          [id]: url,
+        },
+      })
+    },
+    [data.settings.quickLinkUrls, updateSettings],
+  )
+  const resetQuickLinkUrl = useCallback(
+    (id: string) => {
+      const quickLink = quickLinks.find((link) => link.id === id)
+      if (!quickLink) return
+      updateSettings({
+        quickLinkUrls: {
+          ...defaultData.settings.quickLinkUrls,
+          ...(data.settings.quickLinkUrls ?? {}),
+          [id]: quickLink.defaultUrl,
+        },
+      })
+    },
+    [data.settings.quickLinkUrls, updateSettings],
+  )
   const updateTagSuggestionFromTarget = useCallback(
     (
       fieldId: TagSuggestionFieldId,
@@ -1993,8 +2434,12 @@ function App() {
   }, [customerPortalCodes, updateCustomerPortalCodes])
   const updateDashboardProducts = useCallback(
     (next: DashboardProduct[]) => {
-      const legacyProductEntries = dashboardProducts.filter((product) => product.category === 'product')
-      updateSettings({ dashboardProducts: [...next, ...legacyProductEntries] })
+      const normalizedNext = normalizeDashboardProducts(next)
+      const nextIds = new Set(normalizedNext.map((product) => product.id))
+      const legacyProductEntries = dashboardProducts.filter(
+        (product) => product.category === 'product' && !nextIds.has(product.id),
+      )
+      updateSettings({ dashboardProducts: [...normalizedNext, ...legacyProductEntries] })
     },
     [dashboardProducts, updateSettings],
   )
@@ -2103,6 +2548,7 @@ function App() {
     if (productCatalog.some((product) => product.id === selectedProductCatalogId)) return
     setSelectedProductCatalogId(null)
     setProductDraft(getEmptyProductDraft())
+    setProductTagsDraftText('')
   }, [getEmptyProductDraft, productCatalog, selectedProductCatalogId])
 
   useEffect(() => {
@@ -2111,18 +2557,6 @@ function App() {
     setSelectedDashboardNewsId(null)
     setDashboardNewsDraft(getEmptyDashboardNewsDraft())
   }, [dashboardNews, getEmptyDashboardNewsDraft, selectedDashboardNewsId])
-
-  useEffect(() => {
-    if (!activeDashboardProductId) return
-    if (
-      dashboardProducts
-        .filter((product) => product.category !== 'product')
-        .some((product) => product.id === activeDashboardProductId)
-    ) {
-      return
-    }
-    setActiveDashboardProductId(null)
-  }, [activeDashboardProductId, dashboardProducts])
 
   const visibleSnippets = useMemo(() => {
     if (activeCategoryId === 'all') {
@@ -2151,22 +2585,134 @@ function App() {
     [dashboardProducts],
   )
 
-  const dashboardProductResults = useMemo(() => {
+  const productsWithDashboardRelations = useMemo(
+    () =>
+      productCatalog.map((product) => {
+        const compatibleProductIds = new Set(product.compatibleProductIds ?? [])
+        const softwareIds = new Set(product.softwareIds ?? [])
+        const driverIds = new Set(product.driverIds ?? [])
+        const firmwareIds = new Set(product.firmwareIds ?? [])
+
+        productCatalog.forEach((otherProduct) => {
+          if (otherProduct.id === product.id) return
+          if ((otherProduct.compatibleProductIds ?? []).includes(product.id)) {
+            compatibleProductIds.add(otherProduct.id)
+          }
+        })
+
+        dashboardVersionProducts.forEach((versionItem) => {
+          if (!(versionItem.compatibleProductIds ?? []).includes(product.id)) return
+          if (versionItem.category === 'software') softwareIds.add(versionItem.id)
+          if (versionItem.category === 'driver') driverIds.add(versionItem.id)
+          if (versionItem.category === 'firmware') firmwareIds.add(versionItem.id)
+        })
+
+        return {
+          ...product,
+          compatibleProductIds: Array.from(compatibleProductIds),
+          softwareIds: Array.from(softwareIds),
+          driverIds: Array.from(driverIds),
+          firmwareIds: Array.from(firmwareIds),
+          editions: (product.editions ?? []).map((edition) => ({ ...edition })),
+          spareParts: product.spareParts.map((sparePart) => ({ ...sparePart })),
+        }
+      }),
+    [dashboardVersionProducts, productCatalog],
+  )
+
+  const dashboardVersionProductById = useMemo(() => {
+    const map = new Map<string, DashboardProduct>()
+    dashboardVersionProducts.forEach((product) => {
+      map.set(product.id, product)
+    })
+    return map
+  }, [dashboardVersionProducts])
+
+  const productCatalogWithRelationsById = useMemo(() => {
+    const map = new Map<string, ProductCatalogItem>()
+    productsWithDashboardRelations.forEach((product) => {
+      map.set(product.id, product)
+    })
+    return map
+  }, [productsWithDashboardRelations])
+
+  const getProductCatalogDraft = useCallback(
+    (product: ProductCatalogItem): ProductCatalogItem => {
+      const hydratedProduct = productCatalogWithRelationsById.get(product.id) ?? product
+      return {
+        ...hydratedProduct,
+        productType: hydratedProduct.productType ?? '',
+        tags: [...(hydratedProduct.tags ?? [])],
+        compatibleProductIds: [...(hydratedProduct.compatibleProductIds ?? [])],
+        softwareIds: [...(hydratedProduct.softwareIds ?? [])],
+        driverIds: [...(hydratedProduct.driverIds ?? [])],
+        firmwareIds: [...(hydratedProduct.firmwareIds ?? [])],
+        editions: (hydratedProduct.editions ?? []).map((edition) => ({
+          ...edition,
+          firmwareIds: [...(edition.firmwareIds ?? [])],
+          compatibleProductIds: [...(edition.compatibleProductIds ?? [])],
+        })),
+        spareParts: hydratedProduct.spareParts.map((sparePart) => ({ ...sparePart })),
+      }
+    },
+    [productCatalogWithRelationsById],
+  )
+
+  const dashboardCatalogProductResults = useMemo(() => {
     const query = dashboardProductQuery.trim().toLowerCase()
-    if (!query) return dashboardVersionProducts
-    return dashboardVersionProducts.filter((product) => {
-      const compatibleProducts = (product.compatibleProductIds ?? [])
-        .map((id) => productCatalogById.get(id)?.name ?? '')
+    const base = productsWithDashboardRelations
+    const sorted = [...base].sort((left, right) => left.name.localeCompare(right.name, 'fr'))
+    if (!query) return sorted
+
+    return sorted.filter((product) => {
+      const linkedVersionText = normalizeIdList([
+        ...(product.softwareIds ?? []),
+        ...(product.driverIds ?? []),
+        ...(product.firmwareIds ?? []),
+        ...(product.editions ?? []).flatMap((edition) => edition.firmwareIds ?? []),
+      ])
+        .map((id) => dashboardVersionProductById.get(id))
+        .filter((item): item is DashboardProduct => Boolean(item))
+        .flatMap((item) => [item.name, item.latestVersion, item.sheet])
         .join(' ')
-      return [product.name, product.latestVersion, product.sheet, compatibleProducts]
+      const compatibleProductText = (product.compatibleProductIds ?? [])
+        .map((id) => productCatalogWithRelationsById.get(id)?.name ?? '')
+        .join(' ')
+      const sparePartText = product.spareParts
+        .flatMap((sparePart) => [sparePart.name, sparePart.sku])
+        .join(' ')
+      const editionText = (product.editions ?? [])
+        .flatMap((edition) => [
+          edition.name,
+          productEditionPlatformLabels[edition.platform],
+          ...edition.compatibleProductIds.map(
+            (id) => productCatalogWithRelationsById.get(id)?.name ?? '',
+          ),
+        ])
+        .join(' ')
+
+      return [
+        product.name,
+        product.productType ?? '',
+        ...(product.tags ?? []),
+        editionText,
+        linkedVersionText,
+        compatibleProductText,
+        sparePartText,
+      ]
         .map((value) => value.toLowerCase())
         .some((value) => value.includes(query))
     })
-  }, [dashboardProductQuery, dashboardVersionProducts, productCatalogById])
+  }, [
+    dashboardProductQuery,
+    dashboardVersionProductById,
+    productCatalogWithRelationsById,
+    productsWithDashboardRelations,
+  ])
 
   const filteredProductsWithSpareParts = useMemo(() => {
     const query = dashboardSparePartQuery.trim().toLowerCase()
-    const base = productCatalog
+    const base = productsWithDashboardRelations
       .map((product) => {
         const matchingSpareParts = query
           ? product.spareParts.filter((sparePart) =>
@@ -2176,7 +2722,15 @@ function App() {
                 .includes(query),
             )
           : product.spareParts
-        const productMatches = product.name.toLowerCase().includes(query)
+        const productMatches = [
+          product.name,
+          product.productType ?? '',
+          ...(product.tags ?? []),
+          ...(product.editions ?? []).map((edition) => edition.name),
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(query)
         if (!query) return { ...product, spareParts: matchingSpareParts }
         if (productMatches) return product
         return { ...product, spareParts: matchingSpareParts }
@@ -2184,7 +2738,10 @@ function App() {
       .filter((product) => {
         if (!query) return product.spareParts.length > 0
         return (
-          product.name.toLowerCase().includes(query) ||
+          [product.name, product.productType ?? '', ...(product.tags ?? [])]
+            .join(' ')
+            .toLowerCase()
+            .includes(query) ||
           product.spareParts.some((sparePart) =>
             [sparePart.name, sparePart.sku, sparePart.guideAvailable ? 'guide' : '']
               .join(' ')
@@ -2194,23 +2751,22 @@ function App() {
         )
       })
     return base.sort((left, right) => left.name.localeCompare(right.name, 'fr'))
-  }, [dashboardSparePartQuery, productCatalog])
+  }, [dashboardSparePartQuery, productsWithDashboardRelations])
 
-  const versionProductsByCategory = useMemo(
+  const activeDashboardSpareProduct = useMemo(
     () =>
-      dashboardProductCategoryOrder
-        .filter((category) => category !== 'product')
-        .map((category) => ({
-          category,
-          label: dashboardProductCategoryGroupLabels[category],
-          items: dashboardProductResults.filter((product) => product.category === category),
-        })),
-    [dashboardProductResults],
+      filteredProductsWithSpareParts.find(
+        (product) => product.id === activeDashboardSpareProductId,
+      ) ?? null,
+    [activeDashboardSpareProductId, filteredProductsWithSpareParts],
   )
 
   const productsSorted = useMemo(
-    () => [...productCatalog].sort((left, right) => left.name.localeCompare(right.name, 'fr')),
-    [productCatalog],
+    () =>
+      [...productsWithDashboardRelations].sort((left, right) =>
+        left.name.localeCompare(right.name, 'fr'),
+      ),
+    [productsWithDashboardRelations],
   )
   const dashboardNewsSorted = useMemo(
     () =>
@@ -2243,10 +2799,6 @@ function App() {
     () => data.procedures.find((procedure) => procedure.id === activeProcedureId) ?? null,
     [data.procedures, activeProcedureId],
   )
-  const activeDashboardProduct = useMemo(
-    () => dashboardVersionProducts.find((product) => product.id === activeDashboardProductId) ?? null,
-    [dashboardVersionProducts, activeDashboardProductId],
-  )
   const dashboardSoftwareProducts = useMemo(
     () => dashboardVersionProducts.filter((product) => product.category === 'software'),
     [dashboardVersionProducts],
@@ -2255,18 +2807,52 @@ function App() {
     () => dashboardVersionProducts.filter((product) => product.category === 'driver'),
     [dashboardVersionProducts],
   )
-  const activeDashboardVersionCompatibleProducts = useMemo(
+  const dashboardFirmwareProducts = useMemo(
+    () => dashboardVersionProducts.filter((product) => product.category === 'firmware'),
+    [dashboardVersionProducts],
+  )
+  const activeDashboardCatalogProduct = useMemo(
     () =>
-      activeDashboardProduct
-        ? (activeDashboardProduct.compatibleProductIds ?? [])
-            .map((id) => productCatalogById.get(id))
+      dashboardCatalogProductResults.find(
+        (product) => product.id === activeDashboardCatalogProductId,
+      ) ?? null,
+    [activeDashboardCatalogProductId, dashboardCatalogProductResults],
+  )
+  const activeDashboardCatalogProductSoftwares = useMemo(
+    () =>
+      activeDashboardCatalogProduct
+        ? normalizeIdList(activeDashboardCatalogProduct.softwareIds)
+            .map((id) => dashboardVersionProductById.get(id))
+            .filter((product): product is DashboardProduct => Boolean(product))
+        : [],
+    [activeDashboardCatalogProduct, dashboardVersionProductById],
+  )
+  const activeDashboardCatalogProductDrivers = useMemo(
+    () =>
+      activeDashboardCatalogProduct
+        ? normalizeIdList(activeDashboardCatalogProduct.driverIds)
+            .map((id) => dashboardVersionProductById.get(id))
+            .filter((product): product is DashboardProduct => Boolean(product))
+        : [],
+    [activeDashboardCatalogProduct, dashboardVersionProductById],
+  )
+  const activeDashboardCatalogProductFirmwares = useMemo(
+    () =>
+      activeDashboardCatalogProduct
+        ? normalizeIdList(activeDashboardCatalogProduct.firmwareIds)
+            .map((id) => dashboardVersionProductById.get(id))
+            .filter((product): product is DashboardProduct => Boolean(product))
+        : [],
+    [activeDashboardCatalogProduct, dashboardVersionProductById],
+  )
+  const activeDashboardCatalogProductCompatibleProducts = useMemo(
+    () =>
+      activeDashboardCatalogProduct
+        ? normalizeIdList(activeDashboardCatalogProduct.compatibleProductIds)
+            .map((id) => productCatalogWithRelationsById.get(id))
             .filter((product): product is ProductCatalogItem => Boolean(product))
         : [],
-    [activeDashboardProduct, productCatalogById],
-  )
-  const filteredDashboardVersionProducts = useMemo(
-    () => dashboardProductResults.filter((product) => product.category !== 'product'),
-    [dashboardProductResults],
+    [activeDashboardCatalogProduct, productCatalogWithRelationsById],
   )
   const dashboardPortalProcedures = useMemo(() => {
     const query = dashboardProcedureQuery.trim().toLowerCase()
@@ -2301,21 +2887,21 @@ function App() {
 
   useEffect(() => {
     if (workspaceDashboardPage !== 'versions') return
-    const visibleDashboardProducts = filteredDashboardVersionProducts
+    const visibleDashboardProducts = dashboardCatalogProductResults
     if (!visibleDashboardProducts.length) {
-      if (activeDashboardProductId !== null) {
-        setActiveDashboardProductId(null)
+      if (activeDashboardCatalogProductId !== null) {
+        setActiveDashboardCatalogProductId(null)
       }
       return
     }
     const hasVisibleActive = visibleDashboardProducts.some(
-      (product) => product.id === activeDashboardProductId,
+      (product) => product.id === activeDashboardCatalogProductId,
     )
     if (hasVisibleActive) return
-    setActiveDashboardProductId(visibleDashboardProducts[0].id)
+    setActiveDashboardCatalogProductId(visibleDashboardProducts[0].id)
   }, [
-    activeDashboardProductId,
-    filteredDashboardVersionProducts,
+    activeDashboardCatalogProductId,
+    dashboardCatalogProductResults,
     workspaceDashboardPage,
   ])
 
@@ -2335,6 +2921,23 @@ function App() {
     if (hasVisibleActive) return
     setActiveDashboardPortalProcedureId(dashboardPortalProcedures[0].id)
   }, [activeDashboardPortalProcedureId, dashboardPortalProcedures, workspaceDashboardPage])
+
+  useEffect(() => {
+    if (workspaceDashboardPage !== 'parts') return
+
+    if (!filteredProductsWithSpareParts.length) {
+      if (activeDashboardSpareProductId !== null) {
+        setActiveDashboardSpareProductId(null)
+      }
+      return
+    }
+
+    const hasVisibleActive = filteredProductsWithSpareParts.some(
+      (product) => product.id === activeDashboardSpareProductId,
+    )
+    if (hasVisibleActive) return
+    setActiveDashboardSpareProductId(filteredProductsWithSpareParts[0].id)
+  }, [activeDashboardSpareProductId, filteredProductsWithSpareParts, workspaceDashboardPage])
 
   const editSnippets = useMemo(() => {
     if (editSnippetCategoryId === 'all') return data.snippets
@@ -2557,7 +3160,7 @@ function App() {
 
   useEffect(() => {
     if (isProcedureWindow) return
-    const channel = new BroadcastChannel('speedmail-procedure')
+    const channel = new BroadcastChannel(PROCEDURE_CHANNEL)
     channel.onmessage = (event) => {
       const payload = event.data as { type?: string; taskText?: string } | null
       if (!payload || payload.type !== 'procedure:import-task') return
@@ -2909,11 +3512,29 @@ function App() {
 
     const exists = dashboardProducts.some((product) => product.id === payload.id)
     const id = exists ? payload.id : createId('product')
+    const savedProduct = { ...payload, id }
     const next = exists
-      ? dashboardProducts.map((product) => (product.id === id ? { ...payload, id } : product))
-      : [...dashboardProducts, { ...payload, id }]
+      ? dashboardProducts.map((product) => (product.id === id ? savedProduct : product))
+      : [...dashboardProducts, savedProduct]
     updateDashboardProducts(next)
-    setActiveDashboardProductId(id)
+    updateProductCatalog(
+      productCatalog.map((product) => {
+        if (category === 'product') return product
+        const field: 'softwareIds' | 'driverIds' | 'firmwareIds' =
+          category === 'software' ? 'softwareIds' : category === 'driver' ? 'driverIds' : 'firmwareIds'
+        const selectedProductIds = new Set(savedProduct.compatibleProductIds ?? [])
+        const nextVersionIds = new Set(product[field] ?? [])
+        if (selectedProductIds.has(product.id)) {
+          nextVersionIds.add(savedProduct.id)
+        } else {
+          nextVersionIds.delete(savedProduct.id)
+        }
+        return {
+          ...product,
+          [field]: Array.from(nextVersionIds),
+        }
+      }),
+    )
     setSelectedDashboardProductId(null)
     setDashboardProductDraft(getEmptyDashboardProductDraft())
   }
@@ -2922,13 +3543,63 @@ function App() {
     if (!window.confirm(`Supprimer l’élément "${product.name}" ?`)) return
     const next = dashboardProducts.filter((entry) => entry.id !== product.id)
     updateDashboardProducts(next)
+    updateProductCatalog(
+      productCatalog.map((entry) => ({
+        ...entry,
+        softwareIds: (entry.softwareIds ?? []).filter((id) => id !== product.id),
+        driverIds: (entry.driverIds ?? []).filter((id) => id !== product.id),
+        firmwareIds: (entry.firmwareIds ?? []).filter((id) => id !== product.id),
+        editions: (entry.editions ?? []).map((edition) => ({
+          ...edition,
+          firmwareIds: (edition.firmwareIds ?? []).filter((id) => id !== product.id),
+        })),
+      })),
+    )
     if (selectedDashboardProductId === product.id) {
       setSelectedDashboardProductId(null)
       setDashboardProductDraft(getEmptyDashboardProductDraft())
     }
-    if (activeDashboardProductId === product.id) {
-      setActiveDashboardProductId(null)
-    }
+  }
+
+  const syncDashboardProductsForCatalogProduct = (
+    items: DashboardProduct[],
+    catalogProduct: ProductCatalogItem,
+  ) =>
+    items.map((versionItem) => {
+      if (versionItem.category === 'product') return versionItem
+      const linkedVersionIds = new Set(
+        getProductDashboardVersionIds(catalogProduct, versionItem.category),
+      )
+      const compatibleProductIds = new Set(versionItem.compatibleProductIds ?? [])
+      if (linkedVersionIds.has(versionItem.id)) {
+        compatibleProductIds.add(catalogProduct.id)
+      } else {
+        compatibleProductIds.delete(catalogProduct.id)
+      }
+      return {
+        ...versionItem,
+        compatibleProductIds: Array.from(compatibleProductIds),
+      }
+    })
+
+  const syncProductCompatibility = (
+    items: ProductCatalogItem[],
+    catalogProduct: ProductCatalogItem,
+  ) => {
+    const compatibleProductIds = new Set(catalogProduct.compatibleProductIds ?? [])
+    return items.map((product) => {
+      if (product.id === catalogProduct.id) return catalogProduct
+      const nextCompatibleIds = new Set(product.compatibleProductIds ?? [])
+      if (compatibleProductIds.has(product.id)) {
+        nextCompatibleIds.add(catalogProduct.id)
+      } else {
+        nextCompatibleIds.delete(catalogProduct.id)
+      }
+      return {
+        ...product,
+        compatibleProductIds: Array.from(nextCompatibleIds),
+      }
+    })
   }
 
   const handleSaveProductCatalogItem = () => {
@@ -2938,6 +3609,26 @@ function App() {
     const payload: ProductCatalogItem = {
       id: productDraft.id,
       name,
+      productType: productDraft.productType?.trim() ?? '',
+      tags: parseProductTags(productTagsDraftText),
+      compatibleProductIds: normalizeIdList(productDraft.compatibleProductIds).filter(
+        (id) => id !== productDraft.id,
+      ),
+      softwareIds: normalizeIdList(productDraft.softwareIds),
+      driverIds: normalizeIdList(productDraft.driverIds),
+      firmwareIds: normalizeIdList(productDraft.firmwareIds),
+      editions: (productDraft.editions ?? []).map((edition) => {
+        const platform = normalizeProductEditionPlatform(edition.platform)
+        return {
+          id: edition.id || createId('edition'),
+          platform,
+          name: edition.name.trim() || productEditionPlatformLabels[platform],
+          firmwareIds: normalizeIdList(edition.firmwareIds),
+          compatibleProductIds: normalizeIdList(edition.compatibleProductIds).filter(
+            (id) => id !== productDraft.id,
+          ),
+        }
+      }),
       spareParts: productDraft.spareParts.map((sparePart) => ({
         ...sparePart,
         name: sparePart.name.trim(),
@@ -2947,19 +3638,37 @@ function App() {
 
     const exists = productCatalog.some((product) => product.id === payload.id)
     const id = exists ? payload.id : createId('catalog-product')
+    const savedProduct = { ...payload, id }
     const next = exists
-      ? productCatalog.map((product) => (product.id === id ? { ...payload, id } : product))
-      : [...productCatalog, { ...payload, id }]
+      ? productCatalog.map((product) => (product.id === id ? savedProduct : product))
+      : [...productCatalog, savedProduct]
 
-    updateProductCatalog(next)
+    updateProductCatalog(syncProductCompatibility(next, savedProduct))
+    updateDashboardProducts(syncDashboardProductsForCatalogProduct(dashboardProducts, savedProduct))
     setSelectedProductCatalogId(null)
     setProductDraft(getEmptyProductDraft())
+    setProductTagsDraftText('')
   }
 
   const handleDeleteProductCatalogItem = (product: ProductCatalogItem) => {
     if (!window.confirm(`Supprimer le produit "${product.name}" ?`)) return
 
-    updateProductCatalog(productCatalog.filter((entry) => entry.id !== product.id))
+    updateProductCatalog(
+      productCatalog
+        .filter((entry) => entry.id !== product.id)
+        .map((entry) => ({
+          ...entry,
+          compatibleProductIds: (entry.compatibleProductIds ?? []).filter(
+            (id) => id !== product.id,
+          ),
+          editions: (entry.editions ?? []).map((edition) => ({
+            ...edition,
+            compatibleProductIds: (edition.compatibleProductIds ?? []).filter(
+              (id) => id !== product.id,
+            ),
+          })),
+        })),
+    )
     updateDashboardProducts(
       dashboardVersionProducts.map((entry) => ({
         ...entry,
@@ -2970,6 +3679,7 @@ function App() {
     if (selectedProductCatalogId === product.id) {
       setSelectedProductCatalogId(null)
       setProductDraft(getEmptyProductDraft())
+      setProductTagsDraftText('')
     }
   }
 
@@ -3034,6 +3744,61 @@ function App() {
   const removeProductDraftSparePart = (sparePartId: string) => {
     updateProductDraftSpareParts(
       productDraft.spareParts.filter((sparePart) => sparePart.id !== sparePartId),
+    )
+  }
+
+  const updateProductDraftRelation = (
+    field: 'compatibleProductIds' | 'softwareIds' | 'driverIds' | 'firmwareIds',
+    id: string,
+    checked: boolean,
+  ) => {
+    setProductDraft((prev) => ({
+      ...prev,
+      [field]: checked
+        ? normalizeIdList([...(prev[field] ?? []), id])
+        : (prev[field] ?? []).filter((entryId) => entryId !== id),
+    }))
+  }
+
+  const updateProductDraftEditions = (next: ProductEdition[]) => {
+    setProductDraft((prev) => ({ ...prev, editions: next }))
+  }
+
+  const addProductDraftEdition = (platform: ProductEditionPlatform) => {
+    updateProductDraftEditions([...(productDraft.editions ?? []), createProductEditionDraft(platform)])
+  }
+
+  const updateProductDraftEdition = (editionId: string, patch: Partial<ProductEdition>) => {
+    updateProductDraftEditions(
+      (productDraft.editions ?? []).map((edition) =>
+        edition.id === editionId ? { ...edition, ...patch } : edition,
+      ),
+    )
+  }
+
+  const updateProductDraftEditionRelation = (
+    editionId: string,
+    field: 'firmwareIds' | 'compatibleProductIds',
+    id: string,
+    checked: boolean,
+  ) => {
+    updateProductDraftEditions(
+      (productDraft.editions ?? []).map((edition) =>
+        edition.id === editionId
+          ? {
+              ...edition,
+              [field]: checked
+                ? normalizeIdList([...(edition[field] ?? []), id])
+                : (edition[field] ?? []).filter((entryId) => entryId !== id),
+            }
+          : edition,
+      ),
+    )
+  }
+
+  const removeProductDraftEdition = (editionId: string) => {
+    updateProductDraftEditions(
+      (productDraft.editions ?? []).filter((edition) => edition.id !== editionId),
     )
   }
 
@@ -3479,9 +4244,6 @@ function App() {
                     }
                   />
 
-                  <div className="list-item__meta">
-                    Mise en forme supportée : [b][/b], [i][/i], [texte](https://...)
-                  </div>
                 </div>
               )}
             </div>
@@ -3570,6 +4332,7 @@ function App() {
     setProcedureInfoDraft('')
     setDashboardProductDraft(getEmptyDashboardProductDraft())
     setProductDraft(getEmptyProductDraft())
+    setProductTagsDraftText('')
     setDashboardNewsDraft(getEmptyDashboardNewsDraft())
     if (dashboardCalculatorCopyTimeoutRef.current !== null) {
       window.clearTimeout(dashboardCalculatorCopyTimeoutRef.current)
@@ -3580,7 +4343,8 @@ function App() {
     setDashboardCalculatorCopiedKey(null)
     setProcedureChecks({})
     setActiveProcedureId(null)
-    setActiveDashboardProductId(null)
+    setActiveDashboardCatalogProductId(null)
+    setActiveDashboardSpareProductId(null)
     setActiveDashboardPortalProcedureId(null)
     setDashboardProductQuery('')
     setDashboardSparePartQuery('')
@@ -3822,8 +4586,9 @@ function App() {
   const hidePortalInfoTooltip = () => setPortalInfoTooltip(null)
 
   const openLink = (url: string) => {
-    if (!url.startsWith('http')) return
-    openExternal(url)
+    const normalizedUrl = url.trim()
+    if (!normalizedUrl.startsWith('http')) return
+    openExternal(normalizedUrl)
   }
 
   const handleProcedureLinkClick = (event: MouseEvent<HTMLElement>) => {
@@ -3841,18 +4606,7 @@ function App() {
     ? procedureNotesText
     : 'Aucune note optionnelle.'
   const procedureSteps = activeProcedure
-    ? activeProcedure.steps
-        .split('\n')
-        .map((line) => line.trimEnd())
-        .filter((line) => line.trim() !== '')
-        .map((line) => {
-          const trimmed = line.trimStart()
-          const isCheckable = trimmed.startsWith(PROCEDURE_CHECK_MARKER)
-          const text = isCheckable
-            ? trimmed.slice(PROCEDURE_CHECK_MARKER.length).trimStart()
-            : trimmed
-          return { text, isCheckable }
-        })
+    ? parseProcedureStepItems(activeProcedure.steps)
     : []
   const procedureTaskText = activeProcedure ? getProcedureTaskText(activeProcedure) : ''
   const dashboardCalculatorEntries = dashboardCalculatorItems.map((item) => ({
@@ -3896,16 +4650,13 @@ function App() {
     },
   ) => {
     const progress = getSliderProgress(value, min, max)
-    const sliderBackground = `linear-gradient(90deg, rgba(83, 169, 255, 0.78) 0%, rgba(83, 169, 255, 0.78) ${progress}, rgba(255, 255, 255, 0.12) ${progress}, rgba(255, 255, 255, 0.12) 100%)`
+    const sliderBackground = `linear-gradient(90deg, rgba(88, 101, 242, 0.78) 0%, rgba(88, 101, 242, 0.78) ${progress}, rgba(255, 255, 255, 0.12) ${progress}, rgba(255, 255, 255, 0.12) 100%)`
 
     return (
       <div className={`settings-slider${options?.disabled ? ' is-disabled' : ''}`}>
         <div className="settings-slider__head">
           <div className="settings-slider__meta">
             <div className="settings-slider__label">{label}</div>
-            {options?.description ? (
-              <div className="settings-slider__description">{options.description}</div>
-            ) : null}
           </div>
           <div className="settings-slider__value">{valueLabel}</div>
         </div>
@@ -3941,21 +4692,6 @@ function App() {
           Formater & copier
         </button>
         <div className="dashboard-formatter__input-wrap">
-          <span className="dashboard-formatter__icon" aria-hidden="true">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c1.7-4 5-6 8-6s6.3 2 8 6" />
-            </svg>
-          </span>
           <input
             className="input dashboard-formatter__input"
             value={nameFormatterValue}
@@ -3969,14 +4705,6 @@ function App() {
             }}
           />
         </div>
-      </div>
-    </article>
-  )
-
-  const renderWorkspaceDashboardToolsFiller = () => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--filler">
-      <div className="dashboard-placeholder">
-        <strong>WIP</strong>
       </div>
     </article>
   )
@@ -4220,74 +4948,233 @@ function App() {
     </article>
   )
 
+  const renderDashboardVersionInfoCards = (items: DashboardProduct[], emptyMessage: string) =>
+    items.length ? (
+      <div className="dashboard-version-info-grid">
+        {items.map((item) => {
+          const version = item.latestVersion.trim()
+          const sheet = item.sheet.trim()
+          const supportUrl = item.supportUrl?.trim() ?? ''
+
+          return (
+            <article className="dashboard-version-info-card" key={item.id}>
+              <div className="dashboard-version-info-card__head">
+                <div>
+                  <div className="dashboard-version-info-card__title">{item.name}</div>
+                  <div className="dashboard-version-info-card__meta">
+                    {dashboardProductCategoryLabels[item.category]} •{' '}
+                    {version || 'Version non renseignée'}
+                  </div>
+                </div>
+                {supportUrl ? (
+                  <button
+                    className="btn btn--ghost btn--small"
+                    type="button"
+                    onClick={() => openLink(supportUrl)}
+                  >
+                    Support
+                  </button>
+                ) : null}
+              </div>
+              {sheet ? (
+                <div className="dashboard-product-sheet" onClick={handleProcedureLinkClick}>
+                  <div
+                    className="dashboard-product-sheet__content"
+                    dangerouslySetInnerHTML={{
+                      __html: formatProcedureText(sheet),
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="dashboard-version-empty">Aucune note renseignée.</div>
+              )}
+            </article>
+          )
+        })}
+      </div>
+    ) : (
+      <div className="dashboard-empty">{emptyMessage}</div>
+    )
+
   const renderDashboardCatalogPanel = (title: string, searchPlaceholder: string, emptyTitle: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--catalog">
       <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-versions-tools">
-        <div className="dashboard-version-search">
-          <input
-            className="input"
-            value={dashboardProductQuery}
-            onChange={(event) => setDashboardProductQuery(event.target.value)}
-            placeholder={searchPlaceholder}
-          />
-        </div>
-      </div>
 
-      <div className="dashboard-version-browser">
+      <div className="dashboard-version-browser dashboard-product-browser">
         <div className="dashboard-version-browser__list">
-          {versionProductsByCategory.some((group) => group.items.length) ? (
-            versionProductsByCategory.map((group) =>
-              group.items.length ? (
-                <section className="dashboard-version-group" key={group.category}>
-                  <div className="dashboard-version-group__title">{group.label}</div>
-                  <div className="dashboard-version-group__list">
-                    {group.items.map((product) => (
-                      <button
-                        key={product.id}
-                        className={`dashboard-version-item${
-                          activeDashboardProductId === product.id ? ' is-active' : ''
-                        }`}
-                        type="button"
-                        onClick={() => setActiveDashboardProductId(product.id)}
-                      >
-                        <span className="dashboard-version-item__name">{product.name}</span>
-                        <span className="dashboard-version-item__meta">
-                          {product.latestVersion.trim() || 'Version non renseignée'}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              ) : null,
-            )
+          <div className="dashboard-portal-search dashboard-sticky-search">
+            <input
+              className="input"
+              value={dashboardProductQuery}
+              onChange={(event) => setDashboardProductQuery(event.target.value)}
+              placeholder={searchPlaceholder}
+            />
+          </div>
+          {dashboardCatalogProductResults.length ? (
+            <section className="dashboard-version-group">
+              <div className="dashboard-version-group__title">Produits</div>
+              <div className="dashboard-version-group__list">
+                {dashboardCatalogProductResults.map((product) => {
+                  const linkedCount = normalizeIdList([
+                    ...(product.softwareIds ?? []),
+                    ...(product.driverIds ?? []),
+                    ...(product.firmwareIds ?? []),
+                    ...(product.editions ?? []).flatMap((edition) => edition.firmwareIds ?? []),
+                  ]).length
+
+                  return (
+                    <button
+                      key={product.id}
+                      className={`dashboard-version-item${
+                        activeDashboardCatalogProductId === product.id ? ' is-active' : ''
+                      }`}
+                      type="button"
+                      onClick={() => setActiveDashboardCatalogProductId(product.id)}
+                    >
+                      <span className="dashboard-version-item__name">{product.name}</span>
+                      <span className="dashboard-version-item__meta">
+                        {product.productType?.trim() || 'Type non renseigné'} •{' '}
+                        {(product.editions ?? []).length} édition
+                        {(product.editions ?? []).length > 1 ? 's' : ''} • {linkedCount} lien
+                        {linkedCount > 1 ? 's' : ''}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
           ) : (
-            <div className="dashboard-empty">Aucun élément configuré dans Paramètres.</div>
+            <div className="dashboard-empty">Aucun produit configuré dans Paramètres.</div>
           )}
         </div>
 
-        <div className="dashboard-version-detail">
-          {activeDashboardProduct ? (
+        <div className="dashboard-version-detail dashboard-product-detail">
+          {activeDashboardCatalogProduct ? (
             <>
               <div className="dashboard-version-detail__header">
                 <div>
-                  <div className="dashboard-version-detail__title">{activeDashboardProduct.name}</div>
+                  <div className="dashboard-version-detail__title">
+                    {activeDashboardCatalogProduct.name}
+                  </div>
                   <div className="dashboard-version-detail__badges">
                     <span className="dashboard-version-detail__badge">
-                      {dashboardProductCategoryLabels[activeDashboardProduct.category]}
+                      {activeDashboardCatalogProduct.productType?.trim() || 'Type non renseigné'}
                     </span>
-                    <span className="dashboard-version-detail__badge dashboard-version-detail__badge--accent">
-                      {activeDashboardProduct.latestVersion.trim() || 'Version non renseignée'}
-                    </span>
+                    {(activeDashboardCatalogProduct.tags ?? []).map((tag) => (
+                      <span
+                        className="dashboard-version-detail__badge dashboard-version-detail__badge--accent"
+                        key={tag}
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
 
               <div className="dashboard-version-detail__section">
+                <div className="dashboard-version-detail__label">Éditions</div>
+                {(activeDashboardCatalogProduct.editions ?? []).length ? (
+                  <div className="dashboard-product-editions">
+                    {(activeDashboardCatalogProduct.editions ?? []).map((edition) => {
+                      const editionFirmwares = normalizeIdList(edition.firmwareIds)
+                        .map((id) => dashboardVersionProductById.get(id))
+                        .filter((item): item is DashboardProduct => Boolean(item))
+                      const editionCompatibleProducts = normalizeIdList(edition.compatibleProductIds)
+                        .map((id) => productCatalogWithRelationsById.get(id))
+                        .filter((product): product is ProductCatalogItem => Boolean(product))
+
+                      return (
+                        <article className="dashboard-product-edition" key={edition.id}>
+                          <div className="dashboard-product-edition__head">
+                            <div>
+                              <div className="dashboard-product-edition__title">{edition.name}</div>
+                              <div className="dashboard-product-edition__meta">
+                                {productEditionPlatformLabels[edition.platform]}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="dashboard-product-edition__body">
+                            <div className="dashboard-product-edition__block">
+                              <div className="dashboard-version-detail__label">Firmware</div>
+                              {editionFirmwares.length ? (
+                                <div className="dashboard-compatible-products">
+                                  {editionFirmwares.map((firmware) => (
+                                    <span
+                                      className="dashboard-compatible-products__item"
+                                      key={firmware.id}
+                                    >
+                                      {firmware.name}
+                                      {firmware.latestVersion.trim()
+                                        ? ` (${firmware.latestVersion.trim()})`
+                                        : ''}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="dashboard-version-empty">
+                                  Aucun firmware spécifique.
+                                </div>
+                              )}
+                            </div>
+                            <div className="dashboard-product-edition__block">
+                              <div className="dashboard-version-detail__label">Compatibilités</div>
+                              {editionCompatibleProducts.length ? (
+                                <div className="dashboard-compatible-products">
+                                  {editionCompatibleProducts.map((product) => (
+                                    <span
+                                      className="dashboard-compatible-products__item"
+                                      key={product.id}
+                                    >
+                                      {product.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="dashboard-version-empty">
+                                  Aucune compatibilité spécifique.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="dashboard-empty">Aucune édition configurée.</div>
+                )}
+              </div>
+
+              <div className="dashboard-version-detail__section">
+                <div className="dashboard-version-detail__label">Firmwares communs</div>
+                {renderDashboardVersionInfoCards(
+                  activeDashboardCatalogProductFirmwares,
+                  'Aucun firmware commun renseigné.',
+                )}
+              </div>
+
+              <div className="dashboard-version-detail__section">
+                <div className="dashboard-version-detail__label">Logiciels à utiliser</div>
+                {renderDashboardVersionInfoCards(
+                  activeDashboardCatalogProductSoftwares,
+                  'Aucun logiciel renseigné.',
+                )}
+              </div>
+
+              <div className="dashboard-version-detail__section">
+                <div className="dashboard-version-detail__label">Drivers à utiliser</div>
+                {renderDashboardVersionInfoCards(
+                  activeDashboardCatalogProductDrivers,
+                  'Aucun driver renseigné.',
+                )}
+              </div>
+
+              <div className="dashboard-version-detail__section">
                 <div className="dashboard-version-detail__label">Produits compatibles</div>
-                {activeDashboardVersionCompatibleProducts.length ? (
+                {activeDashboardCatalogProductCompatibleProducts.length ? (
                   <div className="dashboard-compatible-products">
-                    {activeDashboardVersionCompatibleProducts.map((product) => (
+                    {activeDashboardCatalogProductCompatibleProducts.map((product) => (
                       <span className="dashboard-compatible-products__item" key={product.id}>
                         {product.name}
                       </span>
@@ -4299,23 +5186,25 @@ function App() {
               </div>
 
               <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Notes</div>
-                <div className="dashboard-product-sheet" onClick={handleProcedureLinkClick}>
-                  <div
-                    className="dashboard-product-sheet__content"
-                    dangerouslySetInnerHTML={{
-                      __html: formatProcedureText(
-                        activeDashboardProduct.sheet || 'Aucune note renseignée.',
-                      ),
-                    }}
-                  />
-                </div>
+                <div className="dashboard-version-detail__label">Spare parts</div>
+                {activeDashboardCatalogProduct.spareParts.length ? (
+                  <div className="dashboard-compatible-products">
+                    {activeDashboardCatalogProduct.spareParts.map((sparePart) => (
+                      <span className="dashboard-compatible-products__item" key={sparePart.id}>
+                        {sparePart.name || 'Sans nom'}
+                        {sparePart.sku.trim() ? ` • ${sparePart.sku.trim()}` : ''}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="dashboard-empty">Aucune spare part renseignée.</div>
+                )}
               </div>
             </>
           ) : (
             <div className="dashboard-wip">
               <strong>{emptyTitle}</strong>
-              <span>Sélectionnez un élément pour afficher ses détails.</span>
+              <span>Sélectionnez un produit pour afficher ses éditions et versions liées.</span>
             </div>
           )}
         </div>
@@ -4326,32 +5215,61 @@ function App() {
   const renderWorkspaceDashboardSparePartsPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--catalog">
       <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-versions-tools">
-        <div className="dashboard-version-search">
-          <input
-            className="input"
-            value={dashboardSparePartQuery}
-            onChange={(event) => setDashboardSparePartQuery(event.target.value)}
-            placeholder="Rechercher un produit, un nom de spare part ou un SKU..."
-          />
-        </div>
-      </div>
-      <div className="dashboard-spare-parts">
-        {filteredProductsWithSpareParts.length ? (
-          filteredProductsWithSpareParts.map((product) => (
-            <section className="dashboard-spare-parts__group" key={product.id}>
-              <div className="dashboard-spare-parts__header">
-                <div className="dashboard-spare-parts__title">{product.name}</div>
-                <div className="dashboard-spare-parts__count">
+      <div className="dashboard-version-browser dashboard-spare-parts-browser">
+        <div className="dashboard-version-browser__list">
+          <div className="dashboard-portal-search dashboard-sticky-search">
+            <input
+              className="input"
+              value={dashboardSparePartQuery}
+              onChange={(event) => setDashboardSparePartQuery(event.target.value)}
+              placeholder="Rechercher un produit, une spare part ou un SKU..."
+            />
+          </div>
+          {filteredProductsWithSpareParts.length ? (
+            filteredProductsWithSpareParts.map((product) => (
+              <button
+                key={product.id}
+                className={`dashboard-version-item${
+                  activeDashboardSpareProductId === product.id ? ' is-active' : ''
+                }`}
+                type="button"
+                onClick={() => setActiveDashboardSpareProductId(product.id)}
+              >
+                <span className="dashboard-version-item__name">{product.name}</span>
+                <span className="dashboard-version-item__meta">
                   {product.spareParts.length} spare part{product.spareParts.length > 1 ? 's' : ''}
+                </span>
+              </button>
+            ))
+          ) : (
+            <div className="dashboard-empty">Aucune spare part configurée.</div>
+          )}
+        </div>
+
+        <div className="dashboard-version-detail dashboard-spare-parts-detail">
+          {activeDashboardSpareProduct ? (
+            <>
+              <div className="dashboard-version-detail__header">
+                <div>
+                  <div className="dashboard-version-detail__title">
+                    {activeDashboardSpareProduct.name}
+                  </div>
+                  <div className="dashboard-version-detail__badges">
+                    <span className="dashboard-version-detail__badge">
+                      {activeDashboardSpareProduct.spareParts.length} spare part
+                      {activeDashboardSpareProduct.spareParts.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="dashboard-spare-parts__list">
-                {product.spareParts.length ? (
-                  product.spareParts.map((sparePart) => (
+                {activeDashboardSpareProduct.spareParts.length ? (
+                  activeDashboardSpareProduct.spareParts.map((sparePart) => (
                     <article className="dashboard-spare-parts__item" key={sparePart.id}>
                       <div>
-                        <div className="dashboard-spare-parts__name">{sparePart.name || 'Sans nom'}</div>
+                        <div className="dashboard-spare-parts__name">
+                          {sparePart.name || 'Sans nom'}
+                        </div>
                         <div className="dashboard-spare-parts__sku">
                           SKU: {sparePart.sku || 'Non renseigné'}
                         </div>
@@ -4369,14 +5287,14 @@ function App() {
                   <div className="dashboard-empty">Aucune spare part pour ce produit.</div>
                 )}
               </div>
-            </section>
-          ))
-        ) : (
-          <div className="dashboard-wip">
-            <strong>Spare parts</strong>
-            <span>Aucune spare part configurée.</span>
-          </div>
-        )}
+            </>
+          ) : (
+            <div className="dashboard-wip">
+              <strong>Spare parts</strong>
+              <span>Sélectionnez un produit pour afficher ses pièces.</span>
+            </div>
+          )}
+        </div>
       </div>
     </article>
   )
@@ -4393,7 +5311,7 @@ function App() {
 
         <div className="dashboard-version-browser dashboard-portal-browser">
           <div className="dashboard-version-browser__list">
-            <div className="dashboard-portal-search">
+            <div className="dashboard-portal-search dashboard-sticky-search">
               <input
                 className="input"
                 value={dashboardProcedureQuery}
@@ -4545,16 +5463,6 @@ function App() {
     )
   }
 
-  const renderWorkspaceDashboardTroubleshootingPanel = (title: string) => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--troubleshooting">
-      <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-wip">
-        <strong>Troubleshotgun</strong>
-        <span>WIP</span>
-      </div>
-    </article>
-  )
-
   const renderWorkspaceDashboardNewsPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--recent">
       <div className="workspace-dashboard__panel-title">{title}</div>
@@ -4587,10 +5495,7 @@ function App() {
     if (workspaceDashboardPage === 'tools') {
       return (
         <div className="workspace-dashboard__single workspace-dashboard__single--tools">
-          <div className="workspace-dashboard__left">
-            {renderWorkspaceDashboardNameFormatter('Name format')}
-            {renderWorkspaceDashboardToolsFiller()}
-          </div>
+          {renderWorkspaceDashboardNameFormatter('Name format')}
           {renderWorkspaceDashboardVatPanel('Price calculator')}
         </div>
       )
@@ -4608,9 +5513,9 @@ function App() {
       return (
         <div className="workspace-dashboard__single">
           {renderDashboardCatalogPanel(
-            'Versions (soft / firm / driver)',
-            'Rechercher un soft, un firmware ou un driver...',
-            'Catalogue de versions',
+            'Versions par produit',
+            'Rechercher un produit, une édition, un firmware, un logiciel ou un driver...',
+            'Produits et versions',
           )}
         </div>
       )
@@ -4620,14 +5525,6 @@ function App() {
       return (
         <div className="workspace-dashboard__single">
           {renderWorkspaceDashboardSparePartsPanel('Spare parts')}
-        </div>
-      )
-    }
-
-    if (workspaceDashboardPage === 'troubleshooting') {
-      return (
-        <div className="workspace-dashboard__single">
-          {renderWorkspaceDashboardTroubleshootingPanel('Troubleshotgun (by product)')}
         </div>
       )
     }
@@ -4652,7 +5549,7 @@ function App() {
           aria-label={page.title}
           onClick={() => handleSelectWorkspaceDashboardPage(page.id)}
         >
-          {page.label}
+          <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
         </button>
       ))}
     </div>
@@ -4675,9 +5572,9 @@ function App() {
           <div className="dashboard-main">
             <header className="dashboard-header">
               <div>
-                <div className="dashboard-header__title">Dashboard</div>
-                <div className="dashboard-header__subtitle">
-                  Navigation Typemail réorganisée sur 6 pages.
+                <div className="dashboard-header__title">
+                  <UiIcon name="dashboard" className="dashboard-header__icon" />
+                  <span>Dashboard</span>
                 </div>
               </div>
               <button className="ghost" type="button" onClick={() => window.close()}>
@@ -4798,7 +5695,7 @@ function App() {
                     className="primary"
                     onClick={() => {
                       if (!procedureTaskText.trim()) return
-                      const channel = new BroadcastChannel('speedmail-procedure')
+                      const channel = new BroadcastChannel(PROCEDURE_CHANNEL)
                       channel.postMessage({
                         type: 'procedure:import-task',
                         taskText: procedureTaskText,
@@ -4912,13 +5809,9 @@ function App() {
       <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-top">
-          <div className="brand">
-            <img
-              className="logo-mark"
-              src={assetUrl('/speedmail/icon.png')}
-              alt="SpeedMail"
-            />
-            <p className="brand-name">SpeedMail</p>
+          <div className="brand" aria-label="Agentor">
+            <img className="brand-logo" src={assetUrl('/agentor/icon.png')} alt="" />
+            <p className="brand-name">Agentor</p>
             <span className="version-pill">v{APP_VERSION_LABEL}</span>
           </div>
           <div className="sidebar-top-actions">
@@ -4929,19 +5822,7 @@ function App() {
                 title={editButtonLabel}
                 aria-label={editButtonLabel}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
+                <UiIcon name="settings" className="sidebar-icon-btn__icon" />
               </button>
               {showUpdateIndicator ? (
                 <span
@@ -4954,7 +5835,10 @@ function App() {
         </div>
 
         <div className="filter-block">
-          <p className="section-label">Catégories</p>
+          <p className="section-label">
+            <UiIcon name="channels" className="section-label__icon" />
+            <span>Catégories</span>
+          </p>
           {snippetCategoryDisplay === 'buttons' ? (
             <div className="category-tabs">
               <button
@@ -5005,7 +5889,10 @@ function App() {
           )}
         </div>
 
-        <p className="section-label">Snippets</p>
+        <p className="section-label">
+          <UiIcon name="list" className="section-label__icon" />
+          <span>Snippets</span>
+        </p>
         <div className="bullet-panel">
           <ul className="bullet-list">
             {visibleSnippets.map((snippet) => (
@@ -5034,10 +5921,14 @@ function App() {
 
       <main className="workspace">
         <header className="workspace-head">
-          <p className="workspace-title">Compose</p>
+          <p className="workspace-title">
+            <UiIcon name="mail" className="workspace-title__icon" />
+            <span>Compose</span>
+          </p>
           <div className="workspace-head__actions">
             <div className="template-controls">
               <div className="template-search-wrap" ref={templateSearchRef}>
+                <UiIcon name="search" className="search-field-icon" />
                 <input
                   value={templateQuery}
                   onChange={(event) => setTemplateQuery(event.target.value)}
@@ -5071,8 +5962,8 @@ function App() {
                             className="result-flag"
                             src={
                               template.language === 'fr'
-                                ? assetUrl('/speedmail/fr.svg')
-                                : assetUrl('/speedmail/gb.svg')
+                                ? assetUrl('/agentor/assets/fr.svg')
+                                : assetUrl('/agentor/assets/gb.svg')
                             }
                             alt={template.language === 'fr' ? 'FR' : 'EN'}
                           />
@@ -5112,7 +6003,7 @@ function App() {
               </svg>
             </button>
             <div className="quick-links-inline">
-              {quickLinks.map((link) => (
+              {resolvedQuickLinks.map((link) => (
                 <button
                   key={link.id}
                   className="quick-link"
@@ -5167,14 +6058,13 @@ function App() {
                         tabIndex={dashboardSectionOpen ? 0 : -1}
                         onClick={() => handleSelectWorkspaceDashboardPage(page.id)}
                       >
-                        {page.label}
+                        <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
               <div className="actions">
-                {emailTags ? <span className="tag-warning">⚠️</span> : null}
                 <span
                   className={`composer-insert-mode composer-insert-mode--${mailInsertMode}`}
                   title="Clic droit dans l’éditeur mail pour changer le mode d’insertion"
@@ -5184,7 +6074,7 @@ function App() {
                 <button
                   className={`primary copy-btn${emailCopied ? ' is-success' : ''}${
                     emailCopyPulse ? ' btn-pulse' : ''
-                  }`}
+                  }${emailTags ? ' has-tag-warning' : ''}`}
                   onClick={() => {
                     triggerPulse(setEmailCopyPulse)
                     void handleCopyEmail()
@@ -5227,7 +6117,10 @@ function App() {
       <aside className="right-sidebar">
         <div className="note-panel-workspace">
           <div className="note-panel-workspace__header">
-            <p className="section-label section-label--tight">Notes</p>
+            <p className="section-label section-label--tight">
+              <UiIcon name="notes" className="section-label__icon" />
+              <span>Notes</span>
+            </p>
           </div>
           <div className="note-editor-wrapper">
             <textarea
@@ -5248,9 +6141,13 @@ function App() {
         </div>
 
         <section className="task-builder">
-          <p className="section-label section-label--tight">Task</p>
+          <p className="section-label section-label--tight">
+            <UiIcon name="inbox" className="section-label__icon" />
+            <span>Task</span>
+          </p>
           <div className="task-template-search">
             <div className="task-search-wrap" ref={taskSearchRef}>
+              <UiIcon name="search" className="search-field-icon" />
               <input
                 value={taskQuery}
                 onChange={(event) => setTaskQuery(event.target.value)}
@@ -5302,11 +6199,10 @@ function App() {
           </div>
           <div className="task-actions">
             <div className="task-actions-buttons">
-              {taskTags ? <span className="tag-warning">⚠️</span> : null}
               <button
                 className={`primary task-copy-btn copy-btn${taskCopied ? ' is-success' : ''}${
                   taskCopyPulse ? ' btn-pulse' : ''
-                }`}
+                }${taskTags ? ' has-tag-warning' : ''}`}
                 onClick={() => {
                   triggerPulse(setTaskCopyPulse)
                   void handleCopyTask()
@@ -5373,7 +6269,10 @@ function App() {
         >
           <div className="modal call-modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal__header">
-              <div className="brand__title">Appel téléphonique</div>
+              <div className="brand__title brand__title--with-icon">
+                <UiIcon name="phone" className="brand__title-icon" />
+                <span>Appel téléphonique</span>
+              </div>
               <button className="close-modal" type="button" onClick={closeCallModal}>
                 ×
               </button>
@@ -5406,9 +6305,9 @@ function App() {
           <div className="modal modal--settings" onClick={(event) => event.stopPropagation()}>
             <div className="modal__header">
               <div className="modal__title-group">
-                <div className="brand__title">Settings</div>
-                <div className="modal__subtitle">
-                  Navigation organisée par catégories avec sous-catégories.
+                <div className="brand__title brand__title--with-icon">
+                  <UiIcon name="settings" className="brand__title-icon" />
+                  <span>Settings</span>
                 </div>
               </div>
               <div className="modal-actions modal-actions--settings">
@@ -5500,7 +6399,10 @@ function App() {
               <aside className="settings-layout__nav">
                 {settingsNavigation.map((section) => (
                   <div className="settings-layout__nav-section" key={section.id}>
-                    <div className="settings-layout__nav-title">{section.label}</div>
+                    <div className="settings-layout__nav-title">
+                      <UiIcon name={section.icon} className="settings-layout__nav-title-icon" />
+                      <span>{section.label}</span>
+                    </div>
                     <div className="settings-layout__nav-items">
                       {section.items.map((item) => (
                         <button
@@ -5511,7 +6413,8 @@ function App() {
                           }`}
                           onClick={() => setEditTab(item.id)}
                         >
-                          {item.label}
+                          <UiIcon name={item.icon} className="settings-layout__nav-btn-icon" />
+                          <span>{item.label}</span>
                         </button>
                       ))}
                     </div>
@@ -5520,10 +6423,16 @@ function App() {
               </aside>
 
               <div className="settings-layout__content">
-                <div className="settings-layout__content-header">
-                  <div className="settings-layout__content-title-group">
+                  <div className="settings-layout__content-header">
+                    <div className="settings-layout__content-title-group">
                     <div className="settings-layout__eyebrow">{activeSettingsTab.sectionLabel}</div>
-                    <div className="settings-layout__content-title">{activeSettingsTab.label}</div>
+                    <div className="settings-layout__content-title">
+                      <UiIcon
+                        name={activeSettingsTab.icon}
+                        className="settings-layout__content-title-icon"
+                      />
+                      <span>{activeSettingsTab.label}</span>
+                    </div>
                     <div className="settings-layout__content-subtitle">
                       {activeSettingsTab.description}
                     </div>
@@ -6039,8 +6948,8 @@ function App() {
                               className="list-item__flag"
                               src={
                                 template.language === 'fr'
-                                  ? assetUrl('/speedmail/fr.svg')
-                                  : assetUrl('/speedmail/gb.svg')
+                                  ? assetUrl('/agentor/assets/fr.svg')
+                                  : assetUrl('/agentor/assets/gb.svg')
                               }
                               alt={template.language === 'fr' ? 'FR' : 'EN'}
                             />
@@ -6654,7 +7563,7 @@ function App() {
                   <div className="list-card__header list-card__header--wrap">
                     <div className="list-card__title">Produits</div>
                     <div className="list-card__subtitle">
-                      Produits utilisés pour les compatibilités versions et les spare parts.
+                      Types, tags, éditions, compatibilités et spare parts.
                     </div>
                   </div>
                   <div className="list-card__body">
@@ -6666,16 +7575,17 @@ function App() {
                             selectedProductCatalogId === product.id ? ' is-selected' : ''
                           }`}
                           onClick={() => {
-                            setProductDraft({
-                              ...product,
-                              spareParts: product.spareParts.map((sparePart) => ({ ...sparePart })),
-                            })
+                            setProductDraft(getProductCatalogDraft(product))
+                            setProductTagsDraftText((product.tags ?? []).join(', '))
                             setSelectedProductCatalogId(product.id)
                           }}
                         >
                           <div className="list-item__content">
                             <div className="list-item__title">{product.name}</div>
                             <div className="list-item__meta">
+                              {product.productType?.trim() || 'Type non renseigné'} •{' '}
+                              {(product.editions ?? []).length} édition
+                              {(product.editions ?? []).length > 1 ? 's' : ''} •{' '}
                               {product.spareParts.length} spare part
                               {product.spareParts.length > 1 ? 's' : ''}
                             </div>
@@ -6718,8 +7628,7 @@ function App() {
                     <div className="list-card__title-group">
                       <div className="list-card__title">Détails produit</div>
                       <div className="list-card__subtitle">
-                        Un produit sert de référence commune pour le catalogue versions et spare
-                        parts.
+                        Liaisons avec les produits, logiciels, drivers et firmwares.
                       </div>
                     </div>
                     <div className="list-card__tools">
@@ -6728,6 +7637,7 @@ function App() {
                         type="button"
                         onClick={() => {
                           setProductDraft(getEmptyProductDraft())
+                          setProductTagsDraftText('')
                           setSelectedProductCatalogId('new')
                         }}
                       >
@@ -6748,18 +7658,360 @@ function App() {
                         Sélectionnez un produit pour l’éditer ou appuyez sur Nouveau.
                       </div>
                     ) : (
-                      <div className="form">
+                      <div className="form product-catalog-form">
+                        <div className="form__row two">
+                          <input
+                            className="input"
+                            placeholder="Nom du produit"
+                            value={productDraft.name}
+                            onChange={(event) =>
+                              setProductDraft((prev) => ({ ...prev, name: event.target.value }))
+                            }
+                          />
+                          <input
+                            className="input"
+                            placeholder="Type de produit (volant, pédalier, pack...)"
+                            value={productDraft.productType ?? ''}
+                            onChange={(event) =>
+                              setProductDraft((prev) => ({
+                                ...prev,
+                                productType: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+
                         <input
                           className="input"
-                          placeholder="Nom du produit"
-                          value={productDraft.name}
-                          onChange={(event) =>
-                            setProductDraft((prev) => ({ ...prev, name: event.target.value }))
-                          }
+                          placeholder="Tags séparés par des virgules (PC, Xbox, base, pack...)"
+                          value={productTagsDraftText}
+                          onChange={(event) => setProductTagsDraftText(event.target.value)}
                         />
-                        <div className="settings-note">
-                          Les spare parts liées à ce produit se configurent dans le sous-menu Spare
-                          Parts.
+
+                        <div className="product-relations-grid">
+                          <div className="dashboard-product-editor__relations">
+                            <div className="settings-label">Produits compatibles</div>
+                            {productsSorted.filter((product) => product.id !== productDraft.id)
+                              .length ? (
+                              <div className="dashboard-product-editor__relation-list">
+                                {productsSorted
+                                  .filter((product) => product.id !== productDraft.id)
+                                  .map((product) => {
+                                    const checked = (productDraft.compatibleProductIds ?? []).includes(
+                                      product.id,
+                                    )
+                                    return (
+                                      <label
+                                        className="dashboard-product-editor__relation-item"
+                                        key={product.id}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={(event) =>
+                                            updateProductDraftRelation(
+                                              'compatibleProductIds',
+                                              product.id,
+                                              event.target.checked,
+                                            )
+                                          }
+                                        />
+                                        <span>{product.name}</span>
+                                      </label>
+                                    )
+                                  })}
+                              </div>
+                            ) : (
+                              <div className="list-item__meta">Aucun autre produit configuré.</div>
+                            )}
+                          </div>
+
+                          <div className="dashboard-product-editor__relations">
+                            <div className="settings-label">Logiciels liés</div>
+                            {dashboardSoftwareProducts.length ? (
+                              <div className="dashboard-product-editor__relation-list">
+                                {dashboardSoftwareProducts.map((product) => {
+                                  const checked = (productDraft.softwareIds ?? []).includes(product.id)
+                                  return (
+                                    <label
+                                      className="dashboard-product-editor__relation-item"
+                                      key={product.id}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(event) =>
+                                          updateProductDraftRelation(
+                                            'softwareIds',
+                                            product.id,
+                                            event.target.checked,
+                                          )
+                                        }
+                                      />
+                                      <span>
+                                        {product.name}
+                                        {product.latestVersion.trim()
+                                          ? ` (${product.latestVersion.trim()})`
+                                          : ''}
+                                      </span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            ) : (
+                              <div className="list-item__meta">Aucun logiciel configuré.</div>
+                            )}
+                          </div>
+
+                          <div className="dashboard-product-editor__relations">
+                            <div className="settings-label">Drivers liés</div>
+                            {dashboardDriverProducts.length ? (
+                              <div className="dashboard-product-editor__relation-list">
+                                {dashboardDriverProducts.map((product) => {
+                                  const checked = (productDraft.driverIds ?? []).includes(product.id)
+                                  return (
+                                    <label
+                                      className="dashboard-product-editor__relation-item"
+                                      key={product.id}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(event) =>
+                                          updateProductDraftRelation(
+                                            'driverIds',
+                                            product.id,
+                                            event.target.checked,
+                                          )
+                                        }
+                                      />
+                                      <span>
+                                        {product.name}
+                                        {product.latestVersion.trim()
+                                          ? ` (${product.latestVersion.trim()})`
+                                          : ''}
+                                      </span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            ) : (
+                              <div className="list-item__meta">Aucun driver configuré.</div>
+                            )}
+                          </div>
+
+                          <div className="dashboard-product-editor__relations">
+                            <div className="settings-label">Firmwares communs</div>
+                            {dashboardFirmwareProducts.length ? (
+                              <div className="dashboard-product-editor__relation-list">
+                                {dashboardFirmwareProducts.map((product) => {
+                                  const checked = (productDraft.firmwareIds ?? []).includes(product.id)
+                                  return (
+                                    <label
+                                      className="dashboard-product-editor__relation-item"
+                                      key={product.id}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(event) =>
+                                          updateProductDraftRelation(
+                                            'firmwareIds',
+                                            product.id,
+                                            event.target.checked,
+                                          )
+                                        }
+                                      />
+                                      <span>
+                                        {product.name}
+                                        {product.latestVersion.trim()
+                                          ? ` (${product.latestVersion.trim()})`
+                                          : ''}
+                                      </span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            ) : (
+                              <div className="list-item__meta">Aucun firmware configuré.</div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="product-editions-editor">
+                          <div className="product-editions-editor__header">
+                            <div>
+                              <div className="settings-label">Éditions</div>
+                              <div className="list-item__meta">
+                                Firmware et compatibilités par édition.
+                              </div>
+                            </div>
+                            <div className="product-editions-editor__actions">
+                              {productEditionPlatformOptions.slice(0, 3).map((option) => (
+                                <button
+                                  className="btn btn--ghost btn--small"
+                                  type="button"
+                                  key={option.value}
+                                  onClick={() => addProductDraftEdition(option.value)}
+                                >
+                                  + {option.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {(productDraft.editions ?? []).length ? (
+                            <div className="product-editions-editor__list">
+                              {(productDraft.editions ?? []).map((edition) => (
+                                <article className="product-edition-card" key={edition.id}>
+                                  <div className="product-edition-card__head">
+                                    <select
+                                      className="select select--roomy"
+                                      value={edition.platform}
+                                      onChange={(event) => {
+                                        const platform = event.target.value as ProductEditionPlatform
+                                        updateProductDraftEdition(edition.id, {
+                                          platform,
+                                          name:
+                                            edition.name.trim() ===
+                                            productEditionPlatformLabels[edition.platform]
+                                              ? productEditionPlatformLabels[platform]
+                                              : edition.name,
+                                        })
+                                      }}
+                                    >
+                                      {productEditionPlatformOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                          {option.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <input
+                                      className="input"
+                                      placeholder="Nom de l'édition"
+                                      value={edition.name}
+                                      onChange={(event) =>
+                                        updateProductDraftEdition(edition.id, {
+                                          name: event.target.value,
+                                        })
+                                      }
+                                    />
+                                    <button
+                                      className="icon-btn-sm danger"
+                                      type="button"
+                                      title="Supprimer l'édition"
+                                      onClick={() => removeProductDraftEdition(edition.id)}
+                                    >
+                                      <svg
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                      </svg>
+                                    </button>
+                                  </div>
+
+                                  <div className="product-edition-card__relations">
+                                    <div className="dashboard-product-editor__relations">
+                                      <div className="settings-label">Firmware de l'édition</div>
+                                      {dashboardFirmwareProducts.length ? (
+                                        <div className="dashboard-product-editor__relation-list">
+                                          {dashboardFirmwareProducts.map((product) => {
+                                            const checked = (edition.firmwareIds ?? []).includes(
+                                              product.id,
+                                            )
+                                            return (
+                                              <label
+                                                className="dashboard-product-editor__relation-item"
+                                                key={product.id}
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={checked}
+                                                  onChange={(event) =>
+                                                    updateProductDraftEditionRelation(
+                                                      edition.id,
+                                                      'firmwareIds',
+                                                      product.id,
+                                                      event.target.checked,
+                                                    )
+                                                  }
+                                                />
+                                                <span>
+                                                  {product.name}
+                                                  {product.latestVersion.trim()
+                                                    ? ` (${product.latestVersion.trim()})`
+                                                    : ''}
+                                                </span>
+                                              </label>
+                                            )
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <div className="list-item__meta">
+                                          Aucun firmware configuré.
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="dashboard-product-editor__relations">
+                                      <div className="settings-label">
+                                        Compatibilités de l'édition
+                                      </div>
+                                      {productsSorted.filter(
+                                        (product) => product.id !== productDraft.id,
+                                      ).length ? (
+                                        <div className="dashboard-product-editor__relation-list">
+                                          {productsSorted
+                                            .filter((product) => product.id !== productDraft.id)
+                                            .map((product) => {
+                                              const checked = (
+                                                edition.compatibleProductIds ?? []
+                                              ).includes(product.id)
+                                              return (
+                                                <label
+                                                  className="dashboard-product-editor__relation-item"
+                                                  key={product.id}
+                                                >
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={(event) =>
+                                                      updateProductDraftEditionRelation(
+                                                        edition.id,
+                                                        'compatibleProductIds',
+                                                        product.id,
+                                                        event.target.checked,
+                                                      )
+                                                    }
+                                                  />
+                                                  <span>{product.name}</span>
+                                                </label>
+                                              )
+                                            })}
+                                        </div>
+                                      ) : (
+                                        <div className="list-item__meta">
+                                          Aucun autre produit configuré.
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </article>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="empty-state">
+                              Aucune édition. Ajoutez PC, Xbox ou PlayStation.
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -6768,28 +8020,11 @@ function App() {
               </div>
             ) : null}
 
-            {editTab === 'procedure' ? (
-              <div className="modal__grid modal__grid--single">
-                <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Troubleshotgun</div>
-                      <div className="list-card__subtitle">Section en cours de rework.</div>
-                    </div>
-                  </div>
-                  <div className="list-card__body">
-                    <div className="dashboard-wip">
-                      <strong>Troubleshotgun</strong>
-                      <span>WIP</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : legacyProcedureEditorEnabled ? (
+            {legacyProcedureEditorEnabled ? (
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Troubleshotgun</div>
+                    <div className="list-card__title">Procédures</div>
                     <div className="list-card__tools">
                       <button className="btn btn--ghost btn--small" onClick={handleOpenProcedure}>
                         Ouvrir
@@ -7795,6 +9030,64 @@ function App() {
               </div>
             ) : null}
 
+            {editTab === 'quickLinks' ? (
+              <div className="modal__grid modal__grid--single">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Liens rapides</div>
+                      <div className="list-card__subtitle">
+                        URLs utilisées par les boutons d’accès rapides en haut de l’éditeur.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="settings-block quick-link-editor-list">
+                      {quickLinks.map((link) => {
+                        const configuredUrl =
+                          typeof quickLinkUrls?.[link.id] === 'string'
+                            ? quickLinkUrls[link.id]
+                            : link.defaultUrl
+                        const isDefault = configuredUrl.trim() === link.defaultUrl
+
+                        return (
+                          <section className="quick-link-editor" key={link.id}>
+                            <div className="quick-link-editor__head">
+                              <div className="quick-link-editor__identity">
+                                <img src={link.icon} alt="" width={22} height={22} />
+                                <div>
+                                  <div className="quick-link-editor__title">{link.label}</div>
+                                  <div className="quick-link-editor__meta">
+                                    Bouton {link.label}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                className="btn btn--ghost btn--small"
+                                type="button"
+                                disabled={isDefault}
+                                onClick={() => resetQuickLinkUrl(link.id)}
+                              >
+                                Réinitialiser
+                              </button>
+                            </div>
+                            <input
+                              className="input"
+                              value={configuredUrl}
+                              placeholder={link.defaultUrl}
+                              onChange={(event) =>
+                                updateQuickLinkUrl(link.id, event.target.value)
+                              }
+                            />
+                          </section>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {editTab === 'preferences' ? (
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
@@ -8008,10 +9301,8 @@ function App() {
                             selectedProductCatalogId === product.id ? ' is-selected' : ''
                           }`}
                           onClick={() => {
-                            setProductDraft({
-                              ...product,
-                              spareParts: product.spareParts.map((sparePart) => ({ ...sparePart })),
-                            })
+                            setProductDraft(getProductCatalogDraft(product))
+                            setProductTagsDraftText((product.tags ?? []).join(', '))
                             setSelectedProductCatalogId(product.id)
                           }}
                         >
@@ -8598,9 +9889,6 @@ function App() {
                               }
                             />
 
-                            <div className="list-item__meta">
-                              Mise en forme supportée : [b][/b], [i][/i], [texte](https://...)
-                            </div>
                           </div>
                         )}
                       </div>
@@ -8629,39 +9917,14 @@ function App() {
                         >
                           {getUpdatePhaseTitle(updateStatus)}
                         </div>
-                        <div className="settings-update__hero-title">Mise à jour SpeedMail</div>
-                        <div className="settings-update__hero-text">{updateSettingsLabel}</div>
+                        <div className="settings-update__hero-title">Agentor {APP_VERSION_LABEL}</div>
+                        <div className="settings-update__hero-text">
+                          {updateSettingsLabel}
+                          <br />
+                          Disponible : {availableUpdateVersionLabel} · Dernière vérification :{' '}
+                          {formatUpdateCheckedAt(updateStatus?.checkedAt)}
+                        </div>
                       </section>
-
-                      <div className="settings-update__grid">
-                        <article className="settings-update__card settings-update__card--current">
-                          <div className="settings-update__card-label">Version actuelle</div>
-                          <div className="settings-update__card-value settings-update__card-value--version">
-                            {APP_VERSION_LABEL}
-                          </div>
-                          <div className="settings-update__card-meta">
-                            Build installé sur cette application.
-                          </div>
-                        </article>
-                        <article className="settings-update__card settings-update__card--available">
-                          <div className="settings-update__card-label">Version disponible</div>
-                          <div className="settings-update__card-value settings-update__card-value--version">
-                            {availableUpdateVersionLabel}
-                          </div>
-                          <div className="settings-update__card-meta">{availableUpdateVersionMeta}</div>
-                        </article>
-                      </div>
-
-                      <div className="settings-update__details">
-                        <div className="settings-update__detail">
-                          <span>Dernière vérification</span>
-                          <strong>{formatUpdateCheckedAt(updateStatus?.checkedAt)}</strong>
-                        </div>
-                        <div className="settings-update__detail">
-                          <span>Statut</span>
-                          <strong>{getUpdatePhaseTitle(updateStatus)}</strong>
-                        </div>
-                      </div>
 
                       {showUpdateProgress ? (
                         <div className="settings-update__progress">

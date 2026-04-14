@@ -15,10 +15,10 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null
 let procedureWin: BrowserWindow | null
 
-const DATA_FILE = () => path.join(app.getPath('userData'), 'speedmail-data.json')
+const DATA_FILE = () => path.join(app.getPath('userData'), 'agentor-data.json')
 const WINDOW_STATE_FILE = () => path.join(app.getPath('userData'), 'window-state.json')
-const LEGACY_APP_DATA_DIR_NAMES = ['TypeFast', 'MailOTron', 'Mailotron']
-const LEGACY_DATA_FILE_NAMES = ['typefast-data.json', 'mailotron-data.json']
+const LEGACY_APP_DATA_DIR_NAMES = ['SpeedMail', 'TypeFast', 'MailOTron', 'Mailotron']
+const LEGACY_DATA_FILE_NAMES = ['speedmail-data.json', 'typefast-data.json', 'mailotron-data.json']
 const defaultData = {
   version: 2,
   categories: [],
@@ -80,7 +80,7 @@ function migrateLegacyStorageIfNeeded() {
   const dataCandidates = [
     ...LEGACY_DATA_FILE_NAMES.map((fileName) => path.join(userDataDir, fileName)),
     ...legacyDirs.flatMap((dir) =>
-      ['speedmail-data.json', ...LEGACY_DATA_FILE_NAMES].map((fileName) => path.join(dir, fileName)),
+      LEGACY_DATA_FILE_NAMES.map((fileName) => path.join(dir, fileName)),
     ),
   ]
   const windowStateCandidates = legacyDirs.map((dir) => path.join(dir, 'window-state.json'))
@@ -157,7 +157,7 @@ const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin'])
 const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
-const AUTO_UPDATE_REPO = 'SpeedMail'
+const AUTO_UPDATE_REPO = 'Agentor'
 const AUTO_UPDATE_GH_TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
 
 type UpdatePhase =
@@ -422,9 +422,9 @@ function createWindow() {
           height: bounds.height,
         }
       : { width: 1400, height: 900 }),
-    icon: path.join(process.env.VITE_PUBLIC, 'speedmail', 'icon.png'),
-    title: 'SpeedMail',
-    backgroundColor: '#15151a',
+    icon: path.join(process.env.VITE_PUBLIC, 'agentor', 'icon.png'),
+    title: 'Agentor',
+    backgroundColor: '#07080a',
     minWidth: 1100,
     minHeight: 720,
     webPreferences: {
@@ -470,9 +470,9 @@ function openProcedureWindow() {
       : { width: 980, height: 720 }),
     minWidth: 860,
     minHeight: 620,
-    title: 'Dashboard',
-    backgroundColor: '#15151a',
-    icon: path.join(process.env.VITE_PUBLIC, 'speedmail', 'icon.png'),
+    title: 'Agentor Dashboard',
+    backgroundColor: '#07080a',
+    icon: path.join(process.env.VITE_PUBLIC, 'agentor', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
@@ -513,7 +513,7 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(async () => {
-  app.setAppUserModelId('com.speedmail.app')
+  app.setAppUserModelId('com.agentor.app')
   migrateLegacyStorageIfNeeded()
   windowState = readWindowState()
   Menu.setApplicationMenu(null)
@@ -529,8 +529,8 @@ ipcMain.handle('storage:save', (_event, data) => {
 })
 ipcMain.handle('storage:export-json', async (_event, data) => {
   const { canceled, filePath } = await dialog.showSaveDialog(win!, {
-    title: 'Exporter les données SpeedMail',
-    defaultPath: 'speedmail-export.json',
+    title: 'Exporter les données Agentor',
+    defaultPath: 'agentor-export.json',
     filters: [{ name: 'JSON', extensions: ['json'] }],
   })
   if (canceled || !filePath) return { canceled: true }
@@ -540,8 +540,8 @@ ipcMain.handle('storage:export-json', async (_event, data) => {
 ipcMain.handle('storage:export-history', async (_event, text) => {
   const parent = win ?? BrowserWindow.getFocusedWindow()
   const dialogOptions = {
-    title: 'Exporter l’historique SpeedMail',
-    defaultPath: 'speedmail-historique.txt',
+    title: 'Exporter l’historique Agentor',
+    defaultPath: 'agentor-historique.txt',
     filters: [{ name: 'Texte', extensions: ['txt'] }],
   }
   const { canceled, filePath } = parent
@@ -553,7 +553,7 @@ ipcMain.handle('storage:export-history', async (_event, text) => {
 })
 ipcMain.handle('storage:import-json', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog(win!, {
-    title: 'Importer des données SpeedMail',
+    title: 'Importer des données Agentor',
     filters: [{ name: 'JSON', extensions: ['json'] }],
     properties: ['openFile'],
   })

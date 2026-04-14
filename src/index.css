@@ -1,50 +1,48 @@
 :root {
-  --bg: #0e1319;
-  --bg-secondary: #131920;
-  --panel: rgba(21, 27, 35, 0.95);
-  --panel-strong: rgba(26, 33, 42, 0.97);
-  --panel-hover: rgba(31, 39, 49, 0.98);
-  --border: rgba(196, 210, 226, 0.08);
-  --border-hover: rgba(196, 210, 226, 0.16);
-  --border-active: rgba(83, 169, 255, 0.68);
+  --bg: #07080a;
+  --bg-secondary: #0b0c0f;
+  --panel: rgba(15, 16, 19, 0.98);
+  --panel-strong: rgba(11, 12, 15, 0.99);
+  --panel-hover: rgba(20, 21, 25, 0.99);
+  --border: rgba(224, 235, 248, 0.12);
+  --border-hover: rgba(224, 235, 248, 0.24);
+  --border-active: rgba(95, 143, 207, 0.68);
   --text: #edf3fb;
-  --text-secondary: #d4ddea;
-  --muted: #97a5b7;
-  --muted-light: #738195;
-  --accent: #53a9ff;
-  --accent-light: #87c5ff;
-  --accent-dark: #2a92ed;
-  --accent-glow: rgba(83, 169, 255, 0.24);
-  --danger: #ff8a85;
-  --danger-light: #ffaaa6;
-  --success: #6dcfa7;
-  --warning: #ffd98a;
-  --info: #a8cbff;
-  --tag: #ff8a85;
-  --selector: #7bd8aa;
-  --field-bg: #141b24;
-  --field-bg-focus: #1a2330;
-  --field-bg-disabled: #121821;
-  --shadow-sm: 0 8px 18px rgba(6, 10, 16, 0.26);
-  --shadow-md: 0 18px 36px rgba(6, 10, 16, 0.34);
-  --shadow-lg: 0 26px 60px rgba(6, 10, 16, 0.42);
-  --shadow-xl: 0 34px 86px rgba(6, 10, 16, 0.5);
+  --text-secondary: #cfdae8;
+  --muted: #9aa9ba;
+  --muted-light: #6f7f91;
+  --accent: #5f8fcf;
+  --accent-light: #8fb5e8;
+  --accent-dark: #3f6594;
+  --accent-glow: rgba(95, 143, 207, 0.22);
+  --danger: #df7b78;
+  --danger-light: #eca09c;
+  --success: #7fb7a0;
+  --warning: #f2c94c;
+  --info: #9ec8e5;
+  --tag: #ff6f6a;
+  --selector: #7bd88f;
+  --field-bg: #090a0d;
+  --field-bg-focus: #111318;
+  --field-bg-disabled: #0d0f13;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.34);
+  --shadow-xl: 0 26px 68px rgba(0, 0, 0, 0.42);
   --shadow-glow: none;
-  --gradient-primary: linear-gradient(135deg, #7dc4ff 0%, #53a9ff 48%, #2f8fe9 100%);
-  --gradient-secondary: linear-gradient(135deg, #2b92ec 0%, #56b2ff 100%);
-  --gradient-bg: radial-gradient(1080px 680px at 10% 4%, rgba(255, 255, 255, 0.05), transparent 60%),
-    radial-gradient(920px 620px at 94% 0%, rgba(83, 169, 255, 0.08), transparent 58%),
-    linear-gradient(145deg, #0e1319 0%, #111822 42%, #18212d 100%);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --surface-soft: rgba(255, 255, 255, 0.035);
-  --surface-soft-hover: rgba(255, 255, 255, 0.06);
-  --surface-strong: rgba(255, 255, 255, 0.1);
-  --font-ui: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --gradient-primary: #5f8fcf;
+  --gradient-secondary: #3f6594;
+  --gradient-bg: #07080a;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --surface-soft: rgba(224, 235, 248, 0.045);
+  --surface-soft-hover: rgba(224, 235, 248, 0.08);
+  --surface-strong: rgba(224, 235, 248, 0.13);
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --transition-fast: 0.12s ease;
+  --transition-base: 0.16s ease;
+  --transition-slow: 0.2s ease;
   --text-scale: 1;
   --editor-line-height: 1.6;
   --app-zoom: 1;
@@ -76,6 +74,16 @@ body {
   font-synthesis: none;
   font-kerning: normal;
   overflow: hidden;
+}
+
+* {
+  letter-spacing: 0 !important;
+}
+
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
 }
 
 #root {
@@ -152,7 +160,7 @@ input[type='checkbox']::after {
 
 input[type='checkbox']:checked {
   border-color: var(--accent);
-  background: rgba(126, 177, 255, 0.18);
+  background: rgba(95, 143, 207, 0.18);
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
