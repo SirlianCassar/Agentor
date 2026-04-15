@@ -369,6 +369,40 @@ export function formatProcedureText(value: string) {
   return escaped
 }
 
+const dashboardNewsLegacyColorMap: Record<string, '1' | '2' | '3'> = {
+  '#ff6b6b': '1',
+  '#69db7c': '2',
+  '#74c0fc': '3',
+}
+
+export function normalizeDashboardNewsColorTags(value: string) {
+  return value.replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/g, (_match, color, inner) => {
+    const colorId = dashboardNewsLegacyColorMap[String(color).trim().toLowerCase()]
+    return colorId ? `(${colorId}*${inner}*${colorId})` : String(inner)
+  })
+}
+
+export function formatDashboardNewsText(value: string) {
+  const normalized = normalizeDashboardNewsColorTags(value)
+  const colorTokenRegex = /\(([123])\*([\s\S]*?)\*\1\)/g
+  let result = ''
+  let lastIndex = 0
+
+  for (const match of normalized.matchAll(colorTokenRegex)) {
+    if (match.index === undefined) continue
+    const colorId = match[1]
+    const inner = match[2] ?? ''
+    result += escapeHtml(normalized.slice(lastIndex, match.index))
+    result += `<span class="dashboard-news-color dashboard-news-color--${colorId}">${escapeHtml(
+      inner,
+    )}</span>`
+    lastIndex = match.index + match[0].length
+  }
+
+  result += escapeHtml(normalized.slice(lastIndex))
+  return result
+}
+
 function normalizeStringRecord(value: unknown, fallback: Record<string, string>) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback
 
