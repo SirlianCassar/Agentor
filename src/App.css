@@ -3560,6 +3560,22 @@ button.dashboard-copy-icon.is-success {
   white-space: pre-wrap;
 }
 
+.dashboard-news-color {
+  font-weight: 700;
+}
+
+.dashboard-news-color--1 {
+  color: #ff6b6b;
+}
+
+.dashboard-news-color--2 {
+  color: #69db7c;
+}
+
+.dashboard-news-color--3 {
+  color: #74c0fc;
+}
+
 .dashboard-news-item__content > :first-child {
   margin-top: 0;
 }
@@ -4363,6 +4379,32 @@ button.ghost.confirm {
   flex-wrap: wrap;
 }
 
+.news-color-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.news-color-btn {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.news-color-btn--1 {
+  border-color: rgba(255, 107, 107, 0.5);
+  color: #ff8e8a;
+}
+
+.news-color-btn--2 {
+  border-color: rgba(105, 219, 124, 0.5);
+  color: #8ff0a0;
+}
+
+.news-color-btn--3 {
+  border-color: rgba(116, 192, 252, 0.5);
+  color: #9bd3ff;
+}
+
 .format-help {
   position: relative;
   margin-left: auto;
@@ -4384,6 +4426,21 @@ button.ghost.confirm {
 
 .token-btn:hover {
   transform: translateY(-1px);
+}
+
+.token-btn.news-color-btn--1 {
+  border-color: rgba(255, 107, 107, 0.5);
+  color: #ff8e8a;
+}
+
+.token-btn.news-color-btn--2 {
+  border-color: rgba(105, 219, 124, 0.5);
+  color: #8ff0a0;
+}
+
+.token-btn.news-color-btn--3 {
+  border-color: rgba(116, 192, 252, 0.5);
+  color: #9bd3ff;
 }
 
 .token-btn--tag {
@@ -7100,13 +7157,13 @@ button.primary:hover,
 
 .workspace-head__actions {
   margin-left: 0;
-  grid-template-columns: minmax(180px, 0.8fr) 42px minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 1fr) 42px minmax(0, 1fr);
   gap: 8px;
 }
 
 .template-search-wrap {
-  width: min(100%, 280px);
-  max-width: 280px;
+  width: min(100%, 340px);
+  max-width: 340px;
 }
 
 .search-field-icon {
@@ -8411,6 +8468,10 @@ body,
   background: var(--surface-soft-hover) !important;
 }
 
+.search-result-item:hover .result-preview {
+  background: transparent !important;
+}
+
 .input,
 .textarea,
 .select,
@@ -9070,22 +9131,6 @@ textarea::placeholder {
   background: linear-gradient(135deg, rgba(255, 152, 0, 0.12) 0%, rgba(255, 152, 0, 0.08) 100%);
 }
 
-.dashboard-product-card__icon {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(220, 236, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(220, 236, 255, 0.82);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(11px * var(--text-scale));
-  font-weight: 800;
-  line-height: 1;
-}
-
 .dashboard-product-card__content {
   display: flex;
   flex-direction: column;
@@ -9143,21 +9188,6 @@ textarea::placeholder {
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
-}
-
-.dashboard-product-section__icon {
-  border-radius: 4px;
-  border: 1px solid rgba(220, 236, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(220, 236, 255, 0.82);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 24px;
-  font-size: calc(10px * var(--text-scale));
-  font-weight: 800;
-  line-height: 1;
 }
 
 .dashboard-product-section__title {

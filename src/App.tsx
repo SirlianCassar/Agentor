@@ -56,9 +56,11 @@ import {
   countTokens,
   createId,
   escapeHtml,
+  formatDashboardNewsText,
   highlightText,
   highlightTextPreview,
   formatProcedureText,
+  normalizeDashboardNewsColorTags,
   normalizeTokenSpacing,
   padEmptySelectors,
   stripTokenSpacing,
@@ -1247,7 +1249,7 @@ const normalizeDashboardNewsItem = (raw: unknown, index: number): DashboardNewsI
     id,
     date: typeof item.date === 'string' ? item.date.trim() : '',
     title: typeof item.title === 'string' ? item.title : '',
-    content: typeof item.content === 'string' ? item.content : '',
+    content: typeof item.content === 'string' ? normalizeDashboardNewsColorTags(item.content) : '',
   }
 }
 
@@ -1340,7 +1342,7 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
       dashboardNews: normalizeDashboardNews(payload.settings.dashboardNews).map((item) => ({
         ...item,
         title: convertLegacyTokens(item.title),
-        content: convertLegacyTokens(item.content),
+        content: normalizeDashboardNewsColorTags(item.content),
       })),
     },
   })
@@ -1576,6 +1578,7 @@ function App() {
   const procedureNotesRef = useRef<HTMLTextAreaElement>(null)
   const procedureStepsRef = useRef<HTMLTextAreaElement>(null)
   const procedureTaskRef = useRef<HTMLTextAreaElement>(null)
+  const dashboardNewsContentRef = useRef<HTMLTextAreaElement>(null)
   const templateSearchRef = useRef<HTMLDivElement>(null)
   const taskSearchRef = useRef<HTMLDivElement>(null)
   const dashboardProductSheetRef = useRef<HTMLTextAreaElement>(null)
@@ -3896,6 +3899,25 @@ function App() {
     }
   }
 
+  const insertDashboardNewsColorTag = (colorId: '1' | '2' | '3') => {
+    const target = dashboardNewsContentRef.current
+    const value = dashboardNewsDraft.content
+    const start = target?.selectionStart ?? value.length
+    const end = target?.selectionEnd ?? value.length
+    const selection = value.slice(start, end) || 'TEXTE'
+    const before = `(${colorId}*`
+    const after = `*${colorId})`
+    const next = `${value.slice(0, start)}${before}${selection}${after}${value.slice(end)}`
+
+    setDashboardNewsDraft((prev) => ({ ...prev, content: next }))
+    requestAnimationFrame(() => {
+      const selectionStart = start + before.length
+      const selectionEnd = selectionStart + selection.length
+      target?.setSelectionRange(selectionStart, selectionEnd)
+      target?.focus()
+    })
+  }
+
   const updateProductDraftSpareParts = (next: SparePart[]) => {
     setProductDraft((prev) => ({
       ...prev,
@@ -5235,7 +5257,6 @@ function App() {
                   <div className="dashboard-product-cards">
                     {activeDashboardCatalogProductFirmwares.length ? (
                       <div className="dashboard-product-card dashboard-product-card--firmware">
-                        <div className="dashboard-product-card__icon">FW</div>
                         <div className="dashboard-product-card__content">
                           <div className="dashboard-product-card__label">Firmware</div>
                           <div className="dashboard-product-card__value">
@@ -5248,7 +5269,6 @@ function App() {
 
                     {activeDashboardCatalogProductDrivers.length ? (
                       <div className="dashboard-product-card dashboard-product-card--driver">
-                        <div className="dashboard-product-card__icon">DR</div>
                         <div className="dashboard-product-card__content">
                           <div className="dashboard-product-card__label">Driver</div>
                           <div className="dashboard-product-card__value">
@@ -5270,7 +5290,6 @@ function App() {
                   {activeDashboardCatalogProductSoftwares.length ? (
                     <div className="dashboard-product-section">
                       <div className="dashboard-product-section__header">
-                        <span className="dashboard-product-section__icon">SW</span>
                         <span className="dashboard-product-section__title">Logiciels</span>
                       </div>
                       <div className="dashboard-product-software-list">
@@ -5559,7 +5578,7 @@ function App() {
                 className="dashboard-news-item__content"
                 onClick={handleProcedureLinkClick}
                 dangerouslySetInnerHTML={{
-                  __html: formatProcedureText(item.content.trim() || 'Aucun contenu.'),
+                  __html: formatDashboardNewsText(item.content.trim() || 'Aucun contenu.'),
                 }}
               />
             </article>
@@ -9665,9 +9684,23 @@ function App() {
                             }))
                           }
                         />
+                        <div className="news-color-toolbar" aria-label="Couleurs news">
+                          {(['1', '2', '3'] as const).map((colorId) => (
+                            <button
+                              key={colorId}
+                              className={`token-btn news-color-btn news-color-btn--${colorId}`}
+                              type="button"
+                              title={`Insérer couleur ${colorId}`}
+                              onClick={() => insertDashboardNewsColorTag(colorId)}
+                            >
+                              {colorId}
+                            </button>
+                          ))}
+                        </div>
                         <textarea
+                          ref={dashboardNewsContentRef}
                           className="textarea textarea--tall"
-                          placeholder="Contenu"
+                          placeholder="Contenu. Couleurs disponibles : (1*TEXTE*1), (2*TEXTE*2), (3*TEXTE*3)."
                           value={dashboardNewsDraft.content}
                           onChange={(event) =>
                             setDashboardNewsDraft((prev) => ({
