@@ -57,6 +57,7 @@ jobs:
         run: npm run build:win -- --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Validate release files
         shell: pwsh

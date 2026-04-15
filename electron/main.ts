@@ -168,7 +168,8 @@ const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
 const AUTO_UPDATE_REPO = 'Agentor'
-const AUTO_UPDATE_GH_TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+const AUTO_UPDATE_GH_TOKEN =
+  process.env.GH_TOKEN || process.env.GITHUB_TOKEN || __AUTO_UPDATE_GH_TOKEN__
 
 type UpdatePhase =
   | 'idle'
@@ -254,7 +255,7 @@ function configureAutoUpdater() {
     pushUpdateStatus({
       phase: 'error',
       message:
-        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub (repo private) pour activer les mises à jour.',
+        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub pour accéder au dépôt privé de mises à jour.',
     })
     console.warn(`${AUTO_UPDATE_LOG_PREFIX} missing GH_TOKEN/GITHUB_TOKEN for private repository`)
     return
@@ -346,7 +347,7 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
     pushUpdateStatus({
       phase: 'error',
       message:
-        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub (repo private) pour activer les mises à jour.',
+        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub pour accéder au dépôt privé de mises à jour.',
     })
     return { ok: false, reason: 'missing-token' as const }
   }

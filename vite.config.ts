@@ -8,10 +8,12 @@ const packageJson = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'),
 ) as { version?: string }
 const appVersion = process.env.VITE_APP_VERSION ?? packageJson.version ?? '2.0.0'
+const autoUpdateGhToken = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN ?? ''
 export default defineConfig({
   base: './',
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+    __AUTO_UPDATE_GH_TOKEN__: JSON.stringify(autoUpdateGhToken),
   },
   plugins: [
     react(),
@@ -19,11 +21,14 @@ export default defineConfig({
       main: {
         entry: 'electron/main.ts',
         vite: {
+          define: {
+            __AUTO_UPDATE_GH_TOKEN__: JSON.stringify(autoUpdateGhToken),
+          },
           build: {
             lib: {
               entry: 'electron/main.ts',
-              formats: ['cjs'],
-              fileName: () => 'main.cjs',
+              formats: ['es'],
+              fileName: () => 'main.mjs',
             },
           },
         },
