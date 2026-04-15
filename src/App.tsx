@@ -1521,110 +1521,6 @@ function mergeSeedIntoData(current: AppData, seed: AppData) {
   }
 }
 
-const placeholderIdsToRemove = {
-  categories: new Set(['cat-urgent', 'cat-support', 'cat-rma', 'cat-portal', 'cat-process']),
-  snippets: new Set([
-    'snip-ack',
-    'snip-docs',
-    'snip-portal',
-    'snip-follow',
-    'snip-close',
-    'snip-escalate',
-  ]),
-  templates: new Set(['mail-rma-ack', 'mail-portal-forward', 'mail-follow-up', 'mail-closure']),
-  taskTemplates: new Set([
-    'task-intake',
-    'task-rma-intake',
-    'task-portal-follow',
-    'task-escalation',
-  ]),
-  procedures: new Set([
-    'proc-rma-14-full',
-    'proc-rma-14-reduced',
-    'proc-rma-30-full',
-    'proc-rma-30-reduced',
-    'proc-portal-triage',
-    'proc-escalation',
-  ]),
-  history: new Set(['hist-demo-1', 'hist-demo-2', 'hist-demo-3']),
-  callHistory: new Set(['call-demo-1', 'call-demo-2']),
-  customerPortalCodes: new Set(['portal-standard', 'portal-escalation', 'portal-order']),
-  dashboardProcessSettings: new Set(['rma-14', 'rma-30']),
-  dashboardProducts: new Set([
-    'dash-software-suite',
-    'dash-firmware-base',
-    'dash-driver-pc',
-    'dash-product-alpha',
-  ]),
-  products: new Set(['alpha-wheelbase', 'alpha-pedals', 'alpha-shifter', 'beta-rudder']),
-  dashboardNews: new Set([
-    'news-demo-release',
-    'news-demo-portal',
-    'news-demo-process',
-    'news-demo-catalog',
-  ]),
-} as const
-
-const placeholderQuickLinkUrls = new Set([
-  'https://crm.example.com/cases',
-  'https://share.example.com/agentor',
-  'https://global.example.com/actions',
-  'https://portal.example.com/support',
-  'https://assist.example.com/kb',
-])
-
-function stripPlaceholderData(data: AppData): AppData {
-  const keepIfNotPlaceholder = <T extends { id: string }>(items: T[], ids: Set<string>) =>
-    items.filter((item) => !ids.has(item.id))
-
-  const quickLinkUrls = Object.fromEntries(
-    Object.entries(data.settings.quickLinkUrls ?? {}).map(([key, value]) => [
-      key,
-      placeholderQuickLinkUrls.has(value) ? '' : value,
-    ]),
-  )
-
-  return {
-    ...data,
-    categories: keepIfNotPlaceholder(data.categories, placeholderIdsToRemove.categories),
-    snippets: keepIfNotPlaceholder(data.snippets, placeholderIdsToRemove.snippets),
-    templates: keepIfNotPlaceholder(data.templates, placeholderIdsToRemove.templates),
-    taskTemplates: keepIfNotPlaceholder(data.taskTemplates, placeholderIdsToRemove.taskTemplates),
-    procedures: keepIfNotPlaceholder(data.procedures, placeholderIdsToRemove.procedures),
-    history: keepIfNotPlaceholder(data.history, placeholderIdsToRemove.history),
-    callHistory: keepIfNotPlaceholder(data.callHistory, placeholderIdsToRemove.callHistory),
-    settings: {
-      ...data.settings,
-      quickLinkUrls: quickLinkUrls as AppSettings['quickLinkUrls'],
-      customerPortalCodes: keepIfNotPlaceholder(
-        normalizePortalProcedures(data.settings.customerPortalCodes),
-        placeholderIdsToRemove.customerPortalCodes,
-      ),
-      dashboardProcessSettings: keepIfNotPlaceholder(
-        normalizeDashboardProcessSettings(data.settings.dashboardProcessSettings),
-        placeholderIdsToRemove.dashboardProcessSettings,
-      ),
-      dashboardProducts: keepIfNotPlaceholder(
-        normalizeDashboardProducts(data.settings.dashboardProducts),
-        placeholderIdsToRemove.dashboardProducts,
-      ),
-      products: keepIfNotPlaceholder(
-        normalizeProducts(data.settings.products),
-        placeholderIdsToRemove.products,
-      ),
-      dashboardNews: keepIfNotPlaceholder(
-        normalizeDashboardNews(data.settings.dashboardNews),
-        placeholderIdsToRemove.dashboardNews,
-      ),
-      callTemplate:
-        data.settings.callTemplate === defaultData.settings.callTemplate ? '' : data.settings.callTemplate,
-    },
-    notes: data.notes === defaultData.notes ? '' : data.notes,
-    emailDraft: data.emailDraft === defaultData.emailDraft ? '' : data.emailDraft,
-    taskDraft: data.taskDraft === defaultData.taskDraft ? '' : data.taskDraft,
-  }
-}
-
 function App() {
   const [data, setData] = useState<AppData>(defaultData)
   const callTemplate = data.settings.callTemplate
@@ -2095,12 +1991,12 @@ function App() {
     loadData()
       .then((loadedData) => {
         if (!active) return
-        setData(stripPlaceholderData(mergeSeedIntoData(normalizeDashboardData(loadedData), defaultData)))
+        setData(mergeSeedIntoData(normalizeDashboardData(loadedData), defaultData))
         setLoaded(true)
       })
       .catch(() => {
         if (!active) return
-        setData(stripPlaceholderData(JSON.parse(JSON.stringify(defaultData)) as AppData))
+        setData(JSON.parse(JSON.stringify(defaultData)) as AppData)
         setLoaded(true)
       })
     return () => {
@@ -4848,7 +4744,7 @@ function App() {
     }
     try {
       const normalized = normalizeData(result.data as Partial<AppData>, defaultData)
-      return stripPlaceholderData(convertLegacyTokensInData(normalized))
+      return convertLegacyTokensInData(normalized)
     } catch {
       setToast('Import impossible : données incompatibles.')
       return null
