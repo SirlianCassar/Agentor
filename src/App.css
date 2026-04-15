@@ -524,7 +524,7 @@ select optgroup {
 }
 
 .bullet-title {
-  font-weight: 900;
+  font-weight: 700;
   font-size: calc(14px * var(--text-scale));
   color: var(--text);
   letter-spacing: 0.01em;
@@ -3016,6 +3016,13 @@ button.dashboard-copy-icon.is-success {
 
 .editor__input::selection {
   background: rgba(95, 143, 207, 0.38);
+}
+
+.editor--email .editor__highlight,
+.editor--email .editor__input,
+.task-editor .editor__highlight,
+.task-editor .editor__input {
+  font-weight: 500 !important;
 }
 
 .editor__placeholder {
@@ -7382,7 +7389,7 @@ button.ghost.confirm {
 }
 
 .bullet-title {
-  font-weight: 900 !important;
+  font-weight: 700 !important;
 }
 
 .bullet-sub,
@@ -8109,6 +8116,7 @@ button.primary:hover,
 /* Final interaction polish */
 .brand {
   gap: 10px;
+  min-width: 0;
 }
 
 .logo-mark,
@@ -8119,6 +8127,10 @@ button.primary:hover,
 .brand-name {
   text-transform: none;
   letter-spacing: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand-logo {
@@ -8294,8 +8306,8 @@ button.ghost,
 }
 
 .brand-name {
-  font-size: calc(26px * var(--text-scale));
-  font-weight: 750;
+  font-size: calc(18px * var(--text-scale));
+  font-weight: 650;
 }
 
 .version-pill {
@@ -8860,6 +8872,15 @@ textarea::placeholder {
 .result-preview .token--addition {
   color: #f5d66f !important;
   font-weight: 700 !important;
+}
+
+.editor--email .editor__highlight .token--tag,
+.editor--email .editor__highlight .token--selector,
+.editor--email .editor__highlight .token--addition,
+.task-editor .editor__highlight .token--tag,
+.task-editor .editor__highlight .token--selector,
+.task-editor .editor__highlight .token--addition {
+  font-weight: 600 !important;
 }
 
 .token-marker,
