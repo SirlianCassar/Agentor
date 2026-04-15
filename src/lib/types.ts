@@ -1,6 +1,8 @@
 export type Language = 'fr' | 'en'
 export type InsertMode = 'line' | 'cursor'
 export type SnippetCategoryDisplay = 'buttons' | 'dropdown'
+export type PortalQuickLinkId = 'crm' | 'share' | 'global' | 'portal' | 'assist'
+export type ProcessMode = 'complete' | 'reduced'
 
 export type CategoryColor =
   | 'rouge'
@@ -77,9 +79,19 @@ export interface HistoryItem {
   createdAt: string
 }
 
+export interface DashboardProcessLine {
+  id: 'rma-14' | 'rma-30'
+  enabled: boolean
+  completeProcedureId: string
+  reducedProcedureId: string
+  mode: ProcessMode
+}
+
 export interface CustomerPortalCode {
   id: string
   procedureName: string
+  showForward?: boolean
+  forwardTarget?: string
   codes: CustomerPortalCodeLine[]
 }
 
@@ -88,8 +100,8 @@ export interface CustomerPortalCodeLine {
   title?: string
   code: string
   showDraft?: boolean
-  showForward?: boolean
-  forwardTarget?: string
+  quickLinkId?: PortalQuickLinkId | ''
+  quickCopyText?: string
   infoNote?: string
 }
 
@@ -162,10 +174,10 @@ export interface AppSettings {
   quickLinkUrls: Record<string, string>
   predefinedTags: string[]
   customerPortalCodes: CustomerPortalCode[]
+  dashboardProcessSettings: DashboardProcessLine[]
   dashboardProducts: DashboardProduct[]
   products: ProductCatalogItem[]
   dashboardNews: DashboardNewsItem[]
-  dashboardProcessLines?: string[]
 }
 
 export interface AppData {

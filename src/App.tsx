@@ -36,6 +36,7 @@ import type {
   CustomerPortalCode,
   CustomerPortalCodeLine,
   DashboardNewsItem,
+  DashboardProcessLine,
   DashboardProduct,
   DashboardProductCategory,
   InsertMode,
@@ -47,6 +48,8 @@ import type {
   Procedure,
   ProcedureBrand,
   ProcedureCoverage,
+  PortalQuickLinkId,
+  ProcessMode,
   SparePart,
   Snippet,
   TaskTemplate,
@@ -445,6 +448,7 @@ type SettingsTab =
   | 'callTemplate'
   | 'procedure'
   | 'dashboard'
+  | 'dashboardProcess'
   | 'dashboardPortal'
   | 'dashboardVersions'
   | 'dashboardSpareParts'
@@ -544,6 +548,12 @@ const settingsNavigation: SettingsNavSection[] = [
         label: 'Procédures Portal',
         description: 'Configuration des codes Portal et de leurs variantes.',
         icon: 'portal',
+      },
+      {
+        id: 'dashboardProcess',
+        label: 'Process',
+        description: 'Activation des indicateurs RMA et liaison aux procédures.',
+        icon: 'settings',
       },
       {
         id: 'dashboardVersions',
@@ -662,6 +672,11 @@ const quickLinks = [
     defaultUrl: defaultData.settings.quickLinkUrls.assist,
   },
 ]
+
+const dashboardProcessLineDefinitions = [
+  { id: 'rma-14', label: 'RMA 14 jours', shortLabel: '14 jours' },
+  { id: 'rma-30', label: 'RMA 30 jours', shortLabel: '30 jours' },
+] as const
 
 const categoryColorMap = new Map(categoryColors.map((color) => [color.id, color.hex]))
 const exportFontOptions = [
@@ -927,8 +942,19 @@ const convertLegacyTokensMaybe = (value?: string) =>
 type LegacyCustomerPortalCode = Partial<
   Omit<CustomerPortalCode, 'codes'> &
     CustomerPortalCodeLine & {
+      showForward: unknown
+      forwardTarget: unknown
       codes: unknown
     }
+>
+type LegacyDashboardProcessLine = Partial<
+  DashboardProcessLine & {
+    procedureId: unknown
+    completeProcedureId: unknown
+    reducedProcedureId: unknown
+    mode: unknown
+    enabled: unknown
+  }
 >
 type LegacyDashboardProduct = Partial<
   DashboardProduct & {
@@ -979,10 +1005,16 @@ const createEmptyPortalCodeLine = (id = createId('portal-code')): CustomerPortal
   title: '',
   code: '',
   showDraft: false,
-  showForward: false,
-  forwardTarget: '',
+  quickLinkId: '',
+  quickCopyText: '',
   infoNote: '',
 })
+
+const isPortalQuickLinkId = (value: unknown): value is PortalQuickLinkId =>
+  value === 'crm' || value === 'share' || value === 'global' || value === 'portal' || value === 'assist'
+
+const normalizeProcessMode = (value: unknown): ProcessMode =>
+  value === 'reduced' ? 'reduced' : 'complete'
 
 const normalizePortalCodeLine = (raw: unknown, fallbackId: string): CustomerPortalCodeLine => {
   const item =
@@ -990,14 +1022,13 @@ const normalizePortalCodeLine = (raw: unknown, fallbackId: string): CustomerPort
       ? (raw as Partial<CustomerPortalCodeLine>)
       : createEmptyPortalCodeLine(fallbackId)
   const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
-  const showForward = Boolean(item.showForward)
   return {
     id,
     title: typeof item.title === 'string' ? item.title : '',
     code: typeof item.code === 'string' ? item.code : '',
     showDraft: Boolean(item.showDraft),
-    showForward,
-    forwardTarget: showForward && typeof item.forwardTarget === 'string' ? item.forwardTarget : '',
+    quickLinkId: isPortalQuickLinkId(item.quickLinkId) ? item.quickLinkId : '',
+    quickCopyText: typeof item.quickCopyText === 'string' ? item.quickCopyText : '',
     infoNote: typeof item.infoNote === 'string' ? item.infoNote : '',
   }
 }
@@ -1009,6 +1040,19 @@ const normalizePortalProcedure = (raw: unknown, index: number): CustomerPortalCo
       : ({}) as LegacyCustomerPortalCode
   const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `portal-${index + 1}`
   const rawCodes = Array.isArray(item.codes) ? item.codes : []
+  const legacyForwardSource = rawCodes.find(
+    (entry) =>
+      Boolean(entry && typeof entry === 'object' && (entry as LegacyCustomerPortalCode).showForward),
+  ) as LegacyCustomerPortalCode | undefined
+  const legacyForwardTarget =
+    legacyForwardSource && typeof legacyForwardSource.forwardTarget === 'string'
+      ? legacyForwardSource.forwardTarget.trim()
+      : ''
+  const forwardTargetCandidate =
+    typeof item.forwardTarget === 'string' && item.forwardTarget.trim()
+      ? item.forwardTarget.trim()
+      : legacyForwardTarget
+  const hasForward = Boolean(item.showForward) || Boolean(forwardTargetCandidate)
   const codes = rawCodes.length
     ? rawCodes.map((entry, codeIndex) =>
         normalizePortalCodeLine(entry, `${id}-code-${codeIndex + 1}`),
@@ -1018,6 +1062,8 @@ const normalizePortalProcedure = (raw: unknown, index: number): CustomerPortalCo
   return {
     id,
     procedureName: typeof item.procedureName === 'string' ? item.procedureName : '',
+    showForward: hasForward,
+    forwardTarget: hasForward ? forwardTargetCandidate : '',
     codes,
   }
 }
@@ -1027,24 +1073,64 @@ const normalizePortalProcedures = (raw: unknown): CustomerPortalCode[] => {
   return raw.map((item, index) => normalizePortalProcedure(item, index))
 }
 
-const getPortalForwardTargets = (codeLines: CustomerPortalCodeLine[]) =>
-  codeLines
-    .filter((entry) => Boolean(entry.showForward))
-    .map((entry) => entry.forwardTarget?.trim())
-    .filter((target): target is string => Boolean(target))
-
-const hasPortalForward = (codeLines: CustomerPortalCodeLine[]) =>
-  codeLines.some((entry) => Boolean(entry.showForward))
-
 const formatPortalForwardLabel = (
-  codeLines: CustomerPortalCodeLine[],
+  procedure: CustomerPortalCode,
   inactiveLabel = 'Forward',
 ) => {
-  if (!hasPortalForward(codeLines)) return inactiveLabel
-  const targets = getPortalForwardTargets(codeLines)
-  return targets.length
-    ? `Forward vers ${targets.join(', ')}`
-    : 'Forward vers cible non renseignée'
+  if (!procedure.showForward) return inactiveLabel
+  const target = procedure.forwardTarget?.trim()
+  return target ? `Forward vers ${target}` : 'Forward vers cible non renseignée'
+}
+
+const normalizeDashboardProcessLine = (
+  raw: unknown,
+  fallback: DashboardProcessLine,
+): DashboardProcessLine => {
+  if (!raw || typeof raw !== 'object') {
+    return fallback
+  }
+  const item = raw as LegacyDashboardProcessLine
+  const id = item.id === 'rma-14' || item.id === 'rma-30' ? item.id : fallback.id
+  const legacyProcedureId =
+    typeof item.procedureId === 'string' ? item.procedureId.trim() : ''
+  const completeProcedureId =
+    typeof item.completeProcedureId === 'string' && item.completeProcedureId.trim()
+      ? item.completeProcedureId.trim()
+      : legacyProcedureId || fallback.completeProcedureId
+  const reducedProcedureId =
+    typeof item.reducedProcedureId === 'string' && item.reducedProcedureId.trim()
+      ? item.reducedProcedureId.trim()
+      : legacyProcedureId || fallback.reducedProcedureId
+  return {
+    id,
+    enabled: Boolean(item.enabled),
+    completeProcedureId,
+    reducedProcedureId,
+    mode: normalizeProcessMode(item.mode),
+  }
+}
+
+const normalizeDashboardProcessSettings = (raw: unknown): DashboardProcessLine[] => {
+  const defaultItems = defaultData.settings.dashboardProcessSettings
+  if (Array.isArray(raw)) {
+    const isLegacyStringArray = raw.every((item) => typeof item === 'string')
+    if (isLegacyStringArray) {
+      return defaultItems.map((fallback) => ({
+        ...fallback,
+        enabled: raw.includes(fallback.id),
+      }))
+    }
+
+    return defaultItems.map((fallback) => {
+      const entry = raw.find((candidate) => {
+        if (!candidate || typeof candidate !== 'object') return false
+        return (candidate as Partial<DashboardProcessLine>).id === fallback.id
+      })
+      return normalizeDashboardProcessLine(entry, fallback)
+    })
+  }
+
+  return defaultItems
 }
 
 const normalizePortalProceduresInData = (payload: AppData): AppData => ({
@@ -1124,6 +1210,17 @@ const normalizeDashboardProductsInData = (payload: AppData): AppData => ({
   settings: {
     ...payload.settings,
     dashboardProducts: normalizeDashboardProducts(payload.settings.dashboardProducts),
+  },
+})
+
+const normalizeDashboardProcessSettingsInData = (payload: AppData): AppData => ({
+  ...payload,
+  settings: {
+    ...payload.settings,
+    dashboardProcessSettings: normalizeDashboardProcessSettings(
+      payload.settings.dashboardProcessSettings ??
+        (payload.settings as AppSettings & { dashboardProcessLines?: unknown }).dashboardProcessLines,
+    ),
   },
 })
 
@@ -1269,7 +1366,9 @@ const normalizeDashboardNewsInData = (payload: AppData): AppData => ({
 const normalizeDashboardData = (payload: AppData): AppData =>
   normalizeDashboardNewsInData(
     normalizeProductsInData(
-      normalizeDashboardProductsInData(normalizePortalProceduresInData(payload)),
+      normalizeDashboardProcessSettingsInData(
+        normalizeDashboardProductsInData(normalizePortalProceduresInData(payload)),
+      ),
     ),
   )
 
@@ -1373,32 +1472,6 @@ function addMissingById<T extends { id: string }>(current: T[], seed: T[]) {
   return [...current, ...seed.filter((item) => !currentIds.has(item.id))]
 }
 
-const legacyDashboardNewsSignatures: Record<string, string> = {
-  'news-test-release': 'Contenu test dashboard news avec',
-  'news-test-tags': 'Tags ajoutés :',
-  'news-test-dashboard': 'Le catalogue contient logiciels',
-  'news-test-portal': 'Procédures Portal de test ajoutées',
-  'news-test-rma': 'Templates RMA, appels et tasks enrichis.',
-}
-
-const shouldRefreshDashboardNewsSeed = (item: DashboardNewsItem) => {
-  const legacySignature = legacyDashboardNewsSignatures[item.id]
-  if (!legacySignature) return false
-  return !item.content.trim() || item.content.includes(legacySignature)
-}
-
-function mergeDashboardNewsSeed(current: DashboardNewsItem[], seed: DashboardNewsItem[]) {
-  const seedById = new Map(seed.map((item) => [item.id, item]))
-  const usedIds = new Set<string>()
-  const merged = current.map((item) => {
-    const seedItem = seedById.get(item.id)
-    if (!seedItem) return item
-    usedIds.add(item.id)
-    return shouldRefreshDashboardNewsSeed(item) ? seedItem : item
-  })
-  return [...merged, ...seed.filter((item) => !usedIds.has(item.id))]
-}
-
 function mergeSeedIntoData(current: AppData, seed: AppData) {
   if ((current.version ?? 0) >= seed.version) return current
 
@@ -1428,6 +1501,10 @@ function mergeSeedIntoData(current: AppData, seed: AppData) {
         normalizePortalProcedures(current.settings.customerPortalCodes),
         normalizePortalProcedures(seed.settings.customerPortalCodes),
       ),
+      dashboardProcessSettings: addMissingById(
+        normalizeDashboardProcessSettings(current.settings.dashboardProcessSettings),
+        normalizeDashboardProcessSettings(seed.settings.dashboardProcessSettings),
+      ),
       dashboardProducts: addMissingById(
         normalizeDashboardProducts(current.settings.dashboardProducts),
         normalizeDashboardProducts(seed.settings.dashboardProducts),
@@ -1436,11 +1513,115 @@ function mergeSeedIntoData(current: AppData, seed: AppData) {
         normalizeProducts(current.settings.products),
         normalizeProducts(seed.settings.products),
       ),
-      dashboardNews: mergeDashboardNewsSeed(
+      dashboardNews: addMissingById(
         normalizeDashboardNews(current.settings.dashboardNews),
         normalizeDashboardNews(seed.settings.dashboardNews),
       ),
     },
+  }
+}
+
+const placeholderIdsToRemove = {
+  categories: new Set(['cat-urgent', 'cat-support', 'cat-rma', 'cat-portal', 'cat-process']),
+  snippets: new Set([
+    'snip-ack',
+    'snip-docs',
+    'snip-portal',
+    'snip-follow',
+    'snip-close',
+    'snip-escalate',
+  ]),
+  templates: new Set(['mail-rma-ack', 'mail-portal-forward', 'mail-follow-up', 'mail-closure']),
+  taskTemplates: new Set([
+    'task-intake',
+    'task-rma-intake',
+    'task-portal-follow',
+    'task-escalation',
+  ]),
+  procedures: new Set([
+    'proc-rma-14-full',
+    'proc-rma-14-reduced',
+    'proc-rma-30-full',
+    'proc-rma-30-reduced',
+    'proc-portal-triage',
+    'proc-escalation',
+  ]),
+  history: new Set(['hist-demo-1', 'hist-demo-2', 'hist-demo-3']),
+  callHistory: new Set(['call-demo-1', 'call-demo-2']),
+  customerPortalCodes: new Set(['portal-standard', 'portal-escalation', 'portal-order']),
+  dashboardProcessSettings: new Set(['rma-14', 'rma-30']),
+  dashboardProducts: new Set([
+    'dash-software-suite',
+    'dash-firmware-base',
+    'dash-driver-pc',
+    'dash-product-alpha',
+  ]),
+  products: new Set(['alpha-wheelbase', 'alpha-pedals', 'alpha-shifter', 'beta-rudder']),
+  dashboardNews: new Set([
+    'news-demo-release',
+    'news-demo-portal',
+    'news-demo-process',
+    'news-demo-catalog',
+  ]),
+} as const
+
+const placeholderQuickLinkUrls = new Set([
+  'https://crm.example.com/cases',
+  'https://share.example.com/agentor',
+  'https://global.example.com/actions',
+  'https://portal.example.com/support',
+  'https://assist.example.com/kb',
+])
+
+function stripPlaceholderData(data: AppData): AppData {
+  const keepIfNotPlaceholder = <T extends { id: string }>(items: T[], ids: Set<string>) =>
+    items.filter((item) => !ids.has(item.id))
+
+  const quickLinkUrls = Object.fromEntries(
+    Object.entries(data.settings.quickLinkUrls ?? {}).map(([key, value]) => [
+      key,
+      placeholderQuickLinkUrls.has(value) ? '' : value,
+    ]),
+  )
+
+  return {
+    ...data,
+    categories: keepIfNotPlaceholder(data.categories, placeholderIdsToRemove.categories),
+    snippets: keepIfNotPlaceholder(data.snippets, placeholderIdsToRemove.snippets),
+    templates: keepIfNotPlaceholder(data.templates, placeholderIdsToRemove.templates),
+    taskTemplates: keepIfNotPlaceholder(data.taskTemplates, placeholderIdsToRemove.taskTemplates),
+    procedures: keepIfNotPlaceholder(data.procedures, placeholderIdsToRemove.procedures),
+    history: keepIfNotPlaceholder(data.history, placeholderIdsToRemove.history),
+    callHistory: keepIfNotPlaceholder(data.callHistory, placeholderIdsToRemove.callHistory),
+    settings: {
+      ...data.settings,
+      quickLinkUrls: quickLinkUrls as AppSettings['quickLinkUrls'],
+      customerPortalCodes: keepIfNotPlaceholder(
+        normalizePortalProcedures(data.settings.customerPortalCodes),
+        placeholderIdsToRemove.customerPortalCodes,
+      ),
+      dashboardProcessSettings: keepIfNotPlaceholder(
+        normalizeDashboardProcessSettings(data.settings.dashboardProcessSettings),
+        placeholderIdsToRemove.dashboardProcessSettings,
+      ),
+      dashboardProducts: keepIfNotPlaceholder(
+        normalizeDashboardProducts(data.settings.dashboardProducts),
+        placeholderIdsToRemove.dashboardProducts,
+      ),
+      products: keepIfNotPlaceholder(
+        normalizeProducts(data.settings.products),
+        placeholderIdsToRemove.products,
+      ),
+      dashboardNews: keepIfNotPlaceholder(
+        normalizeDashboardNews(data.settings.dashboardNews),
+        placeholderIdsToRemove.dashboardNews,
+      ),
+      callTemplate:
+        data.settings.callTemplate === defaultData.settings.callTemplate ? '' : data.settings.callTemplate,
+    },
+    notes: data.notes === defaultData.notes ? '' : data.notes,
+    emailDraft: data.emailDraft === defaultData.emailDraft ? '' : data.emailDraft,
+    taskDraft: data.taskDraft === defaultData.taskDraft ? '' : data.taskDraft,
   }
 }
 
@@ -1476,6 +1657,7 @@ function App() {
   const [emailCopied, setEmailCopied] = useState(false)
   const [taskCopied, setTaskCopied] = useState(false)
   const [portalCopiedId, setPortalCopiedId] = useState<string | null>(null)
+  const [portalQuickCopiedId, setPortalQuickCopiedId] = useState<string | null>(null)
   const [sparePartCopiedId, setSparePartCopiedId] = useState<string | null>(null)
   const [dashboardCalculatorCopiedKey, setDashboardCalculatorCopiedKey] =
     useState<DashboardCalculatorCopyKey | null>(null)
@@ -1559,6 +1741,7 @@ function App() {
   const emailCopyTimeoutRef = useRef<number | null>(null)
   const taskCopyTimeoutRef = useRef<number | null>(null)
   const portalCopyTimeoutRef = useRef<number | null>(null)
+  const portalQuickCopyTimeoutRef = useRef<number | null>(null)
   const sparePartCopyTimeoutRef = useRef<number | null>(null)
   const dashboardCalculatorCopyTimeoutRef = useRef<number | null>(null)
   const callCopyTimeoutRef = useRef<number | null>(null)
@@ -1778,6 +1961,9 @@ function App() {
   const dashboardNews = useMemo(() => {
     return normalizeDashboardNews(data.settings.dashboardNews)
   }, [data.settings.dashboardNews])
+  const dashboardProcessSettings = useMemo(() => {
+    return normalizeDashboardProcessSettings(data.settings.dashboardProcessSettings)
+  }, [data.settings.dashboardProcessSettings])
 
   const getEmptySnippetDraft = useCallback(
     () =>
@@ -1909,12 +2095,12 @@ function App() {
     loadData()
       .then((loadedData) => {
         if (!active) return
-        setData(mergeSeedIntoData(normalizeDashboardData(loadedData), defaultData))
+        setData(stripPlaceholderData(mergeSeedIntoData(normalizeDashboardData(loadedData), defaultData)))
         setLoaded(true)
       })
       .catch(() => {
         if (!active) return
-        setData(JSON.parse(JSON.stringify(defaultData)) as AppData)
+        setData(stripPlaceholderData(JSON.parse(JSON.stringify(defaultData)) as AppData))
         setLoaded(true)
       })
     return () => {
@@ -2038,6 +2224,9 @@ function App() {
       }
       if (portalCopyTimeoutRef.current !== null) {
         window.clearTimeout(portalCopyTimeoutRef.current)
+      }
+      if (portalQuickCopyTimeoutRef.current !== null) {
+        window.clearTimeout(portalQuickCopyTimeoutRef.current)
       }
       if (sparePartCopyTimeoutRef.current !== null) {
         window.clearTimeout(sparePartCopyTimeoutRef.current)
@@ -2295,6 +2484,17 @@ function App() {
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }, [])
+  const updateDashboardProcessSetting = useCallback(
+    (id: DashboardProcessLine['id'], patch: Partial<DashboardProcessLine>) => {
+      const current = normalizeDashboardProcessSettings(data.settings.dashboardProcessSettings)
+      updateSettings({
+        dashboardProcessSettings: current.map((entry) =>
+          entry.id === id ? { ...entry, ...patch } : entry,
+        ),
+      })
+    },
+    [data.settings.dashboardProcessSettings, updateSettings],
+  )
   const updateQuickLinkUrl = useCallback(
     (id: string, url: string) => {
       updateSettings({
@@ -2503,11 +2703,7 @@ function App() {
             ...entry,
             codes: entry.codes.map((codeLine) => {
               if (codeLine.id !== codeLineId) return codeLine
-              const nextLine = { ...codeLine, ...patch }
-              if (!nextLine.showForward) {
-                nextLine.forwardTarget = ''
-              }
-              return nextLine
+              return { ...codeLine, ...patch }
             }),
           }
         }),
@@ -2517,6 +2713,8 @@ function App() {
   )
   const addCustomerPortalCodeLine = useCallback(
     (procedureId: string) => {
+      const current = customerPortalCodes.find((entry) => entry.id === procedureId)
+      if (!current || current.codes.length >= 4) return
       updateCustomerPortalCodes(
         customerPortalCodes.map((entry) =>
           entry.id === procedureId
@@ -2578,17 +2776,6 @@ function App() {
       updateSettings({ dashboardNews: normalizeDashboardNews(next) })
     },
     [updateSettings],
-  )
-
-  const toggleDashboardProcessLine = useCallback(
-    (lineId: string) => {
-      const currentLines = data.settings.dashboardProcessLines ?? []
-      const newLines = currentLines.includes(lineId)
-        ? currentLines.filter((id: string) => id !== lineId)
-        : [...currentLines, lineId]
-      updateSettings({ dashboardProcessLines: newLines })
-    },
-    [data.settings.dashboardProcessLines, updateSettings],
   )
 
   const handleCheckUpdatesNow = useCallback(async () => {
@@ -3001,14 +3188,17 @@ function App() {
     return customerPortalCodes.filter((item) => {
       const searchHaystack = [
         item.procedureName,
+        item.showForward ? 'forward activé' : 'forward désactivé',
+        item.forwardTarget ?? '',
         ...item.codes.flatMap((entry) => [
           entry.title ?? '',
           entry.code,
           entry.showDraft ? 'draft brouillon' : 'sans draft',
-          entry.forwardTarget ?? '',
+          entry.quickLinkId ?? '',
+          entry.quickCopyText ?? '',
           entry.infoNote ?? '',
         ]),
-        formatPortalForwardLabel(item.codes, 'Forward non'),
+        formatPortalForwardLabel(item, 'Forward non'),
       ]
         .join(' ')
         .toLowerCase()
@@ -3566,6 +3756,23 @@ function App() {
     }, 1600)
   }
 
+  const handleCopyPortalQuickText = async (id: string, text: string) => {
+    const value = text.trim()
+    if (!value) return
+    const didCopy = await copyText(value)
+    if (!didCopy) {
+      setToast('Copie impossible.')
+      return
+    }
+    if (portalQuickCopyTimeoutRef.current) {
+      window.clearTimeout(portalQuickCopyTimeoutRef.current)
+    }
+    setPortalQuickCopiedId(id)
+    portalQuickCopyTimeoutRef.current = window.setTimeout(() => {
+      setPortalQuickCopiedId((current) => (current === id ? null : current))
+    }, 1600)
+  }
+
   const handleCopySparePartSku = async (id: string, sku: string) => {
     const value = sku.trim()
     if (!value) return
@@ -4062,13 +4269,13 @@ function App() {
                       }
                     />
                     <div className="portal-code-editor__header-actions">
-                      {item.codes.length < 2 ? (
+                      {item.codes.length < 4 ? (
                         <button
                           className="btn btn--ghost btn--small"
                           type="button"
                           onClick={() => addCustomerPortalCodeLine(item.id)}
                         >
-                          Ajouter un code
+                          Ajouter une étape
                         </button>
                       ) : null}
                       <button
@@ -4096,6 +4303,34 @@ function App() {
                         </svg>
                       </button>
                     </div>
+                  </div>
+
+                  <div className="portal-code-editor__forward">
+                    <label className="portal-code-editor__check portal-code-editor__check--subtle">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(item.showForward)}
+                        onChange={(event) =>
+                          updateCustomerPortalProcedure(item.id, {
+                            showForward: event.target.checked,
+                            forwardTarget: event.target.checked ? item.forwardTarget ?? '' : '',
+                          })
+                        }
+                      />
+                      <span>Forward en tête de procédure</span>
+                    </label>
+                    {item.showForward ? (
+                      <input
+                        className="input"
+                        value={item.forwardTarget ?? ''}
+                        placeholder="Nom à afficher après Forward to"
+                        onChange={(event) =>
+                          updateCustomerPortalProcedure(item.id, {
+                            forwardTarget: event.target.value,
+                          })
+                        }
+                      />
+                    ) : null}
                   </div>
 
                   <div className="portal-code-editor__codes">
@@ -4151,7 +4386,7 @@ function App() {
                         />
 
                         <div className="portal-code-editor__options">
-                          <label className="portal-code-editor__check">
+                          <label className="portal-code-editor__check portal-code-editor__check--subtle">
                             <input
                               type="checkbox"
                               checked={Boolean(codeLine.showDraft)}
@@ -4161,35 +4396,42 @@ function App() {
                                 })
                               }
                             />
-                            <span>Afficher Draft</span>
+                            <span>Draft étape</span>
                           </label>
 
-                          <label className="portal-code-editor__check">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(codeLine.showForward)}
+                          <label className="portal-code-editor__check portal-code-editor__check--subtle">
+                            <span>Lien rapide</span>
+                            <select
+                              className="select select--compact"
+                              value={codeLine.quickLinkId ?? ''}
                               onChange={(event) =>
                                 updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                  showForward: event.target.checked,
+                                  quickLinkId: isPortalQuickLinkId(event.target.value)
+                                    ? event.target.value
+                                    : '',
                                 })
                               }
-                            />
-                            <span>Afficher Forward to</span>
+                            >
+                              <option value="">Aucun</option>
+                              {quickLinks.map((link) => (
+                                <option key={link.id} value={link.id}>
+                                  {link.label}
+                                </option>
+                              ))}
+                            </select>
                           </label>
                         </div>
 
-                        {codeLine.showForward ? (
-                          <input
-                            className="input"
-                            value={codeLine.forwardTarget ?? ''}
-                            placeholder="Nom à afficher après Forward to"
-                            onChange={(event) =>
-                              updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                forwardTarget: event.target.value,
-                              })
-                            }
-                          />
-                        ) : null}
+                        <input
+                          className="input"
+                          value={codeLine.quickCopyText ?? ''}
+                          placeholder="Texte de copie rapide"
+                          onChange={(event) =>
+                            updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
+                              quickCopyText: event.target.value,
+                            })
+                          }
+                        />
 
                         <textarea
                           className="textarea portal-code-editor__note"
@@ -4606,7 +4848,7 @@ function App() {
     }
     try {
       const normalized = normalizeData(result.data as Partial<AppData>, defaultData)
-      return convertLegacyTokensInData(normalized)
+      return stripPlaceholderData(convertLegacyTokensInData(normalized))
     } catch {
       setToast('Import impossible : données incompatibles.')
       return null
@@ -5450,10 +5692,24 @@ function App() {
   const renderWorkspaceDashboardPortalPanel = (title: string) => {
     const activePortalProcedureName =
       activeDashboardPortalProcedure?.procedureName.trim() || 'Procédure sans nom'
-    const activePortalCodeLines = activeDashboardPortalProcedure?.codes ?? []
-    const hasDraft = activePortalCodeLines.some((entry) => Boolean(entry.showDraft))
-    const hasForward = hasPortalForward(activePortalCodeLines)
-    const forwardLabel = formatPortalForwardLabel(activePortalCodeLines)
+    const activePortalForwardLabel = activeDashboardPortalProcedure
+      ? formatPortalForwardLabel(activeDashboardPortalProcedure)
+      : 'Forward'
+    const activePortalProcessSetting =
+      activeDashboardPortalProcedure &&
+      dashboardProcessSettings.find(
+        (entry) =>
+          entry.enabled &&
+          (entry.completeProcedureId === activeDashboardPortalProcedure.id ||
+            entry.reducedProcedureId === activeDashboardPortalProcedure.id),
+      )
+    const activePortalDisplayMode =
+      activePortalProcessSetting && activeDashboardPortalProcedure
+        ? activePortalProcessSetting.reducedProcedureId === activeDashboardPortalProcedure.id
+          ? 'reduced'
+          : 'complete'
+        : 'complete'
+    const visiblePortalSteps = activeDashboardPortalProcedure?.codes ?? []
 
     return (
       <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
@@ -5473,10 +5729,7 @@ function App() {
               dashboardPortalProcedures.map((procedure) => {
                 const procedureName = procedure.procedureName.trim() || 'Procédure sans nom'
                 const procedureHasDraft = procedure.codes.some((entry) => Boolean(entry.showDraft))
-                const procedureForwardLabel = formatPortalForwardLabel(
-                  procedure.codes,
-                  'Forward non',
-                )
+                const procedureForwardLabel = formatPortalForwardLabel(procedure, 'Forward non')
 
                 return (
                   <button
@@ -5507,34 +5760,74 @@ function App() {
                     {activePortalProcedureName}
                   </div>
                   <div className="dashboard-portal-procedure-indicators">
-                    <div className={`dashboard-portal-indicator${hasDraft ? ' is-active' : ''}`}>
+                    <div
+                      className={`dashboard-portal-indicator${
+                        activeDashboardPortalProcedure.showForward ? ' is-active' : ''
+                      }`}
+                    >
                       <div className="dashboard-portal-indicator__led"></div>
-                      <div className="dashboard-portal-indicator__label">Draft</div>
-                    </div>
-                    <div className={`dashboard-portal-indicator${hasForward ? ' is-active' : ''}`}>
-                      <div className="dashboard-portal-indicator__led"></div>
-                      <div className="dashboard-portal-indicator__label">{forwardLabel}</div>
+                      <div className="dashboard-portal-indicator__label">
+                        {activePortalForwardLabel}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="dashboard-version-detail__section">
+                  {activePortalProcessSetting && activePortalDisplayMode === 'reduced' ? (
+                    <div className="dashboard-portal-mode-note">
+                      Procédure réduite active sur ce Process.
+                    </div>
+                  ) : null}
                   <div className="dashboard-portal-steps">
-                    {activeDashboardPortalProcedure.codes.map((entry, index) => {
+                    {visiblePortalSteps.map((entry, index) => {
                       const lineTitle = entry.title?.trim() || `Étape ${index + 1}`
                       const code = entry.code.trim()
                       const infoNote = entry.infoNote?.trim() ?? ''
+                      const quickLink = entry.quickLinkId
+                        ? quickLinks.find((link) => link.id === entry.quickLinkId)
+                        : null
+                      const quickLinkUrl = quickLink
+                        ? resolvedQuickLinks.find((link) => link.id === quickLink.id)?.url ?? ''
+                        : ''
 
                       return (
                         <article className="dashboard-portal-step" key={entry.id}>
                           <span className="dashboard-portal-step__index">{index + 1}</span>
                           <div className="dashboard-portal-step__body">
-                            <div className="dashboard-portal-step__title">{lineTitle}</div>
+                            <div className="dashboard-portal-step__title-row">
+                              <div className="dashboard-portal-step__title">{lineTitle}</div>
+                              {entry.showDraft ? (
+                                <span className="dashboard-portal-step__draft">Draft</span>
+                              ) : null}
+                            </div>
                             <div className="dashboard-portal-step__note">
                               {infoNote || 'Aucune note'}
                             </div>
                           </div>
-                          <div className="dashboard-portal-code">
+                          <div className="dashboard-portal-step__actions">
+                            {quickLink && quickLinkUrl ? (
+                              <button
+                                className="ghost dashboard-copy-btn dashboard-copy-btn--compact dashboard-copy-btn--link"
+                                type="button"
+                                onClick={() => void openExternal(quickLinkUrl)}
+                              >
+                                {quickLink.label}
+                              </button>
+                            ) : null}
+                            {entry.quickCopyText?.trim() ? (
+                              <button
+                                className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
+                                  portalQuickCopiedId === entry.id ? ' is-success' : ''
+                                }`}
+                                type="button"
+                                onClick={() =>
+                                  void handleCopyPortalQuickText(entry.id, entry.quickCopyText ?? '')
+                                }
+                              >
+                                {portalQuickCopiedId === entry.id ? 'Copié !' : 'Copie rapide'}
+                              </button>
+                            ) : null}
                             <code className="dashboard-portal-code__value">{code || '-'}</code>
                             <button
                               className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
@@ -5598,24 +5891,36 @@ function App() {
       <div className="workspace-dashboard__panel-title">{title}</div>
       <div className="dashboard-process">
         <div className="dashboard-process__lines">
-          {[
-            { id: 'rma-14', label: 'Procédure complète RMA 14 Jours' },
-            { id: 'rma-30', label: 'Procédure complète RMA 30 Jours' },
-            { id: 'return-eu', label: 'Retour produit EU' },
-            { id: 'return-us', label: 'Retour produit US' },
-          ].map((line) => (
-            <button
-              className={`dashboard-process__line${
-                data.settings.dashboardProcessLines?.includes(line.id) ? ' is-active' : ''
-              }`}
-              key={line.id}
-              type="button"
-              onClick={() => toggleDashboardProcessLine(line.id)}
-            >
-              <span className="dashboard-process__label">{line.label}</span>
-              <div className="dashboard-process__led"></div>
-            </button>
-          ))}
+          {dashboardProcessLineDefinitions.map((line) => {
+            const lineSetting = dashboardProcessSettings.find((entry) => entry.id === line.id)
+            const completeProcedure = data.procedures.find(
+              (procedure) => procedure.id === lineSetting?.completeProcedureId,
+            )
+            const reducedProcedure = data.procedures.find(
+              (procedure) => procedure.id === lineSetting?.reducedProcedureId,
+            )
+            const activeProcedure =
+              lineSetting?.mode === 'reduced' ? reducedProcedure : completeProcedure
+            const activeProcedureLabel = lineSetting?.mode === 'reduced' ? 'réduite' : 'complète'
+            const isActive = Boolean(lineSetting?.enabled)
+
+            return (
+              <div
+                className={`dashboard-process__line${isActive ? ' is-active' : ''}`}
+                key={line.id}
+              >
+                <div className="dashboard-process__content">
+                  <span className="dashboard-process__label">{line.label}</span>
+                  <span className="dashboard-process__meta">
+                    Complet: {completeProcedure?.name?.trim() || 'non liée'} · Réduite:{' '}
+                    {reducedProcedure?.name?.trim() || 'non liée'} · Active:{' '}
+                    {activeProcedure?.name?.trim() || 'non liée'} ({activeProcedureLabel})
+                  </span>
+                </div>
+                <div className="dashboard-process__led"></div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </article>
@@ -6397,7 +6702,18 @@ function App() {
                 <span>Appel téléphonique</span>
               </div>
               <button className="close-modal" type="button" onClick={closeCallModal}>
-                X
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <div className="call-modal__body">
@@ -9377,7 +9693,7 @@ function App() {
                     <div className="list-card__title-group">
                       <div className="list-card__title">Procédures Portal</div>
                       <div className="list-card__subtitle">
-                        Une procédure peut contenir un ou deux codes, chacun avec ses attributs.
+                        Une procédure peut contenir jusqu’à quatre étapes, avec un forward global.
                       </div>
                     </div>
                     <div className="list-card__tools">
@@ -9392,6 +9708,117 @@ function App() {
                   </div>
                   <div className="list-card__body">
                     {renderPortalCodeEditorSettings()}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'dashboardProcess' ? (
+              <div className="modal__grid modal__grid--single">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Process</div>
+                      <div className="list-card__subtitle">
+                        Les indicateurs du dashboard ne sont plus cliquables. Leur état se règle
+                        ici, avec la procédure associée et son mode d’affichage.
+                      </div>
+                    </div>
+                  </div>
+                    <div className="list-card__body">
+                      <div className="settings-stack settings-stack--tight">
+                        {dashboardProcessLineDefinitions.map((line) => {
+                          const lineSetting =
+                            dashboardProcessSettings.find((entry) => entry.id === line.id) ??
+                            defaultData.settings.dashboardProcessSettings.find(
+                              (entry) => entry.id === line.id,
+                            )
+                          return (
+                            <section className="dashboard-process-settings__item" key={line.id}>
+                              <div className="dashboard-process-settings__head">
+                                <div>
+                                  <div className="dashboard-process-settings__title">{line.label}</div>
+                                  <div className="dashboard-process-settings__meta">
+                                    Choisis une procédure complète et une procédure réduite.
+                                  </div>
+                                </div>
+                                <label className="portal-code-editor__check dashboard-process-settings__toggle">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(lineSetting?.enabled)}
+                                  onChange={(event) =>
+                                    updateDashboardProcessSetting(line.id, {
+                                      enabled: event.target.checked,
+                                    })
+                                  }
+                                    />
+                                    <span>Actif</span>
+                                  </label>
+                              </div>
+                              <div className="form__row two">
+                                <label className="settings-field">
+                                  <span className="settings-label">Procédure complète</span>
+                                  <select
+                                    className="select"
+                                    value={lineSetting?.completeProcedureId ?? ''}
+                                    onChange={(event) =>
+                                      updateDashboardProcessSetting(line.id, {
+                                        completeProcedureId: event.target.value,
+                                      })
+                                    }
+                                  >
+                                    <option value="">Procédure non liée</option>
+                                    {data.procedures.map((procedure) => (
+                                      <option key={procedure.id} value={procedure.id}>
+                                        {procedure.name.trim() || 'Procédure sans nom'}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <label className="settings-field">
+                                  <span className="settings-label">Procédure réduite</span>
+                                  <select
+                                    className="select"
+                                    value={lineSetting?.reducedProcedureId ?? ''}
+                                    onChange={(event) =>
+                                      updateDashboardProcessSetting(line.id, {
+                                        reducedProcedureId: event.target.value,
+                                      })
+                                    }
+                                  >
+                                    <option value="">Procédure non liée</option>
+                                    {data.procedures.map((procedure) => (
+                                      <option key={procedure.id} value={procedure.id}>
+                                        {procedure.name.trim() || 'Procédure sans nom'}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                              </div>
+                              <div className="form__row">
+                                <label className="settings-field">
+                                  <span className="settings-label">Mode actif</span>
+                                  <select
+                                    className="select"
+                                    value={lineSetting?.mode ?? 'complete'}
+                                    onChange={(event) =>
+                                      updateDashboardProcessSetting(line.id, {
+                                        mode:
+                                          event.target.value === 'reduced'
+                                            ? 'reduced'
+                                            : 'complete',
+                                      })
+                                    }
+                                  >
+                                    <option value="complete">Mode complet</option>
+                                    <option value="reduced">Mode réduit</option>
+                                  </select>
+                                </label>
+                              </div>
+                            </section>
+                          )
+                        })}
+                    </div>
                   </div>
                 </div>
               </div>

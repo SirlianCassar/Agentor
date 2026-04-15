@@ -1,7 +1,7 @@
 import type { AppData } from './types'
 
 export const defaultData: AppData = {
-  version: 15,
+  version: 19,
   categories: [],
   snippets: [],
   templates: [],
@@ -34,9 +34,9 @@ export const defaultData: AppData = {
     },
     predefinedTags: [],
     customerPortalCodes: [],
+    dashboardProcessSettings: [],
     dashboardProducts: [],
     products: [],
     dashboardNews: [],
-    dashboardProcessLines: [],
   },
 }

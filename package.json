@@ -40,5 +40,5 @@
     "vite": "^7.3.2",
     "vite-plugin-electron": "^0.29.1"
   },
-  "main": "dist-electron/main.cjs"
+  "main": "dist-electron/main.mjs"
 }

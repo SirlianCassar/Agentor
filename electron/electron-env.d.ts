@@ -6,6 +6,9 @@ declare namespace NodeJS {
     VITE_PUBLIC: string
   }
 }
+
+declare const __AUTO_UPDATE_GH_TOKEN__: string
+
 interface Window {
   agentor: {
     getUpdateStatus: () => Promise<{
