@@ -249,12 +249,6 @@ function configureAutoUpdater() {
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = false
-  autoUpdater.setFeedURL({
-    provider: 'github',
-    owner: AUTO_UPDATE_OWNER,
-    repo: AUTO_UPDATE_REPO,
-    private: true,
-  })
 
   if (!AUTO_UPDATE_GH_TOKEN) {
     pushUpdateStatus({
@@ -265,6 +259,14 @@ function configureAutoUpdater() {
     console.warn(`${AUTO_UPDATE_LOG_PREFIX} missing GH_TOKEN/GITHUB_TOKEN for private repository`)
     return
   }
+
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: AUTO_UPDATE_OWNER,
+    repo: AUTO_UPDATE_REPO,
+    private: true,
+    token: AUTO_UPDATE_GH_TOKEN,
+  })
 
   console.log(`${AUTO_UPDATE_LOG_PREFIX} private GitHub feed configured: ${AUTO_UPDATE_OWNER}/${AUTO_UPDATE_REPO}`)
 
