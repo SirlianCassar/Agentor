@@ -1,9 +1,9 @@
 :root {
-  --bg: #07080a;
-  --bg-secondary: #0b0c0f;
-  --panel: rgba(15, 16, 19, 0.98);
-  --panel-strong: rgba(11, 12, 15, 0.99);
-  --panel-hover: rgba(20, 21, 25, 0.99);
+  --bg: #1c1d1f;
+  --bg-secondary: #202124;
+  --panel: #202124;
+  --panel-strong: #1c1d1f;
+  --panel-hover: #26272a;
   --border: rgba(224, 235, 248, 0.12);
   --border-hover: rgba(224, 235, 248, 0.24);
   --border-active: rgba(95, 143, 207, 0.68);
@@ -22,9 +22,9 @@
   --info: #9ec8e5;
   --tag: #ff6f6a;
   --selector: #7bd88f;
-  --field-bg: #090a0d;
-  --field-bg-focus: #111318;
-  --field-bg-disabled: #0d0f13;
+  --field-bg: #242528;
+  --field-bg-focus: #2a2b2f;
+  --field-bg-disabled: #1f2023;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.24);
   --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.34);
@@ -32,13 +32,13 @@
   --shadow-glow: none;
   --gradient-primary: #5f8fcf;
   --gradient-secondary: #3f6594;
-  --gradient-bg: #07080a;
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --surface-soft: rgba(224, 235, 248, 0.045);
-  --surface-soft-hover: rgba(224, 235, 248, 0.08);
-  --surface-strong: rgba(224, 235, 248, 0.13);
+  --gradient-bg: #1c1d1f;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --surface-soft: rgba(241, 240, 237, 0.045);
+  --surface-soft-hover: rgba(241, 240, 237, 0.08);
+  --surface-strong: rgba(241, 240, 237, 0.13);
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --transition-fast: 0.12s ease;
   --transition-base: 0.16s ease;
@@ -78,12 +78,6 @@ body {
 
 * {
   letter-spacing: 0 !important;
-}
-
-*,
-*::before,
-*::after {
-  border-radius: 0 !important;
 }
 
 #root {

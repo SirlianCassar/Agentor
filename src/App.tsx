@@ -150,8 +150,10 @@ type AppIconName =
   | 'grid'
   | 'history'
   | 'inbox'
+  | 'info'
   | 'list'
   | 'mail'
+  | 'money'
   | 'news'
   | 'notes'
   | 'palette'
@@ -261,6 +263,14 @@ const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) 
           <path d="M4 13h5l2 3h2l2-3h5" />
         </svg>
       )
+    case 'info':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v6" />
+          <path d="M12 7h.01" />
+        </svg>
+      )
     case 'list':
       return (
         <svg {...common}>
@@ -279,6 +289,14 @@ const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) 
           <path d="M3 7l9 6 9-6" />
         </svg>
       )
+    case 'money':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M15 8.5h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9" />
+          <path d="M12 6.5v11" />
+        </svg>
+      )
     case 'news':
       return (
         <svg {...common}>
@@ -291,10 +309,10 @@ const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) 
     case 'notes':
       return (
         <svg {...common}>
-          <path d="M6 3h9l3 3v15H6z" />
-          <path d="M14 3v4h4" />
-          <path d="M9 12h6" />
-          <path d="M9 16h6" />
+          <path d="M5 4h14v11l-5 5H5z" />
+          <path d="M14 20v-5h5" />
+          <path d="M8 9h8" />
+          <path d="M8 13h5" />
         </svg>
       )
     case 'palette':
@@ -406,11 +424,11 @@ const workspaceDashboardPageOptions: Array<{
   title: string
   icon: AppIconName
 }> = [
-  { id: 'tools', title: 'Name format + price calculator', icon: 'tool' },
-  { id: 'portal', title: 'Portal procédures', icon: 'portal' },
-  { id: 'versions', title: 'Versions par produit', icon: 'version' },
+  { id: 'tools', title: 'Argent / prix', icon: 'money' },
+  { id: 'portal', title: 'Procédures', icon: 'notes' },
+  { id: 'versions', title: 'Paramètres versions', icon: 'preferences' },
   { id: 'parts', title: 'Spare parts', icon: 'box' },
-  { id: 'news', title: 'News', icon: 'news' },
+  { id: 'news', title: 'Informations / actualités', icon: 'info' },
 ]
 
 type SettingsTab =
@@ -936,6 +954,7 @@ type LegacyProductEdition = Partial<
 >
 type LegacyProductCatalogItem = Partial<
   ProductCatalogItem & {
+    note: unknown
     tags: unknown
     compatibleProductIds: unknown
     softwareIds: unknown
@@ -1004,6 +1023,26 @@ const normalizePortalProcedure = (raw: unknown, index: number): CustomerPortalCo
 const normalizePortalProcedures = (raw: unknown): CustomerPortalCode[] => {
   if (!Array.isArray(raw)) return []
   return raw.map((item, index) => normalizePortalProcedure(item, index))
+}
+
+const getPortalForwardTargets = (codeLines: CustomerPortalCodeLine[]) =>
+  codeLines
+    .filter((entry) => Boolean(entry.showForward))
+    .map((entry) => entry.forwardTarget?.trim())
+    .filter((target): target is string => Boolean(target))
+
+const hasPortalForward = (codeLines: CustomerPortalCodeLine[]) =>
+  codeLines.some((entry) => Boolean(entry.showForward))
+
+const formatPortalForwardLabel = (
+  codeLines: CustomerPortalCodeLine[],
+  inactiveLabel = 'Forward',
+) => {
+  if (!hasPortalForward(codeLines)) return inactiveLabel
+  const targets = getPortalForwardTargets(codeLines)
+  return targets.length
+    ? `Forward vers ${targets.join(', ')}`
+    : 'Forward vers cible non renseignée'
 }
 
 const normalizePortalProceduresInData = (payload: AppData): AppData => ({
@@ -1169,6 +1208,7 @@ const normalizeProductCatalogItem = (raw: unknown, index: number): ProductCatalo
     id,
     name: typeof item.name === 'string' ? item.name : '',
     productType: typeof item.productType === 'string' ? item.productType : '',
+    note: typeof item.note === 'string' ? item.note : '',
     tags: normalizeTextList(item.tags),
     compatibleProductIds: normalizeIdList(item.compatibleProductIds),
     softwareIds: normalizeIdList(item.softwareIds),
@@ -1285,6 +1325,7 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
         ...product,
         name: convertLegacyTokens(product.name),
         productType: convertLegacyTokens(product.productType ?? ''),
+        note: convertLegacyTokens(product.note ?? ''),
         tags: (product.tags ?? []).map((tag) => convertLegacyTokens(tag)),
         editions: (product.editions ?? []).map((edition) => ({
           ...edition,
@@ -1325,6 +1366,82 @@ function mergeData(current: AppData, incoming: AppData) {
   }
 }
 
+function addMissingById<T extends { id: string }>(current: T[], seed: T[]) {
+  const currentIds = new Set(current.map((item) => item.id))
+  return [...current, ...seed.filter((item) => !currentIds.has(item.id))]
+}
+
+const legacyDashboardNewsSignatures: Record<string, string> = {
+  'news-test-release': 'Contenu test dashboard news avec',
+  'news-test-tags': 'Tags ajoutés :',
+  'news-test-dashboard': 'Le catalogue contient logiciels',
+  'news-test-portal': 'Procédures Portal de test ajoutées',
+  'news-test-rma': 'Templates RMA, appels et tasks enrichis.',
+}
+
+const shouldRefreshDashboardNewsSeed = (item: DashboardNewsItem) => {
+  const legacySignature = legacyDashboardNewsSignatures[item.id]
+  if (!legacySignature) return false
+  return !item.content.trim() || item.content.includes(legacySignature)
+}
+
+function mergeDashboardNewsSeed(current: DashboardNewsItem[], seed: DashboardNewsItem[]) {
+  const seedById = new Map(seed.map((item) => [item.id, item]))
+  const usedIds = new Set<string>()
+  const merged = current.map((item) => {
+    const seedItem = seedById.get(item.id)
+    if (!seedItem) return item
+    usedIds.add(item.id)
+    return shouldRefreshDashboardNewsSeed(item) ? seedItem : item
+  })
+  return [...merged, ...seed.filter((item) => !usedIds.has(item.id))]
+}
+
+function mergeSeedIntoData(current: AppData, seed: AppData) {
+  if ((current.version ?? 0) >= seed.version) return current
+
+  return {
+    ...current,
+    version: seed.version,
+    categories: addMissingById(current.categories, seed.categories),
+    snippets: addMissingById(current.snippets, seed.snippets),
+    templates: addMissingById(current.templates, seed.templates),
+    taskTemplates: addMissingById(current.taskTemplates, seed.taskTemplates),
+    procedures: addMissingById(current.procedures, seed.procedures),
+    notes: current.notes.trim() ? current.notes : seed.notes,
+    emailDraft: current.emailDraft.trim() ? current.emailDraft : seed.emailDraft,
+    taskDraft: current.taskDraft.trim() ? current.taskDraft : seed.taskDraft,
+    history: addMissingById(current.history, seed.history),
+    callHistory: addMissingById(current.callHistory, seed.callHistory).slice(0, CALL_HISTORY_LIMIT),
+    settings: {
+      ...current.settings,
+      quickLinkUrls: {
+        ...seed.settings.quickLinkUrls,
+        ...(current.settings.quickLinkUrls ?? {}),
+      },
+      predefinedTags: Array.from(
+        new Set([...(current.settings.predefinedTags ?? []), ...seed.settings.predefinedTags]),
+      ),
+      customerPortalCodes: addMissingById(
+        normalizePortalProcedures(current.settings.customerPortalCodes),
+        normalizePortalProcedures(seed.settings.customerPortalCodes),
+      ),
+      dashboardProducts: addMissingById(
+        normalizeDashboardProducts(current.settings.dashboardProducts),
+        normalizeDashboardProducts(seed.settings.dashboardProducts),
+      ),
+      products: addMissingById(
+        normalizeProducts(current.settings.products),
+        normalizeProducts(seed.settings.products),
+      ),
+      dashboardNews: mergeDashboardNewsSeed(
+        normalizeDashboardNews(current.settings.dashboardNews),
+        normalizeDashboardNews(seed.settings.dashboardNews),
+      ),
+    },
+  }
+}
+
 function App() {
   const [data, setData] = useState<AppData>(defaultData)
   const callTemplate = data.settings.callTemplate
@@ -1357,6 +1474,7 @@ function App() {
   const [emailCopied, setEmailCopied] = useState(false)
   const [taskCopied, setTaskCopied] = useState(false)
   const [portalCopiedId, setPortalCopiedId] = useState<string | null>(null)
+  const [sparePartCopiedId, setSparePartCopiedId] = useState<string | null>(null)
   const [dashboardCalculatorCopiedKey, setDashboardCalculatorCopiedKey] =
     useState<DashboardCalculatorCopyKey | null>(null)
   const [callModalOpen, setCallModalOpen] = useState(false)
@@ -1377,16 +1495,13 @@ function App() {
   >(null)
   const [activeDashboardPortalProcedureId, setActiveDashboardPortalProcedureId] =
     useState<string | null>(null)
+  const [activeDashboardCatalogEditionId, setActiveDashboardCatalogEditionId] =
+    useState<string | null>(null)
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<SettingsTab>('categories')
   const [editSnippetCategoryId, setEditSnippetCategoryId] = useState('all')
   const [snippetTooltip, setSnippetTooltip] = useState<{
-    text: string
-    x: number
-    y: number
-  } | null>(null)
-  const [portalInfoTooltip, setPortalInfoTooltip] = useState<{
     text: string
     x: number
     y: number
@@ -1442,6 +1557,7 @@ function App() {
   const emailCopyTimeoutRef = useRef<number | null>(null)
   const taskCopyTimeoutRef = useRef<number | null>(null)
   const portalCopyTimeoutRef = useRef<number | null>(null)
+  const sparePartCopyTimeoutRef = useRef<number | null>(null)
   const dashboardCalculatorCopyTimeoutRef = useRef<number | null>(null)
   const callCopyTimeoutRef = useRef<number | null>(null)
   const callHistoryCopyTimeoutRef = useRef<number | null>(null)
@@ -1619,6 +1735,7 @@ function App() {
     id: '',
     name: '',
     productType: '',
+    note: '',
     tags: [],
     compatibleProductIds: [],
     softwareIds: [],
@@ -1762,6 +1879,7 @@ function App() {
         id: '',
         name: '',
         productType: '',
+        note: '',
         tags: [],
         compatibleProductIds: [],
         softwareIds: [],
@@ -1788,7 +1906,7 @@ function App() {
     loadData()
       .then((loadedData) => {
         if (!active) return
-        setData(normalizeDashboardData(loadedData))
+        setData(mergeSeedIntoData(normalizeDashboardData(loadedData), defaultData))
         setLoaded(true)
       })
       .catch(() => {
@@ -1917,6 +2035,9 @@ function App() {
       }
       if (portalCopyTimeoutRef.current !== null) {
         window.clearTimeout(portalCopyTimeoutRef.current)
+      }
+      if (sparePartCopyTimeoutRef.current !== null) {
+        window.clearTimeout(sparePartCopyTimeoutRef.current)
       }
       if (dashboardCalculatorCopyTimeoutRef.current !== null) {
         window.clearTimeout(dashboardCalculatorCopyTimeoutRef.current)
@@ -2456,6 +2577,17 @@ function App() {
     [updateSettings],
   )
 
+  const toggleDashboardProcessLine = useCallback(
+    (lineId: string) => {
+      const currentLines = data.settings.dashboardProcessLines ?? []
+      const newLines = currentLines.includes(lineId)
+        ? currentLines.filter((id: string) => id !== lineId)
+        : [...currentLines, lineId]
+      updateSettings({ dashboardProcessLines: newLines })
+    },
+    [data.settings.dashboardProcessLines, updateSettings],
+  )
+
   const handleCheckUpdatesNow = useCallback(async () => {
     manualUpdateCheckRequestedRef.current = true
     setCheckingUpdateManually(true)
@@ -2613,6 +2745,7 @@ function App() {
           softwareIds: Array.from(softwareIds),
           driverIds: Array.from(driverIds),
           firmwareIds: Array.from(firmwareIds),
+          note: product.note ?? '',
           editions: (product.editions ?? []).map((edition) => ({ ...edition })),
           spareParts: product.spareParts.map((sparePart) => ({ ...sparePart })),
         }
@@ -2642,6 +2775,7 @@ function App() {
       return {
         ...hydratedProduct,
         productType: hydratedProduct.productType ?? '',
+        note: hydratedProduct.note ?? '',
         tags: [...(hydratedProduct.tags ?? [])],
         compatibleProductIds: [...(hydratedProduct.compatibleProductIds ?? [])],
         softwareIds: [...(hydratedProduct.softwareIds ?? [])],
@@ -2818,6 +2952,15 @@ function App() {
       ) ?? null,
     [activeDashboardCatalogProductId, dashboardCatalogProductResults],
   )
+  const activeDashboardCatalogEdition = useMemo(
+    () =>
+      activeDashboardCatalogProduct
+        ? (activeDashboardCatalogProduct.editions ?? []).find(
+            (edition) => edition.id === activeDashboardCatalogEditionId,
+          ) ?? null
+        : null,
+    [activeDashboardCatalogEditionId, activeDashboardCatalogProduct],
+  )
   const activeDashboardCatalogProductSoftwares = useMemo(
     () =>
       activeDashboardCatalogProduct
@@ -2838,21 +2981,15 @@ function App() {
   )
   const activeDashboardCatalogProductFirmwares = useMemo(
     () =>
-      activeDashboardCatalogProduct
-        ? normalizeIdList(activeDashboardCatalogProduct.firmwareIds)
+      activeDashboardCatalogProduct && activeDashboardCatalogEdition
+        ? normalizeIdList([
+            ...(activeDashboardCatalogProduct.firmwareIds ?? []),
+            ...(activeDashboardCatalogEdition.firmwareIds ?? []),
+          ])
             .map((id) => dashboardVersionProductById.get(id))
             .filter((product): product is DashboardProduct => Boolean(product))
         : [],
-    [activeDashboardCatalogProduct, dashboardVersionProductById],
-  )
-  const activeDashboardCatalogProductCompatibleProducts = useMemo(
-    () =>
-      activeDashboardCatalogProduct
-        ? normalizeIdList(activeDashboardCatalogProduct.compatibleProductIds)
-            .map((id) => productCatalogWithRelationsById.get(id))
-            .filter((product): product is ProductCatalogItem => Boolean(product))
-        : [],
-    [activeDashboardCatalogProduct, productCatalogWithRelationsById],
+    [activeDashboardCatalogEdition, activeDashboardCatalogProduct, dashboardVersionProductById],
   )
   const dashboardPortalProcedures = useMemo(() => {
     const query = dashboardProcedureQuery.trim().toLowerCase()
@@ -2865,11 +3002,10 @@ function App() {
           entry.title ?? '',
           entry.code,
           entry.showDraft ? 'draft brouillon' : 'sans draft',
-          entry.showForward ? 'forward transfert' : 'sans forward',
-          entry.showForward && !entry.forwardTarget?.trim() ? 'destinataire non renseigné' : '',
           entry.forwardTarget ?? '',
           entry.infoNote ?? '',
         ]),
+        formatPortalForwardLabel(item.codes, 'Forward non'),
       ]
         .join(' ')
         .toLowerCase()
@@ -2899,9 +3035,37 @@ function App() {
     )
     if (hasVisibleActive) return
     setActiveDashboardCatalogProductId(visibleDashboardProducts[0].id)
+    setActiveDashboardCatalogEditionId(null)
   }, [
     activeDashboardCatalogProductId,
     dashboardCatalogProductResults,
+    workspaceDashboardPage,
+  ])
+
+  useEffect(() => {
+    if (workspaceDashboardPage !== 'versions') return
+    if (!activeDashboardCatalogProduct) {
+      if (activeDashboardCatalogEditionId !== null) {
+        setActiveDashboardCatalogEditionId(null)
+      }
+      return
+    }
+    const hasEdition = (activeDashboardCatalogProduct.editions ?? []).some(
+      (edition) => edition.id === activeDashboardCatalogEditionId,
+    )
+    if (!hasEdition && activeDashboardCatalogEditionId !== null) {
+      setActiveDashboardCatalogEditionId(null)
+    }
+    // Auto-select if only one edition exists
+    if (!hasEdition && (activeDashboardCatalogProduct.editions ?? []).length === 1) {
+      const onlyEdition = activeDashboardCatalogProduct.editions?.[0]
+      if (onlyEdition?.id) {
+        setActiveDashboardCatalogEditionId(onlyEdition.id)
+      }
+    }
+  }, [
+    activeDashboardCatalogEditionId,
+    activeDashboardCatalogProduct,
     workspaceDashboardPage,
   ])
 
@@ -3399,6 +3563,23 @@ function App() {
     }, 1600)
   }
 
+  const handleCopySparePartSku = async (id: string, sku: string) => {
+    const value = sku.trim()
+    if (!value) return
+    const didCopy = await copyText(value)
+    if (!didCopy) {
+      setToast('Copie impossible.')
+      return
+    }
+    if (sparePartCopyTimeoutRef.current) {
+      window.clearTimeout(sparePartCopyTimeoutRef.current)
+    }
+    setSparePartCopiedId(id)
+    sparePartCopyTimeoutRef.current = window.setTimeout(() => {
+      setSparePartCopiedId((current) => (current === id ? null : current))
+    }, 1600)
+  }
+
   const addDashboardCalculatorItem = () => {
     setDashboardCalculatorItems((prev) => [...prev, createDashboardCalculatorItem()])
   }
@@ -3610,6 +3791,7 @@ function App() {
       id: productDraft.id,
       name,
       productType: productDraft.productType?.trim() ?? '',
+      note: productDraft.note ?? '',
       tags: parseProductTags(productTagsDraftText),
       compatibleProductIds: normalizeIdList(productDraft.compatibleProductIds).filter(
         (id) => id !== productDraft.id,
@@ -3744,6 +3926,21 @@ function App() {
   const removeProductDraftSparePart = (sparePartId: string) => {
     updateProductDraftSpareParts(
       productDraft.spareParts.filter((sparePart) => sparePart.id !== sparePartId),
+    )
+  }
+
+  const updateDashboardCatalogEditionNote = (productId: string, editionId: string, note: string) => {
+    updateProductCatalog(
+      productCatalog.map((product) =>
+        product.id === productId
+          ? {
+              ...product,
+              editions: (product.editions ?? []).map((edition) =>
+                edition.id === editionId ? { ...edition, note } : edition,
+              ),
+            }
+          : product,
+      ),
     )
   }
 
@@ -4341,9 +4538,11 @@ function App() {
     setDashboardCalculatorItems([createDashboardCalculatorItem()])
     setDashboardImportFee('')
     setDashboardCalculatorCopiedKey(null)
+    setSparePartCopiedId(null)
     setProcedureChecks({})
     setActiveProcedureId(null)
     setActiveDashboardCatalogProductId(null)
+    setActiveDashboardCatalogEditionId(null)
     setActiveDashboardSpareProductId(null)
     setActiveDashboardPortalProcedureId(null)
     setDashboardProductQuery('')
@@ -4376,21 +4575,33 @@ function App() {
     }
   }
 
-  const handleImportReplace = async () => {
+  const readImportedData = async () => {
     const result = await importJson()
-    if (result.canceled || !result.data) return
-    const normalized = normalizeData(result.data as Partial<AppData>, defaultData)
-    const converted = convertLegacyTokensInData(normalized)
-    setData(converted)
+    if (result.canceled) return null
+    if (result.error || !result.data) {
+      setToast('Import impossible : fichier JSON invalide.')
+      return null
+    }
+    try {
+      const normalized = normalizeData(result.data as Partial<AppData>, defaultData)
+      return convertLegacyTokensInData(normalized)
+    } catch {
+      setToast('Import impossible : données incompatibles.')
+      return null
+    }
+  }
+
+  const handleImportReplace = async () => {
+    const importedData = await readImportedData()
+    if (!importedData) return
+    setData(importedData)
     setToast('Import remplacé.')
   }
 
   const handleImportMerge = async () => {
-    const result = await importJson()
-    if (result.canceled || !result.data) return
-    const normalized = normalizeData(result.data as Partial<AppData>, defaultData)
-    const converted = convertLegacyTokensInData(normalized)
-    setData((prev) => mergeData(prev, converted))
+    const importedData = await readImportedData()
+    if (!importedData) return
+    setData((prev) => mergeData(prev, importedData))
     setToast('Import fusionné.')
   }
 
@@ -4564,27 +4775,6 @@ function App() {
 
   const hideSnippetTooltip = () => setSnippetTooltip(null)
 
-  const showPortalInfoTooltip = (text: string, anchor: HTMLElement) => {
-    const rect = anchor.getBoundingClientRect()
-    const tooltipWidth = 320
-    const gutter = 2
-    const tooltipHeight = Math.min(220, window.innerHeight - 12)
-    let x = rect.right + gutter
-    let y = rect.top - 8
-
-    if (x + tooltipWidth > window.innerWidth - gutter) {
-      x = rect.left - tooltipWidth - gutter
-    }
-    if (x < gutter) {
-      x = gutter
-    }
-    y = Math.max(6, Math.min(y, window.innerHeight - tooltipHeight - 6))
-
-    setPortalInfoTooltip({ text, x, y })
-  }
-
-  const hidePortalInfoTooltip = () => setPortalInfoTooltip(null)
-
   const openLink = (url: string) => {
     const normalizedUrl = url.trim()
     if (!normalizedUrl.startsWith('http')) return
@@ -4720,7 +4910,7 @@ function App() {
                 <div className="dashboard-calculator__item-grid">
                   <span className="dashboard-calculator__item-index">{index + 1}</span>
                   <label className="dashboard-calculator__field dashboard-calculator__field--inline">
-                    <span className="dashboard-calculator__label">Produit TTC</span>
+                    <span className="dashboard-calculator__label">Produit</span>
                     <input
                       className="input"
                       value={item.productPrice}
@@ -4729,11 +4919,11 @@ function App() {
                       }
                       placeholder="119,99"
                       inputMode="decimal"
-                      aria-label={`Produit TTC ligne ${index + 1}`}
+                      aria-label={`Produit ligne ${index + 1}`}
                     />
                   </label>
                   <label className="dashboard-calculator__field dashboard-calculator__field--inline">
-                    <span className="dashboard-calculator__label">Livraison TTC</span>
+                    <span className="dashboard-calculator__label">Livraison</span>
                     <input
                       className="input"
                       value={item.shippingPrice}
@@ -4742,7 +4932,7 @@ function App() {
                       }
                       placeholder="14,99"
                       inputMode="decimal"
-                      aria-label={`Livraison TTC ligne ${index + 1}`}
+                      aria-label={`Livraison ligne ${index + 1}`}
                     />
                   </label>
                   <button
@@ -4769,14 +4959,14 @@ function App() {
 
         <div className="dashboard-calculator__import-fee">
           <label className="dashboard-calculator__import-fee-field">
-            <span className="dashboard-calculator__label">Frais d’import TTC</span>
+            <span className="dashboard-calculator__label">Frais d’import</span>
             <input
               className="input"
               value={dashboardImportFee}
               onChange={(event) => setDashboardImportFee(event.target.value)}
               placeholder="0,00"
               inputMode="decimal"
-              aria-label="Frais d'import TTC ajoutés à la livraison"
+              aria-label="Frais d'import ajoutés à la livraison"
             />
           </label>
           <button
@@ -4797,28 +4987,6 @@ function App() {
               <span className="dashboard-calculator__result-label">Produits</span>
             </div>
             <div className="dashboard-calculator__result-values">
-              <div className="dashboard-calculator__result-value">
-                <span className="dashboard-calculator__result-sub-label">TTC</span>
-                <div className="dashboard-calculator__result-value-main">
-                  <strong>{formatEuroAmount(dashboardProductsTotalTtc)}</strong>
-                  <button
-                    className={`icon-btn-sm dashboard-copy-icon${
-                      dashboardCalculatorCopiedKey === 'productsTtc' ? ' is-success' : ''
-                    }`}
-                    type="button"
-                    title="Copier le total produits TTC"
-                    aria-label="Copier le total produits TTC"
-                    onClick={() =>
-                      void handleCopyDashboardAmount('productsTtc', dashboardProductsTotalTtc)
-                    }
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
               <div className="dashboard-calculator__result-value">
                 <span className="dashboard-calculator__result-sub-label">HT</span>
                 <div className="dashboard-calculator__result-value-main">
@@ -4841,27 +5009,19 @@ function App() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="dashboard-calculator__result">
-            <div className="dashboard-calculator__result-head">
-              <span className="dashboard-calculator__result-label">Livraison</span>
-            </div>
-            <div className="dashboard-calculator__result-values">
               <div className="dashboard-calculator__result-value">
                 <span className="dashboard-calculator__result-sub-label">TTC</span>
                 <div className="dashboard-calculator__result-value-main">
-                  <strong>{formatEuroAmount(dashboardShippingTotalTtc)}</strong>
+                  <strong>{formatEuroAmount(dashboardProductsTotalTtc)}</strong>
                   <button
                     className={`icon-btn-sm dashboard-copy-icon${
-                      dashboardCalculatorCopiedKey === 'shippingTtc' ? ' is-success' : ''
+                      dashboardCalculatorCopiedKey === 'productsTtc' ? ' is-success' : ''
                     }`}
                     type="button"
-                    title="Copier le total livraison TTC"
-                    aria-label="Copier le total livraison TTC"
+                    title="Copier le total produits TTC"
+                    aria-label="Copier le total produits TTC"
                     onClick={() =>
-                      void handleCopyDashboardAmount('shippingTtc', dashboardShippingTotalTtc)
+                      void handleCopyDashboardAmount('productsTtc', dashboardProductsTotalTtc)
                     }
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -4871,6 +5031,14 @@ function App() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="dashboard-calculator__result">
+            <div className="dashboard-calculator__result-head">
+              <span className="dashboard-calculator__result-label">Livraison</span>
+            </div>
+            <div className="dashboard-calculator__result-values">
               <div className="dashboard-calculator__result-value">
                 <span className="dashboard-calculator__result-sub-label">HT</span>
                 <div className="dashboard-calculator__result-value-main">
@@ -4893,26 +5061,20 @@ function App() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="dashboard-calculator__result dashboard-calculator__result--total">
-            <div className="dashboard-calculator__result-head">
-              <span className="dashboard-calculator__result-label">Total</span>
-            </div>
-            <div className="dashboard-calculator__result-values">
               <div className="dashboard-calculator__result-value">
                 <span className="dashboard-calculator__result-sub-label">TTC</span>
                 <div className="dashboard-calculator__result-value-main">
-                  <strong>{formatEuroAmount(dashboardGrandTotalTtc)}</strong>
+                  <strong>{formatEuroAmount(dashboardShippingTotalTtc)}</strong>
                   <button
                     className={`icon-btn-sm dashboard-copy-icon${
-                      dashboardCalculatorCopiedKey === 'totalTtc' ? ' is-success' : ''
+                      dashboardCalculatorCopiedKey === 'shippingTtc' ? ' is-success' : ''
                     }`}
                     type="button"
-                    title="Copier le total TTC"
-                    aria-label="Copier le total TTC"
-                    onClick={() => void handleCopyDashboardAmount('totalTtc', dashboardGrandTotalTtc)}
+                    title="Copier le total livraison TTC"
+                    aria-label="Copier le total livraison TTC"
+                    onClick={() =>
+                      void handleCopyDashboardAmount('shippingTtc', dashboardShippingTotalTtc)
+                    }
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="9" y="9" width="11" height="11" rx="2" />
@@ -4921,6 +5083,14 @@ function App() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="dashboard-calculator__result dashboard-calculator__result--total">
+            <div className="dashboard-calculator__result-head">
+              <span className="dashboard-calculator__result-label">Total</span>
+            </div>
+            <div className="dashboard-calculator__result-values">
               <div className="dashboard-calculator__result-value">
                 <span className="dashboard-calculator__result-sub-label">HT</span>
                 <div className="dashboard-calculator__result-value-main">
@@ -4941,60 +5111,32 @@ function App() {
                   </button>
                 </div>
               </div>
+              <div className="dashboard-calculator__result-value">
+                <span className="dashboard-calculator__result-sub-label">TTC</span>
+                <div className="dashboard-calculator__result-value-main">
+                  <strong>{formatEuroAmount(dashboardGrandTotalTtc)}</strong>
+                  <button
+                    className={`icon-btn-sm dashboard-copy-icon${
+                      dashboardCalculatorCopiedKey === 'totalTtc' ? ' is-success' : ''
+                    }`}
+                    type="button"
+                    title="Copier le total TTC"
+                    aria-label="Copier le total TTC"
+                    onClick={() => void handleCopyDashboardAmount('totalTtc', dashboardGrandTotalTtc)}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="11" height="11" rx="2" />
+                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </article>
   )
-
-  const renderDashboardVersionInfoCards = (items: DashboardProduct[], emptyMessage: string) =>
-    items.length ? (
-      <div className="dashboard-version-info-grid">
-        {items.map((item) => {
-          const version = item.latestVersion.trim()
-          const sheet = item.sheet.trim()
-          const supportUrl = item.supportUrl?.trim() ?? ''
-
-          return (
-            <article className="dashboard-version-info-card" key={item.id}>
-              <div className="dashboard-version-info-card__head">
-                <div>
-                  <div className="dashboard-version-info-card__title">{item.name}</div>
-                  <div className="dashboard-version-info-card__meta">
-                    {dashboardProductCategoryLabels[item.category]} •{' '}
-                    {version || 'Version non renseignée'}
-                  </div>
-                </div>
-                {supportUrl ? (
-                  <button
-                    className="btn btn--ghost btn--small"
-                    type="button"
-                    onClick={() => openLink(supportUrl)}
-                  >
-                    Support
-                  </button>
-                ) : null}
-              </div>
-              {sheet ? (
-                <div className="dashboard-product-sheet" onClick={handleProcedureLinkClick}>
-                  <div
-                    className="dashboard-product-sheet__content"
-                    dangerouslySetInnerHTML={{
-                      __html: formatProcedureText(sheet),
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="dashboard-version-empty">Aucune note renseignée.</div>
-              )}
-            </article>
-          )
-        })}
-      </div>
-    ) : (
-      <div className="dashboard-empty">{emptyMessage}</div>
-    )
 
   const renderDashboardCatalogPanel = (title: string, searchPlaceholder: string, emptyTitle: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--catalog">
@@ -5029,7 +5171,10 @@ function App() {
                         activeDashboardCatalogProductId === product.id ? ' is-active' : ''
                       }`}
                       type="button"
-                      onClick={() => setActiveDashboardCatalogProductId(product.id)}
+                      onClick={() => {
+                        setActiveDashboardCatalogProductId(product.id)
+                        setActiveDashboardCatalogEditionId(null)
+                      }}
                     >
                       <span className="dashboard-version-item__name">{product.name}</span>
                       <span className="dashboard-version-item__meta">
@@ -5051,160 +5196,128 @@ function App() {
         <div className="dashboard-version-detail dashboard-product-detail">
           {activeDashboardCatalogProduct ? (
             <>
-              <div className="dashboard-version-detail__header">
-                <div>
-                  <div className="dashboard-version-detail__title">
+              <div className="dashboard-product-header">
+                <div className="dashboard-product-title-section">
+                  <div className="dashboard-product-title">
                     {activeDashboardCatalogProduct.name}
                   </div>
-                  <div className="dashboard-version-detail__badges">
-                    <span className="dashboard-version-detail__badge">
-                      {activeDashboardCatalogProduct.productType?.trim() || 'Type non renseigné'}
-                    </span>
-                    {(activeDashboardCatalogProduct.tags ?? []).map((tag) => (
-                      <span
-                        className="dashboard-version-detail__badge dashboard-version-detail__badge--accent"
-                        key={tag}
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                  <div className="dashboard-product-meta">
+                    {(activeDashboardCatalogProduct.editions ?? []).length} édition{(activeDashboardCatalogProduct.editions ?? []).length > 1 ? 's' : ''}
                   </div>
                 </div>
               </div>
 
-              <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Éditions</div>
+              <div className="dashboard-product-editions-section">
+                <div className="dashboard-section-label">Éditions</div>
                 {(activeDashboardCatalogProduct.editions ?? []).length ? (
-                  <div className="dashboard-product-editions">
-                    {(activeDashboardCatalogProduct.editions ?? []).map((edition) => {
-                      const editionFirmwares = normalizeIdList(edition.firmwareIds)
-                        .map((id) => dashboardVersionProductById.get(id))
-                        .filter((item): item is DashboardProduct => Boolean(item))
-                      const editionCompatibleProducts = normalizeIdList(edition.compatibleProductIds)
-                        .map((id) => productCatalogWithRelationsById.get(id))
-                        .filter((product): product is ProductCatalogItem => Boolean(product))
-
-                      return (
-                        <article className="dashboard-product-edition" key={edition.id}>
-                          <div className="dashboard-product-edition__head">
-                            <div>
-                              <div className="dashboard-product-edition__title">{edition.name}</div>
-                              <div className="dashboard-product-edition__meta">
-                                {productEditionPlatformLabels[edition.platform]}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="dashboard-product-edition__body">
-                            <div className="dashboard-product-edition__block">
-                              <div className="dashboard-version-detail__label">Firmware</div>
-                              {editionFirmwares.length ? (
-                                <div className="dashboard-compatible-products">
-                                  {editionFirmwares.map((firmware) => (
-                                    <span
-                                      className="dashboard-compatible-products__item"
-                                      key={firmware.id}
-                                    >
-                                      {firmware.name}
-                                      {firmware.latestVersion.trim()
-                                        ? ` (${firmware.latestVersion.trim()})`
-                                        : ''}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="dashboard-version-empty">
-                                  Aucun firmware spécifique.
-                                </div>
-                              )}
-                            </div>
-                            <div className="dashboard-product-edition__block">
-                              <div className="dashboard-version-detail__label">Compatibilités</div>
-                              {editionCompatibleProducts.length ? (
-                                <div className="dashboard-compatible-products">
-                                  {editionCompatibleProducts.map((product) => (
-                                    <span
-                                      className="dashboard-compatible-products__item"
-                                      key={product.id}
-                                    >
-                                      {product.name}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="dashboard-version-empty">
-                                  Aucune compatibilité spécifique.
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </article>
-                      )
-                    })}
+                  <div className="dashboard-product-edition-tabs">
+                    {(activeDashboardCatalogProduct.editions ?? []).map((edition) => (
+                      <button
+                        className={`dashboard-product-edition-tab${
+                          activeDashboardCatalogEditionId === edition.id ? ' is-active' : ''
+                        }`}
+                        key={edition.id}
+                        type="button"
+                        onClick={() => setActiveDashboardCatalogEditionId(edition.id)}
+                      >
+                        <span>{edition.name}</span>
+                        <small>{productEditionPlatformLabels[edition.platform]}</small>
+                      </button>
+                    ))}
                   </div>
                 ) : (
                   <div className="dashboard-empty">Aucune édition configurée.</div>
                 )}
               </div>
 
-              <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Firmwares communs</div>
-                {renderDashboardVersionInfoCards(
-                  activeDashboardCatalogProductFirmwares,
-                  'Aucun firmware commun renseigné.',
-                )}
-              </div>
+              {activeDashboardCatalogEdition ? (
+                <div className="dashboard-product-content">
+                  <div className="dashboard-product-cards">
+                    {activeDashboardCatalogProductFirmwares.length ? (
+                      <div className="dashboard-product-card dashboard-product-card--firmware">
+                        <div className="dashboard-product-card__icon">FW</div>
+                        <div className="dashboard-product-card__content">
+                          <div className="dashboard-product-card__label">Firmware</div>
+                          <div className="dashboard-product-card__value">
+                            {activeDashboardCatalogProductFirmwares[0]?.latestVersion.trim() ||
+                              'Non renseigné'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
 
-              <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Logiciels à utiliser</div>
-                {renderDashboardVersionInfoCards(
-                  activeDashboardCatalogProductSoftwares,
-                  'Aucun logiciel renseigné.',
-                )}
-              </div>
-
-              <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Drivers à utiliser</div>
-                {renderDashboardVersionInfoCards(
-                  activeDashboardCatalogProductDrivers,
-                  'Aucun driver renseigné.',
-                )}
-              </div>
-
-              <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Produits compatibles</div>
-                {activeDashboardCatalogProductCompatibleProducts.length ? (
-                  <div className="dashboard-compatible-products">
-                    {activeDashboardCatalogProductCompatibleProducts.map((product) => (
-                      <span className="dashboard-compatible-products__item" key={product.id}>
-                        {product.name}
-                      </span>
-                    ))}
+                    {activeDashboardCatalogProductDrivers.length ? (
+                      <div className="dashboard-product-card dashboard-product-card--driver">
+                        <div className="dashboard-product-card__icon">DR</div>
+                        <div className="dashboard-product-card__content">
+                          <div className="dashboard-product-card__label">Driver</div>
+                          <div className="dashboard-product-card__value">
+                            {activeDashboardCatalogProductDrivers[0]?.latestVersion.trim() ||
+                              'Non renseigné'}
+                          </div>
+                          <div className="dashboard-product-card__items">
+                            {activeDashboardCatalogProductDrivers.map((d) => (
+                              <span key={d.id} className="dashboard-product-tag">
+                                {d.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                ) : (
-                  <div className="dashboard-empty">Aucun produit compatible renseigné.</div>
-                )}
-              </div>
 
-              <div className="dashboard-version-detail__section">
-                <div className="dashboard-version-detail__label">Spare parts</div>
-                {activeDashboardCatalogProduct.spareParts.length ? (
-                  <div className="dashboard-compatible-products">
-                    {activeDashboardCatalogProduct.spareParts.map((sparePart) => (
-                      <span className="dashboard-compatible-products__item" key={sparePart.id}>
-                        {sparePart.name || 'Sans nom'}
-                        {sparePart.sku.trim() ? ` • ${sparePart.sku.trim()}` : ''}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="dashboard-empty">Aucune spare part renseignée.</div>
-                )}
-              </div>
+                  {activeDashboardCatalogProductSoftwares.length ? (
+                    <div className="dashboard-product-section">
+                      <div className="dashboard-product-section__header">
+                        <span className="dashboard-product-section__icon">SW</span>
+                        <span className="dashboard-product-section__title">Logiciels</span>
+                      </div>
+                      <div className="dashboard-product-software-list">
+                        {activeDashboardCatalogProductSoftwares.map((software) => (
+                          <div className="dashboard-product-software-item" key={software.id}>
+                            <div className="dashboard-product-software-info">
+                              <span className="dashboard-product-software-name">
+                                {software.name}
+                              </span>
+                              <span className="dashboard-product-software-version">
+                                {software.latestVersion.trim() || 'Non renseigné'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="dashboard-version-empty dashboard-product-edition-empty">
+                  Sélectionnez une édition pour afficher les informations techniques.
+                </div>
+              )}
+
+              {activeDashboardCatalogEdition ? (
+                <div className="dashboard-product-note-section">
+                  <div className="dashboard-section-label">Note édition</div>
+                  <textarea
+                    className="textarea dashboard-product-note__field"
+                    value={activeDashboardCatalogEdition.note ?? ''}
+                    onChange={(event) =>
+                      updateDashboardCatalogEditionNote(
+                        activeDashboardCatalogProduct.id,
+                        activeDashboardCatalogEdition.id,
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Ajouter une note libre pour cette édition..."
+                  />
+                </div>
+              ) : null}
             </>
           ) : (
             <div className="dashboard-wip">
               <strong>{emptyTitle}</strong>
-              <span>Sélectionnez un produit pour afficher ses éditions et versions liées.</span>
+              <span>Sélectionnez un produit pour afficher ses éditions.</span>
             </div>
           )}
         </div>
@@ -5266,12 +5379,22 @@ function App() {
                 {activeDashboardSpareProduct.spareParts.length ? (
                   activeDashboardSpareProduct.spareParts.map((sparePart) => (
                     <article className="dashboard-spare-parts__item" key={sparePart.id}>
-                      <div>
+                      <div className="dashboard-spare-parts__main">
                         <div className="dashboard-spare-parts__name">
                           {sparePart.name || 'Sans nom'}
                         </div>
-                        <div className="dashboard-spare-parts__sku">
-                          SKU: {sparePart.sku || 'Non renseigné'}
+                        <div className="dashboard-spare-parts__sku-row">
+                          <button
+                            className={`dashboard-spare-parts__sku-bubble${
+                              sparePartCopiedId === sparePart.id ? ' is-success' : ''
+                            }`}
+                            type="button"
+                            onClick={() => void handleCopySparePartSku(sparePart.id, sparePart.sku)}
+                            disabled={!sparePart.sku.trim()}
+                            title="Cliquer pour copier"
+                          >
+                            {sparePart.sku || 'Non renseigné'}
+                          </button>
                         </div>
                       </div>
                       <span
@@ -5279,6 +5402,12 @@ function App() {
                           sparePart.guideAvailable ? ' is-available' : ''
                         }`}
                       >
+                        <span
+                          className={`dashboard-spare-parts__guide-dot${
+                            sparePart.guideAvailable ? ' is-available' : ''
+                          }`}
+                          aria-hidden="true"
+                        />
                         {sparePart.guideAvailable ? 'Guide disponible' : 'Guide indisponible'}
                       </span>
                     </article>
@@ -5302,8 +5431,10 @@ function App() {
   const renderWorkspaceDashboardPortalPanel = (title: string) => {
     const activePortalProcedureName =
       activeDashboardPortalProcedure?.procedureName.trim() || 'Procédure sans nom'
-    const activePortalCodeCount =
-      activeDashboardPortalProcedure?.codes.filter((entry) => entry.code.trim()).length ?? 0
+    const activePortalCodeLines = activeDashboardPortalProcedure?.codes ?? []
+    const hasDraft = activePortalCodeLines.some((entry) => Boolean(entry.showDraft))
+    const hasForward = hasPortalForward(activePortalCodeLines)
+    const forwardLabel = formatPortalForwardLabel(activePortalCodeLines)
 
     return (
       <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
@@ -5322,7 +5453,11 @@ function App() {
             {dashboardPortalProcedures.length ? (
               dashboardPortalProcedures.map((procedure) => {
                 const procedureName = procedure.procedureName.trim() || 'Procédure sans nom'
-                const filledCodeCount = procedure.codes.filter((entry) => entry.code.trim()).length
+                const procedureHasDraft = procedure.codes.some((entry) => Boolean(entry.showDraft))
+                const procedureForwardLabel = formatPortalForwardLabel(
+                  procedure.codes,
+                  'Forward non',
+                )
 
                 return (
                   <button
@@ -5335,8 +5470,7 @@ function App() {
                   >
                     <span className="dashboard-version-item__name">{procedureName}</span>
                     <span className="dashboard-version-item__meta">
-                      {procedure.codes.length} étape{procedure.codes.length > 1 ? 's' : ''} -{' '}
-                      {filledCodeCount} code{filledCodeCount > 1 ? 's' : ''}
+                      Draft {procedureHasDraft ? 'oui' : 'non'} - {procedureForwardLabel}
                     </span>
                   </button>
                 )
@@ -5349,47 +5483,36 @@ function App() {
           <div className="dashboard-version-detail dashboard-portal-detail">
             {activeDashboardPortalProcedure ? (
               <>
-                <div className="dashboard-version-detail__header">
-                  <div>
-                    <div className="dashboard-version-detail__title">
-                      {activePortalProcedureName}
+                <div className="dashboard-portal-procedure-header">
+                  <div className="dashboard-portal-procedure-title">
+                    {activePortalProcedureName}
+                  </div>
+                  <div className="dashboard-portal-procedure-indicators">
+                    <div className={`dashboard-portal-indicator${hasDraft ? ' is-active' : ''}`}>
+                      <div className="dashboard-portal-indicator__led"></div>
+                      <div className="dashboard-portal-indicator__label">Draft</div>
                     </div>
-                    <div className="dashboard-version-detail__badges">
-                      <span className="dashboard-version-detail__badge">
-                        {activeDashboardPortalProcedure.codes.length} étape
-                        {activeDashboardPortalProcedure.codes.length > 1 ? 's' : ''}
-                      </span>
-                      <span className="dashboard-version-detail__badge dashboard-version-detail__badge--accent">
-                        {activePortalCodeCount} code{activePortalCodeCount > 1 ? 's' : ''}
-                      </span>
+                    <div className={`dashboard-portal-indicator${hasForward ? ' is-active' : ''}`}>
+                      <div className="dashboard-portal-indicator__led"></div>
+                      <div className="dashboard-portal-indicator__label">{forwardLabel}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="dashboard-version-detail__section">
-                  <div className="dashboard-version-detail__label">Récap</div>
-                  <div className="dashboard-portal-recap">
+                  <div className="dashboard-portal-steps">
                     {activeDashboardPortalProcedure.codes.map((entry, index) => {
                       const lineTitle = entry.title?.trim() || `Étape ${index + 1}`
                       const code = entry.code.trim()
-                      const forwardTarget = entry.forwardTarget?.trim() ?? ''
-                      const forwardLabel = entry.showForward
-                        ? forwardTarget
-                          ? `Oui, à ${forwardTarget}`
-                          : 'Oui, destinataire non renseigné'
-                        : 'Non'
+                      const infoNote = entry.infoNote?.trim() ?? ''
 
                       return (
-                        <article className="dashboard-portal-recap__item" key={entry.id}>
-                          <div className="dashboard-portal-recap__content">
-                            <div className="dashboard-portal-recap__title">{lineTitle}</div>
-                            <div className="dashboard-portal-recap__flags">
-                              <span className={entry.showDraft ? 'is-on' : ''}>
-                                Draft: {entry.showDraft ? 'Oui' : 'Non'}
-                              </span>
-                              <span className={entry.showForward ? 'is-on' : ''}>
-                                Forward: {forwardLabel}
-                              </span>
+                        <article className="dashboard-portal-step" key={entry.id}>
+                          <span className="dashboard-portal-step__index">{index + 1}</span>
+                          <div className="dashboard-portal-step__body">
+                            <div className="dashboard-portal-step__title">{lineTitle}</div>
+                            <div className="dashboard-portal-step__note">
+                              {infoNote || 'Aucune note'}
                             </div>
                           </div>
                           <div className="dashboard-portal-code">
@@ -5405,46 +5528,6 @@ function App() {
                               {portalCopiedId === entry.id ? 'Copié !' : 'Copier'}
                             </button>
                           </div>
-                        </article>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="dashboard-version-detail__section">
-                  <div className="dashboard-version-detail__label">Étapes</div>
-                  <div className="dashboard-portal-steps">
-                    {activeDashboardPortalProcedure.codes.map((entry, index) => {
-                      const lineTitle = entry.title?.trim() || `Étape ${index + 1}`
-                      const infoNote = entry.infoNote?.trim() ?? ''
-                      const lineLabel = `${activePortalProcedureName} - ${lineTitle}`
-
-                      return (
-                        <article className="dashboard-portal-step" key={entry.id}>
-                          <span className="dashboard-portal-step__index">{index + 1}</span>
-                          <div className="dashboard-portal-step__body">
-                            <div className="dashboard-portal-step__title">{lineTitle}</div>
-                            <div className="dashboard-portal-step__meta">
-                              {infoNote ? 'Note disponible' : 'Aucune note'}
-                            </div>
-                          </div>
-                          {infoNote ? (
-                            <button
-                              className="dashboard-portal-step__info"
-                              type="button"
-                              aria-label={`Note pour ${lineLabel}`}
-                              onMouseEnter={(event) =>
-                                showPortalInfoTooltip(infoNote, event.currentTarget)
-                              }
-                              onMouseLeave={hidePortalInfoTooltip}
-                              onFocus={(event) =>
-                                showPortalInfoTooltip(infoNote, event.currentTarget)
-                              }
-                              onBlur={hidePortalInfoTooltip}
-                            >
-                              i
-                            </button>
-                          ) : null}
                         </article>
                       )
                     })}
@@ -5491,12 +5574,45 @@ function App() {
     </article>
   )
 
+  const renderWorkspaceDashboardProcessPanel = (title: string) => (
+    <article className="workspace-dashboard__panel workspace-dashboard__panel--process">
+      <div className="workspace-dashboard__panel-title">{title}</div>
+      <div className="dashboard-process">
+        <div className="dashboard-process__lines">
+          {[
+            { id: 'rma-14', label: 'Procédure complète RMA 14 Jours' },
+            { id: 'rma-30', label: 'Procédure complète RMA 30 Jours' },
+            { id: 'return-eu', label: 'Retour produit EU' },
+            { id: 'return-us', label: 'Retour produit US' },
+          ].map((line) => (
+            <button
+              className={`dashboard-process__line${
+                data.settings.dashboardProcessLines?.includes(line.id) ? ' is-active' : ''
+              }`}
+              key={line.id}
+              type="button"
+              onClick={() => toggleDashboardProcessLine(line.id)}
+            >
+              <span className="dashboard-process__label">{line.label}</span>
+              <div className="dashboard-process__led"></div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </article>
+  )
+
   const renderWorkspaceDashboardContent = () => {
     if (workspaceDashboardPage === 'tools') {
       return (
-        <div className="workspace-dashboard__single workspace-dashboard__single--tools">
-          {renderWorkspaceDashboardNameFormatter('Name format')}
-          {renderWorkspaceDashboardVatPanel('Price calculator')}
+        <div className="workspace-dashboard__tools-grid">
+          <div className="workspace-dashboard__tools-left">
+            {renderWorkspaceDashboardNameFormatter('Name format')}
+            {renderWorkspaceDashboardProcessPanel('Process')}
+          </div>
+          <div className="workspace-dashboard__tools-right">
+            {renderWorkspaceDashboardVatPanel('Price calculator')}
+          </div>
         </div>
       )
     }
@@ -6243,18 +6359,6 @@ function App() {
           document.body,
         )
       : null}
-    {typeof document !== 'undefined' && portalInfoTooltip
-      ? createPortal(
-          <div
-            className="bullet-tooltip bullet-tooltip--portal visible"
-            style={{ top: portalInfoTooltip.y, left: portalInfoTooltip.x }}
-          >
-            {portalInfoTooltip.text}
-          </div>,
-          document.body,
-        )
-      : null}
-
     {callModalOpen ? (
         <div
           className="modal-backdrop"
@@ -6274,7 +6378,7 @@ function App() {
                 <span>Appel téléphonique</span>
               </div>
               <button className="close-modal" type="button" onClick={closeCallModal}>
-                ×
+                X
               </button>
             </div>
             <div className="call-modal__body">
@@ -6480,7 +6584,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            ↕
+                            Move
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{category.name}</div>
@@ -6630,7 +6734,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            ↕
+                            Move
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{snippet.title}</div>
@@ -6937,7 +7041,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            ↕
+                            Move
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{template.name}</div>
@@ -7291,7 +7395,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            ↕
+                            Move
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{task.name}</div>
@@ -7688,6 +7792,15 @@ function App() {
                           onChange={(event) => setProductTagsDraftText(event.target.value)}
                         />
 
+                        <textarea
+                          className="textarea"
+                          placeholder="Note affichée en bas du dashboard Versions Produit"
+                          value={productDraft.note ?? ''}
+                          onChange={(event) =>
+                            setProductDraft((prev) => ({ ...prev, note: event.target.value }))
+                          }
+                        />
+
                         <div className="product-relations-grid">
                           <div className="dashboard-product-editor__relations">
                             <div className="settings-label">Produits compatibles</div>
@@ -8055,7 +8168,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            ↕
+                            Move
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{procedure.name}</div>
@@ -8432,7 +8545,7 @@ function App() {
                               title="Insérer une case à cocher"
                               onClick={insertProcedureCheckMarker}
                             >
-                              ✓
+                              Chk
                             </button>
                           </div>
                           <div className="format-help">

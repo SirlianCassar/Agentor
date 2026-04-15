@@ -1,4 +1,14 @@
-import { app, BrowserWindow, dialog, ipcMain, shell, Menu, type Rectangle } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  shell,
+  Menu,
+  type OpenDialogOptions,
+  type Rectangle,
+  type SaveDialogOptions,
+} from 'electron'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -424,7 +434,7 @@ function createWindow() {
       : { width: 1400, height: 900 }),
     icon: path.join(process.env.VITE_PUBLIC, 'agentor', 'icon.png'),
     title: 'Agentor',
-    backgroundColor: '#07080a',
+    backgroundColor: '#1c1d1f',
     minWidth: 1100,
     minHeight: 720,
     webPreferences: {
@@ -471,7 +481,7 @@ function openProcedureWindow() {
     minWidth: 860,
     minHeight: 620,
     title: 'Agentor Dashboard',
-    backgroundColor: '#07080a',
+    backgroundColor: '#1c1d1f',
     icon: path.join(process.env.VITE_PUBLIC, 'agentor', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
@@ -528,18 +538,22 @@ ipcMain.handle('storage:save', (_event, data) => {
   return true
 })
 ipcMain.handle('storage:export-json', async (_event, data) => {
-  const { canceled, filePath } = await dialog.showSaveDialog(win!, {
+  const parent = win ?? BrowserWindow.getFocusedWindow()
+  const dialogOptions: SaveDialogOptions = {
     title: 'Exporter les données Agentor',
     defaultPath: 'agentor-export.json',
     filters: [{ name: 'JSON', extensions: ['json'] }],
-  })
+  }
+  const { canceled, filePath } = parent
+    ? await dialog.showSaveDialog(parent, dialogOptions)
+    : await dialog.showSaveDialog(dialogOptions)
   if (canceled || !filePath) return { canceled: true }
   fs.writeFileSync(filePath, JSON.stringify(data ?? defaultData, null, 2))
   return { canceled: false }
 })
 ipcMain.handle('storage:export-history', async (_event, text) => {
   const parent = win ?? BrowserWindow.getFocusedWindow()
-  const dialogOptions = {
+  const dialogOptions: SaveDialogOptions = {
     title: 'Exporter l’historique Agentor',
     defaultPath: 'agentor-historique.txt',
     filters: [{ name: 'Texte', extensions: ['txt'] }],
@@ -552,15 +566,24 @@ ipcMain.handle('storage:export-history', async (_event, text) => {
   return { canceled: false }
 })
 ipcMain.handle('storage:import-json', async () => {
-  const { canceled, filePaths } = await dialog.showOpenDialog(win!, {
+  const parent = win ?? BrowserWindow.getFocusedWindow()
+  const dialogOptions: OpenDialogOptions = {
     title: 'Importer des données Agentor',
     filters: [{ name: 'JSON', extensions: ['json'] }],
     properties: ['openFile'],
-  })
+  }
+  const { canceled, filePaths } = parent
+    ? await dialog.showOpenDialog(parent, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions)
   if (canceled || !filePaths?.[0]) return { canceled: true }
-  const raw = fs.readFileSync(filePaths[0], 'utf-8')
-  const data = JSON.parse(raw)
-  return { canceled: false, data }
+  try {
+    const raw = fs.readFileSync(filePaths[0], 'utf-8')
+    const data = JSON.parse(raw)
+    return { canceled: false, data }
+  } catch (error) {
+    console.warn('[storage-import] failed', error)
+    return { canceled: false, error: 'invalid-json' }
+  }
 })
 ipcMain.handle('shell:open-external', async (_event, url) => {
   if (!url || typeof url !== 'string') return false

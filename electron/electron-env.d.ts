@@ -30,7 +30,7 @@ interface Window {
     saveData: (data: unknown) => Promise<boolean>
     exportJson: (data: unknown) => Promise<{ canceled: boolean }>
     exportHistory: (text: string) => Promise<{ canceled: boolean }>
-    importJson: () => Promise<{ canceled: boolean; data?: unknown }>
+    importJson: () => Promise<{ canceled: boolean; data?: unknown; error?: string }>
     copyText: (text: string, html?: string) => boolean
     openExternal: (url: string) => Promise<boolean>
     openProcedure: () => Promise<boolean>

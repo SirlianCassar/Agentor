@@ -74,7 +74,11 @@ export async function exportHistory(text: string) {
 export async function importJson() {
   const bridge = getBridge()
   if (!bridge?.importJson) return { canceled: true }
-  return bridge.importJson()
+  try {
+    return await bridge.importJson()
+  } catch {
+    return { canceled: false, error: 'import-failed' }
+  }
 }
 
 export async function copyText(text: string, html?: string) {
