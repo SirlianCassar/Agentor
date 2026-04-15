@@ -257,6 +257,15 @@ const formatAdditionToken = (token: Token) => {
   return `<span class="token-wrap token-wrap--addition"><span class="token-marker token-marker--addition">${marker}</span>\n<span class="token token--addition token--addition-block">${inner}</span>\n<span class="token-marker token-marker--addition">${marker}</span></span>`
 }
 
+const formatAdditionTokenPreview = (token: Token) => {
+  const inner = escapeHtml(token.inner)
+  const isBlock = token.raw.includes('\n')
+  if (!isBlock) {
+    return `<span class="token-wrap token-wrap--addition-inline"><span class="token token--addition token--addition-inline">${inner}</span></span>`
+  }
+  return `<span class="token token--addition token--addition-block">${inner}</span>`
+}
+
 export function highlightText(value: string) {
   const tokens = parseTokens(value)
   if (!tokens.length) return escapeHtml(value)
@@ -299,7 +308,7 @@ export function highlightTextPreview(value: string) {
       const displayInner = formatSelectorDisplay(token.inner)
       result += `<span class="token token--selector">${displayInner}</span>`
     } else {
-      result += formatAdditionToken(token)
+      result += formatAdditionTokenPreview(token)
     }
     lastIndex = token.end
   }
@@ -345,6 +354,9 @@ export function formatProcedureText(value: string) {
   escaped = escaped.replace(/\[b\]([\s\S]*?)\[\/b\]/g, '<strong>$1</strong>')
   escaped = escaped.replace(/\[i\]([\s\S]*?)\[\/i\]/g, '<em>$1</em>')
   escaped = escaped.replace(/==([^=]+)==/g, '<span class="procedure-highlight">$1</span>')
+  escaped = escaped.replace(/<1>([\s\S]*?)<\/1>/g, '<span class="procedure-highlight-1">$1</span>')
+  escaped = escaped.replace(/<2>([\s\S]*?)<\/2>/g, '<span class="procedure-highlight-2">$1</span>')
+  escaped = escaped.replace(/<3>([\s\S]*?)<\/3>/g, '<span class="procedure-highlight-3">$1</span>')
   escaped = escaped.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
     '<a class="procedure-link" href="$2" target="_blank" rel="noreferrer">$1</a>',

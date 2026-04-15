@@ -317,7 +317,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
           ) : null}
           {!readOnly && activeSelector?.options?.length && selectorBubblePos ? (
             <div
-              className="editor__selector-bubble editor__selector-bubble--floating"
+              className={`editor__selector-bubble editor__selector-bubble--floating editor__selector-bubble--${activeSelector.type}`}
               ref={bubbleRef}
               style={{ top: selectorBubblePos.top, left: selectorBubblePos.left }}
             >
@@ -352,9 +352,6 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
                     className="editor__selector-option editor__selector-option--keep"
                     onClick={() => handleSelectorReplace(activeSelector.inner)}
                   >
-                    <span className="editor__selector-option-icon" aria-hidden="true">
-                      ✓
-                    </span>
                     <span className="editor__selector-option-text">Keep</span>
                   </button>
                   <button
@@ -362,9 +359,6 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
                     className="editor__selector-option editor__selector-option--remove"
                     onClick={() => handleSelectorReplace('')}
                   >
-                    <span className="editor__selector-option-icon" aria-hidden="true">
-                      ✕
-                    </span>
                     <span className="editor__selector-option-text">Remove</span>
                   </button>
                 </>

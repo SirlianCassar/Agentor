@@ -122,12 +122,14 @@ export interface ProductEdition {
   name: string
   firmwareIds: string[]
   compatibleProductIds: string[]
+  note?: string
 }
 
 export interface ProductCatalogItem {
   id: string
   name: string
   productType?: string
+  note?: string
   tags?: string[]
   compatibleProductIds?: string[]
   softwareIds?: string[]
@@ -163,6 +165,7 @@ export interface AppSettings {
   dashboardProducts: DashboardProduct[]
   products: ProductCatalogItem[]
   dashboardNews: DashboardNewsItem[]
+  dashboardProcessLines?: string[]
 }
 
 export interface AppData {
