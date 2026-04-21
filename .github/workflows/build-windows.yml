@@ -1,12 +1,15 @@
 name: release-windows
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Version à publier (ex: 2.0.0)"
-        required: true
-        default: "2.0.14"
+        description: "Version à publier (x, x.y, x.y.z). Laisser vide pour incrément patch auto."
+        required: false
+        default: ""
 
 jobs:
   release:
@@ -33,22 +36,71 @@ jobs:
         id: normalize_version
         shell: pwsh
         run: |
-          $raw = "${{ inputs.version }}".Trim()
-          if ($raw.StartsWith("v")) {
-            $raw = $raw.Substring(1)
+          function Normalize-Version([string]$value) {
+            $v = $value.Trim()
+            if ($v.StartsWith("v")) {
+              $v = $v.Substring(1)
+            }
+
+            if ($v -match "^\d+\.\d+\.\d+$") {
+              return $v
+            }
+            if ($v -match "^\d+\.\d+$") {
+              return "$v.0"
+            }
+            if ($v -match "^\d+$") {
+              return "$v.0.0"
+            }
+
+            throw "Invalid version '$value'. Use x, x.y or x.y.z."
           }
 
-          if ($raw -match "^\d+\.\d+\.\d+$") {
-            $semver = $raw
-          } elseif ($raw -match "^\d+\.\d+$") {
-            $semver = "$raw.0"
-          } elseif ($raw -match "^\d+$") {
-            $semver = "$raw.0.0"
+          $raw = "${{ inputs.version }}".Trim()
+          $event = "${{ github.event_name }}"
+          $refType = "${{ github.ref_type }}"
+          $refName = "${{ github.ref_name }}"
+
+          if ($event -eq "push" -and $refType -eq "tag" -and $refName.StartsWith("v")) {
+            $semver = Normalize-Version $refName
+          } elseif ($raw.Length -gt 0) {
+            $semver = Normalize-Version $raw
           } else {
-            throw "Invalid version '$raw'. Use x, x.y or x.y.z."
+            git fetch --tags --force
+
+            $pkgVersion = (node -p "require('./package.json').version").Trim()
+            $pkgSemver = Normalize-Version $pkgVersion
+
+            $latestTag = (git tag --list "v*" --sort=-version:refname | Select-Object -First 1)
+            $baseSemver = $pkgSemver
+            if ($latestTag) {
+              $tagSemver = Normalize-Version $latestTag
+              if ([version]$tagSemver -gt [version]$baseSemver) {
+                $baseSemver = $tagSemver
+              }
+            }
+
+            $parts = $baseSemver.Split(".")
+            $major = [int]$parts[0]
+            $minor = [int]$parts[1]
+            $patch = [int]$parts[2] + 1
+            $semver = "$major.$minor.$patch"
           }
 
           "semver=$semver" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Ensure tag does not already exist
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: pwsh
+        run: |
+          $tag = "v${{ steps.normalize_version.outputs.semver }}"
+          if (git rev-parse -q --verify "refs/tags/$tag" *> $null) {
+            throw "Tag already exists locally: $tag"
+          }
+
+          $remoteTag = git ls-remote --exit-code --tags origin "refs/tags/$tag"
+          if ($LASTEXITCODE -eq 0 -and $remoteTag) {
+            throw "Tag already exists on origin: $tag"
+          }
 
       - name: Set app version
         run: npm version "${{ steps.normalize_version.outputs.semver }}" --no-git-tag-version --allow-same-version
@@ -88,7 +140,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: SpeedMail-Windows-${{ steps.normalize_version.outputs.semver }}
+          name: Agentor-Windows-${{ steps.normalize_version.outputs.semver }}
           path: |
             release/${{ steps.normalize_version.outputs.semver }}/latest*.yml
             release/${{ steps.normalize_version.outputs.semver }}/*.exe
@@ -99,7 +151,7 @@ jobs:
         with:
           tag_name: v${{ steps.normalize_version.outputs.semver }}
           target_commitish: ${{ github.sha }}
-          name: SpeedMail v${{ steps.normalize_version.outputs.semver }}
+          name: Agentor v${{ steps.normalize_version.outputs.semver }}
           generate_release_notes: true
           make_latest: true
           overwrite_files: true
@@ -108,38 +160,3 @@ jobs:
             release/${{ steps.normalize_version.outputs.semver }}/latest*.yml
             release/${{ steps.normalize_version.outputs.semver }}/*.exe
             release/${{ steps.normalize_version.outputs.semver }}/*.blockmap
-
-      - name: Sync workflow default version
-        if: ${{ github.ref == 'refs/heads/main' }}
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          $workflowPath = ".github/workflows/build-windows.yml"
-          $newVersion = "${{ steps.normalize_version.outputs.semver }}"
-          $content = Get-Content -Path $workflowPath -Raw
-
-          $updated = [System.Text.RegularExpressions.Regex]::Replace(
-            $content,
-            '(?m)^(\s*default:\s*")([^"]*)(")$',
-            '${1}' + $newVersion + '${3}',
-            1
-          )
-
-          if ($updated -eq $content) {
-            Write-Host "No workflow default version line updated."
-            exit 0
-          }
-
-          Set-Content -Path $workflowPath -Value $updated -Encoding UTF8
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add $workflowPath
-
-          if (git diff --cached --quiet) {
-            Write-Host "No changes to commit."
-            exit 0
-          }
-
-          git commit -m "chore(ci): set windows workflow default version to $newVersion"
-          git push
