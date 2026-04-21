@@ -100,7 +100,7 @@ export interface CustomerPortalCodeLine {
   title?: string
   code: string
   showDraft?: boolean
-  quickLinkId?: PortalQuickLinkId | ''
+  quickLinkUrl?: string
   quickCopyText?: string
   infoNote?: string
 }
@@ -134,6 +134,9 @@ export interface ProductEdition {
   name: string
   firmwareIds: string[]
   compatibleProductIds: string[]
+  supportUrl?: string
+  shareUrl?: string
+  portalUrl?: string
   note?: string
 }
 
@@ -143,6 +146,7 @@ export interface ProductCatalogItem {
   productType?: string
   note?: string
   tags?: string[]
+  packingGuideAvailable?: boolean
   compatibleProductIds?: string[]
   softwareIds?: string[]
   driverIds?: string[]
