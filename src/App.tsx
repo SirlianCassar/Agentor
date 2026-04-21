@@ -49,7 +49,6 @@ import type {
   ProcedureBrand,
   ProcedureCoverage,
   PortalQuickLinkId,
-  ProcessMode,
   SparePart,
   Snippet,
   TaskTemplate,
@@ -947,6 +946,10 @@ type LegacyCustomerPortalCode = Partial<
       codes: unknown
     }
 >
+type LegacyCustomerPortalCodeLine = Partial<CustomerPortalCodeLine> & {
+  quickLinkId?: unknown
+  quickLinkUrl?: unknown
+}
 type LegacyDashboardProcessLine = Partial<
   DashboardProcessLine & {
     procedureId: unknown
@@ -978,12 +981,17 @@ type LegacyProductEdition = Partial<
     platform: unknown
     firmwareIds: unknown
     compatibleProductIds: unknown
+    supportUrl: unknown
+    shareUrl: unknown
+    portalUrl: unknown
+    note: unknown
   }
 >
 type LegacyProductCatalogItem = Partial<
   ProductCatalogItem & {
     note: unknown
     tags: unknown
+    packingGuideAvailable: unknown
     compatibleProductIds: unknown
     softwareIds: unknown
     driverIds: unknown
@@ -1005,7 +1013,7 @@ const createEmptyPortalCodeLine = (id = createId('portal-code')): CustomerPortal
   title: '',
   code: '',
   showDraft: false,
-  quickLinkId: '',
+  quickLinkUrl: '',
   quickCopyText: '',
   infoNote: '',
 })
@@ -1013,21 +1021,26 @@ const createEmptyPortalCodeLine = (id = createId('portal-code')): CustomerPortal
 const isPortalQuickLinkId = (value: unknown): value is PortalQuickLinkId =>
   value === 'crm' || value === 'share' || value === 'global' || value === 'portal' || value === 'assist'
 
-const normalizeProcessMode = (value: unknown): ProcessMode =>
-  value === 'reduced' ? 'reduced' : 'complete'
-
 const normalizePortalCodeLine = (raw: unknown, fallbackId: string): CustomerPortalCodeLine => {
   const item =
     raw && typeof raw === 'object'
-      ? (raw as Partial<CustomerPortalCodeLine>)
+      ? (raw as LegacyCustomerPortalCodeLine)
       : createEmptyPortalCodeLine(fallbackId)
+  const legacyItem = item as LegacyCustomerPortalCodeLine
   const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
+  const legacyQuickLinkUrl =
+    typeof legacyItem.quickLinkId === 'string' && isPortalQuickLinkId(legacyItem.quickLinkId)
+      ? quickLinks.find((link) => link.id === legacyItem.quickLinkId)?.defaultUrl ?? ''
+      : ''
   return {
     id,
     title: typeof item.title === 'string' ? item.title : '',
     code: typeof item.code === 'string' ? item.code : '',
     showDraft: Boolean(item.showDraft),
-    quickLinkId: isPortalQuickLinkId(item.quickLinkId) ? item.quickLinkId : '',
+    quickLinkUrl:
+      typeof item.quickLinkUrl === 'string'
+        ? item.quickLinkUrl.trim()
+        : legacyQuickLinkUrl,
     quickCopyText: typeof item.quickCopyText === 'string' ? item.quickCopyText : '',
     infoNote: typeof item.infoNote === 'string' ? item.infoNote : '',
   }
@@ -1082,6 +1095,21 @@ const formatPortalForwardLabel = (
   return target ? `Forward vers ${target}` : 'Forward vers cible non renseignée'
 }
 
+const shouldShowPortalForwardIndicator = (procedure: CustomerPortalCode) => {
+  if (!procedure.showForward) return false
+  const target = procedure.forwardTarget?.trim()
+  if (!target) return false
+  const normalized = target
+    .toLowerCase()
+    .replace(/[àâä]/g, 'a')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!normalized) return false
+  return !['personne', 'a personne', 'vers personne', 'fwrd a personne', 'fwd a personne'].includes(
+    normalized,
+  )
+}
+
 const normalizeDashboardProcessLine = (
   raw: unknown,
   fallback: DashboardProcessLine,
@@ -1091,6 +1119,7 @@ const normalizeDashboardProcessLine = (
   }
   const item = raw as LegacyDashboardProcessLine
   const id = item.id === 'rma-14' || item.id === 'rma-30' ? item.id : fallback.id
+  const enabled = Boolean(item.enabled)
   const legacyProcedureId =
     typeof item.procedureId === 'string' ? item.procedureId.trim() : ''
   const completeProcedureId =
@@ -1103,10 +1132,10 @@ const normalizeDashboardProcessLine = (
       : legacyProcedureId || fallback.reducedProcedureId
   return {
     id,
-    enabled: Boolean(item.enabled),
+    enabled,
     completeProcedureId,
     reducedProcedureId,
-    mode: normalizeProcessMode(item.mode),
+    mode: enabled ? 'complete' : 'reduced',
   }
 }
 
@@ -1266,6 +1295,10 @@ const normalizeProductEdition = (raw: unknown, fallbackId: string): ProductEditi
         : productEditionPlatformLabels[platform],
     firmwareIds: normalizeIdList(item.firmwareIds),
     compatibleProductIds: normalizeIdList(item.compatibleProductIds),
+    supportUrl: typeof item.supportUrl === 'string' ? item.supportUrl.trim() : '',
+    shareUrl: typeof item.shareUrl === 'string' ? item.shareUrl.trim() : '',
+    portalUrl: typeof item.portalUrl === 'string' ? item.portalUrl.trim() : '',
+    note: typeof item.note === 'string' ? item.note : '',
   }
 }
 
@@ -1277,6 +1310,10 @@ const createProductEditionDraft = (
   name: productEditionPlatformLabels[platform],
   firmwareIds: [],
   compatibleProductIds: [],
+  supportUrl: '',
+  shareUrl: '',
+  portalUrl: '',
+  note: '',
 })
 
 const getProductDashboardVersionIds = (
@@ -1309,6 +1346,7 @@ const normalizeProductCatalogItem = (raw: unknown, index: number): ProductCatalo
     productType: typeof item.productType === 'string' ? item.productType : '',
     note: typeof item.note === 'string' ? item.note : '',
     tags: normalizeTextList(item.tags),
+    packingGuideAvailable: Boolean(item.packingGuideAvailable),
     compatibleProductIds: normalizeIdList(item.compatibleProductIds),
     softwareIds: normalizeIdList(item.softwareIds),
     driverIds: normalizeIdList(item.driverIds),
@@ -1533,7 +1571,6 @@ function App() {
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
   const [procedureQuery, setProcedureQuery] = useState('')
-  const [dashboardProcedureQuery, setDashboardProcedureQuery] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
@@ -1618,7 +1655,7 @@ function App() {
   const [predefinedTagDraft, setPredefinedTagDraft] = useState('')
   const [tagSuggestionState, setTagSuggestionState] = useState<TagSuggestionState | null>(null)
   const [mailInsertMode, setMailInsertMode] = useState<InsertMode>('line')
-  const [portalEditorOpenIds, setPortalEditorOpenIds] = useState<Record<string, boolean>>({})
+  const [selectedPortalProcedureId, setSelectedPortalProcedureId] = useState<string | null>(null)
   const [workspaceDashboardPage, setWorkspaceDashboardPage] =
     useState<WorkspaceDashboardPage>('tools')
   const isCategorySelectionEmpty = selectedCategoryId === null
@@ -1819,6 +1856,7 @@ function App() {
     productType: '',
     note: '',
     tags: [],
+    packingGuideAvailable: false,
     compatibleProductIds: [],
     softwareIds: [],
     driverIds: [],
@@ -1966,6 +2004,7 @@ function App() {
         productType: '',
         note: '',
         tags: [],
+        packingGuideAvailable: false,
         compatibleProductIds: [],
         softwareIds: [],
         driverIds: [],
@@ -2648,8 +2687,18 @@ function App() {
         codes: [createEmptyPortalCodeLine()],
       },
     ])
-    setPortalEditorOpenIds((prev) => ({ ...prev, [id]: true }))
+    setSelectedPortalProcedureId(id)
   }, [customerPortalCodes, updateCustomerPortalCodes])
+  const handleRemovePortalProcedure = useCallback(
+    (procedureId: string) => {
+      const next = customerPortalCodes.filter((entry) => entry.id !== procedureId)
+      updateCustomerPortalCodes(next)
+      if (selectedPortalProcedureId === procedureId) {
+        setSelectedPortalProcedureId(next[0]?.id ?? null)
+      }
+    },
+    [customerPortalCodes, selectedPortalProcedureId, updateCustomerPortalCodes],
+  )
   const updateDashboardProducts = useCallback(
     (next: DashboardProduct[]) => {
       const normalizedNext = normalizeDashboardProducts(next)
@@ -2832,6 +2881,7 @@ function App() {
           driverIds: Array.from(driverIds),
           firmwareIds: Array.from(firmwareIds),
           note: product.note ?? '',
+          packingGuideAvailable: Boolean(product.packingGuideAvailable),
           editions: (product.editions ?? []).map((edition) => ({ ...edition })),
           spareParts: product.spareParts.map((sparePart) => ({ ...sparePart })),
         }
@@ -2863,6 +2913,7 @@ function App() {
         productType: hydratedProduct.productType ?? '',
         note: hydratedProduct.note ?? '',
         tags: [...(hydratedProduct.tags ?? [])],
+        packingGuideAvailable: Boolean(hydratedProduct.packingGuideAvailable),
         compatibleProductIds: [...(hydratedProduct.compatibleProductIds ?? [])],
         softwareIds: [...(hydratedProduct.softwareIds ?? [])],
         driverIds: [...(hydratedProduct.driverIds ?? [])],
@@ -2871,6 +2922,10 @@ function App() {
           ...edition,
           firmwareIds: [...(edition.firmwareIds ?? [])],
           compatibleProductIds: [...(edition.compatibleProductIds ?? [])],
+          supportUrl: edition.supportUrl ?? '',
+          shareUrl: edition.shareUrl ?? '',
+          portalUrl: edition.portalUrl ?? '',
+          note: edition.note ?? '',
         })),
         spareParts: hydratedProduct.spareParts.map((sparePart) => ({ ...sparePart })),
       }
@@ -2945,6 +3000,7 @@ function App() {
         const productMatches = [
           product.name,
           product.productType ?? '',
+          product.packingGuideAvailable ? 'packing guide disponible' : 'packing guide indisponible',
           ...(product.tags ?? []),
           ...(product.editions ?? []).map((edition) => edition.name),
         ]
@@ -2958,7 +3014,12 @@ function App() {
       .filter((product) => {
         if (!query) return product.spareParts.length > 0
         return (
-          [product.name, product.productType ?? '', ...(product.tags ?? [])]
+          [
+            product.name,
+            product.productType ?? '',
+            product.packingGuideAvailable ? 'packing guide disponible' : 'packing guide indisponible',
+            ...(product.tags ?? []),
+          ]
             .join(' ')
             .toLowerCase()
             .includes(query) ||
@@ -3077,31 +3138,7 @@ function App() {
         : [],
     [activeDashboardCatalogEdition, activeDashboardCatalogProduct, dashboardVersionProductById],
   )
-  const dashboardPortalProcedures = useMemo(() => {
-    const query = dashboardProcedureQuery.trim().toLowerCase()
-    if (!query) return customerPortalCodes
-
-    return customerPortalCodes.filter((item) => {
-      const searchHaystack = [
-        item.procedureName,
-        item.showForward ? 'forward activé' : 'forward désactivé',
-        item.forwardTarget ?? '',
-        ...item.codes.flatMap((entry) => [
-          entry.title ?? '',
-          entry.code,
-          entry.showDraft ? 'draft brouillon' : 'sans draft',
-          entry.quickLinkId ?? '',
-          entry.quickCopyText ?? '',
-          entry.infoNote ?? '',
-        ]),
-        formatPortalForwardLabel(item, 'Forward non'),
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return searchHaystack.includes(query)
-    })
-  }, [customerPortalCodes, dashboardProcedureQuery])
+  const dashboardPortalProcedures = useMemo(() => customerPortalCodes, [customerPortalCodes])
   const activeDashboardPortalProcedure = useMemo(
     () =>
       dashboardPortalProcedures.find(
@@ -3393,10 +3430,6 @@ function App() {
 
   const toggleMailInsertMode = useCallback(() => {
     setMailInsertMode((current) => (current === 'line' ? 'cursor' : 'line'))
-  }, [])
-
-  const togglePortalEditorItem = useCallback((id: string) => {
-    setPortalEditorOpenIds((prev) => ({ ...prev, [id]: !prev[id] }))
   }, [])
 
   useEffect(() => {
@@ -3899,6 +3932,7 @@ function App() {
       productType: productDraft.productType?.trim() ?? '',
       note: productDraft.note ?? '',
       tags: parseProductTags(productTagsDraftText),
+      packingGuideAvailable: Boolean(productDraft.packingGuideAvailable),
       compatibleProductIds: normalizeIdList(productDraft.compatibleProductIds).filter(
         (id) => id !== productDraft.id,
       ),
@@ -3915,6 +3949,10 @@ function App() {
           compatibleProductIds: normalizeIdList(edition.compatibleProductIds).filter(
             (id) => id !== productDraft.id,
           ),
+          supportUrl: edition.supportUrl?.trim() ?? '',
+          shareUrl: edition.shareUrl?.trim() ?? '',
+          portalUrl: edition.portalUrl?.trim() ?? '',
+          note: edition.note ?? '',
         }
       }),
       spareParts: productDraft.spareParts.map((sparePart) => ({
@@ -4124,65 +4162,46 @@ function App() {
     )
   }
 
-  const renderPortalCodeEditorSettings = () => (
-    <div className="portal-code-editor">
-      {customerPortalCodes.length ? (
-        customerPortalCodes.map((item) => {
-          const isOpen = portalEditorOpenIds[item.id] ?? !item.procedureName.trim()
+  const renderPortalCodeEditorSettings = () => {
+    const selectedPortalProcedure =
+      customerPortalCodes.find((entry) => entry.id === selectedPortalProcedureId) ??
+      customerPortalCodes[0] ??
+      null
+    const resolvedSelectedPortalProcedureId = selectedPortalProcedure?.id ?? null
 
-          return (
-            <div className={`portal-code-editor__card${isOpen ? ' is-open' : ''}`} key={item.id}>
-              <button
-                className="portal-code-editor__summary"
-                type="button"
-                onClick={() => togglePortalEditorItem(item.id)}
-                aria-expanded={isOpen}
-              >
-                <span className="portal-code-editor__summary-name">
-                  {item.procedureName.trim() || 'Procédure sans nom'}
-                </span>
-                <span
-                  className={`portal-code-editor__summary-arrow${isOpen ? ' is-open' : ''}`}
-                  aria-hidden="true"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="9 6 15 12 9 18" />
-                  </svg>
-                </span>
-              </button>
-
-              {isOpen ? (
-                <>
-                  <div className="portal-code-editor__header">
-                    <input
-                      className="input"
-                      value={item.procedureName}
-                      placeholder="Nom de procédure"
-                      onChange={(event) =>
-                        updateCustomerPortalProcedure(item.id, {
-                          procedureName: event.target.value,
-                        })
-                      }
-                    />
-                    <div className="portal-code-editor__header-actions">
-                      {item.codes.length < 4 ? (
-                        <button
-                          className="btn btn--ghost btn--small"
-                          type="button"
-                          onClick={() => addCustomerPortalCodeLine(item.id)}
-                        >
-                          Ajouter une étape
-                        </button>
-                      ) : null}
+    return (
+      <div className="portal-code-editor">
+        {customerPortalCodes.length ? (
+          <div className="dashboard-product-editor portal-code-editor__layout">
+            <div className="dashboard-product-editor__list">
+              {customerPortalCodes.map((item) => {
+                const procedureHasDraft = item.codes.some((entry) => Boolean(entry.showDraft))
+                return (
+                  <div
+                    className={`list-item list-item--compact${
+                      resolvedSelectedPortalProcedureId === item.id ? ' is-selected' : ''
+                    }`}
+                    key={item.id}
+                    onClick={() => setSelectedPortalProcedureId(item.id)}
+                  >
+                    <div className="list-item__content">
+                      <div className="list-item__title">
+                        {item.procedureName.trim() || 'Procédure sans nom'}
+                      </div>
+                      <div className="list-item__meta">
+                        {item.codes.length}/4 étape{item.codes.length > 1 ? 's' : ''} • Draft{' '}
+                        {procedureHasDraft ? 'oui' : 'non'} • Forward {item.showForward ? 'oui' : 'non'}
+                      </div>
+                    </div>
+                    <div className="list-item__actions">
                       <button
                         className="icon-btn-sm danger"
                         type="button"
                         title="Supprimer"
-                        onClick={() =>
-                          updateCustomerPortalCodes(
-                            customerPortalCodes.filter((entry) => entry.id !== item.id),
-                          )
-                        }
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          handleRemovePortalProcedure(item.id)
+                        }}
                       >
                         <svg
                           width="14"
@@ -4200,158 +4219,220 @@ function App() {
                       </button>
                     </div>
                   </div>
+                )
+              })}
+            </div>
 
-                  <div className="portal-code-editor__forward">
-                    <label className="portal-code-editor__check portal-code-editor__check--subtle">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(item.showForward)}
-                        onChange={(event) =>
-                          updateCustomerPortalProcedure(item.id, {
-                            showForward: event.target.checked,
-                            forwardTarget: event.target.checked ? item.forwardTarget ?? '' : '',
-                          })
-                        }
-                      />
-                      <span>Forward en tête de procédure</span>
-                    </label>
-                    {item.showForward ? (
-                      <input
-                        className="input"
-                        value={item.forwardTarget ?? ''}
-                        placeholder="Nom à afficher après Forward to"
-                        onChange={(event) =>
-                          updateCustomerPortalProcedure(item.id, {
-                            forwardTarget: event.target.value,
-                          })
-                        }
-                      />
-                    ) : null}
-                  </div>
+            <div className="dashboard-product-editor__form">
+              {selectedPortalProcedure ? (
+                <div className="form portal-code-editor__form">
+                  <section className="portal-code-editor__section">
+                    <div className="portal-code-editor__section-head">
+                      <div className="portal-code-editor__section-title">Procédure</div>
+                      <div className="portal-code-editor__section-meta">
+                        {selectedPortalProcedure.codes.length}/4 étapes
+                      </div>
+                    </div>
+                    <input
+                      className="input"
+                      value={selectedPortalProcedure.procedureName}
+                      placeholder="Nom de procédure"
+                      onChange={(event) =>
+                        updateCustomerPortalProcedure(selectedPortalProcedure.id, {
+                          procedureName: event.target.value,
+                        })
+                      }
+                    />
+                    <div className="portal-code-editor__forward">
+                      <label className="portal-code-editor__check portal-code-editor__check--subtle">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedPortalProcedure.showForward)}
+                          onChange={(event) =>
+                            updateCustomerPortalProcedure(selectedPortalProcedure.id, {
+                              showForward: event.target.checked,
+                              forwardTarget: event.target.checked
+                                ? selectedPortalProcedure.forwardTarget ?? ''
+                                : '',
+                            })
+                          }
+                        />
+                        <span>Forward en tête de procédure</span>
+                      </label>
+                      {selectedPortalProcedure.showForward ? (
+                        <input
+                          className="input"
+                          value={selectedPortalProcedure.forwardTarget ?? ''}
+                          placeholder="Nom à afficher après Forward to"
+                          onChange={(event) =>
+                            updateCustomerPortalProcedure(selectedPortalProcedure.id, {
+                              forwardTarget: event.target.value,
+                            })
+                          }
+                        />
+                      ) : null}
+                    </div>
+                  </section>
 
-                  <div className="portal-code-editor__codes">
-                    {item.codes.map((codeLine, index) => (
-                      <div className="portal-code-editor__code-card" key={codeLine.id}>
-                        <div className="portal-code-editor__row">
-                          {item.codes.length > 1 ? (
+                  <section className="portal-code-editor__section">
+                    <div className="portal-code-editor__section-head">
+                      <div className="portal-code-editor__section-title">Étapes</div>
+                      <button
+                        className="btn btn--ghost btn--small"
+                        type="button"
+                        onClick={() => addCustomerPortalCodeLine(selectedPortalProcedure.id)}
+                        disabled={selectedPortalProcedure.codes.length >= 4}
+                      >
+                        Ajouter une étape
+                      </button>
+                    </div>
+                    <div className="portal-code-editor__codes">
+                      {selectedPortalProcedure.codes.map((codeLine, index) => (
+                        <div className="portal-code-editor__code-card" key={codeLine.id}>
+                          <div className="portal-code-editor__row">
                             <span className="portal-code-editor__index">{index + 1}</span>
-                          ) : null}
+                            <span className="list-item__meta">Étape {index + 1}</span>
+                            {selectedPortalProcedure.codes.length > 1 ? (
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer cette étape"
+                                onClick={() =>
+                                  removeCustomerPortalCodeLine(
+                                    selectedPortalProcedure.id,
+                                    codeLine.id,
+                                  )
+                                }
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            ) : null}
+                          </div>
+
+                          <input
+                            className="input"
+                            value={codeLine.title ?? ''}
+                            placeholder={`Titre de l'étape ${index + 1}`}
+                            onChange={(event) =>
+                              updateCustomerPortalCodeLineItem(
+                                selectedPortalProcedure.id,
+                                codeLine.id,
+                                {
+                                  title: event.target.value,
+                                },
+                              )
+                            }
+                          />
+
+                          <div className="portal-code-editor__options">
+                            <label className="portal-code-editor__check portal-code-editor__check--subtle">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(codeLine.showDraft)}
+                                onChange={(event) =>
+                                  updateCustomerPortalCodeLineItem(
+                                    selectedPortalProcedure.id,
+                                    codeLine.id,
+                                    {
+                                      showDraft: event.target.checked,
+                                    },
+                                  )
+                                }
+                              />
+                              <span>Draft étape</span>
+                            </label>
+
+                            <label className="portal-code-editor__check portal-code-editor__check--subtle portal-code-editor__check--stacked">
+                              <span>Lien d'accès rapide</span>
+                              <input
+                                className="input"
+                                value={codeLine.quickLinkUrl ?? ''}
+                                placeholder="https://..."
+                                onChange={(event) =>
+                                  updateCustomerPortalCodeLineItem(
+                                    selectedPortalProcedure.id,
+                                    codeLine.id,
+                                    {
+                                      quickLinkUrl: event.target.value,
+                                    },
+                                  )
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <input
+                            className="input"
+                            value={codeLine.quickCopyText ?? ''}
+                            placeholder="Template de texte"
+                            onChange={(event) =>
+                              updateCustomerPortalCodeLineItem(
+                                selectedPortalProcedure.id,
+                                codeLine.id,
+                                {
+                                  quickCopyText: event.target.value,
+                                },
+                              )
+                            }
+                          />
+
+                          <textarea
+                            className="textarea portal-code-editor__note"
+                            value={codeLine.infoNote ?? ''}
+                            placeholder="Texte affiché au milieu de l'étape"
+                            onChange={(event) =>
+                              updateCustomerPortalCodeLineItem(
+                                selectedPortalProcedure.id,
+                                codeLine.id,
+                                {
+                                  infoNote: event.target.value,
+                                },
+                              )
+                            }
+                          />
+
                           <input
                             className="input"
                             value={codeLine.code}
                             placeholder={`Code portal ${index + 1}`}
                             onChange={(event) =>
-                              updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                code: event.target.value,
-                              })
+                              updateCustomerPortalCodeLineItem(
+                                selectedPortalProcedure.id,
+                                codeLine.id,
+                                {
+                                  code: event.target.value,
+                                },
+                              )
                             }
                           />
-                          {item.codes.length > 1 ? (
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer ce code"
-                              onClick={() => removeCustomerPortalCodeLine(item.id, codeLine.id)}
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          ) : null}
                         </div>
-
-                        <input
-                          className="input"
-                          value={codeLine.title ?? ''}
-                          placeholder={`Titre de l'étape ${index + 1}`}
-                          onChange={(event) =>
-                            updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                              title: event.target.value,
-                            })
-                          }
-                        />
-
-                        <div className="portal-code-editor__options">
-                          <label className="portal-code-editor__check portal-code-editor__check--subtle">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(codeLine.showDraft)}
-                              onChange={(event) =>
-                                updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                  showDraft: event.target.checked,
-                                })
-                              }
-                            />
-                            <span>Draft étape</span>
-                          </label>
-
-                          <label className="portal-code-editor__check portal-code-editor__check--subtle">
-                            <span>Lien rapide</span>
-                            <select
-                              className="select select--compact"
-                              value={codeLine.quickLinkId ?? ''}
-                              onChange={(event) =>
-                                updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                                  quickLinkId: isPortalQuickLinkId(event.target.value)
-                                    ? event.target.value
-                                    : '',
-                                })
-                              }
-                            >
-                              <option value="">Aucun</option>
-                              {quickLinks.map((link) => (
-                                <option key={link.id} value={link.id}>
-                                  {link.label}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
-
-                        <input
-                          className="input"
-                          value={codeLine.quickCopyText ?? ''}
-                          placeholder="Texte de copie rapide"
-                          onChange={(event) =>
-                            updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                              quickCopyText: event.target.value,
-                            })
-                          }
-                        />
-
-                        <textarea
-                          className="textarea portal-code-editor__note"
-                          value={codeLine.infoNote ?? ''}
-                          placeholder="Note affichée au survol du bouton i"
-                          onChange={(event) =>
-                            updateCustomerPortalCodeLineItem(item.id, codeLine.id, {
-                              infoNote: event.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : null}
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              ) : (
+                <div className="empty-state">Sélectionnez une procédure Portal pour l'éditer.</div>
+              )}
             </div>
-          )
-        })
-      ) : (
-        <div className="empty-state">Aucun code configuré.</div>
-      )}
-    </div>
-  )
+          </div>
+        ) : (
+          <div className="empty-state">Aucune procédure configurée.</div>
+        )}
+      </div>
+    )
+  }
 
   const renderDashboardCatalogEditor = ({
     title,
@@ -4707,10 +4788,9 @@ function App() {
     setActiveDashboardPortalProcedureId(null)
     setDashboardProductQuery('')
     setDashboardSparePartQuery('')
-    setDashboardProcedureQuery('')
     setSnippetTooltip(null)
     setMailInsertMode('line')
-    setPortalEditorOpenIds({})
+    setSelectedPortalProcedureId(null)
     setClearAllArmed(false)
     setToast('Données effacées.')
   }
@@ -5298,7 +5378,39 @@ function App() {
     </article>
   )
 
-  const renderDashboardCatalogPanel = (title: string, searchPlaceholder: string, emptyTitle: string) => (
+  const renderDashboardCatalogPanel = (
+    title: string,
+    searchPlaceholder: string,
+    emptyTitle: string,
+  ) => {
+    const dashboardCatalogRelations = [
+      {
+        id: 'firmware',
+        label: 'Firmware',
+        items: activeDashboardCatalogProductFirmwares,
+      },
+      {
+        id: 'driver',
+        label: 'Driver',
+        items: activeDashboardCatalogProductDrivers,
+      },
+      {
+        id: 'software',
+        label: 'Logiciels',
+        items: activeDashboardCatalogProductSoftwares,
+      },
+    ] as const
+    const formatDashboardRelationItems = (items: readonly DashboardProduct[], emptyLabel: string) => {
+      if (!items.length) return emptyLabel
+      return items
+        .map((item) => {
+          const version = item.latestVersion.trim()
+          return version ? `${item.name} (${version})` : item.name
+        })
+        .join(' • ')
+    }
+
+    return (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--catalog">
       <div className="workspace-dashboard__panel-title">{title}</div>
 
@@ -5338,9 +5450,7 @@ function App() {
                     >
                       <span className="dashboard-version-item__name">{product.name}</span>
                       <span className="dashboard-version-item__meta">
-                        {product.productType?.trim() || 'Type non renseigné'} •{' '}
-                        {(product.editions ?? []).length} édition
-                        {(product.editions ?? []).length > 1 ? 's' : ''} • {linkedCount} lien
+                        {product.productType?.trim() || 'Type non renseigné'} • {linkedCount} lien
                         {linkedCount > 1 ? 's' : ''}
                       </span>
                     </button>
@@ -5362,7 +5472,7 @@ function App() {
                     {activeDashboardCatalogProduct.name}
                   </div>
                   <div className="dashboard-product-meta">
-                    {(activeDashboardCatalogProduct.editions ?? []).length} édition{(activeDashboardCatalogProduct.editions ?? []).length > 1 ? 's' : ''}
+                    {activeDashboardCatalogProduct.productType?.trim() || 'Type non renseigné'}
                   </div>
                 </div>
               </div>
@@ -5392,84 +5502,106 @@ function App() {
 
               {activeDashboardCatalogEdition ? (
                 <div className="dashboard-product-content">
-                  <div className="dashboard-product-cards">
-                    {activeDashboardCatalogProductFirmwares.length ? (
-                      <div className="dashboard-product-card dashboard-product-card--firmware">
-                        <div className="dashboard-product-card__content">
-                          <div className="dashboard-product-card__label">Firmware</div>
-                          <div className="dashboard-product-card__value">
-                            {activeDashboardCatalogProductFirmwares[0]?.latestVersion.trim() ||
-                              'Non renseigné'}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {activeDashboardCatalogProductDrivers.length ? (
-                      <div className="dashboard-product-card dashboard-product-card--driver">
-                        <div className="dashboard-product-card__content">
-                          <div className="dashboard-product-card__label">Driver</div>
-                          <div className="dashboard-product-card__value">
-                            {activeDashboardCatalogProductDrivers[0]?.latestVersion.trim() ||
-                              'Non renseigné'}
-                          </div>
-                          <div className="dashboard-product-card__items">
-                            {activeDashboardCatalogProductDrivers.map((d) => (
-                              <span key={d.id} className="dashboard-product-tag">
-                                {d.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {activeDashboardCatalogProductSoftwares.length ? (
-                    <div className="dashboard-product-section">
-                      <div className="dashboard-product-section__header">
-                        <span className="dashboard-product-section__title">Logiciels</span>
-                      </div>
-                      <div className="dashboard-product-software-list">
-                        {activeDashboardCatalogProductSoftwares.map((software) => (
-                          <div className="dashboard-product-software-item" key={software.id}>
-                            <div className="dashboard-product-software-info">
-                              <span className="dashboard-product-software-name">
-                                {software.name}
-                              </span>
-                              <span className="dashboard-product-software-version">
-                                {software.latestVersion.trim() || 'Non renseigné'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                  <div className="dashboard-product-relations">
+                    <div className="dashboard-product-relations__toolbar">
+                      <div className="dashboard-product-relations__title">Liens & compatibilités</div>
+                      <div className="dashboard-product-relations__shortcuts">
+                        <button
+                          type="button"
+                          className="dashboard-product-relations__shortcut-btn"
+                          onClick={() => openLink(activeDashboardCatalogEdition.supportUrl ?? '')}
+                          disabled={!activeDashboardCatalogEdition.supportUrl?.trim()}
+                          title="Ouvrir la page support"
+                          aria-label="Ouvrir la page support"
+                        >
+                          SUP
+                        </button>
+                        <button
+                          type="button"
+                          className="dashboard-product-relations__shortcut-btn"
+                          onClick={() => openLink(activeDashboardCatalogEdition.shareUrl ?? '')}
+                          disabled={!activeDashboardCatalogEdition.shareUrl?.trim()}
+                          title="Ouvrir la page Share"
+                          aria-label="Ouvrir la page Share"
+                        >
+                          SHR
+                        </button>
+                        <button
+                          type="button"
+                          className="dashboard-product-relations__shortcut-btn"
+                          onClick={() => openLink(activeDashboardCatalogEdition.portalUrl ?? '')}
+                          disabled={!activeDashboardCatalogEdition.portalUrl?.trim()}
+                          title="Ouvrir la page Portal"
+                          aria-label="Ouvrir la page Portal"
+                        >
+                          PRT
+                        </button>
                       </div>
                     </div>
-                  ) : null}
+                    <div className="dashboard-product-relations__table">
+                      <div className="dashboard-product-relations__row">
+                        <div className="dashboard-product-relations__row-title">Firmware</div>
+                        <div className="dashboard-product-relations__row-value">
+                          {formatDashboardRelationItems(
+                            dashboardCatalogRelations[0].items,
+                            'Aucun firmware lié',
+                          )}
+                        </div>
+                      </div>
+                      <div className="dashboard-product-relations__row">
+                        <div className="dashboard-product-relations__row-title">Drivers</div>
+                        <div className="dashboard-product-relations__row-value">
+                          {formatDashboardRelationItems(
+                            dashboardCatalogRelations[1].items,
+                            'Aucun driver lié',
+                          )}
+                        </div>
+                      </div>
+                      <div className="dashboard-product-relations__row">
+                        <div className="dashboard-product-relations__row-title">
+                          Logiciels compatibles
+                        </div>
+                        <div className="dashboard-product-relations__row-value">
+                          {dashboardCatalogRelations[2].items.length ? (
+                            <ul className="dashboard-product-relations__software-list">
+                              {dashboardCatalogRelations[2].items.map((item) => (
+                                <li key={item.id}>
+                                  {item.name}
+                                  {item.latestVersion.trim()
+                                    ? ` (${item.latestVersion.trim()})`
+                                    : ''}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            'Aucun logiciel lié'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-product-note-section">
+                    <div className="dashboard-product-note-section__title">Notes</div>
+                    <textarea
+                      className="textarea dashboard-product-note__field"
+                      value={activeDashboardCatalogEdition.note ?? ''}
+                      onChange={(event) =>
+                        updateDashboardCatalogEditionNote(
+                          activeDashboardCatalogProduct.id,
+                          activeDashboardCatalogEdition.id,
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Ajouter une note libre pour cette édition..."
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="dashboard-version-empty dashboard-product-edition-empty">
                   Sélectionnez une édition pour afficher les informations techniques.
                 </div>
               )}
-
-              {activeDashboardCatalogEdition ? (
-                <div className="dashboard-product-note-section">
-                  <div className="dashboard-section-label">Note édition</div>
-                  <textarea
-                    className="textarea dashboard-product-note__field"
-                    value={activeDashboardCatalogEdition.note ?? ''}
-                    onChange={(event) =>
-                      updateDashboardCatalogEditionNote(
-                        activeDashboardCatalogProduct.id,
-                        activeDashboardCatalogEdition.id,
-                        event.target.value,
-                      )
-                    }
-                    placeholder="Ajouter une note libre pour cette édition..."
-                  />
-                </div>
-              ) : null}
             </>
           ) : (
             <div className="dashboard-wip">
@@ -5480,7 +5612,8 @@ function App() {
         </div>
       </div>
     </article>
-  )
+    )
+  }
 
   const renderWorkspaceDashboardSparePartsPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--catalog">
@@ -5531,6 +5664,21 @@ function App() {
                     </span>
                   </div>
                 </div>
+                <span
+                  className={`dashboard-spare-parts__badge dashboard-spare-parts__badge--packing${
+                    activeDashboardSpareProduct.packingGuideAvailable ? ' is-available' : ''
+                  }`}
+                >
+                  <span
+                    className={`dashboard-spare-parts__guide-dot${
+                      activeDashboardSpareProduct.packingGuideAvailable ? ' is-available' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {activeDashboardSpareProduct.packingGuideAvailable
+                    ? 'Packing guide disponible'
+                    : 'Packing guide indisponible'}
+                </span>
               </div>
               <div className="dashboard-spare-parts__list">
                 {activeDashboardSpareProduct.spareParts.length ? (
@@ -5591,20 +5739,9 @@ function App() {
     const activePortalForwardLabel = activeDashboardPortalProcedure
       ? formatPortalForwardLabel(activeDashboardPortalProcedure)
       : 'Forward'
-    const activePortalProcessSetting =
-      activeDashboardPortalProcedure &&
-      dashboardProcessSettings.find(
-        (entry) =>
-          entry.enabled &&
-          (entry.completeProcedureId === activeDashboardPortalProcedure.id ||
-            entry.reducedProcedureId === activeDashboardPortalProcedure.id),
-      )
-    const activePortalDisplayMode =
-      activePortalProcessSetting && activeDashboardPortalProcedure
-        ? activePortalProcessSetting.reducedProcedureId === activeDashboardPortalProcedure.id
-          ? 'reduced'
-          : 'complete'
-        : 'complete'
+    const showPortalForwardIndicator = activeDashboardPortalProcedure
+      ? shouldShowPortalForwardIndicator(activeDashboardPortalProcedure)
+      : false
     const visiblePortalSteps = activeDashboardPortalProcedure?.codes ?? []
 
     return (
@@ -5613,14 +5750,6 @@ function App() {
 
         <div className="dashboard-version-browser dashboard-portal-browser">
           <div className="dashboard-version-browser__list">
-            <div className="dashboard-portal-search dashboard-sticky-search">
-              <input
-                className="input"
-                value={dashboardProcedureQuery}
-                onChange={(event) => setDashboardProcedureQuery(event.target.value)}
-                placeholder="Rechercher une procédure Portal, un code, un forward..."
-              />
-            </div>
             {dashboardPortalProcedures.length ? (
               dashboardPortalProcedures.map((procedure) => {
                 const procedureName = procedure.procedureName.trim() || 'Procédure sans nom'
@@ -5655,87 +5784,108 @@ function App() {
                   <div className="dashboard-portal-procedure-title">
                     {activePortalProcedureName}
                   </div>
-                  <div className="dashboard-portal-procedure-indicators">
-                    <div
-                      className={`dashboard-portal-indicator${
-                        activeDashboardPortalProcedure.showForward ? ' is-active' : ''
-                      }`}
-                    >
-                      <div className="dashboard-portal-indicator__led"></div>
-                      <div className="dashboard-portal-indicator__label">
-                        {activePortalForwardLabel}
+                  {showPortalForwardIndicator ? (
+                    <div className="dashboard-portal-procedure-indicators">
+                      <div
+                        className={`dashboard-portal-indicator${
+                          activeDashboardPortalProcedure.showForward ? ' is-active' : ''
+                        }`}
+                      >
+                        <div className="dashboard-portal-indicator__label">
+                          {activePortalForwardLabel}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
 
                 <div className="dashboard-version-detail__section">
-                  {activePortalProcessSetting && activePortalDisplayMode === 'reduced' ? (
-                    <div className="dashboard-portal-mode-note">
-                      Procédure réduite active sur ce Process.
-                    </div>
-                  ) : null}
                   <div className="dashboard-portal-steps">
                     {visiblePortalSteps.map((entry, index) => {
                       const lineTitle = entry.title?.trim() || `Étape ${index + 1}`
                       const code = entry.code.trim()
-                      const infoNote = entry.infoNote?.trim() ?? ''
-                      const quickLink = entry.quickLinkId
-                        ? quickLinks.find((link) => link.id === entry.quickLinkId)
-                        : null
-                      const quickLinkUrl = quickLink
-                        ? resolvedQuickLinks.find((link) => link.id === quickLink.id)?.url ?? ''
-                        : ''
+                      const stepText = entry.infoNote?.trim() ?? ''
+                      const quickLinkUrl = entry.quickLinkUrl?.trim() ?? ''
+                      const quickCopyText = entry.quickCopyText?.trim() ?? ''
 
                       return (
                         <article className="dashboard-portal-step" key={entry.id}>
-                          <span className="dashboard-portal-step__index">{index + 1}</span>
-                          <div className="dashboard-portal-step__body">
-                            <div className="dashboard-portal-step__title-row">
-                              <div className="dashboard-portal-step__title">{lineTitle}</div>
-                              {entry.showDraft ? (
-                                <span className="dashboard-portal-step__draft">Draft</span>
+                          <div className="dashboard-portal-step__main">
+                            <div className="dashboard-portal-step__header">
+                              <span className="dashboard-portal-step__index">{index + 1}</span>
+                              <div className="dashboard-portal-step__heading">
+                                <div className="dashboard-portal-step__title">{lineTitle}</div>
+                                {entry.showDraft ? (
+                                  <span className="dashboard-portal-step__draft">DRAFT</span>
+                                ) : null}
+                              </div>
+                              {quickLinkUrl ? (
+                                <button
+                                  className="dashboard-portal-step__link-btn"
+                                  type="button"
+                                  onClick={() => void openExternal(quickLinkUrl)}
+                                  aria-label={`Ouvrir l'accès rapide pour ${lineTitle}`}
+                                  title="Accès rapide"
+                                >
+                                  <svg
+                                    className="dashboard-portal-step__link-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="M10.5 13.5l3-3" />
+                                    <path d="M7.4 16.6l-1.1 1.1a3 3 0 1 1-4.2-4.2l3.3-3.3a3 3 0 0 1 4.2 0" />
+                                    <path d="M16.6 7.4l1.1-1.1a3 3 0 0 1 4.2 4.2l-3.3 3.3a3 3 0 0 1-4.2 0" />
+                                  </svg>
+                                </button>
                               ) : null}
                             </div>
-                            <div className="dashboard-portal-step__note">
-                              {infoNote || 'Aucune note'}
+
+                            <div
+                              className="dashboard-portal-step__content"
+                              dangerouslySetInnerHTML={{
+                                __html: formatProcedureText(stepText || 'Aucun texte renseigné.'),
+                              }}
+                            />
+
+                            <div className="dashboard-portal-step__footer">
+                              <button
+                                className={`dashboard-portal-step__code-btn${
+                                  portalCopiedId === entry.id ? ' is-success' : ''
+                                }`}
+                                type="button"
+                                onClick={() => void handleCopyPortalCode(entry.id, entry.code)}
+                                disabled={!code}
+                                title="Copier le code portal"
+                              >
+                                <span className="dashboard-portal-step__code-btn-label">
+                                  {code || 'Code vide'}
+                                </span>
+                              </button>
                             </div>
                           </div>
-                          <div className="dashboard-portal-step__actions">
-                            {quickLink && quickLinkUrl ? (
+                          {quickCopyText ? (
+                            <div className="dashboard-portal-step__template">
+                              <div className="dashboard-portal-step__template-text">
+                                {quickCopyText}
+                              </div>
                               <button
-                                className="ghost dashboard-copy-btn dashboard-copy-btn--compact dashboard-copy-btn--link"
-                                type="button"
-                                onClick={() => void openExternal(quickLinkUrl)}
-                              >
-                                {quickLink.label}
-                              </button>
-                            ) : null}
-                            {entry.quickCopyText?.trim() ? (
-                              <button
-                                className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
+                                className={`dashboard-portal-step__template-copy${
                                   portalQuickCopiedId === entry.id ? ' is-success' : ''
                                 }`}
                                 type="button"
                                 onClick={() =>
-                                  void handleCopyPortalQuickText(entry.id, entry.quickCopyText ?? '')
+                                  void handleCopyPortalQuickText(entry.id, quickCopyText)
                                 }
                               >
-                                {portalQuickCopiedId === entry.id ? 'Copié !' : 'Copie rapide'}
+                                {portalQuickCopiedId === entry.id ? 'Copié' : 'Copier'}
                               </button>
-                            ) : null}
-                            <code className="dashboard-portal-code__value">{code || '-'}</code>
-                            <button
-                              className={`ghost dashboard-copy-btn dashboard-copy-btn--compact${
-                                portalCopiedId === entry.id ? ' is-success' : ''
-                              }`}
-                              type="button"
-                              onClick={() => void handleCopyPortalCode(entry.id, entry.code)}
-                              disabled={!code}
-                            >
-                              {portalCopiedId === entry.id ? 'Copié !' : 'Copier'}
-                            </button>
-                          </div>
+                            </div>
+                          ) : null}
                         </article>
                       )
                     })}
@@ -5782,53 +5932,12 @@ function App() {
     </article>
   )
 
-  const renderWorkspaceDashboardProcessPanel = (title: string) => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--process">
-      <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-process">
-        <div className="dashboard-process__lines">
-          {dashboardProcessLineDefinitions.map((line) => {
-            const lineSetting = dashboardProcessSettings.find((entry) => entry.id === line.id)
-            const completeProcedure = data.procedures.find(
-              (procedure) => procedure.id === lineSetting?.completeProcedureId,
-            )
-            const reducedProcedure = data.procedures.find(
-              (procedure) => procedure.id === lineSetting?.reducedProcedureId,
-            )
-            const activeProcedure =
-              lineSetting?.mode === 'reduced' ? reducedProcedure : completeProcedure
-            const activeProcedureLabel = lineSetting?.mode === 'reduced' ? 'réduite' : 'complète'
-            const isActive = Boolean(lineSetting?.enabled)
-
-            return (
-              <div
-                className={`dashboard-process__line${isActive ? ' is-active' : ''}`}
-                key={line.id}
-              >
-                <div className="dashboard-process__content">
-                  <span className="dashboard-process__label">{line.label}</span>
-                  <span className="dashboard-process__meta">
-                    Complet: {completeProcedure?.name?.trim() || 'non liée'} · Réduite:{' '}
-                    {reducedProcedure?.name?.trim() || 'non liée'} · Active:{' '}
-                    {activeProcedure?.name?.trim() || 'non liée'} ({activeProcedureLabel})
-                  </span>
-                </div>
-                <div className="dashboard-process__led"></div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </article>
-  )
-
   const renderWorkspaceDashboardContent = () => {
     if (workspaceDashboardPage === 'tools') {
       return (
         <div className="workspace-dashboard__tools-grid">
           <div className="workspace-dashboard__tools-left">
             {renderWorkspaceDashboardNameFormatter('Name format')}
-            {renderWorkspaceDashboardProcessPanel('Process')}
           </div>
           <div className="workspace-dashboard__tools-right">
             {renderWorkspaceDashboardVatPanel('Price calculator')}
@@ -6376,7 +6485,9 @@ function App() {
                     aria-expanded={dashboardSectionOpen}
                     aria-controls="workspace-dashboard"
                   >
-                    {dashboardSectionOpen ? '▾' : '▴'}
+                    <span className="dashboard-toggle-btn__arrow">
+                      {dashboardSectionOpen ? '▾' : '▴'}
+                    </span>
                   </button>
                   <div
                     className={`dashboard-page-strip${dashboardSectionOpen ? ' is-open' : ''}`}
@@ -6815,7 +6926,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            Move
+                            ⇅
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{category.name}</div>
@@ -6965,7 +7076,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            Move
+                            ⇅
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{snippet.title}</div>
@@ -7272,7 +7383,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            Move
+                            ⇅
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{template.name}</div>
@@ -7626,7 +7737,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            Move
+                            ⇅
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{task.name}</div>
@@ -8262,6 +8373,39 @@ function App() {
                                     </button>
                                   </div>
 
+                                  <div className="form__row three">
+                                    <input
+                                      className="input"
+                                      placeholder="URL support édition"
+                                      value={edition.supportUrl ?? ''}
+                                      onChange={(event) =>
+                                        updateProductDraftEdition(edition.id, {
+                                          supportUrl: event.target.value,
+                                        })
+                                      }
+                                    />
+                                    <input
+                                      className="input"
+                                      placeholder="URL share édition"
+                                      value={edition.shareUrl ?? ''}
+                                      onChange={(event) =>
+                                        updateProductDraftEdition(edition.id, {
+                                          shareUrl: event.target.value,
+                                        })
+                                      }
+                                    />
+                                    <input
+                                      className="input"
+                                      placeholder="URL portal édition"
+                                      value={edition.portalUrl ?? ''}
+                                      onChange={(event) =>
+                                        updateProductDraftEdition(edition.id, {
+                                          portalUrl: event.target.value,
+                                        })
+                                      }
+                                    />
+                                  </div>
+
                                   <div className="product-edition-card__relations">
                                     <div className="dashboard-product-editor__relations">
                                       <div className="settings-label">Firmware de l'édition</div>
@@ -8399,7 +8543,7 @@ function App() {
                             {...handleProps.listeners}
                             onClick={(event) => event.stopPropagation()}
                           >
-                            Move
+                            ⇅
                           </button>
                           <div className="list-item__content">
                             <div className="list-item__title">{procedure.name}</div>
@@ -9602,7 +9746,7 @@ function App() {
                       </button>
                     </div>
                   </div>
-                  <div className="list-card__body">
+                  <div className="list-card__body list-card__body--portal-editor">
                     {renderPortalCodeEditorSettings()}
                   </div>
                 </div>
@@ -9616,8 +9760,8 @@ function App() {
                     <div className="list-card__title-group">
                       <div className="list-card__title">Process</div>
                       <div className="list-card__subtitle">
-                        Les indicateurs du dashboard ne sont plus cliquables. Leur état se règle
-                        ici, avec la procédure associée et son mode d’affichage.
+                        Associe la procédure courte et la procédure complète pour chaque ligne, puis
+                        active le toggle Rush pour afficher la version complète.
                       </div>
                     </div>
                   </div>
@@ -9645,10 +9789,11 @@ function App() {
                                   onChange={(event) =>
                                     updateDashboardProcessSetting(line.id, {
                                       enabled: event.target.checked,
+                                      mode: event.target.checked ? 'complete' : 'reduced',
                                     })
                                   }
                                     />
-                                    <span>Actif</span>
+                                    <span>Rush</span>
                                   </label>
                               </div>
                               <div className="form__row two">
@@ -9688,26 +9833,6 @@ function App() {
                                         {procedure.name.trim() || 'Procédure sans nom'}
                                       </option>
                                     ))}
-                                  </select>
-                                </label>
-                              </div>
-                              <div className="form__row">
-                                <label className="settings-field">
-                                  <span className="settings-label">Mode actif</span>
-                                  <select
-                                    className="select"
-                                    value={lineSetting?.mode ?? 'complete'}
-                                    onChange={(event) =>
-                                      updateDashboardProcessSetting(line.id, {
-                                        mode:
-                                          event.target.value === 'reduced'
-                                            ? 'reduced'
-                                            : 'complete',
-                                      })
-                                    }
-                                  >
-                                    <option value="complete">Mode complet</option>
-                                    <option value="reduced">Mode réduit</option>
                                   </select>
                                 </label>
                               </div>
@@ -9763,9 +9888,10 @@ function App() {
                         >
                           <div className="list-item__content">
                             <div className="list-item__title">{product.name}</div>
-                            <div className="list-item__meta">
+                          <div className="list-item__meta">
                               {product.spareParts.length} spare part
-                              {product.spareParts.length > 1 ? 's' : ''}
+                              {product.spareParts.length > 1 ? 's' : ''} • Packing guide{' '}
+                              {product.packingGuideAvailable ? 'disponible' : 'indisponible'}
                             </div>
                           </div>
                         </div>
@@ -9813,6 +9939,19 @@ function App() {
                       </div>
                     ) : (
                       <div className="spare-parts-editor">
+                        <label className="portal-code-editor__check spare-parts-editor__product-guide">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(productDraft.packingGuideAvailable)}
+                            onChange={(event) =>
+                              setProductDraft((prev) => ({
+                                ...prev,
+                                packingGuideAvailable: event.target.checked,
+                              }))
+                            }
+                          />
+                          <span>Packing guide disponible pour ce produit</span>
+                        </label>
                         {productDraft.spareParts.length ? (
                           productDraft.spareParts.map((sparePart) => (
                             <article className="spare-parts-editor__item" key={sparePart.id}>
@@ -10059,7 +10198,7 @@ function App() {
                       </button>
                     </div>
                   </div>
-                  <div className="list-card__body">
+                  <div className="list-card__body list-card__body--portal-editor">
                     {renderPortalCodeEditorSettings()}
                   </div>
                 </div>
