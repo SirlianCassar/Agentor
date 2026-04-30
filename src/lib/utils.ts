@@ -454,6 +454,10 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
       dashboardNews: Array.isArray(raw.settings?.dashboardNews)
         ? raw.settings.dashboardNews
         : fallback.settings.dashboardNews,
+      dashboardReminders:
+        typeof raw.settings?.dashboardReminders === 'string'
+          ? raw.settings.dashboardReminders
+          : fallback.settings.dashboardReminders,
     },
   }
 }
@@ -484,6 +488,10 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
       dashboardNews: Array.isArray(normalized.settings.dashboardNews)
         ? normalized.settings.dashboardNews
         : fallback.settings.dashboardNews,
+      dashboardReminders:
+        typeof normalized.settings.dashboardReminders === 'string'
+          ? normalized.settings.dashboardReminders
+          : fallback.settings.dashboardReminders,
     },
   }
 }

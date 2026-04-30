@@ -52,6 +52,7 @@ const defaultData = {
     snippetCategoryDisplay: 'dropdown',
     customerPortalCodes: [],
     dashboardProducts: [],
+    dashboardReminders: '',
   },
 }
 

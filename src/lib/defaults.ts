@@ -53,5 +53,6 @@ export const defaultData: AppData = {
     dashboardProducts: [],
     products: [],
     dashboardNews: [],
+    dashboardReminders: '',
   },
 }
