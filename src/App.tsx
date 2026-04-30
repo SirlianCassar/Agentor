@@ -113,6 +113,7 @@ type DashboardCalculatorItem = {
   id: string
   productPrice: string
   shippingPrice: string
+  importFee: string
 }
 type DashboardCalculatorCopyKey =
   | 'productsTtc'
@@ -126,6 +127,7 @@ const createDashboardCalculatorItem = (): DashboardCalculatorItem => ({
   id: createId('dashboard-calculator'),
   productPrice: '',
   shippingPrice: '',
+  importFee: '',
 })
 
 const CloseIcon = () => (
@@ -418,8 +420,9 @@ const PHONE_CALL_TEMPLATE = defaultData.settings.callTemplate
 const CALL_HISTORY_LIMIT = 5
 type WorkspaceDashboardPage =
   | 'tools'
+  | 'calculator'
   | 'portal'
-  | 'versions'
+  | 'catalog'
   | 'parts'
   | 'news'
 
@@ -428,11 +431,12 @@ const workspaceDashboardPageOptions: Array<{
   title: string
   icon: AppIconName
 }> = [
-  { id: 'tools', title: 'Argent / prix', icon: 'money' },
+  { id: 'tools', title: 'Tools', icon: 'tool' },
+  { id: 'calculator', title: 'Price calculator', icon: 'money' },
   { id: 'portal', title: 'Procédures', icon: 'notes' },
-  { id: 'versions', title: 'Paramètres versions', icon: 'preferences' },
-  { id: 'parts', title: 'Spare parts', icon: 'box' },
-  { id: 'news', title: 'Informations / actualités', icon: 'info' },
+  { id: 'catalog', title: 'Catalogue de produits', icon: 'preferences' },
+  { id: 'parts', title: 'SKU & spare parts', icon: 'box' },
+  { id: 'news', title: 'News & info', icon: 'info' },
 ]
 
 type SettingsTab =
@@ -450,6 +454,8 @@ type SettingsTab =
   | 'dashboardProcess'
   | 'dashboardPortal'
   | 'dashboardVersions'
+  | 'dashboardSoftwares'
+  | 'dashboardDriverPacks'
   | 'dashboardSpareParts'
   | 'dashboardNews'
   | 'updates'
@@ -556,8 +562,20 @@ const settingsNavigation: SettingsNavSection[] = [
       },
       {
         id: 'dashboardVersions',
-        label: 'Catalogue de versions',
-        description: 'Catalogue logiciels, drivers et firmwares avec produits compatibles.',
+        label: 'Firmwares',
+        description: 'Catalogue des firmwares utilisés dans les éditions produit.',
+        icon: 'version',
+      },
+      {
+        id: 'dashboardSoftwares',
+        label: 'Logiciels',
+        description: 'Catalogue des logiciels et des versions produit compatibles.',
+        icon: 'template',
+      },
+      {
+        id: 'dashboardDriverPacks',
+        label: 'Packs drivers',
+        description: 'Catalogue des packs drivers et des produits qu’ils contiennent.',
         icon: 'version',
       },
       {
@@ -1646,7 +1664,6 @@ function App() {
   )
   const [procedureFormatHelpOpen, setProcedureFormatHelpOpen] = useState(false)
   const [nameFormatterValue, setNameFormatterValue] = useState('')
-  const [dashboardImportFee, setDashboardImportFee] = useState('')
   const [dashboardCalculatorItems, setDashboardCalculatorItems] = useState<DashboardCalculatorItem[]>(
     () => [createDashboardCalculatorItem()],
   )
@@ -1666,6 +1683,7 @@ function App() {
   const isDashboardProductSelectionEmpty = selectedDashboardProductId === null
   const isProductCatalogSelectionEmpty = selectedProductCatalogId === null
   const isDashboardNewsSelectionEmpty = selectedDashboardNewsId === null
+  const dashboardReminders = data.settings.dashboardReminders ?? ''
 
   const emailEditorRef = useRef<TextEditorHandle>(null)
   const taskEditorRef = useRef<TextEditorHandle>(null)
@@ -2614,6 +2632,12 @@ function App() {
   const updateCustomerPortalCodes = useCallback((next: CustomerPortalCode[]) => {
     updateSettings({ customerPortalCodes: next })
   }, [updateSettings])
+  const handleReorderPortalProcedures = useCallback(
+    (next: CustomerPortalCode[]) => {
+      updateCustomerPortalCodes(next)
+    },
+    [updateCustomerPortalCodes],
+  )
   const updateCustomerPortalProcedure = useCallback(
     (id: string, patch: Partial<CustomerPortalCode>) => {
       updateCustomerPortalCodes(
@@ -2716,11 +2740,23 @@ function App() {
     },
     [updateSettings],
   )
+  const handleReorderProductCatalog = useCallback(
+    (next: ProductCatalogItem[]) => {
+      updateProductCatalog(next)
+    },
+    [updateProductCatalog],
+  )
   const updateDashboardNews = useCallback(
     (next: DashboardNewsItem[]) => {
       updateSettings({ dashboardNews: normalizeDashboardNews(next) })
     },
     [updateSettings],
+  )
+  const handleReorderDashboardNews = useCallback(
+    (next: DashboardNewsItem[]) => {
+      updateDashboardNews(next)
+    },
+    [updateDashboardNews],
   )
 
   const handleCheckUpdatesNow = useCallback(async () => {
@@ -2936,10 +2972,9 @@ function App() {
   const dashboardCatalogProductResults = useMemo(() => {
     const query = dashboardProductQuery.trim().toLowerCase()
     const base = productsWithDashboardRelations
-    const sorted = [...base].sort((left, right) => left.name.localeCompare(right.name, 'fr'))
-    if (!query) return sorted
+    if (!query) return base
 
-    return sorted.filter((product) => {
+    return base.filter((product) => {
       const linkedVersionText = normalizeIdList([
         ...(product.softwareIds ?? []),
         ...(product.driverIds ?? []),
@@ -3031,7 +3066,7 @@ function App() {
           )
         )
       })
-    return base.sort((left, right) => left.name.localeCompare(right.name, 'fr'))
+    return base
   }, [dashboardSparePartQuery, productsWithDashboardRelations])
 
   const activeDashboardSpareProduct = useMemo(
@@ -3043,20 +3078,10 @@ function App() {
   )
 
   const productsSorted = useMemo(
-    () =>
-      [...productsWithDashboardRelations].sort((left, right) =>
-        left.name.localeCompare(right.name, 'fr'),
-      ),
+    () => [...productsWithDashboardRelations],
     [productsWithDashboardRelations],
   )
-  const dashboardNewsSorted = useMemo(
-    () =>
-      [...dashboardNews].sort((left, right) => {
-        if (left.date !== right.date) return right.date.localeCompare(left.date)
-        return left.title.localeCompare(right.title, 'fr')
-      }),
-    [dashboardNews],
-  )
+  const dashboardNewsSorted = useMemo(() => [...dashboardNews], [dashboardNews])
 
   const procedureList = useMemo(() => {
     const query = procedureQuery.trim().toLowerCase()
@@ -3148,7 +3173,7 @@ function App() {
   )
 
   useEffect(() => {
-    if (workspaceDashboardPage !== 'versions') return
+    if (workspaceDashboardPage !== 'catalog') return
     const visibleDashboardProducts = dashboardCatalogProductResults
     if (!visibleDashboardProducts.length) {
       if (activeDashboardCatalogProductId !== null) {
@@ -3169,7 +3194,7 @@ function App() {
   ])
 
   useEffect(() => {
-    if (workspaceDashboardPage !== 'versions') return
+    if (workspaceDashboardPage !== 'catalog') return
     if (!activeDashboardCatalogProduct) {
       if (activeDashboardCatalogEditionId !== null) {
         setActiveDashboardCatalogEditionId(null)
@@ -4065,6 +4090,9 @@ function App() {
       spareParts: next,
     }))
   }
+  const handleReorderProductDraftSpareParts = (next: SparePart[]) => {
+    updateProductDraftSpareParts(next)
+  }
 
   const addProductDraftSparePart = () => {
     updateProductDraftSpareParts([
@@ -4089,21 +4117,6 @@ function App() {
   const removeProductDraftSparePart = (sparePartId: string) => {
     updateProductDraftSpareParts(
       productDraft.spareParts.filter((sparePart) => sparePart.id !== sparePartId),
-    )
-  }
-
-  const updateDashboardCatalogEditionNote = (productId: string, editionId: string, note: string) => {
-    updateProductCatalog(
-      productCatalog.map((product) =>
-        product.id === productId
-          ? {
-              ...product,
-              editions: (product.editions ?? []).map((edition) =>
-                edition.id === editionId ? { ...edition, note } : edition,
-              ),
-            }
-          : product,
-      ),
     )
   }
 
@@ -4174,53 +4187,68 @@ function App() {
         {customerPortalCodes.length ? (
           <div className="dashboard-product-editor portal-code-editor__layout">
             <div className="dashboard-product-editor__list">
-              {customerPortalCodes.map((item) => {
-                const procedureHasDraft = item.codes.some((entry) => Boolean(entry.showDraft))
-                return (
-                  <div
-                    className={`list-item list-item--compact${
-                      resolvedSelectedPortalProcedureId === item.id ? ' is-selected' : ''
-                    }`}
-                    key={item.id}
-                    onClick={() => setSelectedPortalProcedureId(item.id)}
-                  >
-                    <div className="list-item__content">
-                      <div className="list-item__title">
-                        {item.procedureName.trim() || 'Procédure sans nom'}
-                      </div>
-                      <div className="list-item__meta">
-                        {item.codes.length}/4 étape{item.codes.length > 1 ? 's' : ''} • Draft{' '}
-                        {procedureHasDraft ? 'oui' : 'non'} • Forward {item.showForward ? 'oui' : 'non'}
-                      </div>
-                    </div>
-                    <div className="list-item__actions">
+              <SortableList
+                items={customerPortalCodes}
+                getId={(item) => item.id}
+                onReorder={handleReorderPortalProcedures}
+                renderItem={(item, handleProps) => {
+                  const procedureHasDraft = item.codes.some((entry) => Boolean(entry.showDraft))
+                  return (
+                    <div
+                      className={`list-item list-item--compact${
+                        resolvedSelectedPortalProcedureId === item.id ? ' is-selected' : ''
+                      }`}
+                      key={item.id}
+                      onClick={() => setSelectedPortalProcedureId(item.id)}
+                    >
                       <button
-                        className="icon-btn-sm danger"
+                        className="drag-handle"
                         type="button"
-                        title="Supprimer"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleRemovePortalProcedure(item.id)
-                        }}
+                        {...handleProps.attributes}
+                        {...handleProps.listeners}
+                        onClick={(event) => event.stopPropagation()}
                       >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
+                        ⇅
                       </button>
+                      <div className="list-item__content">
+                        <div className="list-item__title">
+                          {item.procedureName.trim() || 'Procédure sans nom'}
+                        </div>
+                        <div className="list-item__meta">
+                          {item.codes.length}/4 étape{item.codes.length > 1 ? 's' : ''} • Draft{' '}
+                          {procedureHasDraft ? 'oui' : 'non'} • Forward{' '}
+                          {item.showForward ? 'oui' : 'non'}
+                        </div>
+                      </div>
+                      <div className="list-item__actions">
+                        <button
+                          className="icon-btn-sm danger"
+                          type="button"
+                          title="Supprimer"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleRemovePortalProcedure(item.id)
+                          }}
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                }}
+              />
             </div>
 
             <div className="dashboard-product-editor__form">
@@ -4509,8 +4537,8 @@ function App() {
                     <div className="list-item__content">
                       <div className="list-item__title">{product.name}</div>
                       <div className="list-item__meta">
-                        {dashboardProductCategoryLabels[product.category]} •{' '}
-                        {product.latestVersion.trim() || 'Version non renseignée'}
+                        {dashboardProductCategoryLabels[product.category]}
+                        {product.latestVersion.trim() ? ` • ${product.latestVersion.trim()}` : ''}
                       </div>
                     </div>
                     <div className="list-item__actions">
@@ -4562,22 +4590,24 @@ function App() {
                     }
                   />
 
-                  <select
-                    className="select select--roomy"
-                    value={dashboardProductDraft.category}
-                    onChange={(event) =>
-                      setDashboardProductDraft((prev) => ({
-                        ...prev,
-                        category: event.target.value as DashboardProductCategory,
-                      }))
-                    }
-                  >
-                    {categoryOptions.map((category) => (
-                      <option key={category} value={category}>
-                        {dashboardProductCategoryLabels[category]}
-                      </option>
-                    ))}
-                  </select>
+                  {categoryOptions.length > 1 ? (
+                    <select
+                      className="select select--roomy"
+                      value={dashboardProductDraft.category}
+                      onChange={(event) =>
+                        setDashboardProductDraft((prev) => ({
+                          ...prev,
+                          category: event.target.value as DashboardProductCategory,
+                        }))
+                      }
+                    >
+                      {categoryOptions.map((category) => (
+                        <option key={category} value={category}>
+                          {dashboardProductCategoryLabels[category]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
 
                   <input
                     className="input"
@@ -4777,7 +4807,6 @@ function App() {
       dashboardCalculatorCopyTimeoutRef.current = null
     }
     setDashboardCalculatorItems([createDashboardCalculatorItem()])
-    setDashboardImportFee('')
     setDashboardCalculatorCopiedKey(null)
     setSparePartCopiedId(null)
     setProcedureChecks({})
@@ -5043,22 +5072,22 @@ function App() {
     ...item,
     productAmount: parseDashboardAmount(item.productPrice) ?? 0,
     shippingAmount: parseDashboardAmount(item.shippingPrice) ?? 0,
+    importFeeAmount: parseDashboardAmount(item.importFee) ?? 0,
   }))
   const dashboardProductsTotalTtc = dashboardCalculatorEntries.reduce(
     (sum, item) => sum + item.productAmount,
     0,
   )
   const dashboardShippingValues = dashboardCalculatorEntries
-    .map((item) => item.shippingAmount)
+    .map((item) => item.shippingAmount + item.importFeeAmount)
     .filter((value) => value > 0)
     .sort((left, right) => right - left)
-  const dashboardImportFeeTtc = parseDashboardAmount(dashboardImportFee) ?? 0
   const dashboardBaseShippingTotalTtc =
     dashboardShippingValues.length > 0
       ? dashboardShippingValues[0] +
         dashboardShippingValues.slice(1).reduce((sum, value) => sum + value / 2, 0)
       : 0
-  const dashboardShippingTotalTtc = dashboardBaseShippingTotalTtc + dashboardImportFeeTtc
+  const dashboardShippingTotalTtc = dashboardBaseShippingTotalTtc
   const dashboardGrandTotalTtc = dashboardProductsTotalTtc + dashboardShippingTotalTtc
   const dashboardProductsTotalHt = dashboardProductsTotalTtc / VAT_DIVISOR
   const dashboardShippingTotalHt = dashboardShippingTotalTtc / VAT_DIVISOR
@@ -5139,6 +5168,20 @@ function App() {
     </article>
   )
 
+  const renderWorkspaceDashboardRemindersPanel = (title: string) => (
+    <article className="workspace-dashboard__panel workspace-dashboard__panel--calculator">
+      <div className="workspace-dashboard__panel-title">{title}</div>
+      <div className="dashboard-calculator">
+        <textarea
+          className="textarea dashboard-tools-reminders"
+          value={dashboardReminders}
+          placeholder="Ajoutez vos rappels libres..."
+          onChange={(event) => updateSettings({ dashboardReminders: event.target.value })}
+        />
+      </div>
+    </article>
+  )
+
   const renderWorkspaceDashboardVatPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--calculator">
       <div className="workspace-dashboard__panel-title">{title}</div>
@@ -5175,6 +5218,19 @@ function App() {
                       aria-label={`Livraison ligne ${index + 1}`}
                     />
                   </label>
+                  <label className="dashboard-calculator__field dashboard-calculator__field--inline">
+                    <span className="dashboard-calculator__label">Import</span>
+                    <input
+                      className="input"
+                      value={item.importFee}
+                      onChange={(event) =>
+                        updateDashboardCalculatorItem(item.id, 'importFee', event.target.value)
+                      }
+                      placeholder="0,00"
+                      inputMode="decimal"
+                      aria-label={`Frais d'import ligne ${index + 1}`}
+                    />
+                  </label>
                   <button
                     className="icon-btn-sm danger dashboard-calculator__remove"
                     type="button"
@@ -5194,30 +5250,6 @@ function App() {
             onClick={addDashboardCalculatorItem}
           >
             + Ajouter une ligne
-          </button>
-        </div>
-
-        <div className="dashboard-calculator__import-fee">
-          <label className="dashboard-calculator__import-fee-field">
-            <span className="dashboard-calculator__label">Frais d’import</span>
-            <input
-              className="input"
-              value={dashboardImportFee}
-              onChange={(event) => setDashboardImportFee(event.target.value)}
-              placeholder="0,00"
-              inputMode="decimal"
-              aria-label="Frais d'import ajoutés à la livraison"
-            />
-          </label>
-          <button
-            className="icon-btn-sm danger dashboard-calculator__import-fee-clear"
-            type="button"
-            title="Effacer les frais d’import"
-            aria-label="Effacer les frais d'import"
-            onClick={() => setDashboardImportFee('')}
-            disabled={!dashboardImportFee}
-          >
-            <CloseIcon />
           </button>
         </div>
 
@@ -5400,8 +5432,8 @@ function App() {
         items: activeDashboardCatalogProductSoftwares,
       },
     ] as const
-    const formatDashboardRelationItems = (items: readonly DashboardProduct[], emptyLabel: string) => {
-      if (!items.length) return emptyLabel
+    const formatDashboardRelationItems = (items: readonly DashboardProduct[]) => {
+      if (!items.length) return ''
       return items
         .map((item) => {
           const version = item.latestVersion.trim()
@@ -5450,8 +5482,8 @@ function App() {
                     >
                       <span className="dashboard-version-item__name">{product.name}</span>
                       <span className="dashboard-version-item__meta">
-                        {product.productType?.trim() || 'Type non renseigné'} • {linkedCount} lien
-                        {linkedCount > 1 ? 's' : ''}
+                        {product.productType?.trim() ? `${product.productType.trim()} • ` : ''}
+                        {linkedCount} lien{linkedCount > 1 ? 's' : ''}
                       </span>
                     </button>
                   )
@@ -5467,18 +5499,26 @@ function App() {
           {activeDashboardCatalogProduct ? (
             <>
               <div className="dashboard-product-header">
-                <div className="dashboard-product-title-section">
-                  <div className="dashboard-product-title">
-                    {activeDashboardCatalogProduct.name}
-                  </div>
-                  <div className="dashboard-product-meta">
-                    {activeDashboardCatalogProduct.productType?.trim() || 'Type non renseigné'}
-                  </div>
-                </div>
+                <div className="dashboard-product-title">{activeDashboardCatalogProduct.name}</div>
               </div>
 
               <div className="dashboard-product-editions-section">
-                <div className="dashboard-section-label">Éditions</div>
+                <div className="dashboard-section-label">Tag</div>
+                {(activeDashboardCatalogProduct.tags ?? []).length ? (
+                  <div className="dashboard-product-tags">
+                    {(activeDashboardCatalogProduct.tags ?? [])
+                      .filter((tag) => tag.trim())
+                      .map((tag) => (
+                        <span className="dashboard-product-tag-item" key={tag}>
+                          {tag}
+                        </span>
+                      ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="dashboard-product-editions-section">
+                <div className="dashboard-section-label">Carré des éditions</div>
                 {(activeDashboardCatalogProduct.editions ?? []).length ? (
                   <div className="dashboard-product-edition-tabs">
                     {(activeDashboardCatalogProduct.editions ?? []).map((edition) => (
@@ -5502,65 +5542,67 @@ function App() {
 
               {activeDashboardCatalogEdition ? (
                 <div className="dashboard-product-content">
+                  <div className="dashboard-section-label">Plateforme</div>
+                  <div className="dashboard-product-platform">
+                    {productEditionPlatformLabels[activeDashboardCatalogEdition.platform]}
+                  </div>
+
+                  <div className="dashboard-product-relations__shortcuts">
+                    <button
+                      type="button"
+                      className="dashboard-product-relations__shortcut-btn"
+                      onClick={() => openLink(activeDashboardCatalogEdition.supportUrl ?? '')}
+                      disabled={!activeDashboardCatalogEdition.supportUrl?.trim()}
+                      title="Support"
+                      aria-label="Support"
+                    >
+                      Support
+                    </button>
+                    <button
+                      type="button"
+                      className="dashboard-product-relations__shortcut-btn"
+                      onClick={() => openLink(activeDashboardCatalogEdition.shareUrl ?? '')}
+                      disabled={!activeDashboardCatalogEdition.shareUrl?.trim()}
+                      title="SharePoint"
+                      aria-label="SharePoint"
+                    >
+                      SharePoint
+                    </button>
+                    <button
+                      type="button"
+                      className="dashboard-product-relations__shortcut-btn"
+                      onClick={() => openLink(activeDashboardCatalogEdition.portalUrl ?? '')}
+                      disabled={!activeDashboardCatalogEdition.portalUrl?.trim()}
+                      title="Portal"
+                      aria-label="Portal"
+                    >
+                      Portal
+                    </button>
+                  </div>
+
                   <div className="dashboard-product-relations">
-                    <div className="dashboard-product-relations__toolbar">
-                      <div className="dashboard-product-relations__title">Liens & compatibilités</div>
-                      <div className="dashboard-product-relations__shortcuts">
-                        <button
-                          type="button"
-                          className="dashboard-product-relations__shortcut-btn"
-                          onClick={() => openLink(activeDashboardCatalogEdition.supportUrl ?? '')}
-                          disabled={!activeDashboardCatalogEdition.supportUrl?.trim()}
-                          title="Ouvrir la page support"
-                          aria-label="Ouvrir la page support"
-                        >
-                          SUP
-                        </button>
-                        <button
-                          type="button"
-                          className="dashboard-product-relations__shortcut-btn"
-                          onClick={() => openLink(activeDashboardCatalogEdition.shareUrl ?? '')}
-                          disabled={!activeDashboardCatalogEdition.shareUrl?.trim()}
-                          title="Ouvrir la page Share"
-                          aria-label="Ouvrir la page Share"
-                        >
-                          SHR
-                        </button>
-                        <button
-                          type="button"
-                          className="dashboard-product-relations__shortcut-btn"
-                          onClick={() => openLink(activeDashboardCatalogEdition.portalUrl ?? '')}
-                          disabled={!activeDashboardCatalogEdition.portalUrl?.trim()}
-                          title="Ouvrir la page Portal"
-                          aria-label="Ouvrir la page Portal"
-                        >
-                          PRT
-                        </button>
-                      </div>
-                    </div>
+                    <div className="dashboard-product-relations__title">Tableau des version</div>
                     <div className="dashboard-product-relations__table">
                       <div className="dashboard-product-relations__row">
                         <div className="dashboard-product-relations__row-title">Firmware</div>
                         <div className="dashboard-product-relations__row-value">
-                          {formatDashboardRelationItems(
-                            dashboardCatalogRelations[0].items,
-                            'Aucun firmware lié',
-                          )}
+                          {formatDashboardRelationItems(dashboardCatalogRelations[0].items)}
                         </div>
                       </div>
                       <div className="dashboard-product-relations__row">
-                        <div className="dashboard-product-relations__row-title">Drivers</div>
+                        <div className="dashboard-product-relations__row-title">Driver</div>
                         <div className="dashboard-product-relations__row-value">
-                          {formatDashboardRelationItems(
-                            dashboardCatalogRelations[1].items,
-                            'Aucun driver lié',
-                          )}
+                          {formatDashboardRelationItems(dashboardCatalogRelations[1].items)}
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-product-relations">
+                    <div className="dashboard-product-relations__title">Logiciels compatibles</div>
+                    <div className="dashboard-product-relations__table">
                       <div className="dashboard-product-relations__row">
-                        <div className="dashboard-product-relations__row-title">
-                          Logiciels compatibles
-                        </div>
+                        <div className="dashboard-product-relations__row-title">Logiciel - version</div>
                         <div className="dashboard-product-relations__row-value">
                           {dashboardCatalogRelations[2].items.length ? (
                             <ul className="dashboard-product-relations__software-list">
@@ -5573,28 +5615,19 @@ function App() {
                                 </li>
                               ))}
                             </ul>
-                          ) : (
-                            'Aucun logiciel lié'
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="dashboard-product-note-section">
-                    <div className="dashboard-product-note-section__title">Notes</div>
-                    <textarea
-                      className="textarea dashboard-product-note__field"
-                      value={activeDashboardCatalogEdition.note ?? ''}
-                      onChange={(event) =>
-                        updateDashboardCatalogEditionNote(
-                          activeDashboardCatalogProduct.id,
-                          activeDashboardCatalogEdition.id,
-                          event.target.value,
-                        )
-                      }
-                      placeholder="Ajouter une note libre pour cette édition..."
-                    />
+                    <div className="dashboard-product-note-section__title">Note</div>
+                    {activeDashboardCatalogEdition.note?.trim() ? (
+                      <div className="dashboard-product-note__text">
+                        {activeDashboardCatalogEdition.note}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ) : (
@@ -5819,30 +5852,62 @@ function App() {
                                   <span className="dashboard-portal-step__draft">DRAFT</span>
                                 ) : null}
                               </div>
-                              {quickLinkUrl ? (
-                                <button
-                                  className="dashboard-portal-step__link-btn"
-                                  type="button"
-                                  onClick={() => void openExternal(quickLinkUrl)}
-                                  aria-label={`Ouvrir l'accès rapide pour ${lineTitle}`}
-                                  title="Accès rapide"
-                                >
-                                  <svg
-                                    className="dashboard-portal-step__link-icon"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
+                              <div className="dashboard-portal-step__actions-inline">
+                                {quickLinkUrl ? (
+                                  <button
+                                    className="dashboard-portal-step__link-btn"
+                                    type="button"
+                                    onClick={() => void openExternal(quickLinkUrl)}
+                                    aria-label={`Ouvrir l'accès rapide pour ${lineTitle}`}
+                                    title="Accès rapide"
                                   >
-                                    <path d="M10.5 13.5l3-3" />
-                                    <path d="M7.4 16.6l-1.1 1.1a3 3 0 1 1-4.2-4.2l3.3-3.3a3 3 0 0 1 4.2 0" />
-                                    <path d="M16.6 7.4l1.1-1.1a3 3 0 0 1 4.2 4.2l-3.3 3.3a3 3 0 0 1-4.2 0" />
-                                  </svg>
-                                </button>
-                              ) : null}
+                                    <svg
+                                      className="dashboard-portal-step__link-icon"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      aria-hidden="true"
+                                    >
+                                      <path d="M14 4h6v6" />
+                                      <path d="M20 4l-9 9" />
+                                      <path d="M10 6H7a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-3" />
+                                    </svg>
+                                  </button>
+                                ) : null}
+                                {code ? (
+                                  <>
+                                    <span
+                                      className={`dashboard-portal-step__code-inline${
+                                        portalCopiedId === entry.id ? ' is-success' : ''
+                                      }`}
+                                    >
+                                      {code}
+                                    </span>
+                                    <button
+                                      className={`icon-btn-sm dashboard-copy-icon dashboard-copy-icon--portal${
+                                        portalCopiedId === entry.id ? ' is-success' : ''
+                                      }`}
+                                      type="button"
+                                      onClick={() => void handleCopyPortalCode(entry.id, entry.code)}
+                                      title="Copier le code portal"
+                                      aria-label={`Copier le code portal ${code}`}
+                                    >
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      >
+                                        <rect x="9" y="9" width="11" height="11" rx="2" />
+                                        <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+                                      </svg>
+                                    </button>
+                                  </>
+                                ) : null}
+                              </div>
                             </div>
 
                             <div
@@ -5851,22 +5916,6 @@ function App() {
                                 __html: formatProcedureText(stepText || 'Aucun texte renseigné.'),
                               }}
                             />
-
-                            <div className="dashboard-portal-step__footer">
-                              <button
-                                className={`dashboard-portal-step__code-btn${
-                                  portalCopiedId === entry.id ? ' is-success' : ''
-                                }`}
-                                type="button"
-                                onClick={() => void handleCopyPortalCode(entry.id, entry.code)}
-                                disabled={!code}
-                                title="Copier le code portal"
-                              >
-                                <span className="dashboard-portal-step__code-btn-label">
-                                  {code || 'Code vide'}
-                                </span>
-                              </button>
-                            </div>
                           </div>
                           {quickCopyText ? (
                             <div className="dashboard-portal-step__template">
@@ -5940,8 +5989,16 @@ function App() {
             {renderWorkspaceDashboardNameFormatter('Name format')}
           </div>
           <div className="workspace-dashboard__tools-right">
-            {renderWorkspaceDashboardVatPanel('Price calculator')}
+            {renderWorkspaceDashboardRemindersPanel('Rappels')}
           </div>
+        </div>
+      )
+    }
+
+    if (workspaceDashboardPage === 'calculator') {
+      return (
+        <div className="workspace-dashboard__single">
+          {renderWorkspaceDashboardVatPanel('Price calculator')}
         </div>
       )
     }
@@ -5954,13 +6011,13 @@ function App() {
       )
     }
 
-    if (workspaceDashboardPage === 'versions') {
+    if (workspaceDashboardPage === 'catalog') {
       return (
         <div className="workspace-dashboard__single">
           {renderDashboardCatalogPanel(
-            'Versions par produit',
+            'Catalogue de produits',
             'Rechercher un produit, une édition, un firmware, un logiciel ou un driver...',
-            'Produits et versions',
+            'Catalogue produits',
           )}
         </div>
       )
@@ -5969,14 +6026,14 @@ function App() {
     if (workspaceDashboardPage === 'parts') {
       return (
         <div className="workspace-dashboard__single">
-          {renderWorkspaceDashboardSparePartsPanel('Spare parts')}
+          {renderWorkspaceDashboardSparePartsPanel('SKU & spare parts')}
         </div>
       )
     }
 
     return (
       <div className="workspace-dashboard__single">
-        {renderWorkspaceDashboardNewsPanel('News')}
+        {renderWorkspaceDashboardNewsPanel('News & info')}
       </div>
     )
   }
@@ -8014,55 +8071,69 @@ function App() {
                   </div>
                   <div className="list-card__body">
                     {productsSorted.length ? (
-                      productsSorted.map((product) => (
-                        <div
-                          key={product.id}
-                          className={`list-item list-item--compact${
-                            selectedProductCatalogId === product.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setProductDraft(getProductCatalogDraft(product))
-                            setProductTagsDraftText((product.tags ?? []).join(', '))
-                            setSelectedProductCatalogId(product.id)
-                          }}
-                        >
-                          <div className="list-item__content">
-                            <div className="list-item__title">{product.name}</div>
-                            <div className="list-item__meta">
-                              {product.productType?.trim() || 'Type non renseigné'} •{' '}
-                              {(product.editions ?? []).length} édition
-                              {(product.editions ?? []).length > 1 ? 's' : ''} •{' '}
-                              {product.spareParts.length} spare part
-                              {product.spareParts.length > 1 ? 's' : ''}
+                      <SortableList
+                        items={productsSorted}
+                        getId={(item) => item.id}
+                        onReorder={handleReorderProductCatalog}
+                        renderItem={(product, handleProps) => (
+                          <div
+                            key={product.id}
+                            className={`list-item list-item--compact${
+                              selectedProductCatalogId === product.id ? ' is-selected' : ''
+                            }`}
+                            onClick={() => {
+                              setProductDraft(getProductCatalogDraft(product))
+                              setProductTagsDraftText((product.tags ?? []).join(', '))
+                              setSelectedProductCatalogId(product.id)
+                            }}
+                          >
+                            <button
+                              className="drag-handle"
+                              type="button"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              ⇅
+                            </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">{product.name}</div>
+                              <div className="list-item__meta">
+                                {product.productType?.trim() || 'Type non renseigné'} •{' '}
+                                {(product.editions ?? []).length} édition
+                                {(product.editions ?? []).length > 1 ? 's' : ''} •{' '}
+                                {product.spareParts.length} spare part
+                                {product.spareParts.length > 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handleDeleteProductCatalogItem(product)
+                                }}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
-                          <div className="list-item__actions">
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                handleDeleteProductCatalogItem(product)
-                              }}
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                        )}
+                      />
                     ) : (
                       <div className="empty-state">Aucun produit configuré.</div>
                     )}
@@ -9847,16 +9918,45 @@ function App() {
 
             {editTab === 'dashboardVersions'
               ? renderDashboardCatalogEditor({
-                  title: 'Catalogue de versions',
-                  subtitle:
-                    'Catalogue structuré en logiciels, drivers et firmwares avec produits compatibles.',
-                  items: dashboardVersionProducts,
-                  defaultCategory: 'software',
-                  categoryOptions: ['software', 'driver', 'firmware'],
-                  emptyListMessage: 'Aucun logiciel, firmware ou driver configuré.',
+                  title: 'Firmwares',
+                  subtitle: 'Versions firmware disponibles pour les éditions produit.',
+                  items: dashboardFirmwareProducts,
+                  defaultCategory: 'firmware',
+                  categoryOptions: ['firmware'],
+                  emptyListMessage: 'Aucun firmware configuré.',
                   emptySelectionMessage:
-                    'Sélectionnez un élément pour l’éditer ou appuyez sur Nouveau.',
+                    'Sélectionnez un firmware pour l’éditer ou appuyez sur Nouveau.',
                   latestVersionPlaceholder: 'Dernière version disponible',
+                  fixedCategoryLabel: '',
+                })
+              : null}
+
+            {editTab === 'dashboardSoftwares'
+              ? renderDashboardCatalogEditor({
+                  title: 'Logiciels',
+                  subtitle: 'Déclarez les logiciels et les versions produit compatibles.',
+                  items: dashboardSoftwareProducts,
+                  defaultCategory: 'software',
+                  categoryOptions: ['software'],
+                  emptyListMessage: 'Aucun logiciel configuré.',
+                  emptySelectionMessage:
+                    'Sélectionnez un logiciel pour l’éditer ou appuyez sur Nouveau.',
+                  latestVersionPlaceholder: 'Version du logiciel',
+                  fixedCategoryLabel: '',
+                })
+              : null}
+
+            {editTab === 'dashboardDriverPacks'
+              ? renderDashboardCatalogEditor({
+                  title: 'Packs drivers',
+                  subtitle: 'Déclarez les packs drivers et les produits qu’ils contiennent.',
+                  items: dashboardDriverProducts,
+                  defaultCategory: 'driver',
+                  categoryOptions: ['driver'],
+                  emptyListMessage: 'Aucun pack driver configuré.',
+                  emptySelectionMessage:
+                    'Sélectionnez un pack driver pour l’éditer ou appuyez sur Nouveau.',
+                  latestVersionPlaceholder: 'Version du pack driver',
                   fixedCategoryLabel: '',
                 })
               : null}
@@ -9874,28 +9974,42 @@ function App() {
                   </div>
                   <div className="list-card__body">
                     {productsSorted.length ? (
-                      productsSorted.map((product) => (
-                        <div
-                          key={product.id}
-                          className={`list-item list-item--compact${
-                            selectedProductCatalogId === product.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setProductDraft(getProductCatalogDraft(product))
-                            setProductTagsDraftText((product.tags ?? []).join(', '))
-                            setSelectedProductCatalogId(product.id)
-                          }}
-                        >
-                          <div className="list-item__content">
-                            <div className="list-item__title">{product.name}</div>
-                          <div className="list-item__meta">
-                              {product.spareParts.length} spare part
-                              {product.spareParts.length > 1 ? 's' : ''} • Packing guide{' '}
-                              {product.packingGuideAvailable ? 'disponible' : 'indisponible'}
+                      <SortableList
+                        items={productsSorted}
+                        getId={(item) => item.id}
+                        onReorder={handleReorderProductCatalog}
+                        renderItem={(product, handleProps) => (
+                          <div
+                            key={product.id}
+                            className={`list-item list-item--compact${
+                              selectedProductCatalogId === product.id ? ' is-selected' : ''
+                            }`}
+                            onClick={() => {
+                              setProductDraft(getProductCatalogDraft(product))
+                              setProductTagsDraftText((product.tags ?? []).join(', '))
+                              setSelectedProductCatalogId(product.id)
+                            }}
+                          >
+                            <button
+                              className="drag-handle"
+                              type="button"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              ⇅
+                            </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">{product.name}</div>
+                              <div className="list-item__meta">
+                                {product.spareParts.length} spare part
+                                {product.spareParts.length > 1 ? 's' : ''} • Packing guide{' '}
+                                {product.packingGuideAvailable ? 'disponible' : 'indisponible'}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        )}
+                      />
                     ) : (
                       <div className="empty-state">
                         Aucun produit configuré. Ajoutez d’abord un produit dans le sous-menu
@@ -9953,66 +10067,81 @@ function App() {
                           <span>Packing guide disponible pour ce produit</span>
                         </label>
                         {productDraft.spareParts.length ? (
-                          productDraft.spareParts.map((sparePart) => (
-                            <article className="spare-parts-editor__item" key={sparePart.id}>
-                              <div className="form__row two">
-                                <input
-                                  className="input"
-                                  placeholder="Nom"
-                                  value={sparePart.name}
-                                  onChange={(event) =>
-                                    updateProductDraftSparePart(sparePart.id, {
-                                      name: event.target.value,
-                                    })
-                                  }
-                                />
-                                <input
-                                  className="input"
-                                  placeholder="SKU"
-                                  value={sparePart.sku}
-                                  onChange={(event) =>
-                                    updateProductDraftSparePart(sparePart.id, {
-                                      sku: event.target.value,
-                                    })
-                                  }
-                                />
-                              </div>
-                              <div className="spare-parts-editor__footer">
-                                <label className="portal-code-editor__check">
+                          <SortableList
+                            items={productDraft.spareParts}
+                            getId={(item) => item.id}
+                            onReorder={handleReorderProductDraftSpareParts}
+                            renderItem={(sparePart, handleProps) => (
+                              <article className="spare-parts-editor__item" key={sparePart.id}>
+                                <div className="spare-parts-editor__head">
+                                  <button
+                                    className="drag-handle"
+                                    type="button"
+                                    {...handleProps.attributes}
+                                    {...handleProps.listeners}
+                                  >
+                                    ⇅
+                                  </button>
+                                </div>
+                                <div className="form__row two">
                                   <input
-                                    type="checkbox"
-                                    checked={sparePart.guideAvailable}
+                                    className="input"
+                                    placeholder="Nom"
+                                    value={sparePart.name}
                                     onChange={(event) =>
                                       updateProductDraftSparePart(sparePart.id, {
-                                        guideAvailable: event.target.checked,
+                                        name: event.target.value,
                                       })
                                     }
                                   />
-                                  <span>Guide disponible</span>
-                                </label>
-                                <button
-                                  className="icon-btn-sm danger"
-                                  type="button"
-                                  title="Supprimer"
-                                  onClick={() => removeProductDraftSparePart(sparePart.id)}
-                                >
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
+                                  <input
+                                    className="input"
+                                    placeholder="SKU"
+                                    value={sparePart.sku}
+                                    onChange={(event) =>
+                                      updateProductDraftSparePart(sparePart.id, {
+                                        sku: event.target.value,
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div className="spare-parts-editor__footer">
+                                  <label className="portal-code-editor__check">
+                                    <input
+                                      type="checkbox"
+                                      checked={sparePart.guideAvailable}
+                                      onChange={(event) =>
+                                        updateProductDraftSparePart(sparePart.id, {
+                                          guideAvailable: event.target.checked,
+                                        })
+                                      }
+                                    />
+                                    <span>Guide disponible</span>
+                                  </label>
+                                  <button
+                                    className="icon-btn-sm danger"
+                                    type="button"
+                                    title="Supprimer"
+                                    onClick={() => removeProductDraftSparePart(sparePart.id)}
                                   >
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </article>
-                          ))
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <line x1="18" y1="6" x2="6" y2="18" />
+                                      <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </article>
+                            )}
+                          />
                         ) : (
                           <div className="empty-state">
                             Aucune spare part pour ce produit. Utilisez le bouton Ajouter une spare
@@ -10039,50 +10168,64 @@ function App() {
                   </div>
                   <div className="list-card__body">
                     {dashboardNewsSorted.length ? (
-                      dashboardNewsSorted.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`list-item list-item--compact${
-                            selectedDashboardNewsId === item.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setDashboardNewsDraft({ ...item })
-                            setSelectedDashboardNewsId(item.id)
-                          }}
-                        >
-                          <div className="list-item__content">
-                            <div className="list-item__title">{item.title || 'Sans titre'}</div>
-                            <div className="list-item__meta">
-                              {formatDashboardNewsDate(item.date)}
+                      <SortableList
+                        items={dashboardNewsSorted}
+                        getId={(item) => item.id}
+                        onReorder={handleReorderDashboardNews}
+                        renderItem={(item, handleProps) => (
+                          <div
+                            key={item.id}
+                            className={`list-item list-item--compact${
+                              selectedDashboardNewsId === item.id ? ' is-selected' : ''
+                            }`}
+                            onClick={() => {
+                              setDashboardNewsDraft({ ...item })
+                              setSelectedDashboardNewsId(item.id)
+                            }}
+                          >
+                            <button
+                              className="drag-handle"
+                              type="button"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              ⇅
+                            </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">{item.title || 'Sans titre'}</div>
+                              <div className="list-item__meta">
+                                {formatDashboardNewsDate(item.date)}
+                              </div>
+                            </div>
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handleDeleteDashboardNews(item)
+                                }}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
-                          <div className="list-item__actions">
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                handleDeleteDashboardNews(item)
-                              }}
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                        )}
+                      />
                     ) : (
                       <div className="empty-state">Aucune news configurée.</div>
                     )}
@@ -10251,12 +10394,12 @@ function App() {
                               }}
                             >
                               <div className="list-item__content">
-                                <div className="list-item__title">{product.name}</div>
-                                <div className="list-item__meta">
-                                  {dashboardProductCategoryLabels[product.category]} •{' '}
-                                  {product.latestVersion.trim() || 'Version non renseignée'}
-                                </div>
+                              <div className="list-item__title">{product.name}</div>
+                              <div className="list-item__meta">
+                                {dashboardProductCategoryLabels[product.category]}
+                                {product.latestVersion.trim() ? ` • ${product.latestVersion.trim()}` : ''}
                               </div>
+                            </div>
                               <div className="list-item__actions">
                                 <button
                                   className="icon-btn-sm danger"

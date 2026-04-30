@@ -182,6 +182,7 @@ export interface AppSettings {
   dashboardProducts: DashboardProduct[]
   products: ProductCatalogItem[]
   dashboardNews: DashboardNewsItem[]
+  dashboardReminders: string
 }
 
 export interface AppData {
