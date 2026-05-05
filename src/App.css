@@ -578,6 +578,147 @@ select optgroup {
   transform: translateY(0);
 }
 
+.workspace-head__action-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: center;
+  min-width: 0;
+  margin-inline: 4px;
+}
+
+.draft-boxes-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.draft-box-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--transition-base), border-color var(--transition-base),
+    background var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
+  position: relative;
+  padding: 0;
+}
+
+.draft-box-btn:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  background: rgba(95, 143, 207, 0.16);
+  color: var(--text);
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: none;
+}
+
+.draft-box-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.draft-box-btn.is-filled {
+  border-color: rgba(110, 207, 167, 0.36);
+  background: rgba(110, 207, 167, 0.18);
+  color: #effff7;
+}
+
+.draft-box-btn.is-filled:hover:not(:disabled) {
+  border-color: rgba(110, 207, 167, 0.58);
+  background: rgba(110, 207, 167, 0.26);
+}
+
+.draft-box-btn__icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+}
+
+.draft-box-btn__icon-svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.1;
+}
+
+.draft-box-btn__badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: calc(8px * var(--text-scale));
+  font-weight: 800;
+  letter-spacing: 0;
+  color: currentColor;
+  background: rgba(18, 19, 22, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.25);
+  line-height: 1;
+}
+
+.draft-box-tooltip {
+  position: fixed;
+  width: 340px;
+  max-width: min(340px, calc(100vw - 24px));
+  max-height: 300px;
+  overflow: auto;
+  background: #252525;
+  border: 1px solid rgba(110, 207, 167, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: 1.55;
+  color: var(--text);
+  z-index: 5000;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.draft-box-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.draft-box-tooltip__section + .draft-box-tooltip__section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.draft-box-tooltip__label {
+  font-size: calc(10px * var(--text-scale));
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.draft-box-tooltip__content {
+  word-break: break-word;
+}
+
+.draft-box-tooltip__empty {
+  color: var(--muted);
+}
+
 .workspace {
   background: var(--panel-strong);
   border: 1px solid var(--border);
@@ -1852,7 +1993,7 @@ button.dashboard-copy-btn.is-success:hover {
 .dashboard-tools-reminders {
   min-height: 220px;
   height: 100%;
-  resize: vertical;
+  resize: none;
 }
 
 .dashboard-calculator__note {
@@ -9277,7 +9418,7 @@ textarea::placeholder {
 
 .dashboard-product-note__field {
   min-height: 96px;
-  resize: vertical;
+  resize: none;
 }
 
 .dashboard-product-header {
