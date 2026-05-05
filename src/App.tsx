@@ -123,6 +123,19 @@ type DashboardCalculatorCopyKey =
   | 'totalTtc'
   | 'totalHt'
 
+type DraftBoxSlot = {
+  email: string
+  task: string
+  savedAt: string
+}
+
+type DraftBoxTooltipState = {
+  index: number
+  x: number
+  y: number
+  previewHtml: string
+}
+
 const createDashboardCalculatorItem = (): DashboardCalculatorItem => ({
   id: createId('dashboard-calculator'),
   productPrice: '',
@@ -1612,6 +1625,14 @@ function App() {
   const [sparePartCopiedId, setSparePartCopiedId] = useState<string | null>(null)
   const [dashboardCalculatorCopiedKey, setDashboardCalculatorCopiedKey] =
     useState<DashboardCalculatorCopyKey | null>(null)
+  const [draftBoxes, setDraftBoxes] = useState<DraftBoxSlot[]>(() =>
+    Array.from({ length: 3 }, () => ({
+      email: '',
+      task: '',
+      savedAt: '',
+    })),
+  )
+  const [draftBoxTooltip, setDraftBoxTooltip] = useState<DraftBoxTooltipState | null>(null)
   const [callModalOpen, setCallModalOpen] = useState(false)
   const [callDraft, setCallDraft] = useState(PHONE_CALL_TEMPLATE)
   const [callCopied, setCallCopied] = useState(false)
@@ -3436,6 +3457,109 @@ function App() {
     setData((prev) => ({ ...prev, taskDraft: normalized }))
   }, [normalizeDraftWithCursor])
 
+  const buildDraftBoxPreviewHtml = useCallback((slot: DraftBoxSlot) => {
+    const email = stripTokenSpacing(slot.email).trim()
+    const task = stripTokenSpacing(slot.task).trim()
+
+    if (!email && !task) {
+      return '<div class="draft-box-tooltip__empty">Aucun contenu sauvegardé.</div>'
+    }
+
+    const sections: string[] = []
+    if (email) {
+      sections.push(`
+        <div class="draft-box-tooltip__section">
+          <div class="draft-box-tooltip__label">Mail</div>
+          <div class="draft-box-tooltip__content">${highlightTextPreview(email)}</div>
+        </div>
+      `)
+    }
+    if (task) {
+      sections.push(`
+        <div class="draft-box-tooltip__section">
+          <div class="draft-box-tooltip__label">Task</div>
+          <div class="draft-box-tooltip__content">${highlightTextPreview(task)}</div>
+        </div>
+      `)
+    }
+    return sections.join('')
+  }, [])
+
+  const closeDraftBoxTooltip = useCallback(() => {
+    setDraftBoxTooltip(null)
+  }, [])
+
+  const handleDraftBoxHover = useCallback(
+    (index: number, event: MouseEvent<HTMLButtonElement>) => {
+      const slot = draftBoxes[index]
+      if (!slot || (!slot.email.trim() && !slot.task.trim())) {
+        setDraftBoxTooltip(null)
+        return
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect()
+      setDraftBoxTooltip({
+        index,
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 10,
+        previewHtml: buildDraftBoxPreviewHtml(slot),
+      })
+    },
+    [buildDraftBoxPreviewHtml, draftBoxes],
+  )
+
+  const handleDraftBoxClick = useCallback(
+    (index: number) => {
+      const slot = draftBoxes[index]
+      if (!slot) return
+
+      const hasSavedContent = Boolean(slot.email.trim() || slot.task.trim())
+      if (hasSavedContent) {
+        updateEmailDraft(slot.email, slot.email.length)
+        updateTaskDraft(slot.task, slot.task.length)
+        requestAnimationFrame(() => {
+          setDraftBoxes((prev) =>
+            prev.map((item, slotIndex) =>
+              slotIndex === index
+                ? {
+                    email: '',
+                    task: '',
+                    savedAt: '',
+                  }
+                : item,
+            ),
+          )
+        })
+        closeDraftBoxTooltip()
+        return
+      }
+
+      const nextEmail = data.emailDraft
+      const nextTask = data.taskDraft
+      if (!nextEmail.trim() && !nextTask.trim()) {
+        setToast('Ajoutez du texte avant de le stocker.')
+        return
+      }
+
+      const savedAt = new Date().toISOString()
+      setDraftBoxes((prev) =>
+        prev.map((item, slotIndex) =>
+          slotIndex === index
+            ? {
+                email: nextEmail,
+                task: nextTask,
+                savedAt,
+              }
+            : item,
+        ),
+      )
+      updateEmailDraft('')
+      updateTaskDraft('')
+      closeDraftBoxTooltip()
+    },
+    [closeDraftBoxTooltip, data.emailDraft, data.taskDraft, draftBoxes, updateEmailDraft, updateTaskDraft],
+  )
+
   const updateCallDraft = useCallback((next: string, cursor?: number) => {
     if (cursor !== undefined) {
       const normalized = normalizeDraftWithCursor(next, cursor)
@@ -4798,6 +4922,12 @@ function App() {
       taskText: '',
     })
     setProcedureInfoDraft('')
+    setDraftBoxes([
+      { email: '', task: '', savedAt: '' },
+      { email: '', task: '', savedAt: '' },
+      { email: '', task: '', savedAt: '' },
+    ])
+    closeDraftBoxTooltip()
     setDashboardProductDraft(getEmptyDashboardProductDraft())
     setProductDraft(getEmptyProductDraft())
     setProductTagsDraftText('')
@@ -6482,28 +6612,66 @@ function App() {
                 ) : null}
               </div>
             </div>
-            <button
-              className="primary call-trigger-btn"
-              type="button"
-              title="Appel téléphonique"
-              aria-label="Appel téléphonique"
-              onClick={openCallModal}
-            >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.15"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+    <div className="workspace-head__action-group">
+              <button
+                className="primary call-trigger-btn"
+                type="button"
+                title="Appel téléphonique"
+                aria-label="Appel téléphonique"
+                onClick={openCallModal}
               >
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.99a16 16 0 0 0 6 6l1.53-1.28a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z" />
-                <path d="M15 4.5a4.5 4.5 0 0 1 4.5 4.5" />
-                <path d="M15 1.5A7.5 7.5 0 0 1 22.5 9" />
-              </svg>
-            </button>
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.99a16 16 0 0 0 6 6l1.53-1.28a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z" />
+                  <path d="M15 4.5a4.5 4.5 0 0 1 4.5 4.5" />
+                  <path d="M15 1.5A7.5 7.5 0 0 1 22.5 9" />
+                </svg>
+              </button>
+              <div className="draft-boxes-inline" aria-label="Boîtes de mémoire">
+                {draftBoxes.map((slot, index) => {
+                  const hasContent = Boolean(slot.email.trim() || slot.task.trim())
+                  const isDisabled = !hasContent && !data.emailDraft.trim() && !data.taskDraft.trim()
+                  return (
+                    <button
+                      key={`draft-box-${index + 1}`}
+                      type="button"
+                      className={`draft-box-btn${hasContent ? ' is-filled' : ''}`}
+                      title={
+                        hasContent
+                          ? `Vider la boîte ${index + 1}`
+                          : `Sauvegarder le mail et la task dans la boîte ${index + 1}`
+                      }
+                      aria-label={
+                        hasContent
+                          ? `Vider la boîte ${index + 1}`
+                          : `Sauvegarder le mail et la task dans la boîte ${index + 1}`
+                      }
+                      aria-pressed={hasContent}
+                      disabled={isDisabled}
+                      onClick={() => handleDraftBoxClick(index)}
+                      onMouseEnter={(event) => handleDraftBoxHover(index, event)}
+                      onMouseLeave={closeDraftBoxTooltip}
+                    >
+                      <span className="draft-box-btn__icon" aria-hidden="true">
+                        <UiIcon
+                          name={hasContent ? 'archive' : 'box'}
+                          className="draft-box-btn__icon-svg"
+                        />
+                        <span className="draft-box-btn__badge">{index + 1}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <div className="quick-links-inline">
               {resolvedQuickLinks.map((link) => (
                 <button
@@ -6737,6 +6905,16 @@ function App() {
     </div>
 
     {toast ? <div className="toast">{toast}</div> : null}
+    {typeof document !== 'undefined' && draftBoxTooltip
+      ? createPortal(
+          <div
+            className="draft-box-tooltip visible"
+            style={{ top: draftBoxTooltip.y, left: draftBoxTooltip.x }}
+            dangerouslySetInnerHTML={{ __html: draftBoxTooltip.previewHtml }}
+          />,
+          document.body,
+        )
+      : null}
     {typeof document !== 'undefined' && snippetTooltip
       ? createPortal(
           <div
