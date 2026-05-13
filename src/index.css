@@ -1,45 +1,51 @@
 :root {
-  --bg: #1c1d1f;
-  --bg-secondary: #202124;
-  --panel: #202124;
-  --panel-strong: #1c1d1f;
-  --panel-hover: #26272a;
-  --border: rgba(224, 235, 248, 0.12);
-  --border-hover: rgba(224, 235, 248, 0.24);
-  --border-active: rgba(95, 143, 207, 0.68);
-  --text: #edf3fb;
-  --text-secondary: #cfdae8;
-  --muted: #9aa9ba;
-  --muted-light: #6f7f91;
-  --accent: #5f8fcf;
-  --accent-light: #8fb5e8;
-  --accent-dark: #3f6594;
-  --accent-glow: rgba(95, 143, 207, 0.22);
+  --bg: #0f1118;
+  --bg-secondary: #121623;
+  --panel: #151a27;
+  --panel-strong: #111623;
+  --panel-hover: #1a2040;
+  --border: rgba(192, 203, 255, 0.18);
+  --border-hover: rgba(192, 203, 255, 0.3);
+  --border-active: rgba(126, 139, 255, 0.72);
+  --text: #eff4ff;
+  --text-secondary: #d9e1f0;
+  --muted: #9aa6bb;
+  --muted-light: #78859a;
+  --accent: #7e8bff;
+  --accent-light: #b7bfff;
+  --accent-dark: #5360c7;
+  --accent-glow: rgba(126, 139, 255, 0.26);
   --danger: #df7b78;
-  --danger-light: #eca09c;
+  --danger-light: #ec9f9b;
   --success: #7fb7a0;
   --warning: #f2c94c;
   --info: #9ec8e5;
-  --tag: #ff6f6a;
-  --selector: #7bd88f;
-  --field-bg: #242528;
-  --field-bg-focus: #2a2b2f;
-  --field-bg-disabled: #1f2023;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
-  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.24);
-  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.34);
-  --shadow-xl: 0 26px 68px rgba(0, 0, 0, 0.42);
+  --tag: #ad7eff;
+  --selector: #66dacd;
+  --field-bg: #141a2a;
+  --field-bg-focus: #1a2140;
+  --field-bg-disabled: #101521;
+  --shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 4px 0 rgba(0, 0, 0, 0.22);
+  --shadow-xl: 0 6px 0 rgba(0, 0, 0, 0.24);
   --shadow-glow: none;
-  --gradient-primary: #5f8fcf;
-  --gradient-secondary: #3f6594;
-  --gradient-bg: #1c1d1f;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --surface-soft: rgba(241, 240, 237, 0.045);
-  --surface-soft-hover: rgba(241, 240, 237, 0.08);
-  --surface-strong: rgba(241, 240, 237, 0.13);
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --gradient-primary: #7e8bff;
+  --gradient-secondary: #5360c7;
+  --gradient-bg:
+    radial-gradient(circle at 18% 12%, rgba(126, 139, 255, 0.14), transparent 22%),
+    radial-gradient(circle at 84% 18%, rgba(173, 126, 255, 0.1), transparent 20%),
+    radial-gradient(circle at 58% 82%, rgba(102, 218, 205, 0.06), transparent 22%),
+    linear-gradient(180deg, #0f1118 0%, #121724 100%);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --surface-soft: rgba(255, 255, 255, 0.04);
+  --surface-soft-hover: rgba(255, 255, 255, 0.065);
+  --surface-strong: rgba(255, 255, 255, 0.1);
+  --font-ui:
+    "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
   --transition-fast: 0.12s ease;
   --transition-base: 0.16s ease;
   --transition-slow: 0.2s ease;
@@ -65,7 +71,9 @@ body,
 body {
   margin: 0;
   font-family: var(--font-ui);
-  background: var(--gradient-bg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 18%),
+    var(--gradient-bg);
   color: var(--text);
   font-size: calc(16px * var(--text-scale));
   min-height: 100vh;
@@ -74,6 +82,7 @@ body {
   font-synthesis: none;
   font-kerning: normal;
   overflow: hidden;
+  background-color: var(--bg);
 }
 
 * {
@@ -105,12 +114,12 @@ select {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.015);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 999px;
   border: 1px solid transparent;
   background-clip: padding-box;
@@ -118,20 +127,20 @@ select {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.34) rgba(255, 255, 255, 0.02);
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.015);
 }
 
 input[type='checkbox'] {
   appearance: none;
   width: 18px;
   height: 18px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  border-radius: 2px;
+  border: 1px solid rgba(227, 236, 246, 0.14);
   background: var(--surface-soft);
   display: inline-grid;
   place-items: center;
@@ -154,7 +163,7 @@ input[type='checkbox']::after {
 
 input[type='checkbox']:checked {
   border-color: var(--accent);
-  background: rgba(95, 143, 207, 0.18);
+  background: rgba(103, 146, 201, 0.2);
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 

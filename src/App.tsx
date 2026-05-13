@@ -45,6 +45,8 @@ import type {
   ProductEdition,
   ProductEditionPlatform,
   ProductCatalogItem,
+  ProcedureMailtoLink,
+  TroubleshootgunTemplate,
   Procedure,
   ProcedureBrand,
   ProcedureCoverage,
@@ -175,7 +177,6 @@ type AppIconName =
   | 'money'
   | 'news'
   | 'notes'
-  | 'palette'
   | 'phone'
   | 'portal'
   | 'preferences'
@@ -334,15 +335,6 @@ const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) 
           <path d="M8 13h5" />
         </svg>
       )
-    case 'palette':
-      return (
-        <svg {...common}>
-          <path d="M12 3a9 9 0 0 0 0 18h1.2a1.8 1.8 0 0 0 1.3-3l-.2-.2a1.8 1.8 0 0 1 1.3-3H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />
-          <path d="M7.5 10h.01" />
-          <path d="M10 7.5h.01" />
-          <path d="M14 7.5h.01" />
-        </svg>
-      )
     case 'phone':
       return (
         <svg {...common}>
@@ -437,19 +429,19 @@ type WorkspaceDashboardPage =
   | 'portal'
   | 'catalog'
   | 'parts'
-  | 'news'
+  | 'troubleshootgun'
 
 const workspaceDashboardPageOptions: Array<{
   id: WorkspaceDashboardPage
   title: string
   icon: AppIconName
 }> = [
-  { id: 'tools', title: 'Tools', icon: 'tool' },
-  { id: 'calculator', title: 'Price calculator', icon: 'money' },
+  { id: 'tools', title: 'Notes et actus', icon: 'news' },
+  { id: 'calculator', title: 'Calculateur prix', icon: 'money' },
   { id: 'portal', title: 'Procédures', icon: 'notes' },
-  { id: 'catalog', title: 'Catalogue de produits', icon: 'preferences' },
-  { id: 'parts', title: 'SKU & spare parts', icon: 'box' },
-  { id: 'news', title: 'News & info', icon: 'info' },
+  { id: 'catalog', title: 'Catalogue produits', icon: 'preferences' },
+  { id: 'parts', title: 'SKU et pièces', icon: 'box' },
+  { id: 'troubleshootgun', title: 'Troubleshootgun', icon: 'tool' },
 ]
 
 type SettingsTab =
@@ -470,6 +462,7 @@ type SettingsTab =
   | 'dashboardSoftwares'
   | 'dashboardDriverPacks'
   | 'dashboardSpareParts'
+  | 'dashboardTroubleshootgun'
   | 'dashboardNews'
   | 'updates'
   | 'display'
@@ -478,6 +471,7 @@ type SettingsTab =
   | 'snippetSettings'
   | 'history'
   | 'quickLinks'
+  | 'procedureMailtos'
   | 'preferences'
 
 type SettingsNavSection = {
@@ -598,6 +592,12 @@ const settingsNavigation: SettingsNavSection[] = [
         icon: 'archive',
       },
       {
+        id: 'dashboardTroubleshootgun',
+        label: 'Troubleshootgun',
+        description: 'Templates produits dédiés au dashboard Troubleshootgun.',
+        icon: 'tool',
+      },
+      {
         id: 'dashboardNews',
         label: 'News',
         description: 'Liste des news affichées dans la page 6 du dashboard.',
@@ -633,6 +633,12 @@ const settingsNavigation: SettingsNavSection[] = [
         label: 'Liens rapides',
         description: 'URLs ouvertes par les boutons d’accès rapides.',
         icon: 'grid',
+      },
+      {
+        id: 'procedureMailtos',
+        label: 'Mailto procédures',
+        description: 'Modèles de mailto disponibles dans les procédures.',
+        icon: 'mail',
       },
       {
         id: 'preferences',
@@ -702,6 +708,31 @@ const quickLinks = [
     defaultUrl: defaultData.settings.quickLinkUrls.assist,
   },
 ]
+
+const defaultProcedureMailtos = defaultData.settings.procedureMailtoLinks ?? []
+
+function normalizeProcedureMailtoLink(link: ProcedureMailtoLink, fallbackId: string) {
+  const to = link.to.trim().replace(/^mailto:/i, '')
+  const subject = link.subject?.trim() ?? ''
+  const body = link.body?.trim() ?? ''
+  return {
+    id: link.id.trim() || fallbackId,
+    label: link.label.trim() || 'Mailto',
+    to,
+    subject,
+    body,
+  }
+}
+
+function buildProcedureMailtoHref(link: ProcedureMailtoLink) {
+  const to = link.to.trim().replace(/^mailto:/i, '')
+  if (!to) return ''
+  const params = new URLSearchParams()
+  if (link.subject?.trim()) params.set('subject', link.subject.trim())
+  if (link.body?.trim()) params.set('body', link.body.trim())
+  const query = params.toString()
+  return `mailto:${to}${query ? `?${query}` : ''}`
+}
 
 const dashboardProcessLineDefinitions = [
   { id: 'rma-14', label: 'RMA 14 jours', shortLabel: '14 jours' },
@@ -986,8 +1017,9 @@ type LegacyDashboardProcessLine = Partial<
     procedureId: unknown
     completeProcedureId: unknown
     reducedProcedureId: unknown
-    mode: unknown
+    rush: unknown
     enabled: unknown
+    mode: unknown
   }
 >
 type LegacyDashboardProduct = Partial<
@@ -1018,6 +1050,11 @@ type LegacyProductEdition = Partial<
     note: unknown
   }
 >
+type LegacyTroubleshootgunTemplate = Partial<TroubleshootgunTemplate> & {
+  name: unknown
+  content: unknown
+  taskText: unknown
+}
 type LegacyProductCatalogItem = Partial<
   ProductCatalogItem & {
     note: unknown
@@ -1029,6 +1066,7 @@ type LegacyProductCatalogItem = Partial<
     firmwareIds: unknown
     editions: unknown
     spareParts: unknown
+    troubleshootgunTemplates: unknown
   }
 >
 type LegacyDashboardNewsItem = Partial<
@@ -1150,7 +1188,7 @@ const normalizeDashboardProcessLine = (
   }
   const item = raw as LegacyDashboardProcessLine
   const id = item.id === 'rma-14' || item.id === 'rma-30' ? item.id : fallback.id
-  const enabled = Boolean(item.enabled)
+  const rush = Boolean(item.rush ?? item.enabled ?? (item.mode === 'complete'))
   const legacyProcedureId =
     typeof item.procedureId === 'string' ? item.procedureId.trim() : ''
   const completeProcedureId =
@@ -1163,10 +1201,9 @@ const normalizeDashboardProcessLine = (
       : legacyProcedureId || fallback.reducedProcedureId
   return {
     id,
-    enabled,
+    rush,
     completeProcedureId,
     reducedProcedureId,
-    mode: enabled ? 'complete' : 'reduced',
   }
 }
 
@@ -1333,6 +1370,30 @@ const normalizeProductEdition = (raw: unknown, fallbackId: string): ProductEditi
   }
 }
 
+const normalizeTroubleshootgunTemplate = (
+  raw: unknown,
+  fallbackId: string,
+): TroubleshootgunTemplate => {
+  const item =
+    raw && typeof raw === 'object'
+      ? (raw as LegacyTroubleshootgunTemplate)
+      : ({}) as LegacyTroubleshootgunTemplate
+  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
+  return {
+    id,
+    name: typeof item.name === 'string' ? item.name : '',
+    content: typeof item.content === 'string' ? item.content : '',
+    taskText: typeof item.taskText === 'string' ? item.taskText : '',
+  }
+}
+
+const normalizeTroubleshootgunTemplates = (raw: unknown): TroubleshootgunTemplate[] => {
+  if (!Array.isArray(raw)) return []
+  return raw.map((item, index) =>
+    normalizeTroubleshootgunTemplate(item, `troubleshootgun-template-${index + 1}`),
+  )
+}
+
 const createProductEditionDraft = (
   platform: ProductEditionPlatform = 'pc',
 ): ProductEdition => ({
@@ -1388,6 +1449,7 @@ const normalizeProductCatalogItem = (raw: unknown, index: number): ProductCatalo
     spareParts: rawSpareParts.map((entry, spareIndex) =>
       normalizeSparePart(entry, `${id}-spare-${spareIndex + 1}`),
     ),
+    troubleshootgunTemplates: normalizeTroubleshootgunTemplates(item.troubleshootgunTemplates),
   }
 }
 
@@ -1506,6 +1568,14 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
           name: convertLegacyTokens(sparePart.name),
           sku: convertLegacyTokens(sparePart.sku),
         })),
+        troubleshootgunTemplates: normalizeTroubleshootgunTemplates(
+          product.troubleshootgunTemplates,
+        ).map((template) => ({
+          ...template,
+          name: convertLegacyTokens(template.name),
+          content: convertLegacyTokens(template.content),
+          taskText: convertLegacyTokensMaybe(template.taskText),
+        })),
       })),
       dashboardNews: normalizeDashboardNews(payload.settings.dashboardNews).map((item) => ({
         ...item,
@@ -1601,6 +1671,7 @@ function App() {
   const [taskQuery, setTaskQuery] = useState('')
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
+  const [dashboardTroubleshootgunQuery, setDashboardTroubleshootgunQuery] = useState('')
   const [procedureQuery, setProcedureQuery] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -1649,10 +1720,15 @@ function App() {
   const [activeDashboardSpareProductId, setActiveDashboardSpareProductId] = useState<
     string | null
   >(null)
+  const [activeDashboardTroubleshootgunProductId, setActiveDashboardTroubleshootgunProductId] =
+    useState<string | null>(null)
   const [activeDashboardPortalProcedureId, setActiveDashboardPortalProcedureId] =
     useState<string | null>(null)
   const [activeDashboardCatalogEditionId, setActiveDashboardCatalogEditionId] =
     useState<string | null>(null)
+  const [dashboardProcedureVariant, setDashboardProcedureVariant] = useState<'complete' | 'light'>(
+    'complete',
+  )
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<SettingsTab>('categories')
@@ -1671,6 +1747,9 @@ function App() {
   const [selectedProductCatalogId, setSelectedProductCatalogId] = useState<string | null>(null)
   const [selectedDashboardNewsId, setSelectedDashboardNewsId] = useState<string | null>(null)
   const [productTagsDraftText, setProductTagsDraftText] = useState('')
+  const [dashboardTroubleshootgunPreviewTemplateId, setDashboardTroubleshootgunPreviewTemplateId] =
+    useState<string | null>(null)
+  const [procedureMailtoMenuOpen, setProcedureMailtoMenuOpen] = useState(false)
   const [snippetActiveField, setSnippetActiveField] = useState<'title' | 'content' | 'task'>(
     'content',
   )
@@ -1684,7 +1763,6 @@ function App() {
     'info',
   )
   const [procedureFormatHelpOpen, setProcedureFormatHelpOpen] = useState(false)
-  const [nameFormatterValue, setNameFormatterValue] = useState('')
   const [dashboardCalculatorItems, setDashboardCalculatorItems] = useState<DashboardCalculatorItem[]>(
     () => [createDashboardCalculatorItem()],
   )
@@ -1705,6 +1783,13 @@ function App() {
   const isProductCatalogSelectionEmpty = selectedProductCatalogId === null
   const isDashboardNewsSelectionEmpty = selectedDashboardNewsId === null
   const dashboardReminders = data.settings.dashboardReminders ?? ''
+  const normalizedProcedureMailtos = useMemo(
+    () =>
+      (data.settings.procedureMailtoLinks ?? defaultProcedureMailtos).map((link, index) =>
+        normalizeProcedureMailtoLink(link, `procedure-mailto-${index + 1}`),
+      ),
+    [data.settings.procedureMailtoLinks],
+  )
 
   const emailEditorRef = useRef<TextEditorHandle>(null)
   const taskEditorRef = useRef<TextEditorHandle>(null)
@@ -1902,6 +1987,7 @@ function App() {
     firmwareIds: [],
     editions: [],
     spareParts: [],
+    troubleshootgunTemplates: [],
   })
   const [dashboardNewsDraft, setDashboardNewsDraft] = useState<DashboardNewsItem>({
     id: '',
@@ -1931,6 +2017,10 @@ function App() {
   const productCatalog = useMemo(() => {
     return normalizeProducts(data.settings.products)
   }, [data.settings.products])
+  const productTroubleshootgunTemplates = useMemo(
+    () => normalizeTroubleshootgunTemplates(productDraft.troubleshootgunTemplates),
+    [productDraft.troubleshootgunTemplates],
+  )
   const dashboardNews = useMemo(() => {
     return normalizeDashboardNews(data.settings.dashboardNews)
   }, [data.settings.dashboardNews])
@@ -2050,6 +2140,7 @@ function App() {
         firmwareIds: [],
         editions: [],
         spareParts: [],
+        troubleshootgunTemplates: [],
       }) as ProductCatalogItem,
     [],
   )
@@ -2481,6 +2572,41 @@ function App() {
     },
     [data.settings.quickLinkUrls, updateSettings],
   )
+  const updateProcedureMailtoLinks = useCallback(
+    (next: ProcedureMailtoLink[]) => {
+      updateSettings({ procedureMailtoLinks: next })
+    },
+    [updateSettings],
+  )
+  const addProcedureMailtoLink = useCallback(() => {
+    const id = createId('procedure-mailto')
+    updateProcedureMailtoLinks([
+      ...normalizedProcedureMailtos,
+      {
+        id,
+        label: 'Nouveau mailto',
+        to: '',
+        subject: '',
+        body: '',
+      },
+    ])
+  }, [normalizedProcedureMailtos, updateProcedureMailtoLinks])
+  const updateProcedureMailtoLink = useCallback(
+    (id: string, patch: Partial<ProcedureMailtoLink>) => {
+      updateProcedureMailtoLinks(
+        normalizedProcedureMailtos.map((link) =>
+          link.id === id ? normalizeProcedureMailtoLink({ ...link, ...patch }, link.id) : link,
+        ),
+      )
+    },
+    [normalizedProcedureMailtos, updateProcedureMailtoLinks],
+  )
+  const removeProcedureMailtoLink = useCallback(
+    (id: string) => {
+      updateProcedureMailtoLinks(normalizedProcedureMailtos.filter((link) => link.id !== id))
+    },
+    [normalizedProcedureMailtos, updateProcedureMailtoLinks],
+  )
   const resetQuickLinkUrl = useCallback(
     (id: string) => {
       const quickLink = quickLinks.find((link) => link.id === id)
@@ -2876,6 +3002,24 @@ function App() {
   }, [getEmptyProductDraft, productCatalog, selectedProductCatalogId])
 
   useEffect(() => {
+    if (!productCatalog.length) {
+      setActiveDashboardTroubleshootgunProductId(null)
+      return
+    }
+
+    const resolvedProduct =
+      (activeDashboardTroubleshootgunProductId
+        ? productCatalog.find((product) => product.id === activeDashboardTroubleshootgunProductId)
+        : null) ??
+      productCatalog.find((product) => (product.troubleshootgunTemplates ?? []).length > 0) ??
+      productCatalog[0]
+
+    if (resolvedProduct && resolvedProduct.id !== activeDashboardTroubleshootgunProductId) {
+      setActiveDashboardTroubleshootgunProductId(resolvedProduct.id)
+    }
+  }, [activeDashboardTroubleshootgunProductId, productCatalog])
+
+  useEffect(() => {
     if (!selectedDashboardNewsId || selectedDashboardNewsId === 'new') return
     if (dashboardNews.some((item) => item.id === selectedDashboardNewsId)) return
     setSelectedDashboardNewsId(null)
@@ -2985,10 +3129,25 @@ function App() {
           note: edition.note ?? '',
         })),
         spareParts: hydratedProduct.spareParts.map((sparePart) => ({ ...sparePart })),
+        troubleshootgunTemplates: normalizeTroubleshootgunTemplates(
+          hydratedProduct.troubleshootgunTemplates,
+        ).map((template) => ({ ...template })),
       }
     },
     [productCatalogWithRelationsById],
   )
+
+  useEffect(() => {
+    if (editTab !== 'dashboardTroubleshootgun') return
+    if (selectedProductCatalogId && selectedProductCatalogId !== 'new') return
+    const firstProduct =
+      productCatalog.find((product) => (product.troubleshootgunTemplates ?? []).length > 0) ??
+      productCatalog[0]
+    if (!firstProduct) return
+    setProductDraft(getProductCatalogDraft(firstProduct))
+    setProductTagsDraftText((firstProduct.tags ?? []).join(', '))
+    setSelectedProductCatalogId(firstProduct.id)
+  }, [editTab, getProductCatalogDraft, productCatalog, selectedProductCatalogId])
 
   const dashboardCatalogProductResults = useMemo(() => {
     const query = dashboardProductQuery.trim().toLowerCase()
@@ -3090,6 +3249,55 @@ function App() {
     return base
   }, [dashboardSparePartQuery, productsWithDashboardRelations])
 
+  const filteredProductsWithTroubleshootgun = useMemo(() => {
+    const query = dashboardTroubleshootgunQuery.trim().toLowerCase()
+    const base = productsWithDashboardRelations
+      .map((product) => {
+        const matchingTemplates = query
+          ? normalizeTroubleshootgunTemplates(product.troubleshootgunTemplates).filter((template) =>
+              [template.name, template.content].join(' ').toLowerCase().includes(query),
+            )
+          : normalizeTroubleshootgunTemplates(product.troubleshootgunTemplates)
+        const productMatches = [
+          product.name,
+          product.productType ?? '',
+          ...(product.tags ?? []),
+          ...(product.editions ?? []).map((edition) => edition.name),
+          ...normalizeTroubleshootgunTemplates(product.troubleshootgunTemplates).flatMap((template) => [
+            template.name,
+            template.content,
+          ]),
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(query)
+        if (!query) return { ...product, troubleshootgunTemplates: matchingTemplates }
+        if (productMatches) return product
+        return { ...product, troubleshootgunTemplates: matchingTemplates }
+      })
+      .filter((product) => {
+        if (!query) return (product.troubleshootgunTemplates ?? []).length > 0
+        return (
+          [
+            product.name,
+            product.productType ?? '',
+            ...(product.tags ?? []),
+            ...((product.troubleshootgunTemplates ?? []).flatMap((template) => [
+              template.name,
+              template.content,
+            ]) as string[]),
+          ]
+            .join(' ')
+            .toLowerCase()
+            .includes(query) ||
+          (product.troubleshootgunTemplates ?? []).some((template) =>
+            [template.name, template.content].join(' ').toLowerCase().includes(query),
+          )
+        )
+      })
+    return base
+  }, [dashboardTroubleshootgunQuery, productsWithDashboardRelations])
+
   const activeDashboardSpareProduct = useMemo(
     () =>
       filteredProductsWithSpareParts.find(
@@ -3097,6 +3305,29 @@ function App() {
       ) ?? null,
     [activeDashboardSpareProductId, filteredProductsWithSpareParts],
   )
+  const activeDashboardTroubleshootgunProduct = useMemo(
+    () =>
+      filteredProductsWithTroubleshootgun.find(
+        (product) => product.id === activeDashboardTroubleshootgunProductId,
+      ) ?? null,
+    [activeDashboardTroubleshootgunProductId, filteredProductsWithTroubleshootgun],
+  )
+  const activeDashboardTroubleshootgunTemplates = useMemo(
+    () => activeDashboardTroubleshootgunProduct?.troubleshootgunTemplates ?? [],
+    [activeDashboardTroubleshootgunProduct],
+  )
+  const activeDashboardTroubleshootgunPreviewTemplate = useMemo(() => {
+    if (!activeDashboardTroubleshootgunTemplates.length) return null
+    if (!dashboardTroubleshootgunPreviewTemplateId) return null
+    return (
+      activeDashboardTroubleshootgunTemplates.find(
+        (template) => template.id === dashboardTroubleshootgunPreviewTemplateId,
+      ) ?? null
+    )
+  }, [
+    activeDashboardTroubleshootgunTemplates,
+    dashboardTroubleshootgunPreviewTemplateId,
+  ])
 
   const productsSorted = useMemo(
     () => [...productsWithDashboardRelations],
@@ -3275,6 +3506,29 @@ function App() {
     setActiveDashboardSpareProductId(filteredProductsWithSpareParts[0].id)
   }, [activeDashboardSpareProductId, filteredProductsWithSpareParts, workspaceDashboardPage])
 
+  useEffect(() => {
+    if (workspaceDashboardPage !== 'troubleshootgun') return
+
+    if (!activeDashboardTroubleshootgunTemplates.length) {
+      if (dashboardTroubleshootgunPreviewTemplateId !== null) {
+        setDashboardTroubleshootgunPreviewTemplateId(null)
+      }
+      return
+    }
+
+    const hasVisiblePreview = activeDashboardTroubleshootgunTemplates.some(
+      (template) => template.id === dashboardTroubleshootgunPreviewTemplateId,
+    )
+    if (hasVisiblePreview) return
+    if (dashboardTroubleshootgunPreviewTemplateId !== null) {
+      setDashboardTroubleshootgunPreviewTemplateId(null)
+    }
+  }, [
+    activeDashboardTroubleshootgunTemplates,
+    dashboardTroubleshootgunPreviewTemplateId,
+    workspaceDashboardPage,
+  ])
+
   const editSnippets = useMemo(() => {
     if (editSnippetCategoryId === 'all') return data.snippets
     return data.snippets.filter((snippet) => snippet.categoryId === editSnippetCategoryId)
@@ -3372,19 +3626,19 @@ function App() {
     })
   }
 
-  const insertProcedureStepsLink = () => {
+  const insertProcedureStepsLink = (mailtoLink: ProcedureMailtoLink | null) => {
     const target = procedureStepsRef.current
     const value = procedureDraft.steps
     const start = target?.selectionStart ?? value.length
     const end = target?.selectionEnd ?? value.length
     const selection = value.slice(start, end) || 'texte'
-    const urlPlaceholder = 'https://...'
-    const next = `${value.slice(0, start)}[${selection}](${urlPlaceholder})${value.slice(end)}`
+    const nextHref = mailtoLink ? buildProcedureMailtoHref(mailtoLink) : 'mailto:contact@example.com?subject=Objet&body=Message'
+    const next = `${value.slice(0, start)}[${selection}](${nextHref})${value.slice(end)}`
     setProcedureDraft((prev) => ({ ...prev, steps: next }))
     setProcedureActiveField('steps')
     requestAnimationFrame(() => {
       const urlStart = start + selection.length + 3
-      const urlEnd = urlStart + urlPlaceholder.length
+      const urlEnd = urlStart + nextHref.length
       target?.setSelectionRange(urlStart, urlEnd)
       target?.focus()
     })
@@ -3729,6 +3983,18 @@ function App() {
     }
   }
 
+  const applyTroubleshootgunTemplate = (template: TroubleshootgunTemplate) => {
+    const paddedContent = padEmptySelectors(template.content)
+    updateEmailDraft(paddedContent, paddedContent.length)
+    requestAnimationFrame(() => emailEditorRef.current?.focus())
+
+    const taskText = template.taskText?.trim() ?? ''
+    if (taskText) {
+      const paddedTaskText = padEmptySelectors(taskText)
+      updateTaskDraft(paddedTaskText, paddedTaskText.length)
+    }
+  }
+
   const applyTaskTemplate = (template: TaskTemplate) => {
     const paddedContent = padEmptySelectors(template.content)
     updateTaskDraft(paddedContent, paddedContent.length)
@@ -3792,29 +4058,6 @@ function App() {
       setToast('Copie impossible.')
       return
     }
-  }
-
-  const formatNameValue = (value: string) => {
-    const trimmed = value.trim()
-    if (!trimmed) return ''
-    return trimmed
-      .split(/\s+/)
-      .map((word) => {
-        const lower = word.toLowerCase()
-        return `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`
-      })
-      .join(' ')
-  }
-
-  const handleFormatName = async () => {
-    const formatted = formatNameValue(nameFormatterValue)
-    if (!formatted) return
-    const didCopy = await copyText(formatted)
-    if (!didCopy) {
-      setToast('Copie impossible.')
-      return
-    }
-    setNameFormatterValue('')
   }
 
   const handleCopyPortalCode = async (id: string, code: string) => {
@@ -4088,6 +4331,16 @@ function App() {
       softwareIds: normalizeIdList(productDraft.softwareIds),
       driverIds: normalizeIdList(productDraft.driverIds),
       firmwareIds: normalizeIdList(productDraft.firmwareIds),
+      troubleshootgunTemplates: normalizeTroubleshootgunTemplates(
+        productDraft.troubleshootgunTemplates,
+      )
+        .map((template) => ({
+          id: template.id,
+          name: template.name.trim(),
+          content: template.content.trim(),
+          taskText: template.taskText?.trim() ?? '',
+        }))
+        .filter((template) => template.name || template.content || template.taskText),
       editions: (productDraft.editions ?? []).map((edition) => {
         const platform = normalizeProductEditionPlatform(edition.platform)
         return {
@@ -4242,6 +4495,46 @@ function App() {
     updateProductDraftSpareParts(
       productDraft.spareParts.filter((sparePart) => sparePart.id !== sparePartId),
     )
+  }
+
+  const updateProductDraftTroubleshootgunTemplates = (next: TroubleshootgunTemplate[]) => {
+    setProductDraft((prev) => ({
+      ...prev,
+      troubleshootgunTemplates: next,
+    }))
+  }
+
+  const addProductDraftTroubleshootgunTemplate = () => {
+    updateProductDraftTroubleshootgunTemplates([
+      ...(productDraft.troubleshootgunTemplates ?? []),
+      {
+        id: createId('troubleshootgun-template'),
+        name: '',
+        content: '',
+        taskText: '',
+      },
+    ])
+  }
+
+  const updateProductDraftTroubleshootgunTemplate = (
+    templateId: string,
+    patch: Partial<TroubleshootgunTemplate>,
+  ) => {
+    updateProductDraftTroubleshootgunTemplates(
+      (productDraft.troubleshootgunTemplates ?? []).map((template) =>
+        template.id === templateId ? { ...template, ...patch } : template,
+      ),
+    )
+  }
+
+  const removeProductDraftTroubleshootgunTemplate = (templateId: string) => {
+    updateProductDraftTroubleshootgunTemplates(
+      (productDraft.troubleshootgunTemplates ?? []).filter((template) => template.id !== templateId),
+    )
+  }
+
+  const handleReorderProductDraftTroubleshootgunTemplates = (next: TroubleshootgunTemplate[]) => {
+    updateProductDraftTroubleshootgunTemplates(next)
   }
 
   const updateProductDraftRelation = (
@@ -4945,6 +5238,8 @@ function App() {
     setActiveDashboardCatalogEditionId(null)
     setActiveDashboardSpareProductId(null)
     setActiveDashboardPortalProcedureId(null)
+    setDashboardProcedureVariant('complete')
+    setDashboardTroubleshootgunPreviewTemplateId(null)
     setDashboardProductQuery('')
     setDashboardSparePartQuery('')
     setSnippetTooltip(null)
@@ -5157,9 +5452,9 @@ function App() {
 
   const showSnippetTooltip = (snippet: Snippet, event: MouseEvent<HTMLElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
-    const tooltipWidth = 340
+    const tooltipWidth = 280
     const gutter = 12
-    const tooltipHeight = Math.min(300, window.innerHeight - gutter * 2)
+    const tooltipHeight = Math.min(220, window.innerHeight - gutter * 2)
     let x = rect.right + gutter
     let y = rect.top
     if (x + tooltipWidth > window.innerWidth - gutter) {
@@ -5176,7 +5471,7 @@ function App() {
 
   const openLink = (url: string) => {
     const normalizedUrl = url.trim()
-    if (!normalizedUrl.startsWith('http')) return
+    if (!normalizedUrl.startsWith('http') && !normalizedUrl.startsWith('mailto:')) return
     openExternal(normalizedUrl)
   }
 
@@ -5268,46 +5563,52 @@ function App() {
     )
   }
 
-  const renderWorkspaceDashboardNameFormatter = (title: string) => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--formatter">
+  const renderWorkspaceDashboardNewsNotesPanel = (title: string) => (
+    <article className="workspace-dashboard__panel workspace-dashboard__panel--news-notes">
       <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-formatter">
-        <button
-          className="btn btn--primary btn--small dashboard-formatter__action"
-          type="button"
-          onClick={() => void handleFormatName()}
-          disabled={!nameFormatterValue.trim()}
-        >
-          Formater & copier
-        </button>
-        <div className="dashboard-formatter__input-wrap">
-          <input
-            className="input dashboard-formatter__input"
-            value={nameFormatterValue}
-            onChange={(event) => setNameFormatterValue(event.target.value)}
-            placeholder="Nom prenom"
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                void handleFormatName()
-              }
-            }}
+      <div className="workspace-dashboard__news-notes-grid">
+        <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes">
+          <div className="dashboard-news-notes__panel-head">
+            <div className="dashboard-news-notes__panel-title">Notes libres</div>
+            <button
+              type="button"
+              className="note-clear-btn dashboard-news-notes__clear"
+              onClick={() => updateSettings({ dashboardReminders: '' })}
+              title="Effacer la note"
+              aria-label="Effacer la note"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+          <textarea
+            className="textarea dashboard-news-notes__textarea"
+            value={dashboardReminders}
+            placeholder="Ajoutez vos notes libres..."
+            onChange={(event) => updateSettings({ dashboardReminders: event.target.value })}
           />
         </div>
-      </div>
-    </article>
-  )
-
-  const renderWorkspaceDashboardRemindersPanel = (title: string) => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--calculator">
-      <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-calculator">
-        <textarea
-          className="textarea dashboard-tools-reminders"
-          value={dashboardReminders}
-          placeholder="Ajoutez vos rappels libres..."
-          onChange={(event) => updateSettings({ dashboardReminders: event.target.value })}
-        />
+        <div className="dashboard-news-notes__panel dashboard-news-notes__panel--news">
+          <div className="dashboard-news-notes__panel-title">News</div>
+          <div className="dashboard-news-list dashboard-news-list--stacked">
+            {dashboardNewsSorted.length ? (
+              dashboardNewsSorted.map((item) => (
+                <article className="dashboard-news-item" key={item.id}>
+                  <div className="dashboard-news-item__date">{formatDashboardNewsDate(item.date)}</div>
+                  <div className="dashboard-news-item__title">{item.title || 'Sans titre'}</div>
+                  <div
+                    className="dashboard-news-item__content"
+                    onClick={handleProcedureLinkClick}
+                    dangerouslySetInnerHTML={{
+                      __html: formatDashboardNewsText(item.content.trim() || 'Aucun contenu.'),
+                    }}
+                  />
+                </article>
+              ))
+            ) : (
+              <div className="dashboard-empty">Aucune news configurée.</div>
+            )}
+          </div>
+        </div>
       </div>
     </article>
   )
@@ -5389,7 +5690,7 @@ function App() {
               <span className="dashboard-calculator__result-label">Produits</span>
             </div>
             <div className="dashboard-calculator__result-values">
-              <div className="dashboard-calculator__result-value">
+              <div className="dashboard-calculator__result-value dashboard-calculator__result-value--ht">
                 <span className="dashboard-calculator__result-sub-label">HT</span>
                 <div className="dashboard-calculator__result-value-main">
                   <strong>{formatEuroAmount(dashboardProductsTotalHt)}</strong>
@@ -5411,7 +5712,7 @@ function App() {
                   </button>
                 </div>
               </div>
-              <div className="dashboard-calculator__result-value">
+              <div className="dashboard-calculator__result-value dashboard-calculator__result-value--ttc">
                 <span className="dashboard-calculator__result-sub-label">TTC</span>
                 <div className="dashboard-calculator__result-value-main">
                   <strong>{formatEuroAmount(dashboardProductsTotalTtc)}</strong>
@@ -5441,7 +5742,7 @@ function App() {
               <span className="dashboard-calculator__result-label">Livraison</span>
             </div>
             <div className="dashboard-calculator__result-values">
-              <div className="dashboard-calculator__result-value">
+              <div className="dashboard-calculator__result-value dashboard-calculator__result-value--ht">
                 <span className="dashboard-calculator__result-sub-label">HT</span>
                 <div className="dashboard-calculator__result-value-main">
                   <strong>{formatEuroAmount(dashboardShippingTotalHt)}</strong>
@@ -5463,7 +5764,7 @@ function App() {
                   </button>
                 </div>
               </div>
-              <div className="dashboard-calculator__result-value">
+              <div className="dashboard-calculator__result-value dashboard-calculator__result-value--ttc">
                 <span className="dashboard-calculator__result-sub-label">TTC</span>
                 <div className="dashboard-calculator__result-value-main">
                   <strong>{formatEuroAmount(dashboardShippingTotalTtc)}</strong>
@@ -5493,7 +5794,7 @@ function App() {
               <span className="dashboard-calculator__result-label">Total</span>
             </div>
             <div className="dashboard-calculator__result-values">
-              <div className="dashboard-calculator__result-value">
+              <div className="dashboard-calculator__result-value dashboard-calculator__result-value--ht">
                 <span className="dashboard-calculator__result-sub-label">HT</span>
                 <div className="dashboard-calculator__result-value-main">
                   <strong>{formatEuroAmount(dashboardGrandTotalHt)}</strong>
@@ -5513,7 +5814,7 @@ function App() {
                   </button>
                 </div>
               </div>
-              <div className="dashboard-calculator__result-value">
+              <div className="dashboard-calculator__result-value dashboard-calculator__result-value--ttc">
                 <span className="dashboard-calculator__result-sub-label">TTC</span>
                 <div className="dashboard-calculator__result-value-main">
                   <strong>{formatEuroAmount(dashboardGrandTotalTtc)}</strong>
@@ -5629,26 +5930,26 @@ function App() {
           {activeDashboardCatalogProduct ? (
             <>
               <div className="dashboard-product-header">
-                <div className="dashboard-product-title">{activeDashboardCatalogProduct.name}</div>
-              </div>
-
-              <div className="dashboard-product-editions-section">
-                <div className="dashboard-section-label">Tag</div>
-                {(activeDashboardCatalogProduct.tags ?? []).length ? (
-                  <div className="dashboard-product-tags">
-                    {(activeDashboardCatalogProduct.tags ?? [])
-                      .filter((tag) => tag.trim())
-                      .map((tag) => (
-                        <span className="dashboard-product-tag-item" key={tag}>
-                          {tag}
-                        </span>
-                      ))}
+                <div className="dashboard-product-title-section">
+                  <div className="dashboard-product-title">
+                    {activeDashboardCatalogProduct.name}
                   </div>
-                ) : null}
+                  {(activeDashboardCatalogProduct.tags ?? []).length ? (
+                    <div className="dashboard-product-tags">
+                      {(activeDashboardCatalogProduct.tags ?? [])
+                        .filter((tag) => tag.trim())
+                        .map((tag) => (
+                          <span className="dashboard-product-tag-item" key={tag}>
+                            {tag}
+                          </span>
+                        ))}
+                    </div>
+                  ) : null}
+                </div>
               </div>
 
               <div className="dashboard-product-editions-section">
-                <div className="dashboard-section-label">Carré des éditions</div>
+                <div className="dashboard-section-label">Édition</div>
                 {(activeDashboardCatalogProduct.editions ?? []).length ? (
                   <div className="dashboard-product-edition-tabs">
                     {(activeDashboardCatalogProduct.editions ?? []).map((edition) => (
@@ -5672,9 +5973,9 @@ function App() {
 
               {activeDashboardCatalogEdition ? (
                 <div className="dashboard-product-content">
-                  <div className="dashboard-section-label">Plateforme</div>
                   <div className="dashboard-product-platform">
-                    {productEditionPlatformLabels[activeDashboardCatalogEdition.platform]}
+                    <span>Plate-forme :</span>
+                    <strong>{productEditionPlatformLabels[activeDashboardCatalogEdition.platform]}</strong>
                   </div>
 
                   <div className="dashboard-product-relations__shortcuts">
@@ -5896,6 +6197,187 @@ function App() {
     </article>
   )
 
+  const renderWorkspaceDashboardTroubleshootgunPanel = (title: string) => {
+    return (
+      <article className="workspace-dashboard__panel workspace-dashboard__panel--troubleshootgun">
+        <div className="workspace-dashboard__panel-title">{title}</div>
+        <div className="dashboard-version-browser dashboard-troubleshootgun-browser">
+          <div className="dashboard-version-browser__list">
+            <div className="dashboard-portal-search dashboard-sticky-search">
+              <input
+                className="input"
+                value={dashboardTroubleshootgunQuery}
+                onChange={(event) => setDashboardTroubleshootgunQuery(event.target.value)}
+                placeholder="Rechercher un produit ou un template..."
+              />
+            </div>
+            {filteredProductsWithTroubleshootgun.length ? (
+              filteredProductsWithTroubleshootgun.map((product) => {
+                const templateCount = (product.troubleshootgunTemplates ?? []).length
+                return (
+                  <button
+                    key={product.id}
+                    className={`dashboard-version-item${
+                      activeDashboardTroubleshootgunProductId === product.id ? ' is-active' : ''
+                    }`}
+                    type="button"
+                    onClick={() => setActiveDashboardTroubleshootgunProductId(product.id)}
+                  >
+                    <span className="dashboard-version-item__name">{product.name}</span>
+                    <span className="dashboard-version-item__meta">
+                      {product.productType?.trim() ? `${product.productType.trim()} • ` : ''}
+                      {templateCount} template{templateCount > 1 ? 's' : ''}
+                    </span>
+                  </button>
+                )
+              })
+            ) : (
+              <div className="dashboard-empty">Aucun template Troubleshootgun configuré.</div>
+            )}
+          </div>
+
+          <div className="dashboard-version-detail dashboard-troubleshootgun-detail">
+            {activeDashboardTroubleshootgunProduct ? (
+              <>
+                <div className="dashboard-version-detail__header">
+                  <div>
+                    <div className="dashboard-version-detail__title">
+                      {activeDashboardTroubleshootgunProduct.name}
+                    </div>
+                    <div className="dashboard-version-detail__badges">
+                      <span className="dashboard-version-detail__badge">
+                        {activeDashboardTroubleshootgunTemplates.length} template
+                        {activeDashboardTroubleshootgunTemplates.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="dashboard-troubleshootgun-template-list dashboard-troubleshootgun-template-list--scroll">
+                  {activeDashboardTroubleshootgunTemplates.length ? (
+                    activeDashboardTroubleshootgunTemplates.map((template) => (
+                      <button
+                        className="dashboard-troubleshootgun-template-card dashboard-troubleshootgun-template-card--title-only"
+                        key={template.id}
+                        type="button"
+                        onDoubleClick={() =>
+                          setDashboardTroubleshootgunPreviewTemplateId(template.id)
+                        }
+                        title="Double-clic pour ouvrir l’aperçu"
+                      >
+                        <span className="dashboard-troubleshootgun-template-card__title">
+                          {template.name.trim() || 'Template sans nom'}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="dashboard-empty">
+                      Aucun template n’est défini pour ce produit.
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="dashboard-wip">
+                <strong>Troubleshootgun</strong>
+                <span>Sélectionnez un produit pour afficher ses templates.</span>
+              </div>
+            )}
+          </div>
+        </div>
+        {typeof document !== 'undefined' && activeDashboardTroubleshootgunPreviewTemplate
+          ? createPortal(
+              <div
+                className="modal-backdrop"
+                onClick={() => setDashboardTroubleshootgunPreviewTemplateId(null)}
+              >
+                <div
+                  className="modal troubleshootgun-preview-modal"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="modal__header">
+                    <div className="brand__title brand__title--with-icon">
+                      <UiIcon name="tool" className="brand__title-icon" />
+                      <span>Preview mail</span>
+                    </div>
+                    <button
+                      className="close-modal"
+                      type="button"
+                      onClick={() => setDashboardTroubleshootgunPreviewTemplateId(null)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M18 6L6 18" />
+                        <path d="M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="troubleshootgun-preview-modal__body">
+                    <div className="troubleshootgun-preview-modal__grid">
+                      <div className="troubleshootgun-preview-modal__section">
+                        <div className="troubleshootgun-preview-modal__label">Mail</div>
+                        <div
+                          className="troubleshootgun-preview-modal__content"
+                          dangerouslySetInnerHTML={{
+                            __html: highlightTextPreview(
+                              stripTokenSpacing(
+                                activeDashboardTroubleshootgunPreviewTemplate.content.trim() ||
+                                  'Aucun contenu.',
+                              ),
+                            ),
+                          }}
+                        />
+                      </div>
+                      <div className="troubleshootgun-preview-modal__section troubleshootgun-preview-modal__section--task">
+                        <div className="troubleshootgun-preview-modal__label">Task</div>
+                        <div
+                          className="troubleshootgun-preview-modal__content"
+                          dangerouslySetInnerHTML={{
+                            __html: highlightTextPreview(
+                              stripTokenSpacing(
+                                activeDashboardTroubleshootgunPreviewTemplate.taskText?.trim() ||
+                                  'Aucune task associée.',
+                              ),
+                            ),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="troubleshootgun-preview-modal__actions">
+                    <button
+                      className="btn btn--primary"
+                      type="button"
+                      onClick={() => {
+                        void applyTroubleshootgunTemplate(activeDashboardTroubleshootgunPreviewTemplate)
+                        setDashboardTroubleshootgunPreviewTemplateId(null)
+                      }}
+                    >
+                      Importer
+                    </button>
+                    <button
+                      className="btn btn--ghost"
+                      type="button"
+                      onClick={() => setDashboardTroubleshootgunPreviewTemplateId(null)}
+                    >
+                      Fermer
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body,
+            )
+          : null}
+      </article>
+    )
+  }
+
   const renderWorkspaceDashboardPortalPanel = (title: string) => {
     const activePortalProcedureName =
       activeDashboardPortalProcedure?.procedureName.trim() || 'Procédure sans nom'
@@ -5906,6 +6388,7 @@ function App() {
       ? shouldShowPortalForwardIndicator(activeDashboardPortalProcedure)
       : false
     const visiblePortalSteps = activeDashboardPortalProcedure?.codes ?? []
+    const isLightProcedureVariant = dashboardProcedureVariant === 'light'
 
     return (
       <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
@@ -5941,14 +6424,41 @@ function App() {
           </div>
 
           <div className="dashboard-version-detail dashboard-portal-detail">
-            {activeDashboardPortalProcedure ? (
-              <>
+              {activeDashboardPortalProcedure ? (
+                <>
                 <div className="dashboard-portal-procedure-header">
-                  <div className="dashboard-portal-procedure-title">
-                    {activePortalProcedureName}
+                  <div className="dashboard-portal-procedure-header__top">
+                    <div className="dashboard-portal-procedure-title">
+                      {activePortalProcedureName}
+                    </div>
+                    <div className="dashboard-portal-procedure-header__tools">
+                      <div className="dashboard-portal-procedure-variant">
+                        <button
+                          type="button"
+                          className={`dashboard-portal-procedure-switch${
+                            isLightProcedureVariant ? ' is-on' : ''
+                          }`}
+                          onClick={() =>
+                            setDashboardProcedureVariant(
+                              isLightProcedureVariant ? 'complete' : 'light',
+                            )
+                          }
+                          aria-pressed={isLightProcedureVariant}
+                          aria-label="Basculer la variante de procédure"
+                        >
+                          <span className="dashboard-portal-procedure-switch__track">
+                            <span className="dashboard-portal-procedure-switch__thumb" />
+                          </span>
+                        </button>
+                        <div className="dashboard-portal-procedure-variant__label">
+                          Mode {isLightProcedureVariant ? 'Léger' : 'Complet'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+
                   {showPortalForwardIndicator ? (
-                    <div className="dashboard-portal-procedure-indicators">
+                    <div className="dashboard-portal-procedure-indicators dashboard-portal-procedure-indicators--full">
                       <div
                         className={`dashboard-portal-indicator${
                           activeDashboardPortalProcedure.showForward ? ' is-active' : ''
@@ -6047,7 +6557,7 @@ function App() {
                               }}
                             />
                           </div>
-                          {quickCopyText ? (
+                          {quickCopyText && !isLightProcedureVariant ? (
                             <div className="dashboard-portal-step__template">
                               <div className="dashboard-portal-step__template-text">
                                 {quickCopyText}
@@ -6083,44 +6593,11 @@ function App() {
     )
   }
 
-  const renderWorkspaceDashboardNewsPanel = (title: string) => (
-    <article className="workspace-dashboard__panel workspace-dashboard__panel--recent">
-      <div className="workspace-dashboard__panel-title">{title}</div>
-      <div className="dashboard-news-list">
-        {dashboardNewsSorted.length ? (
-          dashboardNewsSorted.map((item) => (
-            <article className="dashboard-news-item" key={item.id}>
-              <div className="dashboard-news-item__date">{formatDashboardNewsDate(item.date)}</div>
-              <div className="dashboard-news-item__title">{item.title || 'Sans titre'}</div>
-              <div
-                className="dashboard-news-item__content"
-                onClick={handleProcedureLinkClick}
-                dangerouslySetInnerHTML={{
-                  __html: formatDashboardNewsText(item.content.trim() || 'Aucun contenu.'),
-                }}
-              />
-            </article>
-          ))
-        ) : (
-          <div className="dashboard-wip">
-            <strong>News</strong>
-            <span>Aucune news configurée.</span>
-          </div>
-        )}
-      </div>
-    </article>
-  )
-
   const renderWorkspaceDashboardContent = () => {
     if (workspaceDashboardPage === 'tools') {
       return (
-        <div className="workspace-dashboard__tools-grid">
-          <div className="workspace-dashboard__tools-left">
-            {renderWorkspaceDashboardNameFormatter('Name format')}
-          </div>
-          <div className="workspace-dashboard__tools-right">
-            {renderWorkspaceDashboardRemindersPanel('Rappels')}
-          </div>
+        <div className="workspace-dashboard__single workspace-dashboard__single--news-notes">
+          {renderWorkspaceDashboardNewsNotesPanel('News et Notes')}
         </div>
       )
     }
@@ -6161,9 +6638,17 @@ function App() {
       )
     }
 
+    if (workspaceDashboardPage === 'troubleshootgun') {
+      return (
+        <div className="workspace-dashboard__single">
+          {renderWorkspaceDashboardTroubleshootgunPanel('Troubleshootgun')}
+        </div>
+      )
+    }
+
     return (
       <div className="workspace-dashboard__single">
-        {renderWorkspaceDashboardNewsPanel('News & info')}
+        {renderWorkspaceDashboardNewsNotesPanel('News et Notes')}
       </div>
     )
   }
@@ -6336,7 +6821,7 @@ function App() {
                     }}
                     disabled={!procedureTaskText.trim()}
                   >
-                    Exporter la task
+                    Importer la task
                   </button>
                   <button
                     className="ghost"
@@ -6467,7 +6952,7 @@ function App() {
         </div>
 
         <div className="filter-block">
-          <p className="section-label">
+          <p className="section-label section-label--centered">
             <UiIcon name="channels" className="section-label__icon" />
             <span>Catégories</span>
           </p>
@@ -6521,7 +7006,7 @@ function App() {
           )}
         </div>
 
-        <p className="section-label">
+        <p className="section-label section-label--centered section-label--snippets">
           <UiIcon name="list" className="section-label__icon" />
           <span>Snippets</span>
         </p>
@@ -6928,14 +7413,6 @@ function App() {
     {callModalOpen ? (
         <div
           className="modal-backdrop"
-          onPointerDown={(event) => {
-            callModalBackdropPointerDownRef.current = event.target === event.currentTarget
-          }}
-          onClick={(event) => {
-            if (!callModalBackdropPointerDownRef.current) return
-            if (event.target !== event.currentTarget) return
-            closeCallModal()
-          }}
         >
           <div className="modal call-modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal__header">
@@ -7593,9 +8070,6 @@ function App() {
             {editTab === 'templates' ? (
               <div className="modal__grid">
                 <div className="list-card">
-                  <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Templates mail</div>
-                  </div>
                   <div className="list-card__body">
                     <SortableList
                       items={data.templates}
@@ -9142,11 +9616,45 @@ function App() {
                             <button
                               type="button"
                               className="token-btn token-btn--link"
-                              title="Insérer un lien"
-                              onClick={insertProcedureStepsLink}
+                              title="Insérer un mailto"
+                              onClick={() =>
+                                setProcedureMailtoMenuOpen((prev) => !prev)
+                              }
+                              disabled={!normalizedProcedureMailtos.length}
                             >
                               L
                             </button>
+                            {procedureMailtoMenuOpen && normalizedProcedureMailtos.length ? (
+                              <div className="format-help__panel format-help__panel--mailto">
+                                {normalizedProcedureMailtos.map((link) => (
+                                  <button
+                                    key={link.id}
+                                    type="button"
+                                    className="format-help__item format-help__item--button"
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => {
+                                      insertProcedureStepsLink(link)
+                                      setProcedureMailtoMenuOpen(false)
+                                    }}
+                                  >
+                                    <strong>{link.label}</strong>
+                                    <span>{link.to || 'Adresse non renseignée'}</span>
+                                  </button>
+                                ))}
+                                <button
+                                  type="button"
+                                  className="format-help__item format-help__item--button"
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => {
+                                    insertProcedureStepsLink(null)
+                                    setProcedureMailtoMenuOpen(false)
+                                  }}
+                                >
+                                  <strong>Mailto par défaut</strong>
+                                  <span>contact@example.com</span>
+                                </button>
+                              </div>
+                            ) : null}
                             <button
                               type="button"
                               className="token-btn token-btn--bold"
@@ -9188,7 +9696,7 @@ function App() {
                                   Couleur: [color=#ff6b6b]texte[/color]
                                 </div>
                                 <div className="format-help__item">
-                                  Lien: [texte](https://...)
+                                  Lien: [texte](mailto:...)
                                 </div>
                                 <div className="format-help__item">Gras: [b]texte[/b]</div>
                                 <div className="format-help__item">Italique: [i]texte[/i]</div>
@@ -9825,6 +10333,102 @@ function App() {
               </div>
             ) : null}
 
+            {editTab === 'procedureMailtos' ? (
+              <div className="modal__grid modal__grid--single">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Mailto procédures</div>
+                      <div className="list-card__subtitle">
+                        Modèles utilisés par le bouton lien dans les procédures.
+                      </div>
+                    </div>
+                    <div className="list-card__tools">
+                      <button
+                        className="btn btn--ghost btn--small"
+                        type="button"
+                        onClick={addProcedureMailtoLink}
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="settings-stack settings-stack--tight">
+                      {normalizedProcedureMailtos.length ? (
+                        normalizedProcedureMailtos.map((link) => (
+                          <section className="quick-link-editor" key={link.id}>
+                            <div className="quick-link-editor__head">
+                              <div className="quick-link-editor__identity">
+                                <div className="quick-link-editor__badge">M</div>
+                                <div>
+                                  <div className="quick-link-editor__title">{link.label}</div>
+                                  <div className="quick-link-editor__meta">
+                                    {link.to || 'Adresse email non renseignée'}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                className="btn btn--ghost btn--small"
+                                type="button"
+                                onClick={() => removeProcedureMailtoLink(link.id)}
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                            <div className="settings-grid settings-grid--mailto">
+                              <input
+                                className="input"
+                                value={link.label}
+                                placeholder="Libellé"
+                                onChange={(event) =>
+                                  updateProcedureMailtoLink(link.id, {
+                                    label: event.target.value,
+                                  })
+                                }
+                              />
+                              <input
+                                className="input"
+                                value={link.to}
+                                placeholder="destinataire@exemple.com"
+                                onChange={(event) =>
+                                  updateProcedureMailtoLink(link.id, {
+                                    to: event.target.value,
+                                  })
+                                }
+                              />
+                              <input
+                                className="input"
+                                value={link.subject ?? ''}
+                                placeholder="Sujet"
+                                onChange={(event) =>
+                                  updateProcedureMailtoLink(link.id, {
+                                    subject: event.target.value,
+                                  })
+                                }
+                              />
+                              <textarea
+                                className="textarea textarea--tall"
+                                value={link.body ?? ''}
+                                placeholder="Corps du mail"
+                                onChange={(event) =>
+                                  updateProcedureMailtoLink(link.id, {
+                                    body: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </section>
+                        ))
+                      ) : (
+                        <div className="empty-state">Aucun mailto configuré.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {editTab === 'preferences' ? (
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
@@ -10009,85 +10613,94 @@ function App() {
                     <div className="list-card__title-group">
                       <div className="list-card__title">Process</div>
                       <div className="list-card__subtitle">
-                        Associe la procédure courte et la procédure complète pour chaque ligne, puis
-                        active le toggle Rush pour afficher la version complète.
+                        Associe une procédure courte et une procédure complète pour chaque ligne.
+                        Hors rush, la courte est utilisée. En rush, la complète prend le relais.
                       </div>
                     </div>
                   </div>
-                    <div className="list-card__body">
-                      <div className="settings-stack settings-stack--tight">
-                        {dashboardProcessLineDefinitions.map((line) => {
-                          const lineSetting =
-                            dashboardProcessSettings.find((entry) => entry.id === line.id) ??
-                            defaultData.settings.dashboardProcessSettings.find(
-                              (entry) => entry.id === line.id,
-                            )
-                          return (
-                            <section className="dashboard-process-settings__item" key={line.id}>
-                              <div className="dashboard-process-settings__head">
-                                <div>
-                                  <div className="dashboard-process-settings__title">{line.label}</div>
-                                  <div className="dashboard-process-settings__meta">
-                                    Choisis une procédure complète et une procédure réduite.
-                                  </div>
+                  <div className="list-card__body">
+                    <div className="settings-stack settings-stack--tight">
+                      {dashboardProcessLineDefinitions.map((line) => {
+                        const lineSetting =
+                          dashboardProcessSettings.find((entry) => entry.id === line.id) ??
+                          defaultData.settings.dashboardProcessSettings.find(
+                            (entry) => entry.id === line.id,
+                          )
+                        const completeProcedure = data.procedures.find(
+                          (procedure) => procedure.id === lineSetting?.completeProcedureId,
+                        )
+                        const reducedProcedure = data.procedures.find(
+                          (procedure) => procedure.id === lineSetting?.reducedProcedureId,
+                        )
+                        return (
+                          <section className="dashboard-process-settings__item" key={line.id}>
+                            <div className="dashboard-process-settings__head">
+                              <div>
+                                <div className="dashboard-process-settings__title">{line.label}</div>
+                                <div className="dashboard-process-settings__meta">
+                                  La procédure courte s’applique hors rush.
                                 </div>
-                                <label className="portal-code-editor__check dashboard-process-settings__toggle">
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(lineSetting?.enabled)}
+                              </div>
+                              <label className="portal-code-editor__check dashboard-process-settings__toggle">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(lineSetting?.rush)}
                                   onChange={(event) =>
                                     updateDashboardProcessSetting(line.id, {
-                                      enabled: event.target.checked,
-                                      mode: event.target.checked ? 'complete' : 'reduced',
+                                      rush: event.target.checked,
                                     })
                                   }
-                                    />
-                                    <span>Rush</span>
-                                  </label>
-                              </div>
-                              <div className="form__row two">
-                                <label className="settings-field">
-                                  <span className="settings-label">Procédure complète</span>
-                                  <select
-                                    className="select"
-                                    value={lineSetting?.completeProcedureId ?? ''}
-                                    onChange={(event) =>
-                                      updateDashboardProcessSetting(line.id, {
-                                        completeProcedureId: event.target.value,
-                                      })
-                                    }
-                                  >
-                                    <option value="">Procédure non liée</option>
-                                    {data.procedures.map((procedure) => (
-                                      <option key={procedure.id} value={procedure.id}>
-                                        {procedure.name.trim() || 'Procédure sans nom'}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                                <label className="settings-field">
-                                  <span className="settings-label">Procédure réduite</span>
-                                  <select
-                                    className="select"
-                                    value={lineSetting?.reducedProcedureId ?? ''}
-                                    onChange={(event) =>
-                                      updateDashboardProcessSetting(line.id, {
-                                        reducedProcedureId: event.target.value,
-                                      })
-                                    }
-                                  >
-                                    <option value="">Procédure non liée</option>
-                                    {data.procedures.map((procedure) => (
-                                      <option key={procedure.id} value={procedure.id}>
-                                        {procedure.name.trim() || 'Procédure sans nom'}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                              </div>
-                            </section>
-                          )
-                        })}
+                                />
+                                <span>Rush</span>
+                              </label>
+                            </div>
+                            <div className="form__row two">
+                              <label className="settings-field">
+                                <span className="settings-label">Procédure complète</span>
+                                <select
+                                  className="select"
+                                  value={lineSetting?.completeProcedureId ?? ''}
+                                  onChange={(event) =>
+                                    updateDashboardProcessSetting(line.id, {
+                                      completeProcedureId: event.target.value,
+                                    })
+                                  }
+                                >
+                                  <option value="">Procédure non liée</option>
+                                  {data.procedures.map((procedure) => (
+                                    <option key={procedure.id} value={procedure.id}>
+                                      {procedure.name.trim() || 'Procédure sans nom'}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label className="settings-field">
+                                <span className="settings-label">Procédure courte</span>
+                                <select
+                                  className="select"
+                                  value={lineSetting?.reducedProcedureId ?? ''}
+                                  onChange={(event) =>
+                                    updateDashboardProcessSetting(line.id, {
+                                      reducedProcedureId: event.target.value,
+                                    })
+                                  }
+                                >
+                                  <option value="">Procédure non liée</option>
+                                  {data.procedures.map((procedure) => (
+                                    <option key={procedure.id} value={procedure.id}>
+                                      {procedure.name.trim() || 'Procédure sans nom'}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+                            <div className="dashboard-process-settings__resolved">
+                              <span>Hors rush: {reducedProcedure?.name.trim() || 'Non liée'}</span>
+                              <span>Rush: {completeProcedure?.name.trim() || 'Non liée'}</span>
+                            </div>
+                          </section>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -10822,6 +11435,194 @@ function App() {
                         )}
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'dashboardTroubleshootgun' ? (
+              <div className="modal__grid modal__grid--settings">
+                <div className="list-card">
+                  <div className="list-card__header list-card__header--wrap">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Produits</div>
+                      <div className="list-card__subtitle">
+                        Chaque produit peut embarquer ses propres templates Troubleshootgun.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    {productsSorted.length ? (
+                      <SortableList
+                        items={productsSorted}
+                        getId={(item) => item.id}
+                        onReorder={handleReorderProductCatalog}
+                        renderItem={(product, handleProps) => {
+                          const templateCount = (product.troubleshootgunTemplates ?? []).length
+                          return (
+                            <div
+                              key={product.id}
+                              className={`list-item list-item--compact${
+                                selectedProductCatalogId === product.id ? ' is-selected' : ''
+                              }`}
+                              onClick={() => {
+                                setProductDraft(getProductCatalogDraft(product))
+                                setProductTagsDraftText((product.tags ?? []).join(', '))
+                                setSelectedProductCatalogId(product.id)
+                              }}
+                            >
+                              <button
+                                className="drag-handle"
+                                type="button"
+                                {...handleProps.attributes}
+                                {...handleProps.listeners}
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                ⇅
+                              </button>
+                              <div className="list-item__content">
+                                <div className="list-item__title">{product.name}</div>
+                                <div className="list-item__meta">
+                                  {templateCount} template{templateCount > 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        }}
+                      />
+                    ) : (
+                      <div className="empty-state">Aucun produit configuré.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Templates Troubleshootgun</div>
+                      <div className="list-card__subtitle">
+                        Définis un ou plusieurs templates spécifiques par produit.
+                      </div>
+                    </div>
+                    <div className="list-card__tools">
+                      <button
+                        className="btn btn--ghost btn--small"
+                        type="button"
+                        onClick={addProductDraftTroubleshootgunTemplate}
+                        disabled={isProductCatalogSelectionEmpty}
+                      >
+                        Ajouter template
+                      </button>
+                      <button
+                        className="btn btn--primary btn--small"
+                        type="button"
+                        onClick={handleSaveProductCatalogItem}
+                        disabled={isProductCatalogSelectionEmpty}
+                      >
+                        Sauver
+                      </button>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    {isProductCatalogSelectionEmpty ? (
+                      <div className="empty-state">
+                        Sélectionnez un produit pour éditer ses templates Troubleshootgun.
+                      </div>
+                    ) : (
+                      <div className="dashboard-troubleshootgun-editor">
+                        <div className="dashboard-troubleshootgun-editor__head">
+                          <div>
+                            <div className="settings-label">
+                              {productDraft.name.trim() || 'Produit sans nom'}
+                            </div>
+                            <div className="list-item__meta">
+                              {productTroubleshootgunTemplates.length} template
+                              {productTroubleshootgunTemplates.length > 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <SortableList
+                          items={productTroubleshootgunTemplates}
+                          getId={(item) => item.id}
+                          onReorder={handleReorderProductDraftTroubleshootgunTemplates}
+                          renderItem={(template, handleProps) => (
+                            <article
+                              className="dashboard-troubleshootgun-template-card"
+                              key={template.id}
+                            >
+                              <div className="dashboard-troubleshootgun-template-card__head">
+                                <button
+                                  className="drag-handle"
+                                  type="button"
+                                  {...handleProps.attributes}
+                                  {...handleProps.listeners}
+                                >
+                                  ⇅
+                                </button>
+                                <input
+                                  className="input"
+                                  placeholder="Nom du template"
+                                  value={template.name}
+                                  onChange={(event) =>
+                                    updateProductDraftTroubleshootgunTemplate(template.id, {
+                                      name: event.target.value,
+                                    })
+                                  }
+                                />
+                                <button
+                                  className="icon-btn-sm danger"
+                                  type="button"
+                                  title="Supprimer le template"
+                                  onClick={() =>
+                                    removeProductDraftTroubleshootgunTemplate(template.id)
+                                  }
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <textarea
+                                className="textarea textarea--tall"
+                                placeholder="Contenu du template"
+                                value={template.content}
+                                onChange={(event) =>
+                                  updateProductDraftTroubleshootgunTemplate(template.id, {
+                                    content: event.target.value,
+                                  })
+                                }
+                              />
+                              <textarea
+                                className="textarea textarea--tall"
+                                placeholder="Task liée (optionnelle)"
+                                value={template.taskText ?? ''}
+                                onChange={(event) =>
+                                  updateProductDraftTroubleshootgunTemplate(template.id, {
+                                    taskText: event.target.value,
+                                  })
+                                }
+                              />
+                            </article>
+                          )}
+                        />
+                        {productTroubleshootgunTemplates.length ? null : (
+                          <div className="empty-state">
+                            Aucun template défini pour ce produit. Clique sur Ajouter template.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

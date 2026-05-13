@@ -358,7 +358,7 @@ export function formatProcedureText(value: string) {
   escaped = escaped.replace(/<2>([\s\S]*?)<\/2>/g, '<span class="procedure-highlight-2">$1</span>')
   escaped = escaped.replace(/<3>([\s\S]*?)<\/3>/g, '<span class="procedure-highlight-3">$1</span>')
   escaped = escaped.replace(
-    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
     '<a class="procedure-link" href="$2" target="_blank" rel="noreferrer">$1</a>',
   )
 
@@ -445,6 +445,9 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
         raw.settings?.quickLinkUrls,
         fallback.settings.quickLinkUrls,
       ),
+      procedureMailtoLinks: Array.isArray(raw.settings?.procedureMailtoLinks)
+        ? raw.settings.procedureMailtoLinks
+        : fallback.settings.procedureMailtoLinks,
       dashboardProducts: Array.isArray(raw.settings?.dashboardProducts)
         ? raw.settings.dashboardProducts
         : fallback.settings.dashboardProducts,
@@ -479,6 +482,9 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
         normalized.settings.quickLinkUrls,
         fallback.settings.quickLinkUrls,
       ),
+      procedureMailtoLinks: Array.isArray(normalized.settings.procedureMailtoLinks)
+        ? normalized.settings.procedureMailtoLinks
+        : fallback.settings.procedureMailtoLinks,
       dashboardProducts: Array.isArray(normalized.settings.dashboardProducts)
         ? normalized.settings.dashboardProducts
         : fallback.settings.dashboardProducts,
