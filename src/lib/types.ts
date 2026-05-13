@@ -81,10 +81,9 @@ export interface HistoryItem {
 
 export interface DashboardProcessLine {
   id: 'rma-14' | 'rma-30'
-  enabled: boolean
+  rush: boolean
   completeProcedureId: string
   reducedProcedureId: string
-  mode: ProcessMode
 }
 
 export interface CustomerPortalCode {
@@ -103,6 +102,14 @@ export interface CustomerPortalCodeLine {
   quickLinkUrl?: string
   quickCopyText?: string
   infoNote?: string
+}
+
+export interface ProcedureMailtoLink {
+  id: string
+  label: string
+  to: string
+  subject?: string
+  body?: string
 }
 
 export type DashboardProductCategory = 'software' | 'firmware' | 'driver' | 'product'
@@ -140,6 +147,13 @@ export interface ProductEdition {
   note?: string
 }
 
+export interface TroubleshootgunTemplate {
+  id: string
+  name: string
+  content: string
+  taskText?: string
+}
+
 export interface ProductCatalogItem {
   id: string
   name: string
@@ -153,6 +167,7 @@ export interface ProductCatalogItem {
   firmwareIds?: string[]
   editions?: ProductEdition[]
   spareParts: SparePart[]
+  troubleshootgunTemplates?: TroubleshootgunTemplate[]
 }
 
 export interface DashboardNewsItem {
@@ -176,6 +191,7 @@ export interface AppSettings {
   defaultSnippetInsertMode: InsertMode
   snippetCategoryDisplay: SnippetCategoryDisplay
   quickLinkUrls: Record<string, string>
+  procedureMailtoLinks: ProcedureMailtoLink[]
   predefinedTags: string[]
   customerPortalCodes: CustomerPortalCode[]
   dashboardProcessSettings: DashboardProcessLine[]

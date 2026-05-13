@@ -1,7 +1,7 @@
 import type { AppData } from './types'
 
 export const defaultData: AppData = {
-  version: 21,
+  version: 23,
   categories: [],
   snippets: [],
   templates: [],
@@ -32,26 +32,78 @@ export const defaultData: AppData = {
       portal: '',
       assist: '',
     },
+    procedureMailtoLinks: [
+      {
+        id: 'mailto-support',
+        label: 'Support',
+        to: 'support@example.com',
+        subject: 'Demande de support',
+        body: 'Bonjour,\n\nJe vous contacte au sujet de...',
+      },
+      {
+        id: 'mailto-sav',
+        label: 'SAV',
+        to: 'sav@example.com',
+        subject: 'Suivi SAV',
+        body: 'Bonjour,\n\nPouvez-vous faire le point sur...',
+      },
+    ],
     predefinedTags: [],
     customerPortalCodes: [],
     dashboardProcessSettings: [
       {
         id: 'rma-14',
-        enabled: false,
+        rush: false,
         completeProcedureId: '',
         reducedProcedureId: '',
-        mode: 'reduced',
       },
       {
         id: 'rma-30',
-        enabled: false,
+        rush: false,
         completeProcedureId: '',
         reducedProcedureId: '',
-        mode: 'reduced',
       },
     ],
     dashboardProducts: [],
-    products: [],
+    products: [
+      {
+        id: 'sample-troubleshootgun-product',
+        name: 'Pack vérification Troubleshootgun',
+        productType: 'Demo',
+        note: 'Produit seed pour valider l’aperçu Troubleshootgun.',
+        tags: ['demo', 'email', 'test'],
+        packingGuideAvailable: false,
+        compatibleProductIds: [],
+        softwareIds: [],
+        driverIds: [],
+        firmwareIds: [],
+        editions: [],
+        spareParts: [],
+        troubleshootgunTemplates: [
+          {
+            id: 'sample-troubleshootgun-template-1',
+            name: 'Email entrant',
+            content:
+              'Objet: Problème de connexion\n\nBonjour,\n\nJe n’arrive plus à me connecter à mon compte depuis ce matin. Pouvez-vous vérifier ?\n\nMerci.',
+            taskText: 'Répondre avec la procédure de réinitialisation du mot de passe.',
+          },
+          {
+            id: 'sample-troubleshootgun-template-2',
+            name: 'Relance client',
+            content:
+              'Objet: Relance dossier SAV\n\nBonjour,\n\nJe reviens vers vous concernant mon ticket. Avez-vous une mise à jour ?\n\nCordialement,',
+            taskText: 'Confirmer le statut du ticket et proposer un délai.',
+          },
+          {
+            id: 'sample-troubleshootgun-template-3',
+            name: 'Clôture',
+            content:
+              'Objet: Ticket résolu\n\nBonjour,\n\nLe problème est maintenant résolu. Merci pour votre aide et votre réactivité.\n\nBien à vous,',
+            taskText: 'Clôturer le ticket et archiver la réponse modèle.',
+          },
+        ],
+      },
+    ],
     dashboardNews: [],
     dashboardReminders: '',
   },
