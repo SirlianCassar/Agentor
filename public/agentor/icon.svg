@@ -1,3 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Agentor">
-  <image href="./icon.png" width="1024" height="1024" preserveAspectRatio="xMidYMid meet" />
+  <defs>
+    <linearGradient id="outer" x1="84" y1="64" x2="900" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5f18b0"/>
+      <stop offset="0.42" stop-color="#8e2bd8"/>
+      <stop offset="0.76" stop-color="#b85df1"/>
+      <stop offset="1" stop-color="#6c1aa8"/>
+    </linearGradient>
+    <linearGradient id="leftPanel" x1="88" y1="126" x2="270" y2="916" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8f1bdb"/>
+      <stop offset="0.55" stop-color="#8512d1"/>
+      <stop offset="1" stop-color="#7f19cf"/>
+    </linearGradient>
+    <linearGradient id="midPanel" x1="278" y1="92" x2="452" y2="936" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a050df"/>
+      <stop offset="1" stop-color="#9c44d5"/>
+    </linearGradient>
+    <linearGradient id="widePanel" x1="430" y1="92" x2="722" y2="936" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#bf6ff2"/>
+      <stop offset="1" stop-color="#b65df0"/>
+    </linearGradient>
+    <linearGradient id="rightPanel" x1="710" y1="92" x2="938" y2="936" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dfa5f8"/>
+      <stop offset="1" stop-color="#d596f4"/>
+    </linearGradient>
+    <clipPath id="innerClip">
+      <rect x="88" y="88" width="848" height="848" rx="32" ry="32"/>
+    </clipPath>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#21063f" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <rect x="42" y="42" width="940" height="940" rx="76" ry="76" fill="url(#outer)" filter="url(#softShadow)"/>
+  <rect x="42" y="42" width="940" height="940" rx="76" ry="76" fill="none" stroke="#7f29c4" stroke-width="2" opacity="0.5"/>
+  <g clip-path="url(#innerClip)">
+    <rect x="88" y="88" width="190" height="848" fill="url(#leftPanel)"/>
+    <rect x="278" y="88" width="154" height="848" fill="url(#midPanel)"/>
+    <rect x="432" y="88" width="278" height="848" fill="url(#widePanel)"/>
+    <rect x="710" y="88" width="226" height="848" fill="url(#rightPanel)"/>
+    <rect x="88" y="88" width="848" height="848" fill="none" stroke="#efc3ff" stroke-width="1.5" opacity="0.2"/>
+  </g>
+  <path d="M88 904V120c0-17.7 14.3-32 32-32h784" fill="none" stroke="#e6adff" stroke-width="2" opacity="0.14"/>
+  <path d="M42 880V118c0-42 34-76 76-76h762" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.08"/>
 </svg>
