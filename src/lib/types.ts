@@ -92,6 +92,10 @@ export interface CustomerPortalCode {
   showForward?: boolean
   forwardTarget?: string
   codes: CustomerPortalCodeLine[]
+  hasVariant?: boolean
+  mainVersionName?: string
+  variantVersionName?: string
+  variantCodes?: CustomerPortalCodeLine[]
 }
 
 export interface CustomerPortalCodeLine {
@@ -147,11 +151,18 @@ export interface ProductEdition {
   note?: string
 }
 
+export interface TroubleshootgunTemplateSection {
+  id: string
+  title: string
+  content: string
+}
+
 export interface TroubleshootgunTemplate {
   id: string
   name: string
   content: string
   taskText?: string
+  sections?: TroubleshootgunTemplateSection[]
 }
 
 export interface ProductCatalogItem {
