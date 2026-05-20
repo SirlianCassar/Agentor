@@ -12,8 +12,6 @@ import { createPortal } from 'react-dom'
 import { TextEditor, type TextEditorHandle } from './components/TextEditor'
 import { SortableList } from './components/SortableList'
 import { defaultData } from './lib/defaults'
-import herculesLogo from './assets/hercules.svg'
-import thrustmasterLogo from './assets/thrustmaster.svg'
 import {
   checkForUpdatesNow,
   installDownloadedUpdate,
@@ -29,6 +27,25 @@ import {
   copyText,
   type UpdateStatus,
 } from './lib/storage'
+import {
+  settingsNavigation,
+  settingsTabIndex,
+  tokenReferenceItems,
+  type SettingsTab,
+} from './lib/settingsNavigation'
+import {
+  getCategoryIssues,
+  getDashboardNewsIssues,
+  getDashboardProductIssues,
+  getMailTemplateIssues,
+  getPortalProcedureIssues,
+  getProcedureMailtoIssues,
+  getProductCatalogItemIssues,
+  getSnippetIssues,
+  getTaskTemplateIssues,
+  getTroubleshootgunTemplateIssues,
+  type SettingsValidationScope,
+} from './lib/settingsValidation'
 import type {
   AppData,
   AppSettings,
@@ -47,6 +64,7 @@ import type {
   ProductCatalogItem,
   ProcedureMailtoLink,
   TroubleshootgunTemplate,
+  TroubleshootgunTemplateSection,
   Procedure,
   ProcedureBrand,
   ProcedureCoverage,
@@ -444,238 +462,6 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'troubleshootgun', title: 'Troubleshootgun', icon: 'tool' },
 ]
 
-type SettingsTab =
-  | 'categories'
-  | 'snippets'
-  | 'templates'
-  | 'tasks'
-  | 'tags'
-  | 'products'
-  | 'calls'
-  | 'callHistory'
-  | 'callTemplate'
-  | 'procedure'
-  | 'dashboard'
-  | 'dashboardProcess'
-  | 'dashboardPortal'
-  | 'dashboardVersions'
-  | 'dashboardSoftwares'
-  | 'dashboardDriverPacks'
-  | 'dashboardSpareParts'
-  | 'dashboardTroubleshootgun'
-  | 'dashboardNews'
-  | 'updates'
-  | 'display'
-  | 'export'
-  | 'general'
-  | 'snippetSettings'
-  | 'history'
-  | 'quickLinks'
-  | 'procedureMailtos'
-  | 'preferences'
-
-type SettingsNavSection = {
-  id: 'emails' | 'calls' | 'dashboard' | 'general'
-  label: string
-  icon: AppIconName
-  items: Array<{
-    id: SettingsTab
-    label: string
-    description: string
-    icon: AppIconName
-  }>
-}
-
-const settingsNavigation: SettingsNavSection[] = [
-  {
-    id: 'emails',
-    label: 'Emails',
-    icon: 'mail',
-    items: [
-      {
-        id: 'categories',
-        label: 'Catégories',
-        description: 'Organisation des familles utilisées pour les snippets email.',
-        icon: 'channels',
-      },
-      {
-        id: 'snippets',
-        label: 'Snippets',
-        description: 'Bibliothèque de snippets et comportements d’insertion.',
-        icon: 'list',
-      },
-      {
-        id: 'templates',
-        label: 'Templates de mails',
-        description: 'Gestion des modèles email et de leurs tâches associées.',
-        icon: 'template',
-      },
-      {
-        id: 'tasks',
-        label: 'Templates de task',
-        description: 'Modèles de tâches réutilisés dans l’application.',
-        icon: 'tool',
-      },
-      {
-        id: 'tags',
-        label: 'Tags',
-        description: 'Rappel des syntaxes de tags et variables supportées.',
-        icon: 'tag',
-      },
-    ],
-  },
-  {
-    id: 'calls',
-    label: 'Appels',
-    icon: 'phone',
-    items: [
-      {
-        id: 'callHistory',
-        label: 'Historique des 5 derniers appels',
-        description: 'Consultation et copie rapide des derniers appels sauvegardés.',
-        icon: 'history',
-      },
-      {
-        id: 'callTemplate',
-        label: 'Template d’appel',
-        description: 'Template injecté automatiquement à l’ouverture d’un nouvel appel.',
-        icon: 'call',
-      },
-    ],
-  },
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: 'dashboard',
-    items: [
-      {
-        id: 'products',
-        label: 'Produits & relations',
-        description:
-          'Produits, types, tags, éditions, firmwares, logiciels, drivers et spare parts.',
-        icon: 'box',
-      },
-      {
-        id: 'dashboardPortal',
-        label: 'Procédures Portal',
-        description: 'Configuration des codes Portal et de leurs variantes.',
-        icon: 'portal',
-      },
-      {
-        id: 'dashboardProcess',
-        label: 'Process',
-        description: 'Activation des indicateurs RMA et liaison aux procédures.',
-        icon: 'settings',
-      },
-      {
-        id: 'dashboardVersions',
-        label: 'Firmwares',
-        description: 'Catalogue des firmwares utilisés dans les éditions produit.',
-        icon: 'version',
-      },
-      {
-        id: 'dashboardSoftwares',
-        label: 'Logiciels',
-        description: 'Catalogue des logiciels et des versions produit compatibles.',
-        icon: 'template',
-      },
-      {
-        id: 'dashboardDriverPacks',
-        label: 'Packs drivers',
-        description: 'Catalogue des packs drivers et des produits qu’ils contiennent.',
-        icon: 'version',
-      },
-      {
-        id: 'dashboardSpareParts',
-        label: 'Catalogue des Spare Parts',
-        description: 'Liste des spare parts organisées par produit.',
-        icon: 'archive',
-      },
-      {
-        id: 'dashboardTroubleshootgun',
-        label: 'Troubleshootgun',
-        description: 'Templates produits dédiés au dashboard Troubleshootgun.',
-        icon: 'tool',
-      },
-      {
-        id: 'dashboardNews',
-        label: 'News',
-        description: 'Liste des news affichées dans la page 6 du dashboard.',
-        icon: 'news',
-      },
-    ],
-  },
-  {
-    id: 'general',
-    label: 'Générale',
-    icon: 'settings',
-    items: [
-      {
-        id: 'updates',
-        label: 'Mise à jour',
-        description: 'Statut de l’application et recherche de nouvelles versions.',
-        icon: 'download',
-      },
-      {
-        id: 'display',
-        label: 'Affichage',
-        description: 'Zoom global, densité et confort de lecture.',
-        icon: 'display',
-      },
-      {
-        id: 'history',
-        label: 'Paramètres d’historique',
-        description: 'Comportement de sauvegarde des emails copiés.',
-        icon: 'history',
-      },
-      {
-        id: 'quickLinks',
-        label: 'Liens rapides',
-        description: 'URLs ouvertes par les boutons d’accès rapides.',
-        icon: 'grid',
-      },
-      {
-        id: 'procedureMailtos',
-        label: 'Mailto procédures',
-        description: 'Modèles de mailto disponibles dans les procédures.',
-        icon: 'mail',
-      },
-      {
-        id: 'preferences',
-        label: 'Préférences',
-        description: 'Préférences globales, snippets et format d’export.',
-        icon: 'preferences',
-      },
-    ],
-  },
-]
-
-const settingsTabIndex = settingsNavigation.flatMap((section) =>
-  section.items.map((item) => ({
-    ...item,
-    sectionId: section.id,
-    sectionLabel: section.label,
-  })),
-)
-
-const tokenReferenceItems = [
-  {
-    title: 'Tag dynamique',
-    token: '<CLIENT>',
-    description: 'Place un tag remplaçable dans un email, une task ou une procédure.',
-  },
-  {
-    title: 'Sélecteur rapide',
-    token: '[OK/KO]',
-    description: 'Propose plusieurs variantes directement dans le texte.',
-  },
-  {
-    title: 'Ajout optionnel',
-    token: '§texte§',
-    description: 'Signale un bloc optionnel ou contextuel à personnaliser.',
-  },
-]
-
 const quickLinks = [
   {
     id: 'crm',
@@ -1005,6 +791,10 @@ type LegacyCustomerPortalCode = Partial<
     CustomerPortalCodeLine & {
       showForward: unknown
       forwardTarget: unknown
+      hasVariant: unknown
+      mainVersionName: unknown
+      variantVersionName: unknown
+      variantCodes: unknown
       codes: unknown
     }
 >
@@ -1054,6 +844,11 @@ type LegacyTroubleshootgunTemplate = Partial<TroubleshootgunTemplate> & {
   name: unknown
   content: unknown
   taskText: unknown
+  sections: unknown
+}
+type LegacyTroubleshootgunTemplateSection = Partial<TroubleshootgunTemplateSection> & {
+  title: unknown
+  content: unknown
 }
 type LegacyProductCatalogItem = Partial<
   ProductCatalogItem & {
@@ -1086,6 +881,8 @@ const createEmptyPortalCodeLine = (id = createId('portal-code')): CustomerPortal
   quickCopyText: '',
   infoNote: '',
 })
+
+type PortalCodeLineSet = 'codes' | 'variantCodes'
 
 const isPortalQuickLinkId = (value: unknown): value is PortalQuickLinkId =>
   value === 'crm' || value === 'share' || value === 'global' || value === 'portal' || value === 'assist'
@@ -1140,6 +937,11 @@ const normalizePortalProcedure = (raw: unknown, index: number): CustomerPortalCo
         normalizePortalCodeLine(entry, `${id}-code-${codeIndex + 1}`),
       )
     : [normalizePortalCodeLine(item, `${id}-code-1`)]
+  const rawVariantCodes = Array.isArray(item.variantCodes) ? item.variantCodes : []
+  const variantCodes = rawVariantCodes.map((entry, codeIndex) =>
+    normalizePortalCodeLine(entry, `${id}-variant-code-${codeIndex + 1}`),
+  )
+  const hasVariant = Boolean(item.hasVariant) || variantCodes.length > 0
 
   return {
     id,
@@ -1147,6 +949,10 @@ const normalizePortalProcedure = (raw: unknown, index: number): CustomerPortalCo
     showForward: hasForward,
     forwardTarget: hasForward ? forwardTargetCandidate : '',
     codes,
+    hasVariant,
+    mainVersionName: typeof item.mainVersionName === 'string' ? item.mainVersionName : '',
+    variantVersionName: typeof item.variantVersionName === 'string' ? item.variantVersionName : '',
+    variantCodes,
   }
 }
 
@@ -1370,6 +1176,22 @@ const normalizeProductEdition = (raw: unknown, fallbackId: string): ProductEditi
   }
 }
 
+const normalizeTroubleshootgunTemplateSection = (
+  raw: unknown,
+  fallbackId: string,
+): TroubleshootgunTemplateSection => {
+  const item =
+    raw && typeof raw === 'object'
+      ? (raw as LegacyTroubleshootgunTemplateSection)
+      : ({} as LegacyTroubleshootgunTemplateSection)
+  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
+  return {
+    id,
+    title: typeof item.title === 'string' ? item.title : '',
+    content: typeof item.content === 'string' ? item.content : '',
+  }
+}
+
 const normalizeTroubleshootgunTemplate = (
   raw: unknown,
   fallbackId: string,
@@ -1379,11 +1201,15 @@ const normalizeTroubleshootgunTemplate = (
       ? (raw as LegacyTroubleshootgunTemplate)
       : ({}) as LegacyTroubleshootgunTemplate
   const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
+  const rawSections = Array.isArray(item.sections) ? item.sections : []
   return {
     id,
     name: typeof item.name === 'string' ? item.name : '',
     content: typeof item.content === 'string' ? item.content : '',
     taskText: typeof item.taskText === 'string' ? item.taskText : '',
+    sections: rawSections.map((section, index) =>
+      normalizeTroubleshootgunTemplateSection(section, `${id}-section-${index + 1}`),
+    ),
   }
 }
 
@@ -1575,6 +1401,11 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
           name: convertLegacyTokens(template.name),
           content: convertLegacyTokens(template.content),
           taskText: convertLegacyTokensMaybe(template.taskText),
+          sections: (template.sections ?? []).map((section) => ({
+            ...section,
+            title: convertLegacyTokens(section.title),
+            content: convertLegacyTokens(section.content),
+          })),
         })),
       })),
       dashboardNews: normalizeDashboardNews(payload.settings.dashboardNews).map((item) => ({
@@ -1706,6 +1537,9 @@ function App() {
   const [draftBoxTooltip, setDraftBoxTooltip] = useState<DraftBoxTooltipState | null>(null)
   const [callModalOpen, setCallModalOpen] = useState(false)
   const [callDraft, setCallDraft] = useState(PHONE_CALL_TEMPLATE)
+  const [currentCallMemory, setCurrentCallMemory] = useState(PHONE_CALL_TEMPLATE)
+  const [currentCallMemoryLocked, setCurrentCallMemoryLocked] = useState(false)
+  const [selectedCallHistoryId, setSelectedCallHistoryId] = useState<string | null>(null)
   const [callCopied, setCallCopied] = useState(false)
   const [callHistoryCopiedId, setCallHistoryCopiedId] = useState<string | null>(null)
   const [callEntryId, setCallEntryId] = useState<string | null>(null)
@@ -1732,6 +1566,9 @@ function App() {
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<SettingsTab>('categories')
+  const [settingsValidationTouched, setSettingsValidationTouched] = useState<
+    Partial<Record<SettingsValidationScope, boolean>>
+  >({})
   const [editSnippetCategoryId, setEditSnippetCategoryId] = useState('all')
   const [snippetTooltip, setSnippetTooltip] = useState<{
     text: string
@@ -1749,6 +1586,10 @@ function App() {
   const [productTagsDraftText, setProductTagsDraftText] = useState('')
   const [dashboardTroubleshootgunPreviewTemplateId, setDashboardTroubleshootgunPreviewTemplateId] =
     useState<string | null>(null)
+  const [
+    dashboardTroubleshootgunPreviewSectionIds,
+    setDashboardTroubleshootgunPreviewSectionIds,
+  ] = useState<string[]>([])
   const [procedureMailtoMenuOpen, setProcedureMailtoMenuOpen] = useState(false)
   const [snippetActiveField, setSnippetActiveField] = useState<'title' | 'content' | 'task'>(
     'content',
@@ -1772,6 +1613,10 @@ function App() {
   const [tagSuggestionState, setTagSuggestionState] = useState<TagSuggestionState | null>(null)
   const [mailInsertMode, setMailInsertMode] = useState<InsertMode>('line')
   const [selectedPortalProcedureId, setSelectedPortalProcedureId] = useState<string | null>(null)
+  const [portalProcedureEditorOpen, setPortalProcedureEditorOpen] = useState(false)
+  const [portalProcedureVersionMode, setPortalProcedureVersionMode] = useState<'main' | 'variant'>(
+    'main',
+  )
   const [workspaceDashboardPage, setWorkspaceDashboardPage] =
     useState<WorkspaceDashboardPage>('tools')
   const isCategorySelectionEmpty = selectedCategoryId === null
@@ -1836,8 +1681,9 @@ function App() {
   const previousLoadedRef = useRef(loaded)
   const legacyProcedureEditorEnabled = false
 
-  const persistCallDraft = useCallback(() => {
-    const content = getMeaningfulCallDraft(callDraft, callTemplate)
+  const persistCallDraft = useCallback((contentOverride?: string) => {
+    const source = contentOverride ?? callDraft
+    const content = getMeaningfulCallDraft(source, callTemplate)
     if (!content) return null
 
     const id = callEntryId ?? createId('call')
@@ -1918,6 +1764,12 @@ function App() {
   const triggerPulse = useCallback((setPulse: (value: boolean) => void) => {
     setPulse(false)
     requestAnimationFrame(() => setPulse(true))
+  }, [])
+  const markSettingsValidationTouched = useCallback((scope: SettingsValidationScope) => {
+    setSettingsValidationTouched((prev) => ({ ...prev, [scope]: true }))
+  }, [])
+  const clearSettingsValidationTouched = useCallback((scope: SettingsValidationScope) => {
+    setSettingsValidationTouched((prev) => ({ ...prev, [scope]: false }))
   }, [])
 
   const [categoryDraft, setCategoryDraft] = useState<Category>({
@@ -2062,35 +1914,38 @@ function App() {
   const beginNewSnippetDraft = useCallback(
     (focusField = true) => {
       setTagSuggestionState(null)
+      clearSettingsValidationTouched('snippet')
       setSnippetDraft(getEmptySnippetDraft())
       setSelectedSnippetId('new')
       if (focusField) {
         requestAnimationFrame(() => snippetTitleRef.current?.focus())
       }
     },
-    [getEmptySnippetDraft],
+    [clearSettingsValidationTouched, getEmptySnippetDraft],
   )
   const beginNewTemplateDraft = useCallback(
     (focusField = true) => {
       setTagSuggestionState(null)
+      clearSettingsValidationTouched('template')
       setTemplateDraft(getEmptyTemplateDraft())
       setSelectedTemplateId('new')
       if (focusField) {
         requestAnimationFrame(() => templateNameRef.current?.focus())
       }
     },
-    [getEmptyTemplateDraft],
+    [clearSettingsValidationTouched, getEmptyTemplateDraft],
   )
   const beginNewTaskDraft = useCallback(
     (focusField = true) => {
       setTagSuggestionState(null)
+      clearSettingsValidationTouched('task')
       setTaskDraft(getEmptyTaskDraft())
       setSelectedTaskId('new')
       if (focusField) {
         requestAnimationFrame(() => taskTemplateNameRef.current?.focus())
       }
     },
-    [getEmptyTaskDraft],
+    [clearSettingsValidationTouched, getEmptyTaskDraft],
   )
   const getEmptyProcedureDraft = useCallback(
     () =>
@@ -2505,6 +2360,14 @@ function App() {
     () => callHistory.slice(0, CALL_HISTORY_LIMIT),
     [callHistory],
   )
+  const callModalHistoryItems = useMemo(
+    () => recentCallHistory.filter((item) => item.id !== callEntryId).slice(0, 5),
+    [callEntryId, recentCallHistory],
+  )
+  const currentCallPreview = useMemo(() => {
+    const normalized = normalizeCallDraft(currentCallMemory)
+    return normalized.split(/\r?\n/).find((line) => line.trim())?.trim() || 'Brouillon vide'
+  }, [currentCallMemory])
   const activeSettingsTab =
     settingsTabIndex.find((tab) => tab.id === editTab) ?? settingsTabIndex[0]
   const editButtonLabel = 'Settings'
@@ -2515,6 +2378,10 @@ function App() {
   const categoryIdSet = useMemo(
     () => new Set(data.categories.map((category) => category.id)),
     [data.categories],
+  )
+  const taskTemplateIdSet = useMemo(
+    () => new Set(data.taskTemplates.map((task) => task.id)),
+    [data.taskTemplates],
   )
   const categoryColorById = useMemo(() => {
     const map = new Map<string, string>()
@@ -2527,6 +2394,79 @@ function App() {
     () => normalizePredefinedTags(data.settings.predefinedTags ?? defaultData.settings.predefinedTags),
     [data.settings.predefinedTags],
   )
+  const categoryDraftIssues = useMemo(() => getCategoryIssues(categoryDraft), [categoryDraft])
+  const snippetDraftIssues = useMemo(
+    () => getSnippetIssues(snippetDraft, categoryIdSet),
+    [categoryIdSet, snippetDraft],
+  )
+  const templateDraftIssues = useMemo(
+    () => getMailTemplateIssues(templateDraft, taskTemplateIdSet),
+    [taskTemplateIdSet, templateDraft],
+  )
+  const taskDraftIssues = useMemo(() => getTaskTemplateIssues(taskDraft), [taskDraft])
+  const dashboardProductDraftIssues = useMemo(
+    () => getDashboardProductIssues(dashboardProductDraft),
+    [dashboardProductDraft],
+  )
+  const productDraftIssues = useMemo(
+    () => getProductCatalogItemIssues(productDraft),
+    [productDraft],
+  )
+  const dashboardNewsDraftIssues = useMemo(
+    () => getDashboardNewsIssues(dashboardNewsDraft),
+    [dashboardNewsDraft],
+  )
+  const settingsIssueCounts = useMemo<Partial<Record<SettingsTab, number>>>(() => {
+    const countDashboardProducts = (category: DashboardProductCategory) =>
+      dashboardProducts.filter(
+        (product) => product.category === category && getDashboardProductIssues(product).length,
+      ).length
+
+    return {
+      categories: data.categories.filter((category) => getCategoryIssues(category).length).length,
+      snippets: data.snippets.filter((snippet) => getSnippetIssues(snippet, categoryIdSet).length)
+        .length,
+      templates: data.templates.filter(
+        (template) => getMailTemplateIssues(template, taskTemplateIdSet).length,
+      ).length,
+      tasks: data.taskTemplates.filter((task) => getTaskTemplateIssues(task).length).length,
+      products: productCatalog.filter((product) => getProductCatalogItemIssues(product).length)
+        .length,
+      dashboardVersions: countDashboardProducts('firmware'),
+      dashboardSoftwares: countDashboardProducts('software'),
+      dashboardDriverPacks: countDashboardProducts('driver'),
+      dashboardSpareParts: productCatalog.filter((product) =>
+        product.spareParts.some((sparePart) => !sparePart.name.trim() || !sparePart.sku.trim()),
+      ).length,
+      dashboardPortal: customerPortalCodes.filter(
+        (procedure) => getPortalProcedureIssues(procedure).length,
+      ).length,
+      procedureMailtos: normalizedProcedureMailtos.filter(
+        (link) => getProcedureMailtoIssues(link).length,
+      ).length,
+      dashboardTroubleshootgun: productCatalog.reduce(
+        (count, product) =>
+          count +
+          (product.troubleshootgunTemplates ?? []).filter(
+            (template) => getTroubleshootgunTemplateIssues(template).length,
+          ).length,
+        0,
+      ),
+      dashboardNews: dashboardNews.filter((item) => getDashboardNewsIssues(item).length).length,
+    }
+  }, [
+    categoryIdSet,
+    customerPortalCodes,
+    dashboardNews,
+    dashboardProducts,
+    data.categories,
+    data.snippets,
+    data.taskTemplates,
+    data.templates,
+    normalizedProcedureMailtos,
+    productCatalog,
+    taskTemplateIdSet,
+  ])
   const activeTagSuggestions = useMemo(() => {
     if (!tagSuggestionState) return []
 
@@ -2801,13 +2741,19 @@ function App() {
     [customerPortalCodes, updateCustomerPortalCodes],
   )
   const updateCustomerPortalCodeLineItem = useCallback(
-    (procedureId: string, codeLineId: string, patch: Partial<CustomerPortalCodeLine>) => {
+    (
+      procedureId: string,
+      codeLineId: string,
+      patch: Partial<CustomerPortalCodeLine>,
+      lineSet: PortalCodeLineSet = 'codes',
+    ) => {
       updateCustomerPortalCodes(
         customerPortalCodes.map((entry) => {
           if (entry.id !== procedureId) return entry
+          const currentLines = lineSet === 'variantCodes' ? entry.variantCodes ?? [] : entry.codes
           return {
             ...entry,
-            codes: entry.codes.map((codeLine) => {
+            [lineSet]: currentLines.map((codeLine) => {
               if (codeLine.id !== codeLineId) return codeLine
               return { ...codeLine, ...patch }
             }),
@@ -2818,15 +2764,16 @@ function App() {
     [customerPortalCodes, updateCustomerPortalCodes],
   )
   const addCustomerPortalCodeLine = useCallback(
-    (procedureId: string) => {
+    (procedureId: string, lineSet: PortalCodeLineSet = 'codes') => {
       const current = customerPortalCodes.find((entry) => entry.id === procedureId)
-      if (!current || current.codes.length >= 4) return
+      const currentLines = lineSet === 'variantCodes' ? current?.variantCodes ?? [] : current?.codes ?? []
+      if (!current) return
       updateCustomerPortalCodes(
         customerPortalCodes.map((entry) =>
           entry.id === procedureId
             ? {
                 ...entry,
-                codes: [...entry.codes, createEmptyPortalCodeLine()],
+                [lineSet]: [...currentLines, createEmptyPortalCodeLine()],
               }
             : entry,
         ),
@@ -2835,18 +2782,56 @@ function App() {
     [customerPortalCodes, updateCustomerPortalCodes],
   )
   const removeCustomerPortalCodeLine = useCallback(
-    (procedureId: string, codeLineId: string) => {
+    (procedureId: string, codeLineId: string, lineSet: PortalCodeLineSet = 'codes') => {
       updateCustomerPortalCodes(
         customerPortalCodes.map((entry) => {
           if (entry.id !== procedureId) return entry
+          const currentLines = lineSet === 'variantCodes' ? entry.variantCodes ?? [] : entry.codes
           return {
             ...entry,
-            codes: entry.codes.filter((codeLine) => codeLine.id !== codeLineId),
+            [lineSet]: currentLines.filter((codeLine) => codeLine.id !== codeLineId),
           }
         }),
       )
     },
     [customerPortalCodes, updateCustomerPortalCodes],
+  )
+  const appendCustomerPortalCodeLineMailto = useCallback(
+    (
+      procedureId: string,
+      codeLineId: string,
+      lineSet: PortalCodeLineSet = 'codes',
+      mailtoId?: string,
+    ) => {
+      const mailtoLink =
+        normalizedProcedureMailtos.find((link) => link.id === mailtoId) ??
+        normalizedProcedureMailtos[0] ??
+        null
+      const href = mailtoLink
+        ? buildProcedureMailtoHref(mailtoLink)
+        : 'mailto:contact@example.com?subject=Objet&body=Message'
+      if (!href) return
+      const label = mailtoLink?.label.trim() || 'Mailto'
+      const snippet = `[${label}](${href})`
+      updateCustomerPortalCodes(
+        customerPortalCodes.map((entry) => {
+          if (entry.id !== procedureId) return entry
+          const currentLines = lineSet === 'variantCodes' ? entry.variantCodes ?? [] : entry.codes
+          return {
+            ...entry,
+            [lineSet]: currentLines.map((codeLine) => {
+              if (codeLine.id !== codeLineId) return codeLine
+              const currentNote = codeLine.infoNote?.trimEnd() ?? ''
+              return {
+                ...codeLine,
+                infoNote: currentNote ? `${currentNote}\n${snippet}` : snippet,
+              }
+            }),
+          }
+        }),
+      )
+    },
+    [customerPortalCodes, normalizedProcedureMailtos, updateCustomerPortalCodes],
   )
   const handleAddPortalProcedure = useCallback(() => {
     const id = createId('portal')
@@ -2856,9 +2841,13 @@ function App() {
         id,
         procedureName: '',
         codes: [createEmptyPortalCodeLine()],
+        hasVariant: false,
+        variantCodes: [],
       },
     ])
     setSelectedPortalProcedureId(id)
+    setPortalProcedureVersionMode('main')
+    setPortalProcedureEditorOpen(true)
   }, [customerPortalCodes, updateCustomerPortalCodes])
   const handleRemovePortalProcedure = useCallback(
     (procedureId: string) => {
@@ -2866,6 +2855,8 @@ function App() {
       updateCustomerPortalCodes(next)
       if (selectedPortalProcedureId === procedureId) {
         setSelectedPortalProcedureId(next[0]?.id ?? null)
+        setPortalProcedureVersionMode('main')
+        setPortalProcedureEditorOpen(false)
       }
     },
     [customerPortalCodes, selectedPortalProcedureId, updateCustomerPortalCodes],
@@ -3291,7 +3282,17 @@ function App() {
             .toLowerCase()
             .includes(query) ||
           (product.troubleshootgunTemplates ?? []).some((template) =>
-            [template.name, template.content].join(' ').toLowerCase().includes(query),
+            [
+              template.name,
+              template.content,
+              ...(template.sections ?? []).flatMap((section) => [
+                section.title,
+                section.content,
+              ]),
+            ]
+              .join(' ')
+              .toLowerCase()
+              .includes(query),
           )
         )
       })
@@ -3328,6 +3329,12 @@ function App() {
     activeDashboardTroubleshootgunTemplates,
     dashboardTroubleshootgunPreviewTemplateId,
   ])
+
+  useEffect(() => {
+    setDashboardTroubleshootgunPreviewSectionIds(
+      activeDashboardTroubleshootgunPreviewTemplate?.sections?.map((section) => section.id) ?? [],
+    )
+  }, [activeDashboardTroubleshootgunPreviewTemplate])
 
   const productsSorted = useMemo(
     () => [...productsWithDashboardRelations],
@@ -3533,6 +3540,10 @@ function App() {
     if (editSnippetCategoryId === 'all') return data.snippets
     return data.snippets.filter((snippet) => snippet.categoryId === editSnippetCategoryId)
   }, [data.snippets, editSnippetCategoryId])
+  const categoryPreviewSnippets = useMemo(
+    () => data.snippets.filter((snippet) => snippet.categoryId === categoryDraft.id),
+    [categoryDraft.id, data.snippets],
+  )
 
   const templateUsesCustomTask =
     templateDraft.taskCustom ?? (!!templateDraft.taskText && !templateDraft.taskTemplateId)
@@ -3546,7 +3557,7 @@ function App() {
       token)
       return
     }
-    if (snippetActiveField === 'task' && !snippetDraft.taskOptional) {
+    if (snippetActiveField === 'task') {
       insertTokenAtCursor(snippetTaskRef, snippetDraft.taskText ?? '', (next) =>
         setSnippetDraft((prev) => ({ ...prev, taskText: next })),
       token)
@@ -3818,6 +3829,9 @@ function App() {
     if (cursor !== undefined) {
       const normalized = normalizeDraftWithCursor(next, cursor)
       setCallDraft(normalized.value)
+      if (!currentCallMemoryLocked) {
+        setCurrentCallMemory(normalized.value)
+      }
       requestAnimationFrame(() =>
         callEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
       )
@@ -3825,7 +3839,10 @@ function App() {
     }
     const normalized = normalizeTokenSpacing(next)
     setCallDraft(normalized)
-  }, [normalizeDraftWithCursor])
+    if (!currentCallMemoryLocked) {
+      setCurrentCallMemory(normalized)
+    }
+  }, [currentCallMemoryLocked, normalizeDraftWithCursor])
 
   const updateCallTemplate = useCallback((next: string) => {
     updateSettings({ callTemplate: normalizeTokenSpacing(next) })
@@ -3983,8 +4000,25 @@ function App() {
     }
   }
 
-  const applyTroubleshootgunTemplate = (template: TroubleshootgunTemplate) => {
-    const paddedContent = padEmptySelectors(template.content)
+  const getTroubleshootgunTemplateContent = (
+    template: TroubleshootgunTemplate,
+    includedSectionIds = template.sections?.map((section) => section.id) ?? [],
+  ) => {
+    const baseContent = template.content.trim()
+    const sectionContent = (template.sections ?? [])
+      .filter((section) => includedSectionIds.includes(section.id))
+      .map((section) => section.content.trim())
+      .filter(Boolean)
+    return [baseContent, ...sectionContent].filter(Boolean).join('\n\n')
+  }
+
+  const applyTroubleshootgunTemplate = (
+    template: TroubleshootgunTemplate,
+    includedSectionIds?: string[],
+  ) => {
+    const paddedContent = padEmptySelectors(
+      getTroubleshootgunTemplateContent(template, includedSectionIds),
+    )
     updateEmailDraft(paddedContent, paddedContent.length)
     requestAnimationFrame(() => emailEditorRef.current?.focus())
 
@@ -4146,8 +4180,12 @@ function App() {
   }
 
   const openCallModal = () => {
+    const initialCallDraft = normalizeTokenSpacing(callTemplate)
     callModalBackdropPointerDownRef.current = false
-    setCallDraft(normalizeTokenSpacing(callTemplate))
+    setCallDraft(initialCallDraft)
+    setCurrentCallMemory(initialCallDraft)
+    setCurrentCallMemoryLocked(false)
+    setSelectedCallHistoryId(null)
     setCallCopied(false)
     setCallEntryId(createId('call'))
     setCallOpenedAt(new Date().toISOString())
@@ -4160,13 +4198,15 @@ function App() {
 
   const closeCallModal = () => {
     callModalBackdropPointerDownRef.current = false
-    persistCallDraft()
+    persistCallDraft(currentCallMemoryLocked ? currentCallMemory : undefined)
     if (callCopyTimeoutRef.current !== null) {
       window.clearTimeout(callCopyTimeoutRef.current)
       callCopyTimeoutRef.current = null
     }
     setCallModalOpen(false)
     setCallCopied(false)
+    setCurrentCallMemoryLocked(false)
+    setSelectedCallHistoryId(null)
     setCallEntryId(null)
     setCallOpenedAt(null)
   }
@@ -4178,7 +4218,7 @@ function App() {
       window.clearTimeout(callCopyTimeoutRef.current)
     }
 
-    persistCallDraft()
+    persistCallDraft(currentCallMemoryLocked ? currentCallMemory : undefined)
     const didCopy = await copyText(content)
     if (!didCopy) {
       setToast('Copie impossible.')
@@ -4208,7 +4248,11 @@ function App() {
 
   const handleSaveDashboardProduct = () => {
     const name = dashboardProductDraft.name.trim()
-    if (!name) return
+    if (!name) {
+      markSettingsValidationTouched('dashboardProduct')
+      setToast('Nom obligatoire.')
+      return
+    }
     const category = dashboardProductDraft.category
     const payload: DashboardProduct = {
       id: dashboardProductDraft.id,
@@ -4247,8 +4291,10 @@ function App() {
         }
       }),
     )
-    setSelectedDashboardProductId(null)
-    setDashboardProductDraft(getEmptyDashboardProductDraft())
+    setSelectedDashboardProductId(id)
+    setDashboardProductDraft(savedProduct)
+    clearSettingsValidationTouched('dashboardProduct')
+    setToast('Élément catalogue enregistré.')
   }
 
   const handleDeleteDashboardProduct = (product: DashboardProduct) => {
@@ -4316,7 +4362,11 @@ function App() {
 
   const handleSaveProductCatalogItem = () => {
     const name = productDraft.name.trim()
-    if (!name) return
+    if (!name) {
+      markSettingsValidationTouched('product')
+      setToast('Nom obligatoire.')
+      return
+    }
 
     const payload: ProductCatalogItem = {
       id: productDraft.id,
@@ -4339,6 +4389,7 @@ function App() {
           name: template.name.trim(),
           content: template.content.trim(),
           taskText: template.taskText?.trim() ?? '',
+          sections: template.sections ?? [],
         }))
         .filter((template) => template.name || template.content || template.taskText),
       editions: (productDraft.editions ?? []).map((edition) => {
@@ -4373,9 +4424,11 @@ function App() {
 
     updateProductCatalog(syncProductCompatibility(next, savedProduct))
     updateDashboardProducts(syncDashboardProductsForCatalogProduct(dashboardProducts, savedProduct))
-    setSelectedProductCatalogId(null)
-    setProductDraft(getEmptyProductDraft())
-    setProductTagsDraftText('')
+    setSelectedProductCatalogId(id)
+    setProductDraft(savedProduct)
+    setProductTagsDraftText((savedProduct.tags ?? []).join(', '))
+    clearSettingsValidationTouched('product')
+    setToast('Produit enregistré.')
   }
 
   const handleDeleteProductCatalogItem = (product: ProductCatalogItem) => {
@@ -4412,8 +4465,12 @@ function App() {
   }
 
   const handleSaveDashboardNews = () => {
+    if (dashboardNewsDraftIssues.length) {
+      markSettingsValidationTouched('dashboardNews')
+      setToast(dashboardNewsDraftIssues[0])
+      return
+    }
     const title = dashboardNewsDraft.title.trim()
-    if (!title) return
 
     const payload: DashboardNewsItem = {
       id: dashboardNewsDraft.id,
@@ -4431,6 +4488,8 @@ function App() {
     updateDashboardNews(next)
     setSelectedDashboardNewsId(id)
     setDashboardNewsDraft({ ...payload, id })
+    clearSettingsValidationTouched('dashboardNews')
+    setToast('News enregistrée.')
   }
 
   const handleDeleteDashboardNews = (item: DashboardNewsItem) => {
@@ -4512,6 +4571,7 @@ function App() {
         name: '',
         content: '',
         taskText: '',
+        sections: [],
       },
     ])
   }
@@ -4530,6 +4590,56 @@ function App() {
   const removeProductDraftTroubleshootgunTemplate = (templateId: string) => {
     updateProductDraftTroubleshootgunTemplates(
       (productDraft.troubleshootgunTemplates ?? []).filter((template) => template.id !== templateId),
+    )
+  }
+
+  const updateProductDraftTroubleshootgunTemplateSections = (
+    templateId: string,
+    sections: TroubleshootgunTemplateSection[],
+  ) => {
+    updateProductDraftTroubleshootgunTemplate(templateId, { sections })
+  }
+
+  const addProductDraftTroubleshootgunTemplateSection = (templateId: string) => {
+    const template = (productDraft.troubleshootgunTemplates ?? []).find(
+      (entry) => entry.id === templateId,
+    )
+    updateProductDraftTroubleshootgunTemplateSections(templateId, [
+      ...(template?.sections ?? []),
+      {
+        id: createId('troubleshootgun-section'),
+        title: '',
+        content: '',
+      },
+    ])
+  }
+
+  const updateProductDraftTroubleshootgunTemplateSection = (
+    templateId: string,
+    sectionId: string,
+    patch: Partial<TroubleshootgunTemplateSection>,
+  ) => {
+    const template = (productDraft.troubleshootgunTemplates ?? []).find(
+      (entry) => entry.id === templateId,
+    )
+    updateProductDraftTroubleshootgunTemplateSections(
+      templateId,
+      (template?.sections ?? []).map((section) =>
+        section.id === sectionId ? { ...section, ...patch } : section,
+      ),
+    )
+  }
+
+  const removeProductDraftTroubleshootgunTemplateSection = (
+    templateId: string,
+    sectionId: string,
+  ) => {
+    const template = (productDraft.troubleshootgunTemplates ?? []).find(
+      (entry) => entry.id === templateId,
+    )
+    updateProductDraftTroubleshootgunTemplateSections(
+      templateId,
+      (template?.sections ?? []).filter((section) => section.id !== sectionId),
     )
   }
 
@@ -4592,15 +4702,48 @@ function App() {
     )
   }
 
+  const renderIssueBadge = (issues: string[]) =>
+    issues.length ? (
+      <span className="settings-issue-badge" title={issues.join('\n')}>
+        Incomplet
+      </span>
+    ) : null
+
+  const renderValidationIssues = (scope: SettingsValidationScope, issues: string[]) =>
+    settingsValidationTouched[scope] && issues.length ? (
+      <div className="settings-validation" role="alert">
+        {issues.map((issue) => (
+          <span key={issue}>{issue}</span>
+        ))}
+      </div>
+    ) : null
+
   const renderPortalCodeEditorSettings = () => {
     const selectedPortalProcedure =
       customerPortalCodes.find((entry) => entry.id === selectedPortalProcedureId) ??
       customerPortalCodes[0] ??
       null
     const resolvedSelectedPortalProcedureId = selectedPortalProcedure?.id ?? null
+    const portalEditorUsesVariant = Boolean(
+      selectedPortalProcedure?.hasVariant && portalProcedureVersionMode === 'variant',
+    )
+    const portalEditorLineSet: PortalCodeLineSet = portalEditorUsesVariant
+      ? 'variantCodes'
+      : 'codes'
+    const portalEditorLines = selectedPortalProcedure
+      ? portalEditorUsesVariant
+        ? selectedPortalProcedure.variantCodes ?? []
+        : selectedPortalProcedure.codes
+      : []
+    const portalMainVersionName = selectedPortalProcedure?.mainVersionName?.trim() || 'Version 1'
+    const portalVariantVersionName =
+      selectedPortalProcedure?.variantVersionName?.trim() || 'Alternative'
+    const portalEditorVersionLabel = portalEditorUsesVariant
+      ? portalVariantVersionName
+      : portalMainVersionName
 
     return (
-      <div className="portal-code-editor">
+      <div className={`portal-code-editor${portalProcedureEditorOpen ? ' is-editing' : ''}`}>
         {customerPortalCodes.length ? (
           <div className="dashboard-product-editor portal-code-editor__layout">
             <div className="dashboard-product-editor__list">
@@ -4610,13 +4753,17 @@ function App() {
                 onReorder={handleReorderPortalProcedures}
                 renderItem={(item, handleProps) => {
                   const procedureHasDraft = item.codes.some((entry) => Boolean(entry.showDraft))
+                  const issues = getPortalProcedureIssues(item)
                   return (
                     <div
                       className={`list-item list-item--compact${
                         resolvedSelectedPortalProcedureId === item.id ? ' is-selected' : ''
-                      }`}
+                      }${issues.length ? ' is-incomplete' : ''}`}
                       key={item.id}
-                      onClick={() => setSelectedPortalProcedureId(item.id)}
+                      onClick={() => {
+                        setSelectedPortalProcedureId(item.id)
+                        setPortalProcedureVersionMode('main')
+                      }}
                     >
                       <button
                         className="drag-handle"
@@ -4632,10 +4779,12 @@ function App() {
                           {item.procedureName.trim() || 'Procédure sans nom'}
                         </div>
                         <div className="list-item__meta">
-                          {item.codes.length}/4 étape{item.codes.length > 1 ? 's' : ''} • Draft{' '}
+                          {item.codes.length} étape{item.codes.length > 1 ? 's' : ''} • Draft{' '}
                           {procedureHasDraft ? 'oui' : 'non'} • Forward{' '}
-                          {item.showForward ? 'oui' : 'non'}
+                          {item.showForward ? 'oui' : 'non'} • Toggle{' '}
+                          {item.hasVariant ? 'oui' : 'non'}
                         </div>
+                        {renderIssueBadge(issues)}
                       </div>
                       <div className="list-item__actions">
                         <button
@@ -4668,15 +4817,67 @@ function App() {
               />
             </div>
 
+            <div className="portal-code-editor__preview">
+              {selectedPortalProcedure ? (
+                <div className="portal-code-editor__preview-inner">
+                  <div className="portal-code-editor__preview-head">
+                    <div>
+                      <div className="portal-code-editor__preview-title">
+                        {selectedPortalProcedure.procedureName.trim() || 'Procédure sans nom'}
+                      </div>
+                      <div className="list-item__meta">
+                        {selectedPortalProcedure.codes.length} étape
+                        {selectedPortalProcedure.codes.length > 1 ? 's' : ''} •{' '}
+                        {formatPortalForwardLabel(selectedPortalProcedure, 'Forward non')}
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn--ghost btn--small"
+                      type="button"
+                      onClick={() => setPortalProcedureEditorOpen(true)}
+                    >
+                      Modifier
+                    </button>
+                  </div>
+                  <div className="portal-code-editor__preview-steps">
+                    {selectedPortalProcedure.codes.map((line, index) => (
+                      <article className="portal-code-editor__preview-step" key={line.id}>
+                        <div className="portal-code-editor__preview-step-title">
+                          {line.title?.trim() || `Étape ${index + 1}`}
+                        </div>
+                        <div className="list-item__meta">
+                          {line.showDraft ? 'Draft • ' : ''}
+                          {line.quickLinkUrl?.trim() ? 'Lien rapide • ' : ''}
+                          {line.quickCopyText?.trim() ? 'Texte à copier • ' : ''}
+                          {line.code.trim() ? `Code ${line.code.trim()}` : 'Aucun code'}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="empty-state">Sélectionnez une procédure pour afficher l’aperçu.</div>
+              )}
+            </div>
+
             <div className="dashboard-product-editor__form">
               {selectedPortalProcedure ? (
                 <div className="form portal-code-editor__form">
                   <section className="portal-code-editor__section">
                     <div className="portal-code-editor__section-head">
-                      <div className="portal-code-editor__section-title">Procédure</div>
-                      <div className="portal-code-editor__section-meta">
-                        {selectedPortalProcedure.codes.length}/4 étapes
+                      <div>
+                        <div className="portal-code-editor__section-title">Procédure</div>
+                        <div className="portal-code-editor__section-meta">
+                          {selectedPortalProcedure.codes.length} étapes configurées
+                        </div>
                       </div>
+                      <button
+                        className="btn btn--ghost btn--small"
+                        type="button"
+                        onClick={() => setPortalProcedureEditorOpen(false)}
+                      >
+                        Fermer
+                      </button>
                     </div>
                     <input
                       className="input"
@@ -4717,27 +4918,107 @@ function App() {
                         />
                       ) : null}
                     </div>
+                    <div className="portal-code-editor__version-control">
+                      <label className="portal-code-editor__check portal-code-editor__check--subtle">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedPortalProcedure.hasVariant)}
+                          onChange={(event) => {
+                            const hasVariant = event.target.checked
+                            setPortalProcedureVersionMode(hasVariant ? 'variant' : 'main')
+                            updateCustomerPortalProcedure(selectedPortalProcedure.id, {
+                              hasVariant,
+                              variantCodes: hasVariant
+                                ? selectedPortalProcedure.variantCodes?.length
+                                  ? selectedPortalProcedure.variantCodes
+                                  : [createEmptyPortalCodeLine()]
+                                : selectedPortalProcedure.variantCodes ?? [],
+                            })
+                          }}
+                        />
+                        <span>Toggle version alternative</span>
+                      </label>
+                      {selectedPortalProcedure.hasVariant ? (
+                        <div className="portal-code-editor__version-control-detail">
+                          <div className="portal-code-editor__version-names">
+                            <input
+                              className="input"
+                              value={selectedPortalProcedure.mainVersionName ?? ''}
+                              placeholder="Nom version 1"
+                              onChange={(event) =>
+                                updateCustomerPortalProcedure(selectedPortalProcedure.id, {
+                                  mainVersionName: event.target.value,
+                                })
+                              }
+                            />
+                            <input
+                              className="input"
+                              value={selectedPortalProcedure.variantVersionName ?? ''}
+                              placeholder="Nom version 2"
+                              onChange={(event) =>
+                                updateCustomerPortalProcedure(selectedPortalProcedure.id, {
+                                  variantVersionName: event.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="portal-code-editor__version-tabs" role="tablist">
+                            <button
+                              className={`portal-code-editor__version-tab${
+                                portalProcedureVersionMode === 'main' ? ' is-active' : ''
+                              }`}
+                              type="button"
+                              onClick={() => setPortalProcedureVersionMode('main')}
+                            >
+                              {portalMainVersionName}
+                            </button>
+                            <button
+                              className={`portal-code-editor__version-tab${
+                                portalProcedureVersionMode === 'variant' ? ' is-active' : ''
+                              }`}
+                              type="button"
+                              onClick={() => setPortalProcedureVersionMode('variant')}
+                            >
+                              {portalVariantVersionName}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </section>
 
                   <section className="portal-code-editor__section">
                     <div className="portal-code-editor__section-head">
-                      <div className="portal-code-editor__section-title">Étapes</div>
+                      <div>
+                        <div className="portal-code-editor__section-title">
+                          {portalEditorVersionLabel}
+                        </div>
+                        <div className="list-item__meta">
+                          {portalEditorUsesVariant
+                            ? 'Version affichée quand le toggle est activé.'
+                            : 'Version par défaut de la procédure.'}
+                        </div>
+                      </div>
                       <button
                         className="btn btn--ghost btn--small"
                         type="button"
-                        onClick={() => addCustomerPortalCodeLine(selectedPortalProcedure.id)}
-                        disabled={selectedPortalProcedure.codes.length >= 4}
+                        onClick={() =>
+                          addCustomerPortalCodeLine(
+                            selectedPortalProcedure.id,
+                            portalEditorLineSet,
+                          )
+                        }
                       >
                         Ajouter une étape
                       </button>
                     </div>
                     <div className="portal-code-editor__codes">
-                      {selectedPortalProcedure.codes.map((codeLine, index) => (
+                      {portalEditorLines.map((codeLine, index) => (
                         <div className="portal-code-editor__code-card" key={codeLine.id}>
                           <div className="portal-code-editor__row">
                             <span className="portal-code-editor__index">{index + 1}</span>
                             <span className="list-item__meta">Étape {index + 1}</span>
-                            {selectedPortalProcedure.codes.length > 1 ? (
+                            {portalEditorLines.length > 1 ? (
                               <button
                                 className="icon-btn-sm danger"
                                 type="button"
@@ -4746,6 +5027,7 @@ function App() {
                                   removeCustomerPortalCodeLine(
                                     selectedPortalProcedure.id,
                                     codeLine.id,
+                                    portalEditorLineSet,
                                   )
                                 }
                               >
@@ -4777,6 +5059,7 @@ function App() {
                                 {
                                   title: event.target.value,
                                 },
+                                portalEditorLineSet,
                               )
                             }
                           />
@@ -4793,6 +5076,7 @@ function App() {
                                     {
                                       showDraft: event.target.checked,
                                     },
+                                    portalEditorLineSet,
                                   )
                                 }
                               />
@@ -4812,6 +5096,7 @@ function App() {
                                     {
                                       quickLinkUrl: event.target.value,
                                     },
+                                    portalEditorLineSet,
                                   )
                                 }
                               />
@@ -4829,10 +5114,35 @@ function App() {
                                 {
                                   quickCopyText: event.target.value,
                                 },
+                                portalEditorLineSet,
                               )
                             }
                           />
 
+                          <div className="portal-code-editor__note-head">
+                            <span className="list-item__meta">Texte intermédiaire</span>
+                            <select
+                              className="select select--compact"
+                              value=""
+                              onChange={(event) => {
+                                const mailtoId = event.target.value
+                                if (!mailtoId) return
+                                appendCustomerPortalCodeLineMailto(
+                                  selectedPortalProcedure.id,
+                                  codeLine.id,
+                                  portalEditorLineSet,
+                                  mailtoId,
+                                )
+                              }}
+                            >
+                              <option value="">Ajouter un bouton mailto...</option>
+                              {normalizedProcedureMailtos.map((link) => (
+                                <option key={link.id} value={link.id}>
+                                  {link.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <textarea
                             className="textarea portal-code-editor__note"
                             value={codeLine.infoNote ?? ''}
@@ -4844,6 +5154,7 @@ function App() {
                                 {
                                   infoNote: event.target.value,
                                 },
+                                portalEditorLineSet,
                               )
                             }
                           />
@@ -4859,6 +5170,7 @@ function App() {
                                 {
                                   code: event.target.value,
                                 },
+                                portalEditorLineSet,
                               )
                             }
                           />
@@ -4916,6 +5228,7 @@ function App() {
               className="btn btn--ghost btn--small"
               type="button"
               onClick={() => {
+                clearSettingsValidationTouched('dashboardProduct')
                 setDashboardProductDraft(getEmptyDashboardProductDraft(defaultCategory))
                 setSelectedDashboardProductId('new')
               }}
@@ -4935,56 +5248,61 @@ function App() {
           <div className="dashboard-product-editor">
             <div className="dashboard-product-editor__list">
               {items.length ? (
-                items.map((product) => (
-                  <div
-                    key={product.id}
-                    className={`list-item list-item--compact${
-                      selectedDashboardProductId === product.id ? ' is-selected' : ''
-                    }`}
-                    onClick={() => {
-                      setDashboardProductDraft({
-                        ...product,
-                        compatibleProductIds: [...(product.compatibleProductIds ?? [])],
-                        softwareIds: [...(product.softwareIds ?? [])],
-                        driverIds: [...(product.driverIds ?? [])],
-                      })
-                      setSelectedDashboardProductId(product.id)
-                    }}
-                  >
-                    <div className="list-item__content">
-                      <div className="list-item__title">{product.name}</div>
-                      <div className="list-item__meta">
-                        {dashboardProductCategoryLabels[product.category]}
-                        {product.latestVersion.trim() ? ` • ${product.latestVersion.trim()}` : ''}
+                items.map((product) => {
+                  const issues = getDashboardProductIssues(product)
+                  return (
+                    <div
+                      key={product.id}
+                      className={`list-item list-item--compact${
+                        selectedDashboardProductId === product.id ? ' is-selected' : ''
+                      }${issues.length ? ' is-incomplete' : ''}`}
+                      onClick={() => {
+                        clearSettingsValidationTouched('dashboardProduct')
+                        setDashboardProductDraft({
+                          ...product,
+                          compatibleProductIds: [...(product.compatibleProductIds ?? [])],
+                          softwareIds: [...(product.softwareIds ?? [])],
+                          driverIds: [...(product.driverIds ?? [])],
+                        })
+                        setSelectedDashboardProductId(product.id)
+                      }}
+                    >
+                      <div className="list-item__content">
+                        <div className="list-item__title">{product.name || 'Élément sans nom'}</div>
+                        <div className="list-item__meta">
+                          {dashboardProductCategoryLabels[product.category]}
+                          {product.latestVersion.trim() ? ` • ${product.latestVersion.trim()}` : ''}
+                        </div>
+                        {renderIssueBadge(issues)}
+                      </div>
+                      <div className="list-item__actions">
+                        <button
+                          className="icon-btn-sm danger"
+                          type="button"
+                          title="Supprimer"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleDeleteDashboardProduct(product)
+                          }}
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                    <div className="list-item__actions">
-                      <button
-                        className="icon-btn-sm danger"
-                        type="button"
-                        title="Supprimer"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleDeleteDashboardProduct(product)
-                        }}
-                      >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <div className="empty-state">{emptyListMessage}</div>
               )}
@@ -4995,6 +5313,7 @@ function App() {
                 <div className="empty-state">{emptySelectionMessage}</div>
               ) : (
                 <div className="form">
+                  {renderValidationIssues('dashboardProduct', dashboardProductDraftIssues)}
                   <input
                     className="input"
                     placeholder="Nom"
@@ -5245,6 +5564,7 @@ function App() {
     setSnippetTooltip(null)
     setMailInsertMode('line')
     setSelectedPortalProcedureId(null)
+    setPortalProcedureEditorOpen(false)
     setClearAllArmed(false)
     setToast('Données effacées.')
   }
@@ -5309,39 +5629,64 @@ function App() {
   }
 
   const handleCategorySave = () => {
-    if (!categoryDraft.name.trim()) return
+    if (categoryDraftIssues.length) {
+      markSettingsValidationTouched('category')
+      setToast(categoryDraftIssues[0])
+      return
+    }
+    const exists = data.categories.some((category) => category.id === categoryDraft.id)
+    const id = exists ? categoryDraft.id : createId('cat')
+    const savedCategory = { ...categoryDraft, id, name: categoryDraft.name.trim() }
     setData((prev) => {
-      const exists = prev.categories.some((category) => category.id === categoryDraft.id)
-      const id = exists ? categoryDraft.id : createId('cat')
       const next = exists
         ? prev.categories.map((category) =>
-            category.id === id ? { ...categoryDraft, id } : category,
+            category.id === id ? savedCategory : category,
           )
-        : [...prev.categories, { ...categoryDraft, id }]
+        : [...prev.categories, savedCategory]
       return { ...prev, categories: next }
     })
-    setCategoryDraft({ id: '', name: '', color: 'violet' })
-    setSelectedCategoryId(null)
+    setCategoryDraft(savedCategory)
+    setSelectedCategoryId(id)
+    clearSettingsValidationTouched('category')
+    setToast('Catégorie enregistrée.')
   }
 
   const handleSnippetSave = () => {
-    if (!snippetDraft.title.trim()) return
+    if (snippetDraftIssues.length) {
+      markSettingsValidationTouched('snippet')
+      setToast(snippetDraftIssues[0])
+      return
+    }
     const categoryId = categoryIdSet.has(snippetDraft.categoryId)
       ? snippetDraft.categoryId
       : data.categories[0]?.id
-    if (!categoryId) return
+    if (!categoryId) {
+      markSettingsValidationTouched('snippet')
+      setToast('Catégorie obligatoire.')
+      return
+    }
+    const exists = data.snippets.some((snippet) => snippet.id === snippetDraft.id)
+    const id = exists ? snippetDraft.id : createId('snip')
+    const savedSnippet = {
+      ...snippetDraft,
+      id,
+      title: snippetDraft.title.trim(),
+      content: snippetDraft.content.trim(),
+      taskText: snippetDraft.taskText?.trim() ?? '',
+      categoryId,
+    }
     setData((prev) => {
-      const exists = prev.snippets.some((snippet) => snippet.id === snippetDraft.id)
-      const id = exists ? snippetDraft.id : createId('snip')
       const next = exists
         ? prev.snippets.map((snippet) =>
-            snippet.id === id ? { ...snippetDraft, id, categoryId } : snippet,
+            snippet.id === id ? savedSnippet : snippet,
           )
-        : [...prev.snippets, { ...snippetDraft, id, categoryId }]
+        : [...prev.snippets, savedSnippet]
       return { ...prev, snippets: next }
     })
-    setSnippetDraft(getEmptySnippetDraft())
-    setSelectedSnippetId(null)
+    setSnippetDraft(savedSnippet)
+    setSelectedSnippetId(id)
+    clearSettingsValidationTouched('snippet')
+    setToast('Snippet enregistré.')
   }
 
   const handleSnippetReorder = (next: Snippet[]) => {
@@ -5359,31 +5704,56 @@ function App() {
   }
 
   const handleTemplateSave = () => {
-    if (!templateDraft.name.trim()) return
+    if (templateDraftIssues.length) {
+      markSettingsValidationTouched('template')
+      setToast(templateDraftIssues[0])
+      return
+    }
+    const exists = data.templates.some((template) => template.id === templateDraft.id)
+    const id = exists ? templateDraft.id : createId('tmpl')
+    const savedTemplate = {
+      ...templateDraft,
+      id,
+      name: templateDraft.name.trim(),
+      content: templateDraft.content.trim(),
+      taskText: templateDraft.taskText?.trim() ?? '',
+    }
     setData((prev) => {
-      const exists = prev.templates.some((template) => template.id === templateDraft.id)
-      const id = exists ? templateDraft.id : createId('tmpl')
       const next = exists
-        ? prev.templates.map((template) => (template.id === id ? { ...templateDraft, id } : template))
-        : [...prev.templates, { ...templateDraft, id }]
+        ? prev.templates.map((template) => (template.id === id ? savedTemplate : template))
+        : [...prev.templates, savedTemplate]
       return { ...prev, templates: next }
     })
-    setTemplateDraft(getEmptyTemplateDraft())
-    setSelectedTemplateId(null)
+    setTemplateDraft(savedTemplate)
+    setSelectedTemplateId(id)
+    clearSettingsValidationTouched('template')
+    setToast('Template mail enregistré.')
   }
 
   const handleTaskTemplateSave = () => {
-    if (!taskDraft.name.trim()) return
+    if (taskDraftIssues.length) {
+      markSettingsValidationTouched('task')
+      setToast(taskDraftIssues[0])
+      return
+    }
+    const exists = data.taskTemplates.some((task) => task.id === taskDraft.id)
+    const id = exists ? taskDraft.id : createId('task')
+    const savedTask = {
+      ...taskDraft,
+      id,
+      name: taskDraft.name.trim(),
+      content: taskDraft.content.trim(),
+    }
     setData((prev) => {
-      const exists = prev.taskTemplates.some((task) => task.id === taskDraft.id)
-      const id = exists ? taskDraft.id : createId('task')
       const next = exists
-        ? prev.taskTemplates.map((task) => (task.id === id ? { ...taskDraft, id } : task))
-        : [...prev.taskTemplates, { ...taskDraft, id }]
+        ? prev.taskTemplates.map((task) => (task.id === id ? savedTask : task))
+        : [...prev.taskTemplates, savedTask]
       return { ...prev, taskTemplates: next }
     })
-    setTaskDraft({ id: '', name: '', content: '' })
-    setSelectedTaskId(null)
+    setTaskDraft(savedTask)
+    setSelectedTaskId(id)
+    clearSettingsValidationTouched('task')
+    setToast('Template task enregistré.')
   }
 
   const handleProcedureSave = () => {
@@ -5568,8 +5938,13 @@ function App() {
       <div className="workspace-dashboard__panel-title">{title}</div>
       <div className="workspace-dashboard__news-notes-grid">
         <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes">
-          <div className="dashboard-news-notes__panel-head">
-            <div className="dashboard-news-notes__panel-title">Notes libres</div>
+          <div className="dashboard-news-notes__editor">
+            <textarea
+              className="textarea dashboard-news-notes__textarea"
+              value={dashboardReminders}
+              placeholder="Ajoutez vos notes libres..."
+              onChange={(event) => updateSettings({ dashboardReminders: event.target.value })}
+            />
             <button
               type="button"
               className="note-clear-btn dashboard-news-notes__clear"
@@ -5580,12 +5955,6 @@ function App() {
               <CloseIcon />
             </button>
           </div>
-          <textarea
-            className="textarea dashboard-news-notes__textarea"
-            value={dashboardReminders}
-            placeholder="Ajoutez vos notes libres..."
-            onChange={(event) => updateSettings({ dashboardReminders: event.target.value })}
-          />
         </div>
         <div className="dashboard-news-notes__panel dashboard-news-notes__panel--news">
           <div className="dashboard-news-notes__panel-title">News</div>
@@ -6333,6 +6702,48 @@ function App() {
                             ),
                           }}
                         />
+                        {(activeDashboardTroubleshootgunPreviewTemplate.sections ?? []).length ? (
+                          <div className="troubleshootgun-preview-sections">
+                            {(activeDashboardTroubleshootgunPreviewTemplate.sections ?? []).map(
+                              (section) => {
+                                const checked =
+                                  dashboardTroubleshootgunPreviewSectionIds.includes(section.id)
+                                return (
+                                  <label
+                                    className="troubleshootgun-preview-section"
+                                    key={section.id}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(event) =>
+                                        setDashboardTroubleshootgunPreviewSectionIds((current) =>
+                                          event.target.checked
+                                            ? normalizeIdList([...current, section.id])
+                                            : current.filter((id) => id !== section.id),
+                                        )
+                                      }
+                                    />
+                                    <span className="troubleshootgun-preview-section__body">
+                                      <strong>
+                                        {section.title.trim() || 'Section optionnelle'}
+                                      </strong>
+                                      <span
+                                        dangerouslySetInnerHTML={{
+                                          __html: highlightTextPreview(
+                                            stripTokenSpacing(
+                                              section.content.trim() || 'Aucun contenu.',
+                                            ),
+                                          ),
+                                        }}
+                                      />
+                                    </span>
+                                  </label>
+                                )
+                              },
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="troubleshootgun-preview-modal__section troubleshootgun-preview-modal__section--task">
                         <div className="troubleshootgun-preview-modal__label">Task</div>
@@ -6355,7 +6766,10 @@ function App() {
                       className="btn btn--primary"
                       type="button"
                       onClick={() => {
-                        void applyTroubleshootgunTemplate(activeDashboardTroubleshootgunPreviewTemplate)
+                        void applyTroubleshootgunTemplate(
+                          activeDashboardTroubleshootgunPreviewTemplate,
+                          dashboardTroubleshootgunPreviewSectionIds,
+                        )
                         setDashboardTroubleshootgunPreviewTemplateId(null)
                       }}
                     >
@@ -6387,8 +6801,19 @@ function App() {
     const showPortalForwardIndicator = activeDashboardPortalProcedure
       ? shouldShowPortalForwardIndicator(activeDashboardPortalProcedure)
       : false
-    const visiblePortalSteps = activeDashboardPortalProcedure?.codes ?? []
-    const isLightProcedureVariant = dashboardProcedureVariant === 'light'
+    const hasPortalProcedureVariant = Boolean(
+      activeDashboardPortalProcedure?.hasVariant &&
+        (activeDashboardPortalProcedure.variantCodes ?? []).length,
+    )
+    const isLightProcedureVariant =
+      hasPortalProcedureVariant && dashboardProcedureVariant === 'light'
+    const activePortalMainVersionName =
+      activeDashboardPortalProcedure?.mainVersionName?.trim() || 'Principal'
+    const activePortalVariantVersionName =
+      activeDashboardPortalProcedure?.variantVersionName?.trim() || 'Variante'
+    const visiblePortalSteps = isLightProcedureVariant
+      ? activeDashboardPortalProcedure?.variantCodes ?? []
+      : activeDashboardPortalProcedure?.codes ?? []
 
     return (
       <article className="workspace-dashboard__panel workspace-dashboard__panel--portal">
@@ -6401,6 +6826,9 @@ function App() {
                 const procedureName = procedure.procedureName.trim() || 'Procédure sans nom'
                 const procedureHasDraft = procedure.codes.some((entry) => Boolean(entry.showDraft))
                 const procedureForwardLabel = formatPortalForwardLabel(procedure, 'Forward non')
+                const procedureHasVariant = Boolean(
+                  procedure.hasVariant && (procedure.variantCodes ?? []).length,
+                )
 
                 return (
                   <button
@@ -6413,7 +6841,9 @@ function App() {
                   >
                     <span className="dashboard-version-item__name">{procedureName}</span>
                     <span className="dashboard-version-item__meta">
-                      Draft {procedureHasDraft ? 'oui' : 'non'} - {procedureForwardLabel}
+                      Draft {procedureHasDraft ? 'oui' : 'non'} -{' '}
+                      {procedureHasVariant ? 'Toggle oui' : 'Toggle non'} -{' '}
+                      {procedureForwardLabel}
                     </span>
                   </button>
                 )
@@ -6431,30 +6861,35 @@ function App() {
                     <div className="dashboard-portal-procedure-title">
                       {activePortalProcedureName}
                     </div>
-                    <div className="dashboard-portal-procedure-header__tools">
-                      <div className="dashboard-portal-procedure-variant">
-                        <button
-                          type="button"
-                          className={`dashboard-portal-procedure-switch${
-                            isLightProcedureVariant ? ' is-on' : ''
-                          }`}
-                          onClick={() =>
-                            setDashboardProcedureVariant(
-                              isLightProcedureVariant ? 'complete' : 'light',
-                            )
-                          }
-                          aria-pressed={isLightProcedureVariant}
-                          aria-label="Basculer la variante de procédure"
-                        >
-                          <span className="dashboard-portal-procedure-switch__track">
-                            <span className="dashboard-portal-procedure-switch__thumb" />
-                          </span>
-                        </button>
-                        <div className="dashboard-portal-procedure-variant__label">
-                          Mode {isLightProcedureVariant ? 'Léger' : 'Complet'}
+                    {hasPortalProcedureVariant ? (
+                      <div className="dashboard-portal-procedure-header__tools">
+                        <div className="dashboard-portal-procedure-variant">
+                          <button
+                            type="button"
+                            className={`dashboard-portal-procedure-switch${
+                              isLightProcedureVariant ? ' is-on' : ''
+                            }`}
+                            onClick={() =>
+                              setDashboardProcedureVariant(
+                                isLightProcedureVariant ? 'complete' : 'light',
+                              )
+                            }
+                            aria-pressed={isLightProcedureVariant}
+                            aria-label="Basculer la variante de procédure"
+                          >
+                            <span className="dashboard-portal-procedure-switch__track">
+                              <span className="dashboard-portal-procedure-switch__thumb" />
+                            </span>
+                          </button>
+                          <div className="dashboard-portal-procedure-variant__label">
+                            Mode{' '}
+                            {isLightProcedureVariant
+                              ? activePortalVariantVersionName
+                              : activePortalMainVersionName}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
 
                   {showPortalForwardIndicator ? (
@@ -6728,7 +7163,7 @@ function App() {
                     title="Hercules"
                     aria-pressed={procedureBrand === 'hercules'}
                   >
-                    <img src={herculesLogo} alt="Hercules" />
+                    <span className="procedure-filter-btn__mark" aria-hidden="true">H</span>
                     <span>Hercules</span>
                   </button>
                   <button
@@ -6740,7 +7175,7 @@ function App() {
                     title="Thrustmaster"
                     aria-pressed={procedureBrand === 'thrustmaster'}
                   >
-                    <img src={thrustmasterLogo} alt="Thrustmaster" />
+                    <span className="procedure-filter-btn__mark" aria-hidden="true">TM</span>
                     <span>Thrustmaster</span>
                   </button>
                 </div>
@@ -6784,11 +7219,9 @@ function App() {
                     onClick={() => setActiveProcedureId(procedure.id)}
                   >
                     <div className="procedure-item__row">
-                      <img
-                        className="procedure-item__logo"
-                        src={procedure.brand === 'hercules' ? herculesLogo : thrustmasterLogo}
-                        alt={procedure.brand === 'hercules' ? 'Hercules' : 'Thrustmaster'}
-                      />
+                      <span className="procedure-item__logo" aria-hidden="true">
+                        {procedure.brand === 'hercules' ? 'H' : 'TM'}
+                      </span>
                       <span className="procedure-item__title">{procedure.name}</span>
                       <span className="procedure-item__coverage">
                         {procedure.coverage.toUpperCase()}
@@ -6928,8 +7361,7 @@ function App() {
         <div className="sidebar-top">
           <div className="brand" aria-label="Agentor">
             <img className="brand-logo" src={assetUrl('/agentor/icon.png')} alt="" />
-            <p className="brand-name">Agentor</p>
-            <span className="version-pill">v{APP_VERSION_LABEL}</span>
+            <p className="brand-name">AGENTOR</p>
           </div>
           <div className="sidebar-top-actions">
             <div className="sidebar-icon-btn-wrap">
@@ -7436,14 +7868,56 @@ function App() {
               </button>
             </div>
             <div className="call-modal__body">
-              <div className="call-modal__label">Appel téléphonique</div>
-              <TextEditor
-                ref={callEditorRef}
-                value={callDraft}
-                onChange={(value) => updateCallDraft(value)}
-                placeholder="Appel téléphonique"
-                className="call-modal__editor"
-              />
+              <div className="call-modal__main">
+                <div className="call-modal__editor-pane">
+                  <div className="call-modal__label">Appel téléphonique</div>
+                  <TextEditor
+                    ref={callEditorRef}
+                    value={callDraft}
+                    onChange={(value) => updateCallDraft(value)}
+                    placeholder="Appel téléphonique"
+                    className="call-modal__editor"
+                  />
+                </div>
+                <aside className="call-modal__history" aria-label="Derniers appels">
+                  <div className="call-modal__history-title">5 derniers appels</div>
+                  <div className="call-modal__history-list">
+                    <button
+                      className="call-modal__history-item call-modal__history-item--current is-active"
+                      type="button"
+                      onClick={() => requestAnimationFrame(() => callEditorRef.current?.focus())}
+                    >
+                      <span>Appel en cours</span>
+                      <strong>{currentCallPreview}</strong>
+                    </button>
+                    {callModalHistoryItems.length ? (
+                      callModalHistoryItems.map((item) => (
+                        <button
+                          className={`call-modal__history-item${
+                            selectedCallHistoryId === item.id ? ' is-active' : ''
+                          }`}
+                          type="button"
+                          key={item.id}
+                          onClick={() => {
+                            if (!currentCallMemoryLocked) {
+                              setCurrentCallMemory(callDraft)
+                              setCurrentCallMemoryLocked(true)
+                            }
+                            setCallDraft(normalizeTokenSpacing(item.content))
+                            setSelectedCallHistoryId(item.id)
+                            requestAnimationFrame(() => callEditorRef.current?.focus())
+                          }}
+                        >
+                          <span>{formatHistoryTimestamp(item.createdAt)}</span>
+                          <strong>{item.content.split(/\r?\n/)[0]?.trim() || 'Appel'}</strong>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="call-modal__history-empty">Aucun appel enregistré.</div>
+                    )}
+                  </div>
+                </aside>
+              </div>
               <div className="call-modal__footer">
                 <button
                   className={`primary copy-btn${callCopied ? ' is-success' : ''}`}
@@ -7466,6 +7940,7 @@ function App() {
                 <div className="brand__title brand__title--with-icon">
                   <UiIcon name="settings" className="brand__title-icon" />
                   <span>Settings</span>
+                  <span className="version-pill version-pill--settings">v{APP_VERSION_LABEL}</span>
                 </div>
               </div>
               <div className="modal-actions modal-actions--settings">
@@ -7562,19 +8037,27 @@ function App() {
                       <span>{section.label}</span>
                     </div>
                     <div className="settings-layout__nav-items">
-                      {section.items.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={`settings-layout__nav-btn${
-                            editTab === item.id ? ' is-active' : ''
-                          }`}
-                          onClick={() => setEditTab(item.id)}
-                        >
-                          <UiIcon name={item.icon} className="settings-layout__nav-btn-icon" />
-                          <span>{item.label}</span>
-                        </button>
-                      ))}
+                      {section.items.map((item) => {
+                        const issueCount = settingsIssueCounts[item.id] ?? 0
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`settings-layout__nav-btn${
+                              editTab === item.id ? ' is-active' : ''
+                            }${issueCount ? ' has-issues' : ''}`}
+                            onClick={() => setEditTab(item.id)}
+                          >
+                            <span className="settings-layout__nav-btn-main">
+                              <UiIcon name={item.icon} className="settings-layout__nav-btn-icon" />
+                              <span>{item.label}</span>
+                            </span>
+                            {issueCount ? (
+                              <span className="settings-layout__nav-badge">{issueCount}</span>
+                            ) : null}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 ))}
@@ -7621,71 +8104,78 @@ function App() {
                       items={data.categories}
                       getId={(item) => item.id}
                       onReorder={(next) => setData((prev) => ({ ...prev, categories: next }))}
-                      renderItem={(category, handleProps) => (
-                        <div
-                          className={`list-item list-item--compact${
-                            selectedCategoryId === category.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setCategoryDraft(category)
-                            setSelectedCategoryId(category.id)
-                          }}
-                        >
-                          <button
-                            className="drag-handle"
-                            type="button"
-                            {...handleProps.attributes}
-                            {...handleProps.listeners}
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            ⇅
-                          </button>
-                          <div className="list-item__content">
-                            <div className="list-item__title">{category.name}</div>
-                          </div>
-                          <span
-                            className="list-item__color"
-                            style={{
-                              background:
-                                categoryColorMap.get(category.color) ??
-                                categoryColorMap.get('violet'),
+                      renderItem={(category, handleProps) => {
+                        const issues = getCategoryIssues(category)
+                        return (
+                          <div
+                            className={`list-item list-item--compact${
+                              selectedCategoryId === category.id ? ' is-selected' : ''
+                            }${issues.length ? ' is-incomplete' : ''}`}
+                            onClick={() => {
+                              clearSettingsValidationTouched('category')
+                              setCategoryDraft(category)
+                              setSelectedCategoryId(category.id)
                             }}
-                          />
-                          <div className="list-item__actions">
+                          >
                             <button
-                              className="icon-btn-sm danger"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                deleteCategory(category)
-                                setSelectedCategoryId((prev) =>
-                                  prev === category.id ? null : prev,
-                                )
-                                if (selectedCategoryId === category.id) {
-                                  setCategoryDraft(getEmptyCategoryDraft())
-                                }
-                              }}
-                              title="Supprimer"
+                              className="drag-handle"
+                              type="button"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
                             >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                              </svg>
+                              ⇅
                             </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">
+                                {category.name || 'Catégorie sans titre'}
+                              </div>
+                              {renderIssueBadge(issues)}
+                            </div>
+                            <span
+                              className="list-item__color"
+                              style={{
+                                background:
+                                  categoryColorMap.get(category.color) ??
+                                  categoryColorMap.get('violet'),
+                              }}
+                            />
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  deleteCategory(category)
+                                  setSelectedCategoryId((prev) =>
+                                    prev === category.id ? null : prev,
+                                  )
+                                  if (selectedCategoryId === category.id) {
+                                    setCategoryDraft(getEmptyCategoryDraft())
+                                  }
+                                }}
+                                title="Supprimer"
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                      }}
                     />
                   </div>
                 </div>
@@ -7696,6 +8186,7 @@ function App() {
                       <button
                         className="btn btn--ghost btn--small"
                         onClick={() => {
+                          clearSettingsValidationTouched('category')
                           setCategoryDraft(getEmptyCategoryDraft())
                           setSelectedCategoryId('new')
                         }}
@@ -7715,6 +8206,8 @@ function App() {
                       </div>
                     ) : (
                       <div className="form">
+                        {renderValidationIssues('category', categoryDraftIssues)}
+                        <div className="workflow-step-label">Titre</div>
                         <input
                           className="input"
                           placeholder="Nom de catégorie"
@@ -7723,6 +8216,7 @@ function App() {
                             setCategoryDraft((prev) => ({ ...prev, name: event.target.value }))
                           }
                         />
+                        <div className="workflow-step-label">Couleur</div>
                         <div className="color-grid">
                           {categoryColors.map((color) => (
                             <button
@@ -7738,6 +8232,25 @@ function App() {
                               }
                             />
                           ))}
+                        </div>
+                        <div className="category-snippet-preview">
+                          <div className="category-snippet-preview__title">
+                            Aperçu des snippets
+                          </div>
+                          {categoryPreviewSnippets.length ? (
+                            <div className="category-snippet-preview__list">
+                              {categoryPreviewSnippets.map((snippet) => (
+                                <div className="category-snippet-preview__item" key={snippet.id}>
+                                  <span>{snippet.title}</span>
+                                  <small>{snippet.content.split('\n')[0]}</small>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="list-item__meta">
+                              Aucun snippet dans cette catégorie.
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -7771,63 +8284,72 @@ function App() {
                       items={editSnippets}
                       getId={(item) => item.id}
                       onReorder={handleSnippetReorder}
-                      renderItem={(snippet, handleProps) => (
-                        <div
-                          className={`list-item list-item--compact${
-                            selectedSnippetId === snippet.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setSnippetDraft(snippet)
-                            setSelectedSnippetId(snippet.id)
-                          }}
-                        >
-                          <button
-                            className="drag-handle"
-                            type="button"
-                            {...handleProps.attributes}
-                            {...handleProps.listeners}
-                            onClick={(event) => event.stopPropagation()}
+                      renderItem={(snippet, handleProps) => {
+                        const issues = getSnippetIssues(snippet, categoryIdSet)
+                        return (
+                          <div
+                            className={`list-item list-item--compact${
+                              selectedSnippetId === snippet.id ? ' is-selected' : ''
+                            }${issues.length ? ' is-incomplete' : ''}`}
+                            onClick={() => {
+                              clearSettingsValidationTouched('snippet')
+                              setSnippetDraft(snippet)
+                              setSelectedSnippetId(snippet.id)
+                            }}
                           >
-                            ⇅
-                          </button>
-                          <div className="list-item__content">
-                            <div className="list-item__title">{snippet.title}</div>
-                            <div className="list-item__meta">{snippet.content.split('\n')[0]}</div>
-                          </div>
-                          <div className="list-item__actions">
                             <button
-                              className="icon-btn-sm danger"
+                              className="drag-handle"
                               type="button"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                const deleted = deleteSnippet(snippet)
-                                if (!deleted) return
-                                if (selectedSnippetId === snippet.id) {
-                                  beginNewSnippetDraft()
-                                }
-                              }}
-                              title="Supprimer"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
                             >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                              </svg>
+                              ⇅
                             </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">
+                                {snippet.title || 'Snippet sans titre'}
+                              </div>
+                              <div className="list-item__meta">
+                                {snippet.content.split('\n')[0] || 'Contenu manquant'}
+                              </div>
+                              {renderIssueBadge(issues)}
+                            </div>
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  const deleted = deleteSnippet(snippet)
+                                  if (!deleted) return
+                                  if (selectedSnippetId === snippet.id) {
+                                    beginNewSnippetDraft()
+                                  }
+                                }}
+                                title="Supprimer"
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                      }}
                     />
                   </div>
                 </div>
@@ -7885,6 +8407,8 @@ function App() {
                       </div>
                     ) : (
                       <div className="form">
+                        {renderValidationIssues('snippet', snippetDraftIssues)}
+                        <div className="workflow-step-label">Titre</div>
                         <input
                           className="input"
                           placeholder="Titre"
@@ -7932,6 +8456,7 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="workflow-step-label">Contenu</div>
                         <textarea
                           className="textarea textarea--tall"
                           placeholder="Contenu"
@@ -7979,6 +8504,7 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="workflow-step-label">Catégorie</div>
                         <div className="form__row">
                           <select
                             className="select select--roomy"
@@ -7997,10 +8523,9 @@ function App() {
                             ))}
                           </select>
                         </div>
+                        <div className="workflow-step-label">Texte de task</div>
                         <textarea
-                          className={`textarea${
-                            snippetDraft.taskOptional ? ' textarea--disabled' : ''
-                          }`}
+                          className="textarea"
                           placeholder="Texte de tâche associé (optionnel)"
                           value={snippetDraft.taskText ?? ''}
                           ref={snippetTaskRef}
@@ -8036,7 +8561,6 @@ function App() {
                               nextValue,
                             )
                           }}
-                          readOnly={snippetDraft.taskOptional ?? false}
                         />
                         {renderTagSuggestions('snippet-task', (tag) =>
                           applySuggestedTag(
@@ -8047,19 +8571,9 @@ function App() {
                             tag,
                           ),
                         )}
-                        <label className="list-item__meta">
-                          <input
-                            type="checkbox"
-                            checked={snippetDraft.taskOptional ?? false}
-                            onChange={(event) =>
-                              setSnippetDraft((prev) => ({
-                                ...prev,
-                                taskOptional: event.target.checked,
-                              }))
-                            }
-                          />{' '}
-                          Tâche optionnelle
-                        </label>
+                        <div className="list-item__meta">
+                          Si le texte de tâche reste vide, aucune tâche n’est ajoutée.
+                        </div>
                       </div>
                     )}
                   </div>
@@ -8075,72 +8589,81 @@ function App() {
                       items={data.templates}
                       getId={(item) => item.id}
                       onReorder={(next) => setData((prev) => ({ ...prev, templates: next }))}
-                      renderItem={(template, handleProps) => (
-                        <div
-                          className={`list-item list-item--compact${
-                            selectedTemplateId === template.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setTemplateDraft(template)
-                            setSelectedTemplateId(template.id)
-                          }}
-                        >
-                          <button
-                            className="drag-handle"
-                            type="button"
-                            {...handleProps.attributes}
-                            {...handleProps.listeners}
-                            onClick={(event) => event.stopPropagation()}
+                      renderItem={(template, handleProps) => {
+                        const issues = getMailTemplateIssues(template, taskTemplateIdSet)
+                        return (
+                          <div
+                            className={`list-item list-item--compact${
+                              selectedTemplateId === template.id ? ' is-selected' : ''
+                            }${issues.length ? ' is-incomplete' : ''}`}
+                            onClick={() => {
+                              clearSettingsValidationTouched('template')
+                              setTemplateDraft(template)
+                              setSelectedTemplateId(template.id)
+                            }}
                           >
-                            ⇅
-                          </button>
-                          <div className="list-item__content">
-                            <div className="list-item__title">{template.name}</div>
-                            <div className="list-item__meta">{template.content.split('\n')[0]}</div>
-                          </div>
-                          <div className="list-item__actions">
-                            <img
-                              className="list-item__flag"
-                              src={
-                                template.language === 'fr'
-                                  ? assetUrl('/agentor/assets/fr.svg')
-                                  : assetUrl('/agentor/assets/gb.svg')
-                              }
-                              alt={template.language === 'fr' ? 'FR' : 'EN'}
-                            />
                             <button
-                              className="icon-btn-sm danger"
+                              className="drag-handle"
                               type="button"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                const deleted = deleteTemplate(template)
-                                if (!deleted) return
-                                if (selectedTemplateId === template.id) {
-                                  beginNewTemplateDraft()
-                                }
-                              }}
-                              title="Supprimer"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
                             >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                              </svg>
+                              ⇅
                             </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">
+                                {template.name || 'Template sans titre'}
+                              </div>
+                              <div className="list-item__meta">
+                                {template.content.split('\n')[0] || 'Contenu manquant'}
+                              </div>
+                              {renderIssueBadge(issues)}
+                            </div>
+                            <div className="list-item__actions">
+                              <img
+                                className="list-item__flag"
+                                src={
+                                  template.language === 'fr'
+                                    ? assetUrl('/agentor/assets/fr.svg')
+                                    : assetUrl('/agentor/assets/gb.svg')
+                                }
+                                alt={template.language === 'fr' ? 'FR' : 'EN'}
+                              />
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  const deleted = deleteTemplate(template)
+                                  if (!deleted) return
+                                  if (selectedTemplateId === template.id) {
+                                    beginNewTemplateDraft()
+                                  }
+                                }}
+                                title="Supprimer"
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                      }}
                     />
                   </div>
                 </div>
@@ -8198,6 +8721,8 @@ function App() {
                       </div>
                     ) : (
                       <div className="form">
+                        {renderValidationIssues('template', templateDraftIssues)}
+                        <div className="workflow-step-label">Titre</div>
                         <input
                           className="input"
                           placeholder="Nom du template mail"
@@ -8245,6 +8770,7 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="workflow-step-label">Langue</div>
                         <select
                           className="select"
                           value={templateDraft.language}
@@ -8258,6 +8784,7 @@ function App() {
                           <option value="fr">Français</option>
                           <option value="en">Anglais</option>
                         </select>
+                        <div className="workflow-step-label">Contenu</div>
                         <textarea
                           className="textarea textarea--tall"
                           placeholder="Contenu complet"
@@ -8305,6 +8832,7 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="workflow-step-label">Task</div>
                         {templateUsesCustomTask ? (
                           <textarea
                             className={`textarea${
@@ -8429,63 +8957,72 @@ function App() {
                       items={data.taskTemplates}
                       getId={(item) => item.id}
                       onReorder={(next) => setData((prev) => ({ ...prev, taskTemplates: next }))}
-                      renderItem={(task, handleProps) => (
-                        <div
-                          className={`list-item list-item--compact${
-                            selectedTaskId === task.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => {
-                            setTaskDraft(task)
-                            setSelectedTaskId(task.id)
-                          }}
-                        >
-                          <button
-                            className="drag-handle"
-                            type="button"
-                            {...handleProps.attributes}
-                            {...handleProps.listeners}
-                            onClick={(event) => event.stopPropagation()}
+                      renderItem={(task, handleProps) => {
+                        const issues = getTaskTemplateIssues(task)
+                        return (
+                          <div
+                            className={`list-item list-item--compact${
+                              selectedTaskId === task.id ? ' is-selected' : ''
+                            }${issues.length ? ' is-incomplete' : ''}`}
+                            onClick={() => {
+                              clearSettingsValidationTouched('task')
+                              setTaskDraft(task)
+                              setSelectedTaskId(task.id)
+                            }}
                           >
-                            ⇅
-                          </button>
-                          <div className="list-item__content">
-                            <div className="list-item__title">{task.name}</div>
-                            <div className="list-item__meta">{task.content.split('\n')[0]}</div>
-                          </div>
-                          <div className="list-item__actions">
                             <button
-                              className="icon-btn-sm danger"
+                              className="drag-handle"
                               type="button"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                const deleted = deleteTaskTemplate(task)
-                                if (!deleted) return
-                                if (selectedTaskId === task.id) {
-                                  beginNewTaskDraft()
-                                }
-                              }}
-                              title="Supprimer"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
                             >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                              </svg>
+                              ⇅
                             </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">
+                                {task.name || 'Task sans titre'}
+                              </div>
+                              <div className="list-item__meta">
+                                {task.content.split('\n')[0] || 'Contenu manquant'}
+                              </div>
+                              {renderIssueBadge(issues)}
+                            </div>
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  const deleted = deleteTaskTemplate(task)
+                                  if (!deleted) return
+                                  if (selectedTaskId === task.id) {
+                                    beginNewTaskDraft()
+                                  }
+                                }}
+                                title="Supprimer"
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )
+                      }}
                     />
                   </div>
                 </div>
@@ -8543,6 +9080,8 @@ function App() {
                       </div>
                     ) : (
                       <div className="form">
+                        {renderValidationIssues('task', taskDraftIssues)}
+                        <div className="workflow-step-label">Titre</div>
                         <input
                           className="input"
                           placeholder="Nom du template tâche"
@@ -8590,8 +9129,9 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="workflow-step-label">Contenu</div>
                         <textarea
-                          className="textarea textarea--tall"
+                          className="textarea textarea--tall textarea--task-template"
                           placeholder="Contenu"
                           value={taskDraft.content}
                           ref={taskTemplateContentRef}
@@ -8637,6 +9177,17 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="task-template-preview-settings">
+                          <div className="task-template-preview-settings__title">Aperçu</div>
+                          <div
+                            className="task-template-preview-settings__content settings-token-preview"
+                            dangerouslySetInnerHTML={{
+                              __html: highlightText(
+                                taskDraft.content.trim() || 'Le contenu du template apparaîtra ici.',
+                              ),
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -8727,64 +9278,71 @@ function App() {
                         items={productsSorted}
                         getId={(item) => item.id}
                         onReorder={handleReorderProductCatalog}
-                        renderItem={(product, handleProps) => (
-                          <div
-                            key={product.id}
-                            className={`list-item list-item--compact${
-                              selectedProductCatalogId === product.id ? ' is-selected' : ''
-                            }`}
-                            onClick={() => {
-                              setProductDraft(getProductCatalogDraft(product))
-                              setProductTagsDraftText((product.tags ?? []).join(', '))
-                              setSelectedProductCatalogId(product.id)
-                            }}
-                          >
-                            <button
-                              className="drag-handle"
-                              type="button"
-                              {...handleProps.attributes}
-                              {...handleProps.listeners}
-                              onClick={(event) => event.stopPropagation()}
+                        renderItem={(product, handleProps) => {
+                          const issues = getProductCatalogItemIssues(product)
+                          return (
+                            <div
+                              key={product.id}
+                              className={`list-item list-item--compact${
+                                selectedProductCatalogId === product.id ? ' is-selected' : ''
+                              }${issues.length ? ' is-incomplete' : ''}`}
+                              onClick={() => {
+                                clearSettingsValidationTouched('product')
+                                setProductDraft(getProductCatalogDraft(product))
+                                setProductTagsDraftText((product.tags ?? []).join(', '))
+                                setSelectedProductCatalogId(product.id)
+                              }}
                             >
-                              ⇅
-                            </button>
-                            <div className="list-item__content">
-                              <div className="list-item__title">{product.name}</div>
-                              <div className="list-item__meta">
-                                {product.productType?.trim() || 'Type non renseigné'} •{' '}
-                                {(product.editions ?? []).length} édition
-                                {(product.editions ?? []).length > 1 ? 's' : ''} •{' '}
-                                {product.spareParts.length} spare part
-                                {product.spareParts.length > 1 ? 's' : ''}
+                              <button
+                                className="drag-handle"
+                                type="button"
+                                {...handleProps.attributes}
+                                {...handleProps.listeners}
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                ⇅
+                              </button>
+                              <div className="list-item__content">
+                                <div className="list-item__title">
+                                  {product.name || 'Produit sans nom'}
+                                </div>
+                                <div className="list-item__meta">
+                                  {product.productType?.trim() || 'Type non renseigné'} •{' '}
+                                  {(product.editions ?? []).length} édition
+                                  {(product.editions ?? []).length > 1 ? 's' : ''} •{' '}
+                                  {product.spareParts.length} spare part
+                                  {product.spareParts.length > 1 ? 's' : ''}
+                                </div>
+                                {renderIssueBadge(issues)}
+                              </div>
+                              <div className="list-item__actions">
+                                <button
+                                  className="icon-btn-sm danger"
+                                  type="button"
+                                  title="Supprimer"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleDeleteProductCatalogItem(product)
+                                  }}
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
-                            <div className="list-item__actions">
-                              <button
-                                className="icon-btn-sm danger"
-                                type="button"
-                                title="Supprimer"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  handleDeleteProductCatalogItem(product)
-                                }}
-                              >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                          )
+                        }}
                       />
                     ) : (
                       <div className="empty-state">Aucun produit configuré.</div>
@@ -8805,6 +9363,7 @@ function App() {
                         className="btn btn--ghost btn--small"
                         type="button"
                         onClick={() => {
+                          clearSettingsValidationTouched('product')
                           setProductDraft(getEmptyProductDraft())
                           setProductTagsDraftText('')
                           setSelectedProductCatalogId('new')
@@ -8828,6 +9387,7 @@ function App() {
                       </div>
                     ) : (
                       <div className="form product-catalog-form">
+                        {renderValidationIssues('product', productDraftIssues)}
                         <div className="form__row two">
                           <input
                             className="input"
@@ -9271,11 +9831,9 @@ function App() {
                           <div className="list-item__content">
                             <div className="list-item__title">{procedure.name}</div>
                             <div className="list-item__meta list-item__meta--brand">
-                              <img
-                                className="list-item__brand-icon"
-                                src={procedure.brand === 'hercules' ? herculesLogo : thrustmasterLogo}
-                                alt={procedure.brand === 'hercules' ? 'Hercules' : 'Thrustmaster'}
-                              />
+                              <span className="list-item__brand-icon" aria-hidden="true">
+                                {procedure.brand === 'hercules' ? 'H' : 'TM'}
+                              </span>
                               <span>
                                 {procedure.language.toUpperCase()} ·{' '}
                                 {procedure.brand === 'hercules' ? 'Hercules' : 'Thrustmaster'} ·{' '}
@@ -10586,16 +11144,25 @@ function App() {
                     <div className="list-card__title-group">
                       <div className="list-card__title">Procédures Portal</div>
                       <div className="list-card__subtitle">
-                        Une procédure peut contenir jusqu’à quatre étapes, avec un forward global.
+                        Liste à gauche, aperçu à droite, édition dans une fenêtre dédiée.
                       </div>
                     </div>
                     <div className="list-card__tools">
+                      {selectedPortalProcedureId ? (
+                        <button
+                          className="btn btn--ghost btn--small"
+                          type="button"
+                          onClick={() => setPortalProcedureEditorOpen(true)}
+                        >
+                          Modifier
+                        </button>
+                      ) : null}
                       <button
                         className="btn btn--ghost btn--small"
                         type="button"
                         onClick={handleAddPortalProcedure}
                       >
-                        Ajouter
+                        Nouveau
                       </button>
                     </div>
                   </div>
@@ -10963,59 +11530,64 @@ function App() {
                         items={dashboardNewsSorted}
                         getId={(item) => item.id}
                         onReorder={handleReorderDashboardNews}
-                        renderItem={(item, handleProps) => (
-                          <div
-                            key={item.id}
-                            className={`list-item list-item--compact${
-                              selectedDashboardNewsId === item.id ? ' is-selected' : ''
-                            }`}
-                            onClick={() => {
-                              setDashboardNewsDraft({ ...item })
-                              setSelectedDashboardNewsId(item.id)
-                            }}
-                          >
-                            <button
-                              className="drag-handle"
-                              type="button"
-                              {...handleProps.attributes}
-                              {...handleProps.listeners}
-                              onClick={(event) => event.stopPropagation()}
+                        renderItem={(item, handleProps) => {
+                          const issues = getDashboardNewsIssues(item)
+                          return (
+                            <div
+                              key={item.id}
+                              className={`list-item list-item--compact${
+                                selectedDashboardNewsId === item.id ? ' is-selected' : ''
+                              }${issues.length ? ' is-incomplete' : ''}`}
+                              onClick={() => {
+                                clearSettingsValidationTouched('dashboardNews')
+                                setDashboardNewsDraft({ ...item })
+                                setSelectedDashboardNewsId(item.id)
+                              }}
                             >
-                              ⇅
-                            </button>
-                            <div className="list-item__content">
-                              <div className="list-item__title">{item.title || 'Sans titre'}</div>
-                              <div className="list-item__meta">
-                                {formatDashboardNewsDate(item.date)}
+                              <button
+                                className="drag-handle"
+                                type="button"
+                                {...handleProps.attributes}
+                                {...handleProps.listeners}
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                ⇅
+                              </button>
+                              <div className="list-item__content">
+                                <div className="list-item__title">{item.title || 'Sans titre'}</div>
+                                <div className="list-item__meta">
+                                  {formatDashboardNewsDate(item.date)}
+                                </div>
+                                {renderIssueBadge(issues)}
+                              </div>
+                              <div className="list-item__actions">
+                                <button
+                                  className="icon-btn-sm danger"
+                                  type="button"
+                                  title="Supprimer"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleDeleteDashboardNews(item)
+                                  }}
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
-                            <div className="list-item__actions">
-                              <button
-                                className="icon-btn-sm danger"
-                                type="button"
-                                title="Supprimer"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  handleDeleteDashboardNews(item)
-                                }}
-                              >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                          )
+                        }}
                       />
                     ) : (
                       <div className="empty-state">Aucune news configurée.</div>
@@ -11036,6 +11608,7 @@ function App() {
                         className="btn btn--ghost btn--small"
                         type="button"
                         onClick={() => {
+                          clearSettingsValidationTouched('dashboardNews')
                           setDashboardNewsDraft(getEmptyDashboardNewsDraft())
                           setSelectedDashboardNewsId('new')
                         }}
@@ -11058,6 +11631,7 @@ function App() {
                       </div>
                     ) : (
                       <div className="form">
+                        {renderValidationIssues('dashboardNews', dashboardNewsDraftIssues)}
                         <input
                           className="input"
                           type="date"
@@ -11119,16 +11693,25 @@ function App() {
                     <div className="list-card__title-group">
                       <div className="list-card__title">Procédures Portal</div>
                       <div className="list-card__subtitle">
-                        Une procédure peut contenir un ou deux codes, chacun avec ses attributs.
+                        Liste à gauche, aperçu à droite, édition dans une fenêtre dédiée.
                       </div>
                     </div>
                     <div className="list-card__tools">
+                      {selectedPortalProcedureId ? (
+                        <button
+                          className="btn btn--ghost btn--small"
+                          type="button"
+                          onClick={() => setPortalProcedureEditorOpen(true)}
+                        >
+                          Modifier
+                        </button>
+                      ) : null}
                       <button
                         className="btn btn--ghost btn--small"
                         type="button"
                         onClick={handleAddPortalProcedure}
                       >
-                        Ajouter
+                        Nouveau
                       </button>
                     </div>
                   </div>
@@ -11593,6 +12176,7 @@ function App() {
                                   </svg>
                                 </button>
                               </div>
+                              <div className="workflow-step-label">Contenu mail</div>
                               <textarea
                                 className="textarea textarea--tall"
                                 placeholder="Contenu du template"
@@ -11603,6 +12187,80 @@ function App() {
                                   })
                                 }
                               />
+                              <div className="troubleshootgun-section-editor">
+                                <div className="troubleshootgun-section-editor__head">
+                                  <div>
+                                    <div className="settings-label">Textes optionnels</div>
+                                    <div className="list-item__meta">
+                                      Cochées par défaut dans l'aperçu, décochables avant import.
+                                    </div>
+                                  </div>
+                                  <button
+                                    className="btn btn--ghost btn--small"
+                                    type="button"
+                                    onClick={() =>
+                                      addProductDraftTroubleshootgunTemplateSection(template.id)
+                                    }
+                                  >
+                                    Ajouter section
+                                  </button>
+                                </div>
+                                {(template.sections ?? []).length ? (
+                                  <div className="troubleshootgun-section-editor__list">
+                                    {(template.sections ?? []).map((section, sectionIndex) => (
+                                      <div
+                                        className="troubleshootgun-section-editor__item"
+                                        key={section.id}
+                                      >
+                                        <div className="troubleshootgun-section-editor__row">
+                                          <input
+                                            className="input"
+                                            placeholder={`Titre section ${sectionIndex + 1}`}
+                                            value={section.title}
+                                            onChange={(event) =>
+                                              updateProductDraftTroubleshootgunTemplateSection(
+                                                template.id,
+                                                section.id,
+                                                { title: event.target.value },
+                                              )
+                                            }
+                                          />
+                                          <button
+                                            className="icon-btn-sm danger"
+                                            type="button"
+                                            title="Supprimer la section"
+                                            onClick={() =>
+                                              removeProductDraftTroubleshootgunTemplateSection(
+                                                template.id,
+                                                section.id,
+                                              )
+                                            }
+                                          >
+                                            <CloseIcon />
+                                          </button>
+                                        </div>
+                                        <textarea
+                                          className="textarea"
+                                          placeholder="Texte de section"
+                                          value={section.content}
+                                          onChange={(event) =>
+                                            updateProductDraftTroubleshootgunTemplateSection(
+                                              template.id,
+                                              section.id,
+                                              { content: event.target.value },
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="list-item__meta">
+                                    Aucune section optionnelle.
+                                  </div>
+                                )}
+                              </div>
+                              <div className="workflow-step-label">Task liée</div>
                               <textarea
                                 className="textarea textarea--tall"
                                 placeholder="Task liée (optionnelle)"
