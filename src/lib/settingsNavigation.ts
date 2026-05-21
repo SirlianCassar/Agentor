@@ -1,3 +1,5 @@
+import type { AppIconName } from './iconTypes'
+
 export type SettingsTab =
   | 'categories'
   | 'snippets'
@@ -10,13 +12,11 @@ export type SettingsTab =
   | 'callTemplate'
   | 'procedure'
   | 'dashboard'
-  | 'dashboardProcess'
   | 'dashboardPortal'
   | 'dashboardVersions'
   | 'dashboardSoftwares'
   | 'dashboardDriverPacks'
   | 'dashboardSpareParts'
-  | 'dashboardTroubleshootgun'
   | 'dashboardNews'
   | 'updates'
   | 'display'
@@ -28,30 +28,10 @@ export type SettingsTab =
   | 'procedureMailtos'
   | 'preferences'
 
-export type SettingsIconName =
-  | 'archive'
-  | 'box'
-  | 'call'
-  | 'channels'
-  | 'display'
-  | 'download'
-  | 'grid'
-  | 'history'
-  | 'list'
-  | 'mail'
-  | 'news'
-  | 'notes'
-  | 'phone'
-  | 'portal'
-  | 'preferences'
-  | 'settings'
-  | 'tag'
-  | 'template'
-  | 'tool'
-  | 'version'
+export type SettingsIconName = AppIconName
 
 export type SettingsNavSection = {
-  id: 'content' | 'procedures' | 'catalogs' | 'troubleshootgun' | 'support' | 'application'
+  id: 'content' | 'procedures' | 'catalogs' | 'support' | 'application'
   label: string
   icon: SettingsIconName
   items: Array<{
@@ -97,38 +77,32 @@ export const settingsNavigation: SettingsNavSection[] = [
   {
     id: 'procedures',
     label: 'Procédures',
-    icon: 'portal',
+    icon: 'list',
     items: [
       {
         id: 'dashboardPortal',
         label: 'Procédures',
         description: 'Étapes, variantes, forward, modules de copie et mailto.',
-        icon: 'notes',
+        icon: 'list',
       },
       {
         id: 'procedureMailtos',
-        label: 'Contacts mailto',
-        description: 'Contacts proposés lors de l’ajout d’un bouton mailto.',
+        label: 'Templates mailto',
+        description: 'Destinataires, titre et texte proposés pour les boutons mailto.',
         icon: 'mail',
-      },
-      {
-        id: 'dashboardProcess',
-        label: 'Process',
-        description: 'Association des procédures aux lignes du dashboard.',
-        icon: 'tool',
       },
     ],
   },
   {
     id: 'catalogs',
     label: 'Catalogues',
-    icon: 'box',
+    icon: 'book',
     items: [
       {
         id: 'products',
         label: 'Produits',
         description: 'Produits, éditions, compatibilités, tags et spare parts.',
-        icon: 'box',
+        icon: 'book',
       },
       {
         id: 'dashboardVersions',
@@ -153,19 +127,6 @@ export const settingsNavigation: SettingsNavSection[] = [
         label: 'Spare Parts',
         description: 'Pièces et SKU organisés par produit.',
         icon: 'archive',
-      },
-    ],
-  },
-  {
-    id: 'troubleshootgun',
-    label: 'Troubleshootgun',
-    icon: 'tool',
-    items: [
-      {
-        id: 'dashboardTroubleshootgun',
-        label: 'Templates',
-        description: 'Templates mail/task et textes optionnels à importer.',
-        icon: 'tool',
       },
       {
         id: 'dashboardNews',

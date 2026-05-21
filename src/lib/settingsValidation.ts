@@ -9,7 +9,6 @@ import type {
   ProcedureMailtoLink,
   Snippet,
   TaskTemplate,
-  TroubleshootgunTemplate,
 } from './types'
 
 export type SettingsValidationScope =
@@ -95,12 +94,17 @@ export function getPortalCodeLineIssues(line: CustomerPortalCodeLine) {
       line.code.trim() ||
       line.quickLinkUrl?.trim() ||
       line.quickCopyText?.trim() ||
+      line.quickMailtoTemplateId?.trim() ||
+      line.quickMailtoHref?.trim() ||
       line.infoNote?.trim() ||
       line.showDraft,
   )
   if (!hasAnyModule) issues.push('Etape vide.')
   if (line.quickLinkUrl?.trim() && !/^https?:\/\//i.test(line.quickLinkUrl.trim())) {
     issues.push('Lien rapide invalide.')
+  }
+  if (line.quickMailtoHref?.trim() && !/^mailto:/i.test(line.quickMailtoHref.trim())) {
+    issues.push('Mailto rapide invalide.')
   }
   return issues
 }
@@ -126,16 +130,24 @@ export function getProcedureMailtoIssues(link: ProcedureMailtoLink) {
   const issues: string[] = []
   if (isBlank(link.label)) issues.push('Libelle obligatoire.')
   if (isBlank(link.to)) issues.push('Email obligatoire.')
-  if (link.to?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(link.to.trim())) {
+  const recipients = link.to
+    ?.replace(/^mailto:/i, '')
+    .split(/[;,]/)
+    .map((recipient) => recipient.trim())
+    .filter(Boolean)
+  if (recipients?.length && recipients.some((recipient) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient))) {
     issues.push('Email invalide.')
   }
-  return issues
-}
-
-export function getTroubleshootgunTemplateIssues(template: TroubleshootgunTemplate) {
-  const issues: string[] = []
-  if (isBlank(template.name)) issues.push('Titre obligatoire.')
-  if (isBlank(template.content)) issues.push('Contenu mail obligatoire.')
+  const ccRecipients = link.cc
+    ?.split(/[;,]/)
+    .map((recipient) => recipient.trim())
+    .filter(Boolean)
+  if (
+    ccRecipients?.length &&
+    ccRecipients.some((recipient) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient))
+  ) {
+    issues.push('CC invalide.')
+  }
   return issues
 }
 

@@ -2,7 +2,6 @@ export type Language = 'fr' | 'en'
 export type InsertMode = 'line' | 'cursor'
 export type SnippetCategoryDisplay = 'buttons' | 'dropdown'
 export type PortalQuickLinkId = 'crm' | 'share' | 'global' | 'portal' | 'assist'
-export type ProcessMode = 'complete' | 'reduced'
 
 export type CategoryColor =
   | 'rouge'
@@ -79,13 +78,6 @@ export interface HistoryItem {
   createdAt: string
 }
 
-export interface DashboardProcessLine {
-  id: 'rma-14' | 'rma-30'
-  rush: boolean
-  completeProcedureId: string
-  reducedProcedureId: string
-}
-
 export interface CustomerPortalCode {
   id: string
   procedureName: string
@@ -105,6 +97,9 @@ export interface CustomerPortalCodeLine {
   showDraft?: boolean
   quickLinkUrl?: string
   quickCopyText?: string
+  quickMailtoTemplateId?: string
+  quickMailtoLabel?: string
+  quickMailtoHref?: string
   infoNote?: string
 }
 
@@ -112,6 +107,7 @@ export interface ProcedureMailtoLink {
   id: string
   label: string
   to: string
+  cc?: string
   subject?: string
   body?: string
 }
@@ -151,20 +147,6 @@ export interface ProductEdition {
   note?: string
 }
 
-export interface TroubleshootgunTemplateSection {
-  id: string
-  title: string
-  content: string
-}
-
-export interface TroubleshootgunTemplate {
-  id: string
-  name: string
-  content: string
-  taskText?: string
-  sections?: TroubleshootgunTemplateSection[]
-}
-
 export interface ProductCatalogItem {
   id: string
   name: string
@@ -178,7 +160,6 @@ export interface ProductCatalogItem {
   firmwareIds?: string[]
   editions?: ProductEdition[]
   spareParts: SparePart[]
-  troubleshootgunTemplates?: TroubleshootgunTemplate[]
 }
 
 export interface DashboardNewsItem {
@@ -205,7 +186,6 @@ export interface AppSettings {
   procedureMailtoLinks: ProcedureMailtoLink[]
   predefinedTags: string[]
   customerPortalCodes: CustomerPortalCode[]
-  dashboardProcessSettings: DashboardProcessLine[]
   dashboardProducts: DashboardProduct[]
   products: ProductCatalogItem[]
   dashboardNews: DashboardNewsItem[]
