@@ -6,6 +6,7 @@ export type SettingsTab =
   | 'templates'
   | 'tasks'
   | 'templateCategories'
+  | 'taskCategories'
   | 'tags'
   | 'products'
   | 'calls'
@@ -79,6 +80,12 @@ export const settingsNavigation: SettingsNavSection[] = [
         label: 'Tasks',
         description: 'Modèles de tâches réutilisés dans l’application.',
         icon: 'tool',
+      },
+      {
+        id: 'taskCategories',
+        label: 'Catégories task',
+        description: 'Catégories utilisées par la recherche de templates task.',
+        icon: 'channels',
       },
       {
         id: 'taskFormat',

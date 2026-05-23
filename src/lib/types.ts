@@ -59,6 +59,7 @@ export interface TaskTemplate {
   content: string
   taskSectionId?: TaskSectionId
   taskSections?: string[]
+  categoryId?: string
 }
 
 export type ProcedureBrand = 'hercules' | 'thrustmaster'
@@ -205,6 +206,7 @@ export interface AppSettings {
   dashboardReminders: string
   taskSectionNames: string[]
   mailTemplateCategories: MailTemplateCategory[]
+  taskTemplateCategories: MailTemplateCategory[]
 }
 
 export interface AppData {
