@@ -157,6 +157,7 @@ type DraftBoxSlot = {
   task: string
   taskSkeletonEnabled: boolean
   taskBoxes: TaskBoxSlot[]
+  activeTaskBoxIndex: number
   savedAt: string
 }
 
@@ -186,6 +187,7 @@ const createEmptyDraftBoxSlot = (): DraftBoxSlot => ({
   task: '',
   taskSkeletonEnabled: true,
   taskBoxes: Array.from({ length: 2 }, createEmptyTaskBoxSlot),
+  activeTaskBoxIndex: 0,
   savedAt: '',
 })
 
@@ -1543,6 +1545,7 @@ function App() {
   const [taskDraftBoxes, setTaskDraftBoxes] = useState<TaskBoxSlot[]>(() =>
     Array.from({ length: 2 }, createEmptyTaskBoxSlot),
   )
+  const [activeTaskBoxIndex, setActiveTaskBoxIndex] = useState(0)
   const [draftBoxTooltip, setDraftBoxTooltip] = useState<DraftBoxTooltipState | null>(null)
   const [callModalOpen, setCallModalOpen] = useState(false)
   const [callDraft, setCallDraft] = useState(PHONE_CALL_TEMPLATE)
@@ -3785,19 +3788,62 @@ function App() {
     setData((prev) => ({ ...prev, taskDraft: normalized }))
   }, [normalizeDraftWithCursor, taskDraftSkeletonEnabled, taskSectionNames])
 
+  const hasTaskBoxContent = useCallback(
+    (task: string, index: number) => {
+      const normalized = stripTokenSpacing(task)
+      return taskBoxUsesSkeleton(index)
+        ? hasMeaningfulTaskContent(normalized, taskSectionNames)
+        : Boolean(normalized.trim())
+    },
+    [taskSectionNames],
+  )
+
+  const getTaskBoxStorageValue = useCallback(
+    (value: string, index: number) => {
+      const normalized = stripTokenSpacing(value)
+      if (!hasTaskBoxContent(normalized, index)) return ''
+      if (taskBoxUsesSkeleton(index)) {
+        return ensureStructuredTaskDraft(normalized, taskSectionNames)
+      }
+      if (hasRecognizedTaskHeadings(normalized, taskSectionNames)) {
+        return buildTaskTemplateContent({
+          taskSections: parseStructuredTaskDraft(normalized, taskSectionNames),
+        })
+      }
+      return normalized.trim()
+    },
+    [hasTaskBoxContent, taskSectionNames],
+  )
+
+  const getTaskBoxesSnapshot = useCallback(
+    (currentTask: string = data.taskDraft) =>
+      Array.from({ length: 2 }, (_, index) => {
+        const source = index === activeTaskBoxIndex ? currentTask : taskDraftBoxes[index]?.task ?? ''
+        return {
+          task: getTaskBoxStorageValue(source, index),
+          savedAt: taskDraftBoxes[index]?.savedAt ?? '',
+        }
+      }),
+    [activeTaskBoxIndex, data.taskDraft, getTaskBoxStorageValue, taskDraftBoxes],
+  )
+
   const insertTaskText = useCallback(
     (text: string, sectionId?: TaskSectionId) => {
       if (!text.trim()) return
-      setTaskDraftSkeletonEnabled(true)
-      const next = insertTaskTextInSection(data.taskDraft, text, sectionId, taskSectionNames)
-      updateTaskDraft(next, next.length, true)
+      const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+      setTaskDraftSkeletonEnabled(useSkeleton)
+      const next = useSkeleton
+        ? insertTaskTextInSection(data.taskDraft, text, sectionId, taskSectionNames)
+        : [data.taskDraft.trimEnd(), padEmptySelectors(text.trimEnd())].filter(Boolean).join('\n')
+      updateTaskDraft(next, next.length, useSkeleton)
     },
-    [data.taskDraft, taskSectionNames, updateTaskDraft],
+    [activeTaskBoxIndex, data.taskDraft, taskSectionNames, updateTaskDraft],
   )
 
   const handleTaskPaste = useCallback(
     (event: ClipboardEvent<HTMLTextAreaElement>) => {
       const text = event.clipboardData.getData('text/plain')
+      if (!taskBoxUsesSkeleton(activeTaskBoxIndex)) return
       if (!text.trim() || !hasRecognizedTaskHeadings(text, taskSectionNames)) return
 
       event.preventDefault()
@@ -3805,17 +3851,17 @@ function App() {
       setTaskDraftSkeletonEnabled(true)
       updateTaskDraft(next, next.length, true)
     },
-    [taskSectionNames, updateTaskDraft],
+    [activeTaskBoxIndex, taskSectionNames, updateTaskDraft],
   )
 
   const buildDraftBoxPreviewHtml = useCallback((slot: DraftBoxSlot) => {
     const email = stripTokenSpacing(slot.email).trim()
     const task = stripTokenSpacing(slot.task).trim()
-    const hasTaskContent = hasMeaningfulTaskContent(task, taskSectionNames)
+    const hasTaskContent = hasTaskBoxContent(task, slot.activeTaskBoxIndex ?? 0)
     const savedTaskBoxes = (slot.taskBoxes ?? []).map((box) => stripTokenSpacing(box.task).trim())
     const filledTaskBoxes = savedTaskBoxes
       .map((boxTask, index) => ({ task: boxTask, index }))
-      .filter(({ task: boxTask }) => hasMeaningfulTaskContent(boxTask, taskSectionNames))
+      .filter(({ task: boxTask, index }) => hasTaskBoxContent(boxTask, index))
 
     if (!email && !hasTaskContent && !filledTaskBoxes.length) {
       return '<div class="draft-box-tooltip__empty">Aucun contenu sauvegardé.</div>'
@@ -3841,18 +3887,18 @@ function App() {
     filledTaskBoxes.forEach(({ task: boxTask, index }) => {
       sections.push(`
         <div class="draft-box-tooltip__section">
-          <div class="draft-box-tooltip__label">Task Box ${index + 1}</div>
+          <div class="draft-box-tooltip__label">Task ${index + 1}</div>
           <div class="draft-box-tooltip__content">${highlightTextPreview(boxTask)}</div>
         </div>
       `)
     })
     return sections.join('')
-  }, [taskSectionNames])
+  }, [hasTaskBoxContent])
 
   const buildTaskBoxPreviewHtml = useCallback(
     (slot: TaskBoxSlot, index: number) => {
       const task = stripTokenSpacing(slot.task).trim()
-      if (!hasMeaningfulTaskContent(task, taskSectionNames)) {
+      if (!hasTaskBoxContent(task, index)) {
         return '<div class="draft-box-tooltip__empty">Aucune task sauvegardée.</div>'
       }
       return `
@@ -3864,12 +3910,28 @@ function App() {
         </div>
       `
     },
-    [taskSectionNames],
+    [hasTaskBoxContent],
   )
 
   const closeDraftBoxTooltip = useCallback(() => {
     setDraftBoxTooltip(null)
   }, [])
+
+  const openTaskBox = useCallback(
+    (index: number) => {
+      if (index === activeTaskBoxIndex) return
+      const nextBoxes = getTaskBoxesSnapshot()
+      const useSkeleton = taskBoxUsesSkeleton(index)
+      const nextTask = nextBoxes[index]?.task ?? ''
+      setTaskDraftBoxes(nextBoxes)
+      setActiveTaskBoxIndex(index)
+      setTaskDraftSkeletonEnabled(useSkeleton)
+      updateTaskDraft(nextTask, nextTask.length, useSkeleton)
+      closeDraftBoxTooltip()
+      requestAnimationFrame(() => taskEditorRef.current?.focus())
+    },
+    [activeTaskBoxIndex, closeDraftBoxTooltip, getTaskBoxesSnapshot, updateTaskDraft],
+  )
 
   const handleDraftBoxHover = useCallback(
     (index: number, event: MouseEvent<HTMLButtonElement>) => {
@@ -3877,9 +3939,9 @@ function App() {
       if (
         !slot ||
         (!slot.email.trim() &&
-          !hasMeaningfulTaskContent(slot.task, taskSectionNames) &&
-          !(slot.taskBoxes ?? []).some((box) =>
-            hasMeaningfulTaskContent(box.task, taskSectionNames),
+          !hasTaskBoxContent(slot.task, slot.activeTaskBoxIndex ?? 0) &&
+          !(slot.taskBoxes ?? []).some((box, boxIndex) =>
+            hasTaskBoxContent(box.task, boxIndex),
           ))
       ) {
         setDraftBoxTooltip(null)
@@ -3900,7 +3962,8 @@ function App() {
   const handleTaskBoxHover = useCallback(
     (index: number, event: MouseEvent<HTMLButtonElement>) => {
       const slot = taskDraftBoxes[index]
-      if (!slot || !hasMeaningfulTaskContent(slot.task, taskSectionNames)) {
+      const task = index === activeTaskBoxIndex ? data.taskDraft : slot?.task ?? ''
+      if (!slot || !hasTaskBoxContent(task, index)) {
         setDraftBoxTooltip(null)
         return
       }
@@ -3910,26 +3973,10 @@ function App() {
         index,
         x: rect.left + rect.width / 2,
         y: rect.bottom + 10,
-        previewHtml: buildTaskBoxPreviewHtml(slot, index),
+        previewHtml: buildTaskBoxPreviewHtml({ ...slot, task }, index),
       })
     },
-    [buildTaskBoxPreviewHtml, taskDraftBoxes, taskSectionNames],
-  )
-
-  const getTaskForBoxStorage = useCallback(
-    (value: string, index: number) => {
-      const normalized = stripTokenSpacing(value)
-      if (taskBoxUsesSkeleton(index)) {
-        return ensureStructuredTaskDraft(normalized, taskSectionNames)
-      }
-      if (hasRecognizedTaskHeadings(normalized, taskSectionNames)) {
-        return buildTaskTemplateContent({
-          taskSections: parseStructuredTaskDraft(normalized, taskSectionNames),
-        })
-      }
-      return normalized.trim()
-    },
-    [taskSectionNames],
+    [activeTaskBoxIndex, buildTaskBoxPreviewHtml, data.taskDraft, hasTaskBoxContent, taskDraftBoxes],
   )
 
   const handleDraftBoxClick = useCallback(
@@ -3937,21 +3984,24 @@ function App() {
       const slot = draftBoxes[index]
       if (!slot) return
 
-      const hasSavedTask = hasMeaningfulTaskContent(slot.task, taskSectionNames)
-      const hasSavedTaskBoxes = (slot.taskBoxes ?? []).some((box) =>
-        hasMeaningfulTaskContent(box.task, taskSectionNames),
+      const savedActiveTaskIndex = Math.max(0, Math.min(1, slot.activeTaskBoxIndex ?? 0))
+      const hasSavedTask = hasTaskBoxContent(slot.task, savedActiveTaskIndex)
+      const hasSavedTaskBoxes = (slot.taskBoxes ?? []).some((box, boxIndex) =>
+        hasTaskBoxContent(box.task, boxIndex),
       )
       const hasSavedContent = Boolean(slot.email.trim() || hasSavedTask || hasSavedTaskBoxes)
       if (hasSavedContent) {
+        const restoredTaskBoxes = Array.from({ length: 2 }, (_, taskBoxIndex) => ({
+          ...createEmptyTaskBoxSlot(),
+          ...(slot.taskBoxes?.[taskBoxIndex] ?? {}),
+        }))
+        const activeTask = restoredTaskBoxes[savedActiveTaskIndex]?.task || slot.task || ''
+        const useSkeleton = taskBoxUsesSkeleton(savedActiveTaskIndex)
         updateEmailDraft(slot.email, slot.email.length)
-        setTaskDraftSkeletonEnabled(slot.taskSkeletonEnabled ?? true)
-        updateTaskDraft(slot.task, slot.task.length, slot.taskSkeletonEnabled ?? true)
-        setTaskDraftBoxes(
-          Array.from({ length: 2 }, (_, taskBoxIndex) => ({
-            ...createEmptyTaskBoxSlot(),
-            ...(slot.taskBoxes?.[taskBoxIndex] ?? {}),
-          })),
-        )
+        setTaskDraftBoxes(restoredTaskBoxes)
+        setActiveTaskBoxIndex(savedActiveTaskIndex)
+        setTaskDraftSkeletonEnabled(useSkeleton)
+        updateTaskDraft(activeTask, activeTask.length, useSkeleton)
         requestAnimationFrame(() => {
           setDraftBoxes((prev) =>
             prev.map((item, slotIndex) =>
@@ -3964,11 +4014,11 @@ function App() {
       }
 
       const nextEmail = data.emailDraft
-      const nextTask = data.taskDraft
-      const hasNextTaskContent = hasMeaningfulTaskContent(nextTask, taskSectionNames)
-      const nextTaskBoxes = taskDraftBoxes.map((slot) => ({ ...slot }))
-      const hasNextTaskBoxContent = nextTaskBoxes.some((slot) =>
-        hasMeaningfulTaskContent(slot.task, taskSectionNames),
+      const nextTaskBoxes = getTaskBoxesSnapshot()
+      const activeTask = nextTaskBoxes[activeTaskBoxIndex]?.task ?? ''
+      const hasNextTaskContent = hasTaskBoxContent(activeTask, activeTaskBoxIndex)
+      const hasNextTaskBoxContent = nextTaskBoxes.some((slot, boxIndex) =>
+        hasTaskBoxContent(slot.task, boxIndex),
       )
       if (!nextEmail.trim() && !hasNextTaskContent && !hasNextTaskBoxContent) {
         setToast('Ajoutez du texte avant de le stocker.')
@@ -3981,15 +4031,17 @@ function App() {
           slotIndex === index
             ? {
                 email: nextEmail,
-                task: hasNextTaskContent ? nextTask : '',
-                taskSkeletonEnabled: taskDraftSkeletonEnabled,
+                task: hasNextTaskContent ? activeTask : '',
+                taskSkeletonEnabled: taskBoxUsesSkeleton(activeTaskBoxIndex),
                 taskBoxes: nextTaskBoxes,
+                activeTaskBoxIndex,
                 savedAt,
               }
             : item,
         ),
       )
       updateEmailDraft('')
+      setActiveTaskBoxIndex(0)
       setTaskDraftSkeletonEnabled(true)
       updateTaskDraft('', undefined, true)
       setTaskDraftBoxes(Array.from({ length: 2 }, createEmptyTaskBoxSlot))
@@ -3997,62 +4049,12 @@ function App() {
     },
     [
       closeDraftBoxTooltip,
+      activeTaskBoxIndex,
       data.emailDraft,
-      data.taskDraft,
       draftBoxes,
-      taskDraftBoxes,
-      taskDraftSkeletonEnabled,
-      taskSectionNames,
+      getTaskBoxesSnapshot,
+      hasTaskBoxContent,
       updateEmailDraft,
-      updateTaskDraft,
-    ],
-  )
-
-  const handleTaskBoxClick = useCallback(
-    (index: number) => {
-      const slot = taskDraftBoxes[index]
-      if (!slot) return
-
-      const hasSavedTask = hasMeaningfulTaskContent(slot.task, taskSectionNames)
-      if (hasSavedTask) {
-        const useSkeleton = taskBoxUsesSkeleton(index)
-        setTaskDraftSkeletonEnabled(useSkeleton)
-        updateTaskDraft(slot.task, slot.task.length, useSkeleton)
-        setTaskDraftBoxes((prev) =>
-          prev.map((item, slotIndex) => (slotIndex === index ? createEmptyTaskBoxSlot() : item)),
-        )
-        closeDraftBoxTooltip()
-        requestAnimationFrame(() => taskEditorRef.current?.focus())
-        return
-      }
-
-      const nextTask = data.taskDraft
-      const storedTask = getTaskForBoxStorage(nextTask, index)
-      if (!hasMeaningfulTaskContent(storedTask, taskSectionNames)) {
-        setToast('Ajoutez une task avant de la stocker.')
-        return
-      }
-
-      setTaskDraftBoxes((prev) =>
-        prev.map((item, slotIndex) =>
-          slotIndex === index
-            ? {
-                task: storedTask,
-                savedAt: new Date().toISOString(),
-              }
-            : item,
-        ),
-      )
-      setTaskDraftSkeletonEnabled(true)
-      updateTaskDraft('', undefined, true)
-      closeDraftBoxTooltip()
-    },
-    [
-      closeDraftBoxTooltip,
-      data.taskDraft,
-      getTaskForBoxStorage,
-      taskDraftBoxes,
-      taskSectionNames,
       updateTaskDraft,
     ],
   )
@@ -4225,9 +4227,12 @@ function App() {
   }
 
   const applyTaskTemplate = (template: TaskTemplate) => {
-    const nextTaskDraft = buildTaskDraftFromTemplate(template, taskSectionNames)
-    setTaskDraftSkeletonEnabled(true)
-    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, true)
+    const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+    const nextTaskDraft = useSkeleton
+      ? buildTaskDraftFromTemplate(template, taskSectionNames)
+      : buildTaskTemplateContent(template)
+    setTaskDraftSkeletonEnabled(useSkeleton)
+    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
     requestAnimationFrame(() => taskEditorRef.current?.focus())
   }
 
@@ -4264,9 +4269,12 @@ function App() {
     )
 
     if (emailLines) updateEmailDraft(padEmptySelectors(emailLines), emailLines.length)
-    const nextTaskDraft = buildStructuredTaskDraft(taskSections, taskSectionNames)
-    setTaskDraftSkeletonEnabled(true)
-    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, true)
+    const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+    const nextTaskDraft = useSkeleton
+      ? buildStructuredTaskDraft(taskSections, taskSectionNames)
+      : buildTaskTemplateContent({ taskSections })
+    setTaskDraftSkeletonEnabled(useSkeleton)
+    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
     setTemplatePreview(null)
     closeTemplateSearch()
     requestAnimationFrame(() => emailEditorRef.current?.focus())
@@ -5814,8 +5822,12 @@ function App() {
       window.setTimeout(() => setTaskClearArmed(false), 2000)
       return
     }
-    setTaskDraftSkeletonEnabled(true)
-    updateTaskDraft('', undefined, true)
+    const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+    setTaskDraftSkeletonEnabled(useSkeleton)
+    updateTaskDraft('', undefined, useSkeleton)
+    setTaskDraftBoxes((prev) =>
+      prev.map((slot, index) => (index === activeTaskBoxIndex ? createEmptyTaskBoxSlot() : slot)),
+    )
     setTaskClearArmed(false)
   }
 
@@ -5886,6 +5898,7 @@ function App() {
     setProcedureInfoDraft('')
     setDraftBoxes(Array.from({ length: 3 }, createEmptyDraftBoxSlot))
     setTaskDraftBoxes(Array.from({ length: 2 }, createEmptyTaskBoxSlot))
+    setActiveTaskBoxIndex(0)
     setTaskDraftSkeletonEnabled(true)
     closeDraftBoxTooltip()
     setDashboardProductDraft(getEmptyDashboardProductDraft())
@@ -7685,9 +7698,9 @@ function App() {
                             className="search-result-item search-result-item--back"
                             type="button"
                             onClick={() => setTemplateBrowserView('categories')}
+                            title="Retour aux catégories"
                           >
-                            <div className="result-name">Categories</div>
-                            <div className="result-preview">{selectedTemplateBrowserCategory.name}</div>
+                            ←
                           </button>
                         ) : null}
                         {templateBrowserTemplates.length ? (
@@ -7743,10 +7756,11 @@ function App() {
                           }}
                         >
                           <div className="result-name">
+                            {category.id === 'favorites' && <span className="category-star">★</span>}
                             <span className="result-name__text">{category.name}</span>
-                            <span className="result-count">{category.count}</span>
+                            <span className="category-count">({category.count})</span>
+                            <span className="category-arrow">›</span>
                           </div>
-                          <div className="result-preview">Ouvrir les templates</div>
                         </button>
                       ))
                     )}
@@ -7768,17 +7782,17 @@ function App() {
                 {draftBoxes.map((slot, index) => {
                   const hasContent = Boolean(
                     slot.email.trim() ||
-                      hasMeaningfulTaskContent(slot.task, taskSectionNames) ||
-                      (slot.taskBoxes ?? []).some((box) =>
-                        hasMeaningfulTaskContent(box.task, taskSectionNames),
+                      hasTaskBoxContent(slot.task, slot.activeTaskBoxIndex ?? 0) ||
+                      (slot.taskBoxes ?? []).some((box, boxIndex) =>
+                        hasTaskBoxContent(box.task, boxIndex),
                       ),
                   )
+                  const currentTaskBoxes = getTaskBoxesSnapshot()
                   const isDisabled =
                     !hasContent &&
                     !data.emailDraft.trim() &&
-                    !hasMeaningfulTaskContent(data.taskDraft, taskSectionNames) &&
-                    !taskDraftBoxes.some((box) =>
-                      hasMeaningfulTaskContent(box.task, taskSectionNames),
+                    !currentTaskBoxes.some((box, boxIndex) =>
+                      hasTaskBoxContent(box.task, boxIndex),
                     )
                   return (
                     <button
@@ -7788,12 +7802,12 @@ function App() {
                       title={
                         hasContent
                           ? `Vider la boîte ${index + 1}`
-                          : `Sauvegarder le mail, la task et les BOX task dans la boîte ${index + 1}`
+                          : `Sauvegarder le mail et les deux tasks dans la boîte ${index + 1}`
                       }
                       aria-label={
                         hasContent
                           ? `Vider la boîte ${index + 1}`
-                          : `Sauvegarder le mail, la task et les BOX task dans la boîte ${index + 1}`
+                          : `Sauvegarder le mail et les deux tasks dans la boîte ${index + 1}`
                       }
                       aria-pressed={hasContent}
                       disabled={isDisabled}
@@ -7988,11 +8002,9 @@ function App() {
                           className="search-result-item search-result-item--back"
                           type="button"
                           onClick={() => setTaskBrowserView('categories')}
+                          title="Retour aux catégories"
                         >
-                          <div className="result-name">Categories</div>
-                          <div className="result-preview">
-                            {selectedTaskBrowserCategory?.name ?? 'Tasks'}
-                          </div>
+                          ←
                         </button>
                       ) : null}
                       {taskTemplateResults.length ? (
@@ -8031,9 +8043,9 @@ function App() {
                       >
                         <div className="result-name">
                           <span className="result-name__text">{category.name}</span>
-                          <span className="result-count">{category.count}</span>
+                          <span className="category-count">({category.count})</span>
+                          <span className="category-arrow">›</span>
                         </div>
-                        <div className="result-preview">Ouvrir les templates</div>
                       </button>
                     ))
                   )}
@@ -8053,29 +8065,30 @@ function App() {
           </div>
           <div className="task-actions">
             <div className="task-actions-buttons">
-              <div className="draft-boxes-inline task-draft-boxes-inline" aria-label="Boîtes task">
+              <div className="draft-boxes-inline task-draft-boxes-inline" aria-label="Tasks">
                 {taskDraftBoxes.map((slot, index) => {
-                  const hasContent = hasMeaningfulTaskContent(slot.task, taskSectionNames)
-                  const isDisabled =
-                    !hasContent && !hasMeaningfulTaskContent(data.taskDraft, taskSectionNames)
+                  const taskValue = index === activeTaskBoxIndex ? data.taskDraft : slot.task
+                  const hasContent = hasTaskBoxContent(taskValue, index)
+                  const isActive = index === activeTaskBoxIndex
                   return (
                     <button
                       key={`task-draft-box-${index + 1}`}
                       type="button"
-                      className={`draft-box-btn task-draft-box-btn${hasContent ? ' is-filled' : ''}`}
+                      className={`draft-box-btn task-draft-box-btn${hasContent ? ' is-filled' : ''}${
+                        isActive ? ' is-active' : ''
+                      }`}
                       title={
-                        hasContent
-                          ? `Charger la task de la BOX ${index + 1}`
-                          : `Sauvegarder la task dans la BOX ${index + 1}`
+                        index === 0
+                          ? 'Task 1 avec squelette'
+                          : 'Task 2 libre sans squelette'
                       }
                       aria-label={
-                        hasContent
-                          ? `Charger la task de la BOX ${index + 1}`
-                          : `Sauvegarder la task dans la BOX ${index + 1}`
+                        index === 0
+                          ? 'Afficher la task 1 avec squelette'
+                          : 'Afficher la task 2 libre sans squelette'
                       }
-                      aria-pressed={hasContent}
-                      disabled={isDisabled}
-                      onClick={() => handleTaskBoxClick(index)}
+                      aria-pressed={isActive}
+                      onClick={() => openTaskBox(index)}
                       onMouseEnter={(event) => handleTaskBoxHover(index, event)}
                       onMouseLeave={closeDraftBoxTooltip}
                     >
