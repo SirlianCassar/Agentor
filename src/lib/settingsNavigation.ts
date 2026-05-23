@@ -5,6 +5,7 @@ export type SettingsTab =
   | 'snippets'
   | 'templates'
   | 'tasks'
+  | 'templateCategories'
   | 'tags'
   | 'products'
   | 'calls'
@@ -26,6 +27,7 @@ export type SettingsTab =
   | 'history'
   | 'quickLinks'
   | 'procedureMailtos'
+  | 'taskFormat'
   | 'preferences'
 
 export type SettingsIconName = AppIconName
@@ -67,10 +69,22 @@ export const settingsNavigation: SettingsNavSection[] = [
         icon: 'template',
       },
       {
+        id: 'templateCategories',
+        label: 'Catégories mail',
+        description: 'Catégories utilisées par la recherche et le Troubleshootgun.',
+        icon: 'channels',
+      },
+      {
         id: 'tasks',
         label: 'Tasks',
         description: 'Modèles de tâches réutilisés dans l’application.',
         icon: 'tool',
+      },
+      {
+        id: 'taskFormat',
+        label: 'Task Format',
+        description: 'Noms des 4 sections utilisées dans chaque task.',
+        icon: 'template',
       },
     ],
   },

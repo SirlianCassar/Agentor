@@ -2,6 +2,7 @@ export type Language = 'fr' | 'en'
 export type InsertMode = 'line' | 'cursor'
 export type SnippetCategoryDisplay = 'buttons' | 'dropdown'
 export type PortalQuickLinkId = 'crm' | 'share' | 'global' | 'portal' | 'assist'
+export type TaskSectionId = 'section-1' | 'section-2' | 'section-3' | 'section-4'
 
 export type CategoryColor =
   | 'rouge'
@@ -33,6 +34,7 @@ export interface Snippet {
   content: string
   insertMode: InsertMode
   taskText?: string
+  taskSectionId?: TaskSectionId
   taskOptional?: boolean
   categoryId: string
 }
@@ -42,7 +44,10 @@ export interface MailTemplate {
   name: string
   content: string
   language: Language
+  categoryId?: string
+  favorite?: boolean
   taskText?: string
+  taskSectionId?: TaskSectionId
   taskOptional?: boolean
   taskTemplateId?: string
   taskCustom?: boolean
@@ -52,6 +57,8 @@ export interface TaskTemplate {
   id: string
   name: string
   content: string
+  taskSectionId?: TaskSectionId
+  taskSections?: string[]
 }
 
 export type ProcedureBrand = 'hercules' | 'thrustmaster'
@@ -70,6 +77,7 @@ export interface Procedure {
   taskTemplateId?: string
   taskCustom?: boolean
   taskText?: string
+  taskSectionId?: TaskSectionId
 }
 
 export interface HistoryItem {
@@ -169,6 +177,11 @@ export interface DashboardNewsItem {
   content: string
 }
 
+export interface MailTemplateCategory {
+  id: string
+  name: string
+}
+
 export interface AppSettings {
   language: Language
   zoom: number
@@ -190,6 +203,8 @@ export interface AppSettings {
   products: ProductCatalogItem[]
   dashboardNews: DashboardNewsItem[]
   dashboardReminders: string
+  taskSectionNames: string[]
+  mailTemplateCategories: MailTemplateCategory[]
 }
 
 export interface AppData {

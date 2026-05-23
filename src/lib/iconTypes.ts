@@ -22,6 +22,7 @@ export type AppIconName =
   | 'link'
   | 'list'
   | 'mail'
+  | 'maintenance'
   | 'money'
   | 'news'
   | 'notes'
