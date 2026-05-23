@@ -15,7 +15,7 @@ export const defaultData: AppData = {
   procedures: [],
   notes: '',
   emailDraft: '',
-  taskDraft: '► Current Contact\n\n► Previous Actions / History\n\n► Next Steps\n\n► Internal Notes',
+  taskDraft: '\n\n► Current Contact\n\n► Previous Actions / History\n\n► Next Steps\n\n► Internal Notes',
   history: [],
   callHistory: [],
   settings: {
@@ -48,5 +48,6 @@ export const defaultData: AppData = {
     dashboardReminders: '',
     taskSectionNames: ['Current Contact', 'Previous Actions / History', 'Next Steps', 'Internal Notes'],
     mailTemplateCategories: [{ id: 'template-cat-general', name: 'General' }],
+    taskTemplateCategories: [{ id: 'task-template-cat-general', name: 'General' }],
   },
 }

@@ -476,6 +476,9 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
       mailTemplateCategories: Array.isArray(raw.settings?.mailTemplateCategories)
         ? raw.settings.mailTemplateCategories
         : fallback.settings.mailTemplateCategories,
+      taskTemplateCategories: Array.isArray(raw.settings?.taskTemplateCategories)
+        ? raw.settings.taskTemplateCategories
+        : fallback.settings.taskTemplateCategories,
     },
   }
 }
@@ -520,6 +523,9 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
       mailTemplateCategories: Array.isArray(normalized.settings.mailTemplateCategories)
         ? normalized.settings.mailTemplateCategories
         : fallback.settings.mailTemplateCategories,
+      taskTemplateCategories: Array.isArray(normalized.settings.taskTemplateCategories)
+        ? normalized.settings.taskTemplateCategories
+        : fallback.settings.taskTemplateCategories,
     },
   }
 }
