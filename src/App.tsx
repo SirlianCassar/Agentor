@@ -3181,9 +3181,6 @@ function App() {
     ],
     [data.templates, mailTemplateCategories],
   )
-  const selectedTemplateBrowserCategory =
-    templateBrowserCategories.find((category) => category.id === activeTemplateCategoryId) ??
-    templateBrowserCategories[0]
   const templateBrowserTemplates = useMemo(() => {
     const query = templateQuery.trim().toLowerCase()
     const base =
@@ -3734,9 +3731,6 @@ function App() {
       })),
     [data.taskTemplates, taskTemplateCategories],
   )
-  const selectedTaskBrowserCategory =
-    taskBrowserCategories.find((category) => category.id === activeTaskCategoryId) ??
-    taskBrowserCategories[0]
   const taskTemplateResults = useMemo(() => {
     const query = taskQuery.trim().toLowerCase()
     if (!taskFocused && !query) return []
