@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ClipboardEvent,
   type MouseEvent,
   type RefObject,
   type TransitionEvent,
@@ -58,6 +59,7 @@ import type {
   InsertMode,
   Language,
   MailTemplate,
+  MailTemplateCategory,
   ProductEdition,
   ProductEditionPlatform,
   ProductCatalogItem,
@@ -68,6 +70,7 @@ import type {
   PortalQuickLinkId,
   SparePart,
   Snippet,
+  TaskSectionId,
   TaskTemplate,
 } from './lib/types'
 import {
@@ -94,6 +97,8 @@ const SELECTOR_TOKEN = '[Option1/Option2]'
 const ADDITION_TOKEN = '§texte§'
 const PROCEDURE_CHECK_MARKER = '[ ]'
 const PROCEDURE_CHANNEL = 'agentor-procedure'
+const TASK_SECTION_IDS: TaskSectionId[] = ['section-1', 'section-2', 'section-3', 'section-4']
+const LEGACY_TASK_SECTION_NAMES = ['Diagnostic', 'SAV', 'Infos client', 'Suivi']
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
 const APP_VERSION_LABEL = APP_VERSION.replace(/\.0$/, '')
@@ -128,10 +133,12 @@ const productEditionPlatformLabels: Record<ProductEditionPlatform, string> = {
 }
 type DashboardCalculatorItem = {
   id: string
+  quantity: number
   productPrice: string
   shippingPrice: string
   importFee: string
 }
+type DashboardCalculatorPriceField = keyof Omit<DashboardCalculatorItem, 'id' | 'quantity'>
 type DashboardCalculatorCopyKey =
   | 'productsTtc'
   | 'productsHt'
@@ -153,12 +160,244 @@ type DraftBoxTooltipState = {
   previewHtml: string
 }
 
+type TemplateBrowserView = 'categories' | 'templates'
+
+type TemplatePreviewState = {
+  templateId: string
+  selectedEmailLines: boolean[]
+  selectedTaskSections: boolean[]
+}
+
+const normalizeTaskSectionNames = (names: string[] | undefined) =>
+  TASK_SECTION_IDS.map((_, index) => {
+    const fallback = defaultData.settings.taskSectionNames[index] ?? `Section ${index + 1}`
+    const value = names?.[index]
+    return typeof value === 'string' && value.trim() ? value.trim() : fallback
+  })
+
+const normalizeStoredTaskSectionNames = (names: string[] | undefined) => {
+  const normalized = normalizeTaskSectionNames(names)
+  const isLegacyDefault = LEGACY_TASK_SECTION_NAMES.every((name, index) => normalized[index] === name)
+  return isLegacyDefault ? normalizeTaskSectionNames(defaultData.settings.taskSectionNames) : normalized
+}
+
+const getTaskSectionIndex = (sectionId: TaskSectionId | undefined) => {
+  const index = sectionId ? TASK_SECTION_IDS.indexOf(sectionId) : -1
+  return index === -1 ? 0 : index
+}
+
+const normalizeTaskSectionId = (sectionId: unknown): TaskSectionId =>
+  TASK_SECTION_IDS.includes(sectionId as TaskSectionId) ? (sectionId as TaskSectionId) : 'section-3'
+
+const getTaskSectionLabel = (sectionId: TaskSectionId | undefined, sectionNames: string[]) =>
+  sectionNames[getTaskSectionIndex(sectionId)] ?? sectionNames[0] ?? 'Section 1'
+
+const trimBlankLines = (lines: string[]) => {
+  const next = [...lines]
+  while (next.length && !next[0].trim()) next.shift()
+  while (next.length && !next[next.length - 1].trim()) next.pop()
+  return next.join('\n')
+}
+
+const getTaskSectionHeading = (index: number, sectionNames: string[]) =>
+  `► ${sectionNames[index]}`
+
+const simplifyTaskHeading = (value: string) =>
+  value
+    .replace(/^#+\s*/, '')
+    .replace(/^\d+[\).:\-]?\s*/, '')
+    .replace(/[:\-]\s*$/, '')
+    .trim()
+    .toLowerCase()
+
+const hasMeaningfulTaskContent = (taskContent: string, sectionNames: string[]) =>
+  parseStructuredTaskDraft(stripTokenSpacing(taskContent), sectionNames).some((section) =>
+    stripTokenSpacing(section).trim(),
+  )
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const findTaskSectionHeadingIndex = (line: string, sectionNames: string[]) => {
+  const trimmed = line.trim()
+  const arrowMatch = trimmed.match(/^►\s*(.*)$/)
+  if (arrowMatch) {
+    const text = arrowMatch[1]
+    const index = sectionNames.findIndex((name) => simplifyTaskHeading(name) === simplifyTaskHeading(text))
+    if (index !== -1) return index
+  }
+  const numberedMatch = trimmed.match(/^#+\s*(\d+)[\).:\-]?\s*(.*)$/)
+  if (numberedMatch) {
+    const index = Number(numberedMatch[1]) - 1
+    if (index >= 0 && index < TASK_SECTION_IDS.length) return index
+  }
+
+  const simplified = simplifyTaskHeading(trimmed)
+  if (!simplified) return -1
+  const candidates = [sectionNames, defaultData.settings.taskSectionNames, LEGACY_TASK_SECTION_NAMES]
+  for (const names of candidates) {
+    const index = names.findIndex((name) => simplifyTaskHeading(name) === simplified)
+    if (index !== -1) return index
+  }
+  return -1
+}
+
+const findInlineTaskSectionHeading = (line: string, sectionNames: string[]) => {
+  const trimmed = line.trim()
+  const candidates = [sectionNames, defaultData.settings.taskSectionNames, LEGACY_TASK_SECTION_NAMES]
+  for (const names of candidates) {
+    for (const [index, name] of names.entries()) {
+      const arrowPattern = new RegExp(`^►\\s*${escapeRegExp(name)}\\s*[:\\-]\\s*(.*)$`, 'i')
+      const arrowMatch = trimmed.match(arrowPattern)
+      if (arrowMatch) return { index, content: arrowMatch[1] ?? '' }
+      const pattern = new RegExp(`^#{0,6}\\s*(?:${index + 1}[\\).:\\-]?\\s*)?${escapeRegExp(name)}\\s*[:\\-]\\s*(.*)$`, 'i')
+      const match = trimmed.match(pattern)
+      if (match) return { index, content: match[1] ?? '' }
+    }
+  }
+  return null
+}
+
+const buildStructuredTaskDraft = (contents: string[], sectionNames: string[]) =>
+  TASK_SECTION_IDS.map((_, index) => {
+    const content = (contents[index] ?? '').trimEnd()
+    const heading = getTaskSectionHeading(index, sectionNames)
+    return content ? `${heading}\n${content}` : heading
+  }).join('\n\n')
+
+const parseStructuredTaskDraft = (value: string, sectionNames: string[]) => {
+  const contents = TASK_SECTION_IDS.map(() => '')
+  const contentLines = TASK_SECTION_IDS.map(() => [] as string[])
+  const leadingLines: string[] = []
+  let currentIndex = -1
+
+  value.replace(/\r\n/g, '\n').split('\n').forEach((line) => {
+    const inlineHeading = findInlineTaskSectionHeading(line, sectionNames)
+    if (inlineHeading) {
+      currentIndex = inlineHeading.index
+      if (inlineHeading.content.trim()) {
+        contentLines[currentIndex].push(inlineHeading.content)
+      }
+      return
+    }
+
+    const headingIndex = findTaskSectionHeadingIndex(line, sectionNames)
+    if (headingIndex !== -1) {
+      currentIndex = headingIndex
+      return
+    }
+    if (currentIndex === -1) {
+      leadingLines.push(line)
+      return
+    }
+    contentLines[currentIndex].push(line)
+  })
+
+  contentLines.forEach((lines, index) => {
+    contents[index] = trimBlankLines(lines)
+  })
+
+  const leadingContent = trimBlankLines(leadingLines)
+  if (leadingContent) {
+    contents[0] = [leadingContent, contents[0]].filter(Boolean).join('\n')
+  }
+
+  return contents
+}
+
+const hasCompleteTaskStructure = (value: string, sectionNames: string[]) =>
+  sectionNames.every((_, index) =>
+    value.replace(/\r\n/g, '\n').split('\n').some(
+      (line) => line.trim() === getTaskSectionHeading(index, sectionNames),
+    ),
+  )
+
+const hasRecognizedTaskHeadings = (value: string, sectionNames: string[]) =>
+  value
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .some(
+      (line) =>
+        findTaskSectionHeadingIndex(line, sectionNames) !== -1 ||
+        Boolean(findInlineTaskSectionHeading(line, sectionNames)),
+    )
+
+const ensureStructuredTaskDraft = (value: string, sectionNames: string[]) => {
+  if (hasCompleteTaskStructure(value, sectionNames)) return value
+  return buildStructuredTaskDraft(parseStructuredTaskDraft(value, sectionNames), sectionNames)
+}
+
+const insertTaskTextInSection = (
+  value: string,
+  text: string,
+  sectionId: TaskSectionId | undefined,
+  sectionNames: string[],
+) => {
+  const contents = parseStructuredTaskDraft(value, sectionNames)
+  const index = getTaskSectionIndex(sectionId)
+  const insert = padEmptySelectors(text.trimEnd())
+  contents[index] = [contents[index].trimEnd(), insert].filter(Boolean).join('\n')
+  return buildStructuredTaskDraft(contents, sectionNames)
+}
+
+const normalizeTaskTemplateSections = (task: Partial<TaskTemplate>) => {
+  const sections = TASK_SECTION_IDS.map((_, index) =>
+    typeof task.taskSections?.[index] === 'string' ? task.taskSections[index] : '',
+  )
+  const hasSections = sections.some((section) => section.trim())
+  if (hasSections) return sections
+
+  const legacyContent = typeof task.content === 'string' ? task.content : ''
+  if (!legacyContent.trim()) return sections
+  const index = getTaskSectionIndex(normalizeTaskSectionId(task.taskSectionId))
+  return sections.map((section, sectionIndex) => (sectionIndex === index ? legacyContent : section))
+}
+
+const buildTaskTemplateContent = (task: Partial<TaskTemplate>) =>
+  normalizeTaskTemplateSections(task).filter((section) => section.trim()).join('\n\n')
+
+const buildTaskDraftFromTemplate = (task: TaskTemplate, sectionNames: string[]) =>
+  buildStructuredTaskDraft(normalizeTaskTemplateSections(task), sectionNames)
+
+const normalizeMailTemplateCategories = (categories: MailTemplateCategory[] | undefined) => {
+  const source = Array.isArray(categories) ? categories : defaultData.settings.mailTemplateCategories
+  const normalized = source
+    .map((category, index) => ({
+      id: category.id?.trim() || `template-cat-${index + 1}`,
+      name: category.name?.trim() || `Category ${index + 1}`,
+    }))
+    .filter((category) => category.name.trim())
+  return normalized.length ? normalized : defaultData.settings.mailTemplateCategories
+}
+
+const getTemplateTaskSections = (
+  template: MailTemplate,
+  taskTemplates: TaskTemplate[],
+): string[] => {
+  const usesCustom = template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
+  if (usesCustom) {
+    const sections = TASK_SECTION_IDS.map(() => '')
+    sections[getTaskSectionIndex(normalizeTaskSectionId(template.taskSectionId))] =
+      template.taskText ?? ''
+    return sections
+  }
+  const linkedTask = template.taskTemplateId
+    ? taskTemplates.find((task) => task.id === template.taskTemplateId)
+    : null
+  return linkedTask ? normalizeTaskTemplateSections(linkedTask) : TASK_SECTION_IDS.map(() => '')
+}
+
+const getTemplateEmailLines = (template: MailTemplate) => template.content.split(/\r?\n/)
+
 const createDashboardCalculatorItem = (): DashboardCalculatorItem => ({
   id: createId('dashboard-calculator'),
+  quantity: 1,
   productPrice: '',
   shippingPrice: '',
   importFee: '',
 })
+
+const getDashboardCalculatorQuantity = (quantity: number | undefined) =>
+  Math.max(1, Math.min(99, Math.round(quantity || 1)))
 
 const CloseIcon = () => <UiIcon name="close" className="close-icon" />
 const DeleteIcon = () => <UiIcon name="delete" className="action-icon" />
@@ -206,7 +445,6 @@ type WorkspaceDashboardPage =
   | 'portal'
   | 'catalog'
   | 'parts'
-  | 'troubleshootgun'
 
 const workspaceDashboardPageOptions: Array<{
   id: WorkspaceDashboardPage
@@ -217,8 +455,7 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'calculator', title: 'Calculateur prix', icon: 'money' },
   { id: 'portal', title: 'Procédures', icon: 'list' },
   { id: 'catalog', title: 'Catalogue produits', icon: 'book' },
-  { id: 'parts', title: 'SKU et pièces', icon: 'folder' },
-  { id: 'troubleshootgun', title: 'Troubleshootgun', icon: 'systemReport' },
+  { id: 'parts', title: 'SKU et pièces', icon: 'maintenance' },
 ]
 
 const quickLinks = [
@@ -546,6 +783,7 @@ const sanitizeProcedureDraft = (procedure: Procedure & { categoryId?: string }) 
     ...rest,
     productName: rest.productName ?? '',
     optionalNotes: rest.optionalNotes ?? '',
+    taskSectionId: normalizeTaskSectionId(rest.taskSectionId),
   }
 }
 
@@ -977,8 +1215,43 @@ const normalizeDashboardData = (payload: AppData): AppData =>
     ),
   )
 
+const normalizeTaskSectionsInData = (payload: AppData): AppData => {
+  const sectionNames = normalizeStoredTaskSectionNames(payload.settings.taskSectionNames)
+  const templateCategories = normalizeMailTemplateCategories(payload.settings.mailTemplateCategories)
+  const firstTemplateCategoryId = templateCategories[0]?.id ?? ''
+  return {
+    ...payload,
+    taskDraft: ensureStructuredTaskDraft(payload.taskDraft, sectionNames),
+    snippets: payload.snippets.map((snippet) => ({
+      ...snippet,
+      taskSectionId: normalizeTaskSectionId(snippet.taskSectionId),
+    })),
+    templates: payload.templates.map((template) => ({
+      ...template,
+      taskSectionId: normalizeTaskSectionId(template.taskSectionId),
+      categoryId: template.categoryId?.trim() || firstTemplateCategoryId,
+      favorite: Boolean(template.favorite),
+    })),
+    taskTemplates: payload.taskTemplates.map((task) => ({
+      ...task,
+      taskSectionId: normalizeTaskSectionId(task.taskSectionId),
+      taskSections: normalizeTaskTemplateSections(task),
+      content: buildTaskTemplateContent(task),
+    })),
+    procedures: payload.procedures.map((procedure) => ({
+      ...procedure,
+      taskSectionId: normalizeTaskSectionId(procedure.taskSectionId),
+    })),
+    settings: {
+      ...payload.settings,
+      taskSectionNames: sectionNames,
+      mailTemplateCategories: templateCategories,
+    },
+  }
+}
+
 const convertLegacyTokensInData = (payload: AppData): AppData =>
-  normalizeDashboardData({
+  normalizeTaskSectionsInData(normalizeDashboardData({
     ...payload,
     notes: convertLegacyTokens(payload.notes),
     emailDraft: convertLegacyTokens(payload.emailDraft),
@@ -1002,11 +1275,14 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
       name: convertLegacyTokens(template.name),
       content: convertLegacyTokens(template.content),
       taskText: convertLegacyTokensMaybe(template.taskText),
+      categoryId: template.categoryId,
+      favorite: Boolean(template.favorite),
     })),
     taskTemplates: payload.taskTemplates.map((task) => ({
       ...task,
       name: convertLegacyTokens(task.name),
       content: convertLegacyTokens(task.content),
+      taskSections: normalizeTaskTemplateSections(task).map((section) => convertLegacyTokens(section)),
     })),
     procedures: payload.procedures.map((procedure) => ({
       ...procedure,
@@ -1049,7 +1325,7 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
         content: normalizeDashboardNewsColorTags(item.content),
       })),
     },
-  })
+  }))
 
 function mergeData(current: AppData, incoming: AppData) {
   return {
@@ -1118,6 +1394,10 @@ function mergeSeedIntoData(current: AppData, seed: AppData) {
         normalizeDashboardNews(current.settings.dashboardNews),
         normalizeDashboardNews(seed.settings.dashboardNews),
       ),
+      mailTemplateCategories: addMissingById(
+        normalizeMailTemplateCategories(current.settings.mailTemplateCategories),
+        normalizeMailTemplateCategories(seed.settings.mailTemplateCategories),
+      ),
     },
   }
 }
@@ -1131,6 +1411,9 @@ function App() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('all')
   const [templateQuery, setTemplateQuery] = useState('')
   const [taskQuery, setTaskQuery] = useState('')
+  const [templateBrowserView, setTemplateBrowserView] = useState<TemplateBrowserView>('categories')
+  const [activeTemplateCategoryId, setActiveTemplateCategoryId] = useState<string>('favorites')
+  const [templatePreview, setTemplatePreview] = useState<TemplatePreviewState | null>(null)
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
   const [procedureQuery, setProcedureQuery] = useState('')
@@ -1219,8 +1502,8 @@ function App() {
   const [templateActiveField, setTemplateActiveField] = useState<'name' | 'content' | 'task'>(
     'content',
   )
-  const [taskTemplateActiveField, setTaskTemplateActiveField] = useState<'name' | 'content'>(
-    'content',
+  const [taskTemplateActiveField, setTaskTemplateActiveField] = useState<'name' | TaskSectionId>(
+    'section-1',
   )
   const [procedureActiveField, setProcedureActiveField] = useState<'info' | 'notes' | 'steps'>(
     'info',
@@ -1281,7 +1564,12 @@ function App() {
   const templateTaskRef = useRef<HTMLTextAreaElement>(null)
   const callTemplateRef = useRef<HTMLTextAreaElement>(null)
   const taskTemplateNameRef = useRef<HTMLInputElement>(null)
-  const taskTemplateContentRef = useRef<HTMLTextAreaElement>(null)
+  const taskTemplateSectionRefs = useRef<Record<TaskSectionId, HTMLTextAreaElement | null>>({
+    'section-1': null,
+    'section-2': null,
+    'section-3': null,
+    'section-4': null,
+  })
   const procedureNameRef = useRef<HTMLInputElement>(null)
   const procedureProductNameRef = useRef<HTMLInputElement>(null)
   const procedureInfoRef = useRef<HTMLTextAreaElement>(null)
@@ -1408,6 +1696,7 @@ function App() {
     content: '',
     insertMode: defaultData.settings.defaultSnippetInsertMode,
     taskText: '',
+    taskSectionId: 'section-3',
     taskOptional: false,
     categoryId: defaultData.categories[0]?.id ?? '',
   })
@@ -1416,7 +1705,10 @@ function App() {
     name: '',
     content: '',
     language: 'fr',
+    categoryId: defaultData.settings.mailTemplateCategories[0]?.id ?? '',
+    favorite: false,
     taskText: '',
+    taskSectionId: 'section-3',
     taskOptional: false,
     taskTemplateId: '',
     taskCustom: false,
@@ -1425,6 +1717,11 @@ function App() {
     id: '',
     name: '',
     content: '',
+    taskSections: ['', '', '', ''],
+  })
+  const [templateCategoryDraft, setTemplateCategoryDraft] = useState<MailTemplateCategory>({
+    id: '',
+    name: '',
   })
   const [procedureDraft, setProcedureDraft] = useState<Procedure>({
     id: '',
@@ -1484,6 +1781,10 @@ function App() {
     data.settings.defaultSnippetInsertMode === 'cursor' ? 'cursor' : 'line'
   const snippetCategoryDisplay =
     data.settings.snippetCategoryDisplay === 'buttons' ? 'buttons' : 'dropdown'
+  const mailTemplateCategories = useMemo(
+    () => normalizeMailTemplateCategories(data.settings.mailTemplateCategories),
+    [data.settings.mailTemplateCategories],
+  )
   const customerPortalCodes = useMemo(() => {
     return normalizePortalProcedures(data.settings.customerPortalCodes)
   }, [data.settings.customerPortalCodes])
@@ -1505,6 +1806,7 @@ function App() {
         content: '',
         insertMode: defaultSnippetInsertMode,
         taskText: '',
+        taskSectionId: 'section-3',
         taskOptional: false,
         categoryId: getDefaultSnippetCategoryId(),
       }) as Snippet,
@@ -1517,15 +1819,25 @@ function App() {
         name: '',
         content: '',
         language: 'fr',
+        categoryId: mailTemplateCategories[0]?.id ?? '',
+        favorite: false,
         taskText: '',
+        taskSectionId: 'section-3',
         taskOptional: false,
         taskTemplateId: '',
         taskCustom: false,
       }) as MailTemplate,
-    [],
+    [mailTemplateCategories],
   )
   const getEmptyTaskDraft = useCallback(
-    () => ({ id: '', name: '', content: '' } as TaskTemplate),
+    () =>
+      ({
+        id: '',
+        name: '',
+        content: '',
+        taskSections: ['', '', '', ''],
+        taskSectionId: 'section-3',
+      }) as TaskTemplate,
     [],
   )
   const beginNewSnippetDraft = useCallback(
@@ -1579,6 +1891,7 @@ function App() {
         taskTemplateId: '',
         taskCustom: false,
         taskText: '',
+        taskSectionId: 'section-3',
       }) as Procedure,
     [],
   )
@@ -1631,7 +1944,7 @@ function App() {
     loadData()
       .then((loadedData) => {
         if (!active) return
-        setData(mergeSeedIntoData(normalizeDashboardData(loadedData), defaultData))
+        setData(mergeSeedIntoData(normalizeTaskSectionsInData(normalizeDashboardData(loadedData)), defaultData))
         setLoaded(true)
       })
       .catch(() => {
@@ -1833,6 +2146,8 @@ function App() {
     setProductDraft(getEmptyProductDraft())
     setProductTagsDraftText('')
     setDashboardNewsDraft(getEmptyDashboardNewsDraft())
+    setTemplateCategoryDraft({ id: '', name: '' })
+    setTemplateCategoryDraft({ id: '', name: '' })
   }, [
     editOpen,
     editTab,
@@ -1932,6 +2247,10 @@ function App() {
     : 200
   const historyOnCopy = data.settings.historyOnCopy !== false
   const autoFocusEditor = data.settings.autoFocusEditor !== false
+  const taskSectionNames = useMemo(
+    () => normalizeStoredTaskSectionNames(data.settings.taskSectionNames),
+    [data.settings.taskSectionNames],
+  )
   const quickLinkUrls = data.settings.quickLinkUrls ?? defaultData.settings.quickLinkUrls
   const resolvedQuickLinks = useMemo(
     () =>
@@ -2089,6 +2408,24 @@ function App() {
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }, [])
+  const updateTaskSectionName = useCallback((index: number, name: string) => {
+    setData((prev) => {
+      const currentNames = normalizeStoredTaskSectionNames(prev.settings.taskSectionNames)
+      const nextNames = currentNames.map((currentName, sectionIndex) =>
+        sectionIndex === index ? name : currentName,
+      )
+      const normalizedNextNames = normalizeTaskSectionNames(nextNames)
+      const contents = parseStructuredTaskDraft(prev.taskDraft, currentNames)
+      return {
+        ...prev,
+        taskDraft: buildStructuredTaskDraft(contents, normalizedNextNames),
+        settings: {
+          ...prev.settings,
+          taskSectionNames: normalizedNextNames,
+        },
+      }
+    })
+  }, [])
   const updateQuickLinkUrl = useCallback(
     (id: string, url: string) => {
       updateSettings({
@@ -2100,6 +2437,46 @@ function App() {
       })
     },
     [data.settings.quickLinkUrls, updateSettings],
+  )
+  const saveTemplateCategory = useCallback(() => {
+    const name = templateCategoryDraft.name.trim()
+    if (!name) {
+      setToast('Nom de catégorie obligatoire.')
+      return
+    }
+    const exists = mailTemplateCategories.some((category) => category.id === templateCategoryDraft.id)
+    const id = exists ? templateCategoryDraft.id : createId('template-cat')
+    const savedCategory = { id, name }
+    updateSettings({
+      mailTemplateCategories: exists
+        ? mailTemplateCategories.map((category) =>
+            category.id === id ? savedCategory : category,
+          )
+        : [...mailTemplateCategories, savedCategory],
+    })
+    setTemplateCategoryDraft({ id: '', name: '' })
+    setToast('Catégorie template enregistrée.')
+  }, [mailTemplateCategories, templateCategoryDraft, updateSettings])
+  const deleteTemplateCategory = useCallback(
+    (categoryId: string) => {
+      if (mailTemplateCategories.length <= 1) {
+        setToast('Gardez au moins une catégorie.')
+        return
+      }
+      const fallbackId = mailTemplateCategories.find((category) => category.id !== categoryId)?.id ?? ''
+      updateSettings({
+        mailTemplateCategories: mailTemplateCategories.filter(
+          (category) => category.id !== categoryId,
+        ),
+      })
+      setData((prev) => ({
+        ...prev,
+        templates: prev.templates.map((template) =>
+          template.categoryId === categoryId ? { ...template, categoryId: fallbackId } : template,
+        ),
+      }))
+    },
+    [mailTemplateCategories, updateSettings],
   )
   const updateProcedureMailtoLinks = useCallback(
     (next: ProcedureMailtoLink[]) => {
@@ -2623,13 +3000,36 @@ function App() {
     return data.snippets.filter((snippet) => snippet.categoryId === activeCategoryId)
   }, [data.snippets, activeCategoryId, data.categories])
 
-  const templateResults = useMemo(() => {
+  const templateBrowserCategories = useMemo(
+    () => [
+      {
+        id: 'favorites',
+        name: 'Favoris',
+        count: data.templates.filter((template) => template.favorite).length,
+      },
+      ...mailTemplateCategories.map((category) => ({
+        ...category,
+        count: data.templates.filter((template) => template.categoryId === category.id).length,
+      })),
+    ],
+    [data.templates, mailTemplateCategories],
+  )
+  const selectedTemplateBrowserCategory =
+    templateBrowserCategories.find((category) => category.id === activeTemplateCategoryId) ??
+    templateBrowserCategories[0]
+  const templateBrowserTemplates = useMemo(() => {
     const query = templateQuery.trim().toLowerCase()
-    const base = data.templates
-    if (!templateFocused && !query) return []
+    const base =
+      activeTemplateCategoryId === 'favorites'
+        ? data.templates.filter((template) => template.favorite)
+        : data.templates.filter((template) => template.categoryId === activeTemplateCategoryId)
     if (!query) return base
-    return base.filter((template) => template.name.toLowerCase().includes(query))
-  }, [templateQuery, data.templates, templateFocused])
+    return data.templates.filter(
+      (template) =>
+        template.name.toLowerCase().includes(query) ||
+        template.content.toLowerCase().includes(query),
+    )
+  }, [activeTemplateCategoryId, data.templates, templateQuery])
 
   const dashboardVersionProducts = useMemo(
     () => dashboardProducts.filter((product) => product.category !== 'product'),
@@ -3058,9 +3458,26 @@ function App() {
       token)
       return
     }
-    insertTokenAtCursor(taskTemplateContentRef, taskDraft.content, (next) =>
-      setTaskDraft((prev) => ({ ...prev, content: next })),
-    token)
+    const sectionId = taskTemplateActiveField
+    const sectionIndex = getTaskSectionIndex(sectionId)
+    const sections = normalizeTaskTemplateSections(taskDraft)
+    const value = sections[sectionIndex] ?? ''
+    const target = { current: taskTemplateSectionRefs.current[sectionId] }
+    insertTokenAtCursor(
+      target,
+      value,
+      (next) =>
+        setTaskDraft((prev) => {
+          const nextSections = normalizeTaskTemplateSections(prev)
+          nextSections[sectionIndex] = next
+          return {
+            ...prev,
+            taskSections: nextSections,
+            content: buildTaskTemplateContent({ ...prev, taskSections: nextSections }),
+          }
+        }),
+      token,
+    )
   }
 
   const insertProcedureToken = (token: string) => {
@@ -3108,7 +3525,7 @@ function App() {
     const start = target?.selectionStart ?? value.length
     const end = target?.selectionEnd ?? value.length
     const selection = value.slice(start, end) || 'texte'
-    const nextHref = mailtoLink ? buildProcedureMailtoHref(mailtoLink) : 'mailto:contact@example.com?subject=Objet&body=Message'
+    const nextHref = mailtoLink ? buildProcedureMailtoHref(mailtoLink) : 'mailto:?subject=Objet&body=Message'
     const next = `${value.slice(0, start)}[${selection}](${nextHref})${value.slice(end)}`
     setProcedureDraft((prev) => ({ ...prev, steps: next }))
     setProcedureActiveField('steps')
@@ -3175,23 +3592,46 @@ function App() {
   }, [normalizeDraftWithCursor])
 
   const updateTaskDraft = useCallback((next: string, cursor?: number) => {
+    const structuredNext = ensureStructuredTaskDraft(next, taskSectionNames)
     if (cursor !== undefined) {
-      const normalized = normalizeDraftWithCursor(next, cursor)
+      const normalized = normalizeDraftWithCursor(structuredNext, cursor)
       setData((prev) => ({ ...prev, taskDraft: normalized.value }))
       requestAnimationFrame(() =>
         taskEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
       )
       return
     }
-    const normalized = normalizeTokenSpacing(next)
+    const normalized = normalizeTokenSpacing(structuredNext)
     setData((prev) => ({ ...prev, taskDraft: normalized }))
-  }, [normalizeDraftWithCursor])
+  }, [normalizeDraftWithCursor, taskSectionNames])
+
+  const insertTaskText = useCallback(
+    (text: string, sectionId?: TaskSectionId) => {
+      if (!text.trim()) return
+      const next = insertTaskTextInSection(data.taskDraft, text, sectionId, taskSectionNames)
+      updateTaskDraft(next, next.length)
+    },
+    [data.taskDraft, taskSectionNames, updateTaskDraft],
+  )
+
+  const handleTaskPaste = useCallback(
+    (event: ClipboardEvent<HTMLTextAreaElement>) => {
+      const text = event.clipboardData.getData('text/plain')
+      if (!text.trim() || !hasRecognizedTaskHeadings(text, taskSectionNames)) return
+
+      event.preventDefault()
+      const next = buildStructuredTaskDraft(parseStructuredTaskDraft(text, taskSectionNames), taskSectionNames)
+      updateTaskDraft(next, next.length)
+    },
+    [taskSectionNames, updateTaskDraft],
+  )
 
   const buildDraftBoxPreviewHtml = useCallback((slot: DraftBoxSlot) => {
     const email = stripTokenSpacing(slot.email).trim()
     const task = stripTokenSpacing(slot.task).trim()
+    const hasTaskContent = hasMeaningfulTaskContent(task, taskSectionNames)
 
-    if (!email && !task) {
+    if (!email && !hasTaskContent) {
       return '<div class="draft-box-tooltip__empty">Aucun contenu sauvegardé.</div>'
     }
 
@@ -3204,7 +3644,7 @@ function App() {
         </div>
       `)
     }
-    if (task) {
+    if (hasTaskContent) {
       sections.push(`
         <div class="draft-box-tooltip__section">
           <div class="draft-box-tooltip__label">Task</div>
@@ -3213,7 +3653,7 @@ function App() {
       `)
     }
     return sections.join('')
-  }, [])
+  }, [taskSectionNames])
 
   const closeDraftBoxTooltip = useCallback(() => {
     setDraftBoxTooltip(null)
@@ -3222,7 +3662,10 @@ function App() {
   const handleDraftBoxHover = useCallback(
     (index: number, event: MouseEvent<HTMLButtonElement>) => {
       const slot = draftBoxes[index]
-      if (!slot || (!slot.email.trim() && !slot.task.trim())) {
+      if (
+        !slot ||
+        (!slot.email.trim() && !hasMeaningfulTaskContent(slot.task, taskSectionNames))
+      ) {
         setDraftBoxTooltip(null)
         return
       }
@@ -3235,7 +3678,7 @@ function App() {
         previewHtml: buildDraftBoxPreviewHtml(slot),
       })
     },
-    [buildDraftBoxPreviewHtml, draftBoxes],
+    [buildDraftBoxPreviewHtml, draftBoxes, taskSectionNames],
   )
 
   const handleDraftBoxClick = useCallback(
@@ -3243,7 +3686,8 @@ function App() {
       const slot = draftBoxes[index]
       if (!slot) return
 
-      const hasSavedContent = Boolean(slot.email.trim() || slot.task.trim())
+      const hasSavedTask = hasMeaningfulTaskContent(slot.task, taskSectionNames)
+      const hasSavedContent = Boolean(slot.email.trim() || hasSavedTask)
       if (hasSavedContent) {
         updateEmailDraft(slot.email, slot.email.length)
         updateTaskDraft(slot.task, slot.task.length)
@@ -3266,7 +3710,8 @@ function App() {
 
       const nextEmail = data.emailDraft
       const nextTask = data.taskDraft
-      if (!nextEmail.trim() && !nextTask.trim()) {
+      const hasNextTaskContent = hasMeaningfulTaskContent(nextTask, taskSectionNames)
+      if (!nextEmail.trim() && !hasNextTaskContent) {
         setToast('Ajoutez du texte avant de le stocker.')
         return
       }
@@ -3277,7 +3722,7 @@ function App() {
           slotIndex === index
             ? {
                 email: nextEmail,
-                task: nextTask,
+                task: hasNextTaskContent ? nextTask : '',
                 savedAt,
               }
             : item,
@@ -3287,7 +3732,15 @@ function App() {
       updateTaskDraft('')
       closeDraftBoxTooltip()
     },
-    [closeDraftBoxTooltip, data.emailDraft, data.taskDraft, draftBoxes, updateEmailDraft, updateTaskDraft],
+    [
+      closeDraftBoxTooltip,
+      data.emailDraft,
+      data.taskDraft,
+      draftBoxes,
+      taskSectionNames,
+      updateEmailDraft,
+      updateTaskDraft,
+    ],
   )
 
   const updateCallDraft = useCallback((next: string, cursor?: number) => {
@@ -3333,16 +3786,22 @@ function App() {
     if (isProcedureWindow) return
     const channel = new BroadcastChannel(PROCEDURE_CHANNEL)
     channel.onmessage = (event) => {
-      const payload = event.data as { type?: string; taskText?: string } | null
+      const payload = event.data as { type?: string; taskText?: string; taskSectionId?: TaskSectionId } | null
       if (!payload || payload.type !== 'procedure:import-task') return
       if (!payload.taskText?.trim()) return
-      updateTaskDraft(payload.taskText, payload.taskText.length)
+      const nextTaskDraft = insertTaskTextInSection(
+        '',
+        payload.taskText,
+        payload.taskSectionId,
+        taskSectionNames,
+      )
+      updateTaskDraft(nextTaskDraft, nextTaskDraft.length)
       setTaskQuery('')
       setTaskFocused(false)
       setTaskListKey((prev) => prev + 1)
     }
     return () => channel.close()
-  }, [isProcedureWindow, updateTaskDraft])
+  }, [isProcedureWindow, taskSectionNames, updateTaskDraft])
 
   useEffect(() => {
     setProcedureChecks({})
@@ -3371,6 +3830,19 @@ function App() {
         : start + token.length
       target?.setSelectionRange(pos, pos)
       target?.focus()
+    })
+  }
+
+  const updateTaskTemplateSectionDraft = (sectionId: TaskSectionId, value: string) => {
+    const sectionIndex = getTaskSectionIndex(sectionId)
+    setTaskDraft((prev) => {
+      const nextSections = normalizeTaskTemplateSections(prev)
+      nextSections[sectionIndex] = value
+      return {
+        ...prev,
+        taskSections: nextSections,
+        content: buildTaskTemplateContent({ ...prev, taskSections: nextSections }),
+      }
     })
   }
 
@@ -3407,16 +3879,6 @@ function App() {
     })
   }
 
-  const insertTaskText = (text: string) => {
-    if (!text.trim()) return
-    const base = data.taskDraft
-    const prefix = base && !base.endsWith('\n') ? `${base}\n` : base
-    const insert = padEmptySelectors(text.trimEnd())
-    const withBreak = insert.endsWith('\n') ? insert : `${insert}\n`
-    const next = `${prefix ?? ''}${withBreak}`
-    updateTaskDraft(next, next.length)
-  }
-
   const insertSnippet = (snippet: Snippet) => {
     const selection = emailEditorRef.current?.getSelection() ?? {
       start: data.emailDraft.length,
@@ -3444,31 +3906,54 @@ function App() {
       updateEmailDraft(next, before.length + content.length)
     }
     if (snippet.taskText) {
-      insertTaskText(snippet.taskText)
-    }
-  }
-
-  const applyTemplate = (template: MailTemplate) => {
-    const paddedContent = padEmptySelectors(template.content)
-    updateEmailDraft(paddedContent, paddedContent.length)
-    requestAnimationFrame(() => emailEditorRef.current?.focus())
-    const usesCustom =
-      template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
-    const taskText = usesCustom
-      ? template.taskText ?? ''
-      : template.taskTemplateId
-      ? data.taskTemplates.find((task) => task.id === template.taskTemplateId)?.content ?? ''
-      : ''
-    if (taskText) {
-      const paddedTaskText = padEmptySelectors(taskText)
-      updateTaskDraft(paddedTaskText, paddedTaskText.length)
+      insertTaskText(snippet.taskText, snippet.taskSectionId)
     }
   }
 
   const applyTaskTemplate = (template: TaskTemplate) => {
-    const paddedContent = padEmptySelectors(template.content)
-    updateTaskDraft(paddedContent, paddedContent.length)
+    const nextTaskDraft = buildTaskDraftFromTemplate(template, taskSectionNames)
+    updateTaskDraft(nextTaskDraft, nextTaskDraft.length)
     requestAnimationFrame(() => taskEditorRef.current?.focus())
+  }
+
+  const openTemplatePreview = (template: MailTemplate) => {
+    setTemplatePreview({
+      templateId: template.id,
+      selectedEmailLines: getTemplateEmailLines(template).map((line) => Boolean(line.trim())),
+      selectedTaskSections: getTemplateTaskSections(template, data.taskTemplates).map((section) =>
+        Boolean(section.trim()),
+      ),
+    })
+  }
+
+  const toggleTemplateFavorite = (templateId: string) => {
+    setData((prev) => ({
+      ...prev,
+      templates: prev.templates.map((template) =>
+        template.id === templateId ? { ...template, favorite: !template.favorite } : template,
+      ),
+    }))
+  }
+
+  const importTemplatePreview = () => {
+    if (!templatePreview) return
+    const template = data.templates.find((item) => item.id === templatePreview.templateId)
+    if (!template) return
+
+    const emailLines = getTemplateEmailLines(template)
+      .filter((_, index) => templatePreview.selectedEmailLines[index])
+      .join('\n')
+      .trim()
+    const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
+      templatePreview.selectedTaskSections[index] ? section : '',
+    )
+
+    if (emailLines) updateEmailDraft(padEmptySelectors(emailLines), emailLines.length)
+    const nextTaskDraft = buildStructuredTaskDraft(taskSections, taskSectionNames)
+    updateTaskDraft(nextTaskDraft, nextTaskDraft.length)
+    setTemplatePreview(null)
+    closeTemplateSearch()
+    requestAnimationFrame(() => emailEditorRef.current?.focus())
   }
 
   const getProcedureTaskText = (procedure: Procedure) => {
@@ -3477,6 +3962,16 @@ function App() {
     if (usesCustom) return procedure.taskText ?? ''
     if (!procedure.taskTemplateId) return ''
     return data.taskTemplates.find((task) => task.id === procedure.taskTemplateId)?.content ?? ''
+  }
+
+  const getProcedureTaskSectionId = (procedure: Procedure) => {
+    const usesCustom =
+      procedure.taskCustom ?? (!!procedure.taskText && !procedure.taskTemplateId)
+    if (usesCustom) return normalizeTaskSectionId(procedure.taskSectionId)
+    if (!procedure.taskTemplateId) return 'section-1'
+    return normalizeTaskSectionId(
+      data.taskTemplates.find((task) => task.id === procedure.taskTemplateId)?.taskSectionId,
+    )
   }
 
   const buildExportHtml = useCallback(
@@ -3521,7 +4016,7 @@ function App() {
     setTaskCopied(true)
     taskCopyTimeoutRef.current = window.setTimeout(() => setTaskCopied(false), 1600)
 
-    if (!data.taskDraft.trim()) return
+    if (!hasMeaningfulTaskContent(data.taskDraft, taskSectionNames)) return
     const cleaned = stripTokenSpacing(data.taskDraft)
     const didCopy = await copyText(cleaned, buildExportHtml(cleaned))
     if (!didCopy) {
@@ -3587,11 +4082,24 @@ function App() {
 
   const updateDashboardCalculatorItem = (
     id: string,
-    field: keyof Omit<DashboardCalculatorItem, 'id'>,
+    field: DashboardCalculatorPriceField,
     value: string,
   ) => {
     setDashboardCalculatorItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    )
+  }
+
+  const adjustDashboardCalculatorQuantity = (id: string, delta: number) => {
+    setDashboardCalculatorItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              quantity: getDashboardCalculatorQuantity((item.quantity || 1) + delta),
+            }
+          : item,
+      ),
     )
   }
 
@@ -5018,6 +5526,7 @@ function App() {
       content: '',
       insertMode: defaultData.settings.defaultSnippetInsertMode,
       taskText: '',
+      taskSectionId: 'section-3',
       taskOptional: false,
       categoryId: '',
     })
@@ -5026,12 +5535,21 @@ function App() {
       name: '',
       content: '',
       language: 'fr',
+      categoryId: defaultData.settings.mailTemplateCategories[0]?.id ?? '',
+      favorite: false,
       taskText: '',
+      taskSectionId: 'section-3',
       taskOptional: false,
       taskTemplateId: '',
       taskCustom: false,
     })
-    setTaskDraft({ id: '', name: '', content: '' })
+    setTaskDraft({
+      id: '',
+      name: '',
+      content: '',
+      taskSections: ['', '', '', ''],
+      taskSectionId: 'section-3',
+    })
     setProcedureDraft({
       id: '',
       name: '',
@@ -5045,6 +5563,7 @@ function App() {
       taskTemplateId: '',
       taskCustom: false,
       taskText: '',
+      taskSectionId: 'section-3',
     })
     setProcedureInfoDraft('')
     setDraftBoxes([
@@ -5185,6 +5704,7 @@ function App() {
       title: snippetDraft.title.trim(),
       content: snippetDraft.content.trim(),
       taskText: snippetDraft.taskText?.trim() ?? '',
+      taskSectionId: normalizeTaskSectionId(snippetDraft.taskSectionId),
       categoryId,
     }
     setData((prev) => {
@@ -5228,7 +5748,10 @@ function App() {
       id,
       name: templateDraft.name.trim(),
       content: templateDraft.content.trim(),
+      categoryId: templateDraft.categoryId?.trim() || mailTemplateCategories[0]?.id || '',
+      favorite: Boolean(templateDraft.favorite),
       taskText: templateDraft.taskText?.trim() ?? '',
+      taskSectionId: normalizeTaskSectionId(templateDraft.taskSectionId),
     }
     setData((prev) => {
       const next = exists
@@ -5250,11 +5773,14 @@ function App() {
     }
     const exists = data.taskTemplates.some((task) => task.id === taskDraft.id)
     const id = exists ? taskDraft.id : createId('task')
+    const taskSections = normalizeTaskTemplateSections(taskDraft).map((section) => section.trim())
     const savedTask = {
       ...taskDraft,
       id,
       name: taskDraft.name.trim(),
-      content: taskDraft.content.trim(),
+      taskSections,
+      content: buildTaskTemplateContent({ ...taskDraft, taskSections }).trim(),
+      taskSectionId: 'section-1' as TaskSectionId,
     }
     setData((prev) => {
       const next = exists
@@ -5375,9 +5901,15 @@ function App() {
     ? parseProcedureStepItems(activeProcedure.steps)
     : []
   const procedureTaskText = activeProcedure ? getProcedureTaskText(activeProcedure) : ''
+  const procedureTaskSectionId = activeProcedure
+    ? getProcedureTaskSectionId(activeProcedure)
+    : 'section-1'
   const dashboardCalculatorEntries = dashboardCalculatorItems.map((item) => ({
     ...item,
-    productAmount: parseDashboardAmount(item.productPrice) ?? 0,
+    quantity: getDashboardCalculatorQuantity(item.quantity),
+    productAmount:
+      (parseDashboardAmount(item.productPrice) ?? 0) *
+      getDashboardCalculatorQuantity(item.quantity),
     shippingAmount: parseDashboardAmount(item.shippingPrice) ?? 0,
     importFeeAmount: parseDashboardAmount(item.importFee) ?? 0,
   }))
@@ -5386,8 +5918,11 @@ function App() {
     0,
   )
   const dashboardShippingValues = dashboardCalculatorEntries
-    .map((item) => item.shippingAmount + item.importFeeAmount)
-    .filter((value) => value > 0)
+    .flatMap((item) => {
+      const shippingValue = item.shippingAmount + item.importFeeAmount
+      if (shippingValue <= 0) return []
+      return Array(item.quantity).fill(shippingValue)
+    })
     .sort((left, right) => right - left)
   const dashboardBaseShippingTotalTtc =
     dashboardShippingValues.length > 0
@@ -5504,6 +6039,34 @@ function App() {
               <div className="dashboard-calculator__item" key={item.id}>
                 <div className="dashboard-calculator__item-grid">
                   <span className="dashboard-calculator__item-index">{index + 1}</span>
+                  <div
+                    className="dashboard-calculator__quantity"
+                    aria-label={`Quantité ligne ${index + 1}`}
+                  >
+                    <button
+                      className="dashboard-calculator__quantity-btn"
+                      type="button"
+                      title="Réduire la quantité"
+                      aria-label={`Réduire la quantité ligne ${index + 1}`}
+                      onClick={() => adjustDashboardCalculatorQuantity(item.id, -1)}
+                      disabled={getDashboardCalculatorQuantity(item.quantity) <= 1}
+                    >
+                      -
+                    </button>
+                    <span className="dashboard-calculator__quantity-value">
+                      x{getDashboardCalculatorQuantity(item.quantity)}
+                    </span>
+                    <button
+                      className="dashboard-calculator__quantity-btn"
+                      type="button"
+                      title="Augmenter la quantité"
+                      aria-label={`Augmenter la quantité ligne ${index + 1}`}
+                      onClick={() => adjustDashboardCalculatorQuantity(item.id, 1)}
+                      disabled={getDashboardCalculatorQuantity(item.quantity) >= 99}
+                    >
+                      +
+                    </button>
+                  </div>
                   <label className="dashboard-calculator__field dashboard-calculator__field--inline">
                     <span className="dashboard-calculator__label">Produit</span>
                     <input
@@ -6079,94 +6642,6 @@ function App() {
     </article>
   )
 
-  const renderWorkspaceDashboardTroubleshootgunPanel = (title: string) => {
-    const placeholderCards = [
-      {
-        id: 'demo-troubleshootgun-diagnostic',
-        title: 'Diagnostic entrant',
-        hint: 'Email',
-        content:
-          'Bonjour,\n\nJe n\'arrive plus à connecter ma Base X au PC. Le périphérique apparaît puis disparaît dans le Control Panel.',
-        task: 'Créer une task diagnostic USB et demander version driver + firmware.',
-      },
-      {
-        id: 'demo-troubleshootgun-rma',
-        title: 'Retour SAV',
-        hint: 'SAV',
-        content:
-          'Le produit a été testé sur deux ports USB. Même résultat. Le client a fourni facture et numéro de série.',
-        task: 'Vérifier garantie, préparer dossier RMA et ajouter note sur tests déjà effectués.',
-      },
-      {
-        id: 'demo-troubleshootgun-follow-up',
-        title: 'Relance client',
-        hint: 'Suivi',
-        content:
-          'Le client n\'a pas encore envoyé la capture du Control Panel. Préparer une relance courte avec la liste des éléments attendus.',
-        task: 'Relancer le client avec les pièces manquantes et programmer un suivi.',
-      },
-    ]
-
-    return (
-      <article className="workspace-dashboard__panel workspace-dashboard__panel--troubleshootgun">
-        <div className="workspace-dashboard__panel-title">{title}</div>
-        <div className="dashboard-version-browser dashboard-troubleshootgun-detail">
-          <div className="dashboard-troubleshootgun-template-list dashboard-troubleshootgun-template-list--scroll">
-            {placeholderCards.map((card, index) => (
-              <article
-                className={`dashboard-troubleshootgun-template-card${
-                  index === 0 ? ' is-active' : ''
-                }`}
-                key={card.id}
-              >
-                <div className="dashboard-troubleshootgun-template-card__head">
-                  <UiIcon name="systemReport" className="dashboard-page-btn__icon" />
-                  <div className="dashboard-troubleshootgun-template-card__title">
-                    {card.title}
-                  </div>
-                  <span className="dashboard-troubleshootgun-template-card__hint">
-                    {card.hint}
-                  </span>
-                </div>
-                <div className="dashboard-troubleshootgun-template-card__content">
-                  {card.content}
-                </div>
-                <div className="dashboard-troubleshootgun-template-card__task">
-                  {card.task}
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="dashboard-troubleshootgun-preview">
-            <div className="dashboard-troubleshootgun-preview__head">
-              <div>
-                <div className="dashboard-troubleshootgun-preview__title">
-                  Aperçu placeholder
-                </div>
-                <div className="dashboard-troubleshootgun-preview__meta">
-                  contenu de vérification
-                </div>
-              </div>
-              <UiIcon name="systemReport" className="settings-layout__content-title-icon" />
-            </div>
-            <div className="dashboard-troubleshootgun-preview__content">
-              Ce bloc sert à vérifier la page Troubleshootgun, l&apos;icône système report, les
-              cartes, le scroll et l&apos;alignement des icônes dans le dashboard.
-            </div>
-            <div className="dashboard-troubleshootgun-preview__task">
-              <div className="dashboard-troubleshootgun-preview__task-label">Task liée</div>
-              <div className="dashboard-troubleshootgun-preview__task-content">
-                Importer un texte de test puis contrôler les boutons add, save, delete, multiply et
-                exchange dans les settings.
-              </div>
-            </div>
-          </div>
-        </div>
-      </article>
-    )
-  }
-
   const renderWorkspaceDashboardPortalPanel = (title: string) => {
     const activePortalProcedureName =
       activeDashboardPortalProcedure?.procedureName.trim() || 'Procédure sans nom'
@@ -6477,14 +6952,6 @@ function App() {
       )
     }
 
-    if (workspaceDashboardPage === 'troubleshootgun') {
-      return (
-        <div className="workspace-dashboard__single">
-          {renderWorkspaceDashboardTroubleshootgunPanel('Troubleshootgun')}
-        </div>
-      )
-    }
-
     return (
       <div className="workspace-dashboard__single">
         {renderWorkspaceDashboardNewsNotesPanel('News et Notes')}
@@ -6653,6 +7120,7 @@ function App() {
                       channel.postMessage({
                         type: 'procedure:import-task',
                         taskText: procedureTaskText,
+                        taskSectionId: procedureTaskSectionId,
                       })
                       channel.close()
                     }}
@@ -6877,50 +7345,94 @@ function App() {
                 <input
                   value={templateQuery}
                   onChange={(event) => setTemplateQuery(event.target.value)}
-                  placeholder="Rechercher un template..."
+                  placeholder="Templates / Troubleshootgun..."
                   onFocus={() => {
                     setTemplateFocused(true)
+                    setTemplateBrowserView('categories')
                     setTemplateListKey((prev) => prev + 1)
                   }}
                   onBlur={() => {
                     closeTemplateSearch()
                   }}
                 />
-                {templateResults.length ? (
+                {templateFocused ? (
                   <div
-                    className="search-results visible"
+                    className="search-results search-results--templates visible"
                     key={templateListKey}
                     onMouseDown={(event) => event.preventDefault()}
                   >
-                    {templateResults.map((template) => (
-                      <div
-                        key={template.id}
-                        className="search-result-item"
-                        onClick={() => {
-                          applyTemplate(template)
-                          closeTemplateSearch()
-                        }}
-                      >
-                        <div className="result-name">
-                          <span className="result-name__text">{template.name}</span>
-                          <img
-                            className="result-flag"
-                            src={
-                              template.language === 'fr'
-                                ? assetUrl('/agentor/assets/fr.svg')
-                                : assetUrl('/agentor/assets/gb.svg')
-                            }
-                            alt={template.language === 'fr' ? 'FR' : 'EN'}
-                          />
-                        </div>
-                        <div
-                          className="result-preview"
-                          dangerouslySetInnerHTML={{
-                            __html: highlightTextPreview(template.content.split('\n')[0] ?? ''),
+                    {templateQuery.trim() || templateBrowserView === 'templates' ? (
+                      <>
+                        {templateBrowserView === 'templates' && !templateQuery.trim() ? (
+                          <button
+                            className="search-result-item search-result-item--back"
+                            type="button"
+                            onClick={() => setTemplateBrowserView('categories')}
+                          >
+                            <div className="result-name">Categories</div>
+                            <div className="result-preview">{selectedTemplateBrowserCategory.name}</div>
+                          </button>
+                        ) : null}
+                        {templateBrowserTemplates.length ? (
+                          templateBrowserTemplates.map((template) => (
+                            <div key={template.id} className="search-result-item search-result-item--template">
+                              <button
+                                className="search-result-item__main"
+                                type="button"
+                                onClick={() => openTemplatePreview(template)}
+                              >
+                                <div className="result-name">
+                                  <span className="result-name__text">{template.name}</span>
+                                  <img
+                                    className="result-flag"
+                                    src={
+                                      template.language === 'fr'
+                                        ? assetUrl('/agentor/assets/fr.svg')
+                                        : assetUrl('/agentor/assets/gb.svg')
+                                    }
+                                    alt={template.language === 'fr' ? 'FR' : 'EN'}
+                                  />
+                                </div>
+                                <div
+                                  className="result-preview"
+                                  dangerouslySetInnerHTML={{
+                                    __html: highlightTextPreview(template.content.split('\n')[0] ?? ''),
+                                  }}
+                                />
+                              </button>
+                              <button
+                                className={`template-favorite-btn${template.favorite ? ' is-active' : ''}`}
+                                type="button"
+                                title={template.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                                onClick={() => toggleTemplateFavorite(template.id)}
+                              >
+                                ★
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="search-result-empty">Aucun template.</div>
+                        )}
+                      </>
+                    ) : (
+                      templateBrowserCategories.map((category) => (
+                        <button
+                          key={category.id}
+                          className="search-result-item search-result-item--category"
+                          type="button"
+                          onClick={() => {
+                            setActiveTemplateCategoryId(category.id)
+                            setTemplateBrowserView('templates')
                           }}
-                        />
-                      </div>
-                    ))}
+                        >
+                          <div className="result-name">
+                            <span className="result-name__text">{category.name}</span>
+                            <span className="result-count">{category.count}</span>
+                          </div>
+                          <div className="result-preview">Ouvrir les templates</div>
+                        </button>
+                      ))
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -6937,8 +7449,13 @@ function App() {
               </button>
               <div className="draft-boxes-inline" aria-label="Boîtes de mémoire">
                 {draftBoxes.map((slot, index) => {
-                  const hasContent = Boolean(slot.email.trim() || slot.task.trim())
-                  const isDisabled = !hasContent && !data.emailDraft.trim() && !data.taskDraft.trim()
+                  const hasContent = Boolean(
+                    slot.email.trim() || hasMeaningfulTaskContent(slot.task, taskSectionNames),
+                  )
+                  const isDisabled =
+                    !hasContent &&
+                    !data.emailDraft.trim() &&
+                    !hasMeaningfulTaskContent(data.taskDraft, taskSectionNames)
                   return (
                     <button
                       key={`draft-box-${index + 1}`}
@@ -7166,6 +7683,7 @@ function App() {
               ref={taskEditorRef}
               value={data.taskDraft}
               onChange={(value) => updateTaskDraft(value)}
+              onPaste={handleTaskPaste}
               placeholder="Écrivez vos tâches..."
               className="task-editor"
             />
@@ -7257,9 +7775,20 @@ function App() {
                   <div className="call-modal__history-title">5 derniers appels</div>
                   <div className="call-modal__history-list">
                     <button
-                      className="call-modal__history-item call-modal__history-item--current is-active"
+                      className={`call-modal__history-item call-modal__history-item--current${
+                        selectedCallHistoryId === null ? ' is-active' : ''
+                      }`}
                       type="button"
-                      onClick={() => requestAnimationFrame(() => callEditorRef.current?.focus())}
+                      onClick={() => {
+                        setCallDraft(normalizeTokenSpacing(currentCallMemory))
+                        setSelectedCallHistoryId(null)
+                        setCurrentCallMemoryLocked(false)
+                        requestAnimationFrame(() => {
+                          const cursor = currentCallMemory.length
+                          callEditorRef.current?.focus()
+                          callEditorRef.current?.setSelection(cursor, cursor)
+                        })
+                      }}
                     >
                       <span>Appel en cours</span>
                       <strong>{currentCallPreview}</strong>
@@ -7305,6 +7834,113 @@ function App() {
           </div>
         </div>
       ) : null}
+
+    {templatePreview ? (() => {
+      const template = data.templates.find((item) => item.id === templatePreview.templateId)
+      if (!template) return null
+      const emailLines = getTemplateEmailLines(template)
+      const taskSections = getTemplateTaskSections(template, data.taskTemplates)
+      return (
+        <div className="modal-backdrop">
+          <div className="modal troubleshootgun-preview-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal__header">
+              <div className="modal__title-group">
+                <div className="brand__title brand__title--with-icon">
+                  <UiIcon name="template" className="brand__title-icon" />
+                  <span>{template.name}</span>
+                </div>
+                <div className="modal__subtitle">Choisissez les lignes à importer.</div>
+              </div>
+              <button className="close-modal" type="button" onClick={() => setTemplatePreview(null)}>
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="troubleshootgun-preview-modal__body">
+              <div className="troubleshootgun-preview-modal__grid">
+                <section className="troubleshootgun-preview-modal__section">
+                  <div className="troubleshootgun-preview-modal__label">Mail</div>
+                  <div className="troubleshootgun-preview-sections">
+                    {emailLines.map((line, index) =>
+                      !line.trim() ? null : (
+                        <label className="troubleshootgun-preview-section" key={`${line}-${index}`}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(templatePreview.selectedEmailLines[index])}
+                            onChange={(event) =>
+                              setTemplatePreview((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      selectedEmailLines: prev.selectedEmailLines.map((checked, lineIndex) =>
+                                        lineIndex === index ? event.target.checked : checked,
+                                      ),
+                                    }
+                                  : prev,
+                              )
+                            }
+                          />
+                          <span className="troubleshootgun-preview-section__body">
+                            <span
+                              className="troubleshootgun-preview-modal__content"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightText(line.trim()),
+                              }}
+                            />
+                          </span>
+                        </label>
+                      )
+                    )}
+                  </div>
+                </section>
+                <section className="troubleshootgun-preview-modal__section troubleshootgun-preview-modal__section--task">
+                  <div className="troubleshootgun-preview-modal__label">Task</div>
+                  <div className="troubleshootgun-preview-sections">
+                    {TASK_SECTION_IDS.map((sectionId, index) => (
+                      <label className="troubleshootgun-preview-section" key={sectionId}>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(templatePreview.selectedTaskSections[index])}
+                          disabled={!taskSections[index]?.trim()}
+                          onChange={(event) =>
+                            setTemplatePreview((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    selectedTaskSections: prev.selectedTaskSections.map((checked, sectionIndex) =>
+                                      sectionIndex === index ? event.target.checked : checked,
+                                    ),
+                                  }
+                                : prev,
+                            )
+                          }
+                        />
+                        <span className="troubleshootgun-preview-section__body">
+                          <strong>{getTaskSectionLabel(sectionId, taskSectionNames)}</strong>
+                          <span
+                            className="troubleshootgun-preview-modal__content"
+                            dangerouslySetInnerHTML={{
+                              __html: highlightText(taskSections[index]?.trim() || 'Section vide'),
+                            }}
+                          />
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              </div>
+              <div className="troubleshootgun-preview-modal__actions">
+                <button className="ghost" type="button" onClick={() => setTemplatePreview(null)}>
+                  Annuler
+                </button>
+                <button className="primary" type="button" onClick={importTemplatePreview}>
+                  Importer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    })() : null}
 
     {editOpen ? (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
@@ -7840,6 +8476,24 @@ function App() {
                           </select>
                         </div>
                         <div className="workflow-step-label">Texte de task</div>
+                        <div className="form__row">
+                          <select
+                            className="select select--roomy"
+                            value={normalizeTaskSectionId(snippetDraft.taskSectionId)}
+                            onChange={(event) =>
+                              setSnippetDraft((prev) => ({
+                                ...prev,
+                                taskSectionId: event.target.value as TaskSectionId,
+                              }))
+                            }
+                          >
+                            {TASK_SECTION_IDS.map((sectionId) => (
+                              <option key={sectionId} value={sectionId}>
+                                {getTaskSectionLabel(sectionId, taskSectionNames)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <textarea
                           className="textarea"
                           placeholder="Texte de tâche associé (optionnel)"
@@ -8087,6 +8741,38 @@ function App() {
                           <option value="fr">Français</option>
                           <option value="en">Anglais</option>
                         </select>
+                        <div className="workflow-step-label">Catégorie</div>
+                        <div className="form__row two">
+                          <select
+                            className="select select--roomy"
+                            value={templateDraft.categoryId ?? mailTemplateCategories[0]?.id ?? ''}
+                            onChange={(event) =>
+                              setTemplateDraft((prev) => ({
+                                ...prev,
+                                categoryId: event.target.value,
+                              }))
+                            }
+                          >
+                            {mailTemplateCategories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                          <label className="portal-code-editor__check">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(templateDraft.favorite)}
+                              onChange={(event) =>
+                                setTemplateDraft((prev) => ({
+                                  ...prev,
+                                  favorite: event.target.checked,
+                                }))
+                              }
+                            />
+                            <span>Favori</span>
+                          </label>
+                        </div>
                         <div className="workflow-step-label">Contenu</div>
                         <textarea
                           className="textarea textarea--tall"
@@ -8136,6 +8822,27 @@ function App() {
                           ),
                         )}
                         <div className="workflow-step-label">Task</div>
+                        {templateUsesCustomTask ? (
+                          <div className="form__row">
+                            <select
+                              className="select select--roomy"
+                              value={normalizeTaskSectionId(templateDraft.taskSectionId)}
+                              onChange={(event) =>
+                                setTemplateDraft((prev) => ({
+                                  ...prev,
+                                  taskSectionId: event.target.value as TaskSectionId,
+                                }))
+                              }
+                              disabled={templateDraft.taskOptional ?? false}
+                            >
+                              {TASK_SECTION_IDS.map((sectionId) => (
+                                <option key={sectionId} value={sectionId}>
+                                  {getTaskSectionLabel(sectionId, taskSectionNames)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : null}
                         {templateUsesCustomTask ? (
                           <textarea
                             className={`textarea${
@@ -8249,6 +8956,100 @@ function App() {
               </div>
             ) : null}
 
+            {editTab === 'templateCategories' ? (
+              <div className="modal__grid">
+                <div className="list-card">
+                  <div className="list-card__header list-card__header--wrap">
+                    <div className="list-card__title">Catégories mail</div>
+                  </div>
+                  <div className="list-card__body">
+                    <SortableList
+                      items={mailTemplateCategories}
+                      getId={(item) => item.id}
+                      onReorder={(next) => updateSettings({ mailTemplateCategories: next })}
+                      renderItem={(category, handleProps) => (
+                        <div
+                          className={`list-item list-item--compact${
+                            templateCategoryDraft.id === category.id ? ' is-selected' : ''
+                          }`}
+                          onClick={() => setTemplateCategoryDraft(category)}
+                        >
+                          <button
+                            className="drag-handle"
+                            type="button"
+                            {...handleProps.attributes}
+                            {...handleProps.listeners}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <MoveIcon />
+                          </button>
+                          <div className="list-item__content">
+                            <div className="list-item__title">{category.name}</div>
+                            <div className="list-item__meta">
+                              {data.templates.filter((template) => template.categoryId === category.id).length}{' '}
+                              template(s)
+                            </div>
+                          </div>
+                          <div className="list-item__actions">
+                            <button
+                              className="icon-btn-sm danger"
+                              type="button"
+                              title="Supprimer"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                deleteTemplateCategory(category.id)
+                              }}
+                            >
+                              <DeleteIcon />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title">Détails</div>
+                    <div className="list-card__tools">
+                      <button
+                        className="btn btn--ghost btn--small btn--with-icon"
+                        type="button"
+                        onClick={() => setTemplateCategoryDraft({ id: '', name: '' })}
+                      >
+                        <ButtonIcon name="add" />
+                        Nouveau
+                      </button>
+                      <button
+                        className="btn btn--primary btn--small btn--with-icon"
+                        type="button"
+                        onClick={saveTemplateCategory}
+                      >
+                        <ButtonIcon name="save" />
+                        Sauver
+                      </button>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="form">
+                      <div className="workflow-step-label">Nom</div>
+                      <input
+                        className="input"
+                        value={templateCategoryDraft.name}
+                        placeholder="Nom de catégorie"
+                        onChange={(event) =>
+                          setTemplateCategoryDraft((prev) => ({
+                            ...prev,
+                            name: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {editTab === 'tasks' ? (
               <div className="modal__grid">
                 <div className="list-card">
@@ -8269,7 +9070,11 @@ function App() {
                             }${issues.length ? ' is-incomplete' : ''}`}
                             onClick={() => {
                               clearSettingsValidationTouched('task')
-                              setTaskDraft(task)
+                              setTaskDraft({
+                                ...task,
+                                taskSections: normalizeTaskTemplateSections(task),
+                                content: buildTaskTemplateContent(task),
+                              })
                               setSelectedTaskId(task.id)
                             }}
                           >
@@ -8419,67 +9224,88 @@ function App() {
                             tag,
                           ),
                         )}
-                        <div className="workflow-step-label">Contenu</div>
-                        <textarea
-                          className="textarea textarea--tall textarea--task-template"
-                          placeholder="Contenu"
-                          value={taskDraft.content}
-                          ref={taskTemplateContentRef}
-                          data-tag-autocomplete-field="true"
-                          onFocus={(event) => {
-                            setTaskTemplateActiveField('content')
-                            updateTagSuggestionFromTarget(
-                              'task-content',
-                              event.currentTarget,
-                              event.currentTarget.value,
+                        <div className="workflow-step-label">Sections</div>
+                        <div className="task-template-sections">
+                          {TASK_SECTION_IDS.map((sectionId, sectionIndex) => {
+                            const sections = normalizeTaskTemplateSections(taskDraft)
+                            return (
+                              <label className="task-template-section" key={sectionId}>
+                                <span className="task-template-section__title">
+                                  {getTaskSectionLabel(sectionId, taskSectionNames)}
+                                </span>
+                                <textarea
+                                  className="textarea textarea--task-template-section"
+                                  placeholder="Texte de cette section"
+                                  value={sections[sectionIndex] ?? ''}
+                                  ref={(node) => {
+                                    taskTemplateSectionRefs.current[sectionId] = node
+                                  }}
+                                  onFocus={() => setTaskTemplateActiveField(sectionId)}
+                                  onChange={(event) =>
+                                    updateTaskTemplateSectionDraft(sectionId, event.target.value)
+                                  }
+                                />
+                              </label>
                             )
-                          }}
-                          onClick={(event) =>
-                            updateTagSuggestionFromTarget(
-                              'task-content',
-                              event.currentTarget,
-                              event.currentTarget.value,
-                            )
-                          }
-                          onKeyUp={(event) =>
-                            updateTagSuggestionFromTarget(
-                              'task-content',
-                              event.currentTarget,
-                              event.currentTarget.value,
-                            )
-                          }
-                          onChange={(event) => {
-                            const nextValue = event.target.value
-                            setTaskDraft((prev) => ({ ...prev, content: nextValue }))
-                            updateTagSuggestionFromTarget(
-                              'task-content',
-                              event.currentTarget,
-                              nextValue,
-                            )
-                          }}
-                        />
-                        {renderTagSuggestions('task-content', (tag) =>
-                          applySuggestedTag(
-                            'task-content',
-                            taskTemplateContentRef,
-                            taskDraft.content,
-                            (next) => setTaskDraft((prev) => ({ ...prev, content: next })),
-                            tag,
-                          ),
-                        )}
+                          })}
+                        </div>
                         <div className="task-template-preview-settings">
                           <div className="task-template-preview-settings__title">Aperçu</div>
                           <div
                             className="task-template-preview-settings__content settings-token-preview"
                             dangerouslySetInnerHTML={{
                               __html: highlightText(
-                                taskDraft.content.trim() || 'Le contenu du template apparaîtra ici.',
+                                buildTaskDraftFromTemplate(taskDraft, taskSectionNames).trim() ||
+                                  'Le contenu du template apparaîtra ici.',
                               ),
                             }}
                           />
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'taskFormat' ? (
+              <div className="modal__grid modal__grid--single">
+                <div className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title-group">
+                      <div className="list-card__title">Task Format</div>
+                      <div className="list-card__subtitle">
+                        Squelette permanent utilisé par la zone task et les templates.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="list-card__body">
+                    <div className="settings-block">
+                      {TASK_SECTION_IDS.map((sectionId, index) => (
+                        <div className="settings-option" key={sectionId}>
+                          <div className="settings-option__info">
+                            <div className="settings-option__title">Partie {index + 1}</div>
+                            <div className="settings-option__desc">
+                              Titre fixe dans chaque task.
+                            </div>
+                          </div>
+                          <input
+                            className="input"
+                            value={taskSectionNames[index]}
+                            onChange={(event) => updateTaskSectionName(index, event.target.value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="task-template-preview-settings">
+                      <div className="task-template-preview-settings__title">Squelette</div>
+                      <div
+                        className="task-template-preview-settings__content settings-token-preview"
+                        dangerouslySetInnerHTML={{
+                          __html: highlightText(buildStructuredTaskDraft(['', '', '', ''], taskSectionNames)),
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -9453,7 +10279,7 @@ function App() {
                                   }}
                                 >
                                   <strong>Mailto par défaut</strong>
-                                  <span>contact@example.com</span>
+                                  <span>Sans destinataire</span>
                                 </button>
                               </div>
                             ) : null}
@@ -9562,6 +10388,24 @@ function App() {
                             tag,
                           ),
                         )}
+                        {procedureUsesCustomTask ? (
+                          <select
+                            className="select select--roomy"
+                            value={normalizeTaskSectionId(procedureDraft.taskSectionId)}
+                            onChange={(event) =>
+                              setProcedureDraft((prev) => ({
+                                ...prev,
+                                taskSectionId: event.target.value as TaskSectionId,
+                              }))
+                            }
+                          >
+                            {TASK_SECTION_IDS.map((sectionId) => (
+                              <option key={sectionId} value={sectionId}>
+                                {getTaskSectionLabel(sectionId, taskSectionNames)}
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
                         {procedureUsesCustomTask ? (
                           <textarea
                             className="textarea"

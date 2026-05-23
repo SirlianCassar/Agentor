@@ -1,51 +1,63 @@
 import type { AppIconName } from '../lib/iconTypes'
-import addIcon from '../assets/icons8-add-32.png'
-import bookIcon from '../assets/icons8-book-32.png'
-import deleteIcon from '../assets/icons8-delete-32.png'
-import editIcon from '../assets/icons8-edit-32.png'
-import euroIcon from '../assets/icons8-euro-32.png'
-import exchangeIcon from '../assets/icons8-exchange-32.png'
-import folderIcon from '../assets/icons8-folder-32.png'
-import hangarIcon from '../assets/icons8-hangar-32.png'
-import linkIcon from '../assets/icons8-link-32.png'
-import listIcon from '../assets/icons8-list-32.png'
-import mailIcon from '../assets/icons8-mail-32.png'
-import multiplyIcon from '../assets/icons8-multiply-32.png'
-import openedFolderIcon from '../assets/icons8-opened-folder-32.png'
-import phoneRingingIcon from '../assets/icons8-phone-ringing-32.png'
-import rssIcon from '../assets/icons8-rss-32.png'
-import saveIcon from '../assets/icons8-save-32.png'
-import settingsIcon from '../assets/icons8-settings-32.png'
-import systemReportIcon from '../assets/icons8-system-report-32.png'
+import addIcon from '../assets/Icons8-2/icons8-plus-70.png'
+import archiveIcon from '../assets/Icons8-2/icons8-dossier-70.png'
+import bookIcon from '../assets/Icons8-2/icons8-livre-70.png'
+import calculatorIcon from '../assets/Icons8-2/icons8-calculatrice-70.png'
+import channelsIcon from '../assets/Icons8-2/icons8-contenu-70.png'
+import closeIcon from '../assets/Icons8-2/icons8-multiplier-70.png'
+import contactsIcon from '../assets/Icons8-2/icons8-contacts-70.png'
+import dashboardIcon from "../assets/Icons8-2/icons8-page-vue-d'ensemble-4-70.png"
+import deleteIcon from '../assets/Icons8-2/icons8-poubelle-70.png'
+import displayIcon from '../assets/Icons8-2/icons8-page-présentation-2-70.png'
+import downloadIcon from '../assets/Icons8-2/icons8-télécharger-70.png'
+import editIcon from '../assets/Icons8-2/icons8-crayon-70.png'
+import exchangeIcon from '../assets/Icons8-2/icons8-signe-égal-70.png'
+import folderIcon from '../assets/Icons8-2/icons8-dossier-70.png'
+import maintenanceIcon from '../assets/Icons8-2/icons8-entretien-70.png'
+import openedFolderIcon from '../assets/Icons8-2/icons8-dossier-ouvert-70.png'
+import historyIcon from '../assets/Icons8-2/icons8-historique-des-activités-70.png'
+import linkIcon from '../assets/Icons8-2/icons8-lien-70.png'
+import listIcon from '../assets/Icons8-2/icons8-liste-70.png'
+import mailIcon from '../assets/Icons8-2/icons8-email-70.png'
+import newsIcon from '../assets/Icons8-2/icons8-nouvelles-70.png'
+import notesIcon from '../assets/Icons8-2/icons8-note-70.png'
+import phoneIcon from '../assets/Icons8-2/icons8-téléphone-70.png'
+import saveIcon from '../assets/Icons8-2/icons8-sauvegarder-70.png'
+import settingsIcon from '../assets/Icons8-2/icons8-paramètres-70.png'
+import systemReportIcon from '../assets/Icons8-2/icons8-rapport-système-70.png'
+import taskIcon from '../assets/Icons8-2/icons8-tâches-parallèles-70.png'
+import templateIcon from '../assets/Icons8-2/icons8-documents-70.png'
+import versionIcon from '../assets/Icons8-2/icons8-téléchargement-des-mises-à-jour-70.png'
 
 const rasterIcons: Partial<Record<AppIconName, string>> = {
   add: addIcon,
   archive: folderIcon,
   book: bookIcon,
-  box: hangarIcon,
-  call: phoneRingingIcon,
-  channels: listIcon,
-  close: multiplyIcon,
-  dashboard: systemReportIcon,
+  box: archiveIcon,
+  call: phoneIcon,
+  channels: channelsIcon,
+  close: closeIcon,
+  dashboard: dashboardIcon,
   delete: deleteIcon,
-  display: systemReportIcon,
-  download: saveIcon,
+  display: displayIcon,
+  download: downloadIcon,
   edit: editIcon,
   exchange: exchangeIcon,
   folder: folderIcon,
   folderOpen: openedFolderIcon,
   grid: openedFolderIcon,
-  hangar: hangarIcon,
-  history: bookIcon,
+  hangar: archiveIcon,
+  history: historyIcon,
   inbox: mailIcon,
-  info: systemReportIcon,
+  info: contactsIcon,
   link: linkIcon,
   list: listIcon,
   mail: mailIcon,
-  money: euroIcon,
-  news: rssIcon,
-  notes: bookIcon,
-  phone: phoneRingingIcon,
+  maintenance: maintenanceIcon,
+  money: calculatorIcon,
+  news: newsIcon,
+  notes: notesIcon,
+  phone: phoneIcon,
   portal: openedFolderIcon,
   preferences: settingsIcon,
   save: saveIcon,
@@ -53,9 +65,9 @@ const rasterIcons: Partial<Record<AppIconName, string>> = {
   shield: systemReportIcon,
   systemReport: systemReportIcon,
   tag: linkIcon,
-  template: systemReportIcon,
-  tool: settingsIcon,
-  version: exchangeIcon,
+  template: templateIcon,
+  tool: taskIcon,
+  version: versionIcon,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {

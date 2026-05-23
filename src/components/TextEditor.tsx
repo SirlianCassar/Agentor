@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { KeyboardEvent, MouseEventHandler } from 'react'
+import type { ClipboardEventHandler, KeyboardEvent, MouseEventHandler } from 'react'
 import type { Token } from '../lib/utils'
 import { findTokenAt, highlightText, parseTokens, stripTokenSpacing } from '../lib/utils'
 
@@ -29,11 +29,12 @@ interface TextEditorProps {
   minHeight?: number
   readOnly?: boolean
   onContextMenu?: MouseEventHandler<HTMLDivElement>
+  onPaste?: ClipboardEventHandler<HTMLTextAreaElement>
 }
 
 export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
   (
-    { value, onChange, placeholder, className, autoGrow = false, minHeight, readOnly, onContextMenu },
+    { value, onChange, placeholder, className, autoGrow = false, minHeight, readOnly, onContextMenu, onPaste },
     ref,
   ) => {
     const editorRef = useRef<HTMLDivElement>(null)
@@ -308,6 +309,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
             onClick={readOnly ? undefined : handleClick}
             onKeyDown={readOnly ? undefined : handleKeyDown}
             onKeyUp={readOnly ? undefined : updateActiveSelector}
+            onPaste={readOnly ? undefined : onPaste}
             onScroll={syncScroll}
             onSelect={readOnly ? undefined : updateActiveSelector}
             spellCheck={false}

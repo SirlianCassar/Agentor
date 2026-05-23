@@ -53,6 +53,8 @@ const defaultData = {
     customerPortalCodes: [],
     dashboardProducts: [],
     dashboardReminders: '',
+    taskSectionNames: ['Current Contact', 'Previous Actions / History', 'Next Steps', 'Internal Notes'],
+    mailTemplateCategories: [],
   },
 }
 

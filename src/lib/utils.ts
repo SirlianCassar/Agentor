@@ -415,6 +415,14 @@ function normalizeStringRecord(value: unknown, fallback: Record<string, string>)
   return normalized
 }
 
+function normalizeFixedStringList(value: unknown, fallback: string[]) {
+  if (!Array.isArray(value)) return fallback
+  return fallback.map((fallbackValue, index) => {
+    const entry = value[index]
+    return typeof entry === 'string' && entry.trim() ? entry.trim() : fallbackValue
+  })
+}
+
 export function normalizeData(raw: Partial<AppData> | null | undefined, fallback: AppData) {
   if (!raw || typeof raw !== 'object') return fallback
   const legacyTemplates = (raw as Partial<AppData> & { mailTemplates?: unknown }).mailTemplates
@@ -461,6 +469,13 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
         typeof raw.settings?.dashboardReminders === 'string'
           ? raw.settings.dashboardReminders
           : fallback.settings.dashboardReminders,
+      taskSectionNames: normalizeFixedStringList(
+        raw.settings?.taskSectionNames,
+        fallback.settings.taskSectionNames,
+      ),
+      mailTemplateCategories: Array.isArray(raw.settings?.mailTemplateCategories)
+        ? raw.settings.mailTemplateCategories
+        : fallback.settings.mailTemplateCategories,
     },
   }
 }
@@ -498,6 +513,13 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
         typeof normalized.settings.dashboardReminders === 'string'
           ? normalized.settings.dashboardReminders
           : fallback.settings.dashboardReminders,
+      taskSectionNames: normalizeFixedStringList(
+        normalized.settings.taskSectionNames,
+        fallback.settings.taskSectionNames,
+      ),
+      mailTemplateCategories: Array.isArray(normalized.settings.mailTemplateCategories)
+        ? normalized.settings.mailTemplateCategories
+        : fallback.settings.mailTemplateCategories,
     },
   }
 }
