@@ -60,6 +60,13 @@
   --text-scale: 1;
   --editor-line-height: 1.6;
   --app-zoom: 1;
+  --icon-size-xs: 14px;
+  --icon-size-sm: 16px;
+  --icon-size-md: 18px;
+  --icon-size-lg: 20px;
+  --control-size-sm: 32px;
+  --control-size-md: 36px;
+  --control-size-lg: 40px;
   color-scheme: dark;
 }
 

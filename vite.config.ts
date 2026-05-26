@@ -16,7 +16,11 @@ export default defineConfig({
     __AUTO_UPDATE_GH_TOKEN__: JSON.stringify(autoUpdateGhToken),
   },
   plugins: [
-    react(),
+    react({
+      babel: {
+        compact: false,
+      },
+    }),
     electron({
       main: {
         entry: 'electron/main.ts',

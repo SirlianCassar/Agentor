@@ -14,6 +14,11 @@ import { findTokenAt, highlightText, parseTokens, stripTokenSpacing } from '../l
 
 const EMPTY_SELECTOR_SPACER = '\u00A0'.repeat(6)
 
+export type ProtectedTextRange = {
+  start: number
+  end: number
+}
+
 export interface TextEditorHandle {
   focus: () => void
   getSelection: () => { start: number; end: number }
@@ -30,11 +35,23 @@ interface TextEditorProps {
   readOnly?: boolean
   onContextMenu?: MouseEventHandler<HTMLDivElement>
   onPaste?: ClipboardEventHandler<HTMLTextAreaElement>
+  protectedRanges?: ProtectedTextRange[]
 }
 
 export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
   (
-    { value, onChange, placeholder, className, autoGrow = false, minHeight, readOnly, onContextMenu, onPaste },
+    {
+      value,
+      onChange,
+      placeholder,
+      className,
+      autoGrow = false,
+      minHeight,
+      readOnly,
+      onContextMenu,
+      onPaste,
+      protectedRanges = [],
+    },
     ref,
   ) => {
     const editorRef = useRef<HTMLDivElement>(null)
@@ -48,6 +65,19 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
     )
     const [autoHeight, setAutoHeight] = useState<number | null>(null)
     const isEmpty = !value.trim()
+
+    const normalizedProtectedRanges = useMemo(
+      () =>
+        protectedRanges
+          .filter((range) => range.end > range.start)
+          .map((range) => ({
+            start: Math.max(0, Math.min(range.start, value.length)),
+            end: Math.max(0, Math.min(range.end, value.length)),
+          }))
+          .filter((range) => range.end > range.start)
+          .sort((a, b) => a.start - b.start),
+      [protectedRanges, value.length],
+    )
 
     const highlighted = useMemo(() => {
       const html = highlightText(value)
@@ -143,6 +173,67 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       updateSelectorBubblePosition(selector)
     }
 
+    const getProtectedRangeAt = useCallback(
+      (position: number, includeEdges = false) =>
+        normalizedProtectedRanges.find((range) =>
+          includeEdges
+            ? position >= range.start && position <= range.end
+            : position > range.start && position < range.end,
+        ) ?? null,
+      [normalizedProtectedRanges],
+    )
+
+    const getIntersectingProtectedRange = useCallback(
+      (start: number, end: number) =>
+        normalizedProtectedRanges.find((range) => start < range.end && end > range.start) ?? null,
+      [normalizedProtectedRanges],
+    )
+
+    const moveSelectionOutsideProtectedRange = useCallback(
+      (range: ProtectedTextRange) => {
+        const textarea = textareaRef.current
+        if (!textarea) return
+
+        const lineStart = value.lastIndexOf('\n', Math.max(0, range.start - 1)) + 1
+        const previousLineEnd = lineStart > 0 ? lineStart - 1 : -1
+        const belowLineStart = value[range.end] === '\n' ? range.end + 1 : -1
+
+        const next =
+          belowLineStart >= 0
+          ? belowLineStart
+          : previousLineEnd >= 0
+          ? previousLineEnd
+          : range.start
+
+        textarea.setSelectionRange(next, next)
+      },
+      [value],
+    )
+
+    const correctProtectedSelection = useCallback(() => {
+      const textarea = textareaRef.current
+      if (!textarea || !normalizedProtectedRanges.length) return false
+      const { selectionStart, selectionEnd } = textarea
+      if (selectionStart === selectionEnd) {
+        const range = getProtectedRangeAt(selectionStart, true)
+        if (!range) return false
+        moveSelectionOutsideProtectedRange(range)
+        setActiveSelector(null)
+        return true
+      }
+
+      const range = getIntersectingProtectedRange(selectionStart, selectionEnd)
+      if (!range) return false
+      moveSelectionOutsideProtectedRange(range)
+      setActiveSelector(null)
+      return true
+    }, [
+      getIntersectingProtectedRange,
+      getProtectedRangeAt,
+      moveSelectionOutsideProtectedRange,
+      normalizedProtectedRanges.length,
+    ])
+
     useEffect(() => {
       if (!activeSelector) {
         setSelectorBubblePos(null)
@@ -199,6 +290,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       if (readOnly) return
       requestAnimationFrame(() => {
         if (!textareaRef.current) return
+        if (correctProtectedSelection()) return
         const position = textareaRef.current.selectionStart ?? 0
         const token = findTokenAt(value, position)
         if (token) {
@@ -208,11 +300,78 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       })
     }
 
+    const handleDoubleClick = () => {
+      if (readOnly) return
+      requestAnimationFrame(() => {
+        const textarea = textareaRef.current
+        if (!textarea) return
+        if (correctProtectedSelection()) return
+
+        let start = textarea.selectionStart ?? 0
+        let end = textarea.selectionEnd ?? start
+
+        while (start > 0 && !/\s/.test(value[start - 1])) start -= 1
+        while (end < value.length && !/\s/.test(value[end])) end += 1
+
+        if (start === end) return
+        if (getIntersectingProtectedRange(start, end)) return
+        textarea.setSelectionRange(start, end)
+        setActiveSelector(null)
+      })
+    }
+
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
       if (readOnly) return
       if (!textareaRef.current) return
       const { selectionStart, selectionEnd } = textareaRef.current
       if (selectionStart === null || selectionEnd === null) return
+
+      if (normalizedProtectedRanges.length) {
+        if (selectionStart !== selectionEnd) {
+          const range = getIntersectingProtectedRange(selectionStart, selectionEnd)
+          if (range) {
+            event.preventDefault()
+            moveSelectionOutsideProtectedRange(range)
+            return
+          }
+        } else {
+          const cursor = selectionStart
+          const range = getProtectedRangeAt(cursor, false)
+          const editsText =
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            (event.key.length === 1 || event.key === 'Enter' || event.key === 'Tab')
+          const edgeRange = editsText ? getProtectedRangeAt(cursor, true) : null
+          const targetRange = range ?? edgeRange
+          if (targetRange) {
+            event.preventDefault()
+            moveSelectionOutsideProtectedRange(targetRange)
+            return
+          }
+
+          const blockedByKey = normalizedProtectedRanges.find((protectedRange) => {
+            if (event.key === 'Backspace') {
+              return (
+                (cursor > protectedRange.start && cursor <= protectedRange.end) ||
+                (cursor === protectedRange.end + 1 && value[protectedRange.end] === '\n')
+              )
+            }
+            if (event.key === 'Delete') {
+              return (
+                (cursor >= protectedRange.start && cursor < protectedRange.end) ||
+                (cursor === protectedRange.start - 1 && value[cursor] === '\n')
+              )
+            }
+            return false
+          })
+          if (blockedByKey) {
+            event.preventDefault()
+            moveSelectionOutsideProtectedRange(blockedByKey)
+            return
+          }
+        }
+      }
 
       if (event.key !== 'Backspace' && event.key !== 'Delete') return
 
@@ -246,6 +405,20 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       requestAnimationFrame(() => {
         textareaRef.current?.setSelectionRange(match.start, match.start)
       })
+    }
+
+    const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = (event) => {
+      if (readOnly) return
+      if (correctProtectedSelection()) {
+        event.preventDefault()
+        return
+      }
+      onPaste?.(event)
+    }
+
+    const handleSelect = () => {
+      if (correctProtectedSelection()) return
+      updateActiveSelector()
     }
 
     const handleSelectorReplace = (option: string) => {
@@ -307,11 +480,12 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
               onChange(event.target.value)
             }}
             onClick={readOnly ? undefined : handleClick}
+            onDoubleClick={readOnly ? undefined : handleDoubleClick}
             onKeyDown={readOnly ? undefined : handleKeyDown}
-            onKeyUp={readOnly ? undefined : updateActiveSelector}
-            onPaste={readOnly ? undefined : onPaste}
+            onKeyUp={readOnly ? undefined : handleSelect}
+            onPaste={readOnly ? undefined : handlePaste}
             onScroll={syncScroll}
-            onSelect={readOnly ? undefined : updateActiveSelector}
+            onSelect={readOnly ? undefined : handleSelect}
             spellCheck={false}
           />
           {isEmpty && placeholder ? (

@@ -10,7 +10,7 @@ import {
   type TransitionEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { TextEditor, type TextEditorHandle } from './components/TextEditor'
+import { TextEditor, type ProtectedTextRange, type TextEditorHandle } from './components/TextEditor'
 import { SortableList } from './components/SortableList'
 import { UiIcon } from './components/UiIcon'
 import { defaultData } from './lib/defaults'
@@ -104,12 +104,6 @@ const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
 const APP_VERSION_LABEL = APP_VERSION.replace(/\.0$/, '')
 const VAT_DIVISOR = 1.2
 const DATA_HISTORY_LIMIT = 160
-const dashboardProductCategoryOrder: DashboardProductCategory[] = [
-  'software',
-  'driver',
-  'firmware',
-  'product',
-]
 const dashboardProductCategoryLabels: Record<DashboardProductCategory, string> = {
   software: 'Logiciel',
   driver: 'Driver',
@@ -230,8 +224,8 @@ const getTaskSectionHeading = (index: number, sectionNames: string[]) =>
 const simplifyTaskHeading = (value: string) =>
   value
     .replace(/^#+\s*/, '')
-    .replace(/^\d+[\).:\-]?\s*/, '')
-    .replace(/[:\-]\s*$/, '')
+    .replace(/^\d+[).:-]?\s*/, '')
+    .replace(/[:-]\s*$/, '')
     .trim()
     .toLowerCase()
 
@@ -250,7 +244,7 @@ const findTaskSectionHeadingIndex = (line: string, sectionNames: string[]) => {
     const index = sectionNames.findIndex((name) => simplifyTaskHeading(name) === simplifyTaskHeading(text))
     if (index !== -1) return index
   }
-  const numberedMatch = trimmed.match(/^#+\s*(\d+)[\).:\-]?\s*(.*)$/)
+  const numberedMatch = trimmed.match(/^#+\s*(\d+)[).:-]?\s*(.*)$/)
   if (numberedMatch) {
     const index = Number(numberedMatch[1]) - 1
     if (index >= 0 && index < TASK_SECTION_IDS.length) return index
@@ -287,9 +281,9 @@ const buildStructuredTaskDraft = (contents: string[], sectionNames: string[]) =>
     const content = (contents[index] ?? '').trimEnd()
     const heading = getTaskSectionHeading(index, sectionNames)
     return content ? `${heading}\n${content}` : heading
-  }).join('\n\n')}`
+  }).join('\n\n')}\n`
 
-const parseStructuredTaskDraft = (value: string, sectionNames: string[]) => {
+const parseStructuredTaskDraftWithLeadingContent = (value: string, sectionNames: string[]) => {
   const contents = TASK_SECTION_IDS.map(() => '')
   const contentLines = TASK_SECTION_IDS.map(() => [] as string[])
   const leadingLines: string[] = []
@@ -322,6 +316,11 @@ const parseStructuredTaskDraft = (value: string, sectionNames: string[]) => {
   })
 
   const leadingContent = trimBlankLines(leadingLines)
+  return { contents, leadingContent }
+}
+
+const parseStructuredTaskDraft = (value: string, sectionNames: string[]) => {
+  const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(value, sectionNames)
   if (leadingContent) {
     contents[0] = [leadingContent, contents[0]].filter(Boolean).join('\n')
   }
@@ -356,9 +355,35 @@ const ensureTaskTitleSpace = (value: string, sectionNames: string[]) => {
   return `${'\n'.repeat(Math.max(0, 2 - leadingBreaks))}${value}`
 }
 
+const ensureTaskTrailingEditableLine = (value: string, sectionNames: string[]) => {
+  if (value.endsWith('\n')) return value
+  const lines = value.replace(/\r\n/g, '\n').split('\n')
+  const lastLine = lines[lines.length - 1] ?? ''
+  return findTaskSectionHeadingIndex(lastLine, sectionNames) !== -1 ? `${value}\n` : value
+}
+
 const ensureStructuredTaskDraft = (value: string, sectionNames: string[]) => {
-  if (hasCompleteTaskStructure(value, sectionNames)) return ensureTaskTitleSpace(value, sectionNames)
+  if (hasCompleteTaskStructure(value, sectionNames)) {
+    return ensureTaskTrailingEditableLine(ensureTaskTitleSpace(value, sectionNames), sectionNames)
+  }
   return buildStructuredTaskDraft(parseStructuredTaskDraft(value, sectionNames), sectionNames)
+}
+
+const getTaskHeadingProtectedRanges = (
+  value: string,
+  sectionNames: string[],
+): ProtectedTextRange[] => {
+  const ranges: ProtectedTextRange[] = []
+  let offset = 0
+
+  value.replace(/\r\n/g, '\n').split('\n').forEach((line) => {
+    if (findTaskSectionHeadingIndex(line, sectionNames) !== -1) {
+      ranges.push({ start: offset, end: offset + line.length })
+    }
+    offset += line.length + 1
+  })
+
+  return ranges
 }
 
 const insertTaskTextInSection = (
@@ -387,11 +412,54 @@ const normalizeTaskTemplateSections = (task: Partial<TaskTemplate>) => {
   return sections.map((section, sectionIndex) => (sectionIndex === index ? legacyContent : section))
 }
 
+const getTaskTemplatePreviewText = (task: Partial<TaskTemplate>) => {
+  const sections = normalizeTaskTemplateSections(task)
+  const preview = sections
+    .map((section) => stripTokenSpacing(section).trim())
+    .find((section) => section.length > 0)
+  return preview ?? 'Aucun contenu.'
+}
+
 const buildTaskTemplateContent = (task: Partial<TaskTemplate>) =>
   normalizeTaskTemplateSections(task).filter((section) => section.trim()).join('\n\n')
 
 const buildTaskDraftFromTemplate = (task: TaskTemplate, sectionNames: string[]) =>
   buildStructuredTaskDraft(normalizeTaskTemplateSections(task), sectionNames)
+
+const TASK_MAIL_NUMBER_PATTERN = /\((\d+)\)/g
+
+const getHighestTaskMailNumber = (value: string) => {
+  let max = 0
+  TASK_MAIL_NUMBER_PATTERN.lastIndex = 0
+  for (const match of value.matchAll(TASK_MAIL_NUMBER_PATTERN)) {
+    const next = Number(match[1])
+    if (Number.isFinite(next)) {
+      max = Math.max(max, next)
+    }
+  }
+  return max
+}
+
+const getNextTaskMailNumber = (value: string) => Math.max(1, getHighestTaskMailNumber(value) + 1)
+
+const annotateTaskMailNumber = (value: string, mailNumber: number) => {
+  const trimmed = value.trimEnd()
+  if (!trimmed) return value
+  if (/\(\d+\)\s*$/.test(trimmed)) return trimmed
+  return `${trimmed} (${mailNumber})`
+}
+
+const stripTaskMailNumber = (value: string) => value.replace(/\s*\(\d+\)\s*$/, '').trimEnd()
+
+const normalizeTaskSnippetInsert = (value: string) =>
+  stripTokenSpacing(stripTaskMailNumber(value).trim())
+
+const taskSectionContainsSnippet = (section: string, snippetText: string) => {
+  const normalizedSnippet = normalizeTaskSnippetInsert(snippetText)
+  if (!normalizedSnippet) return false
+  const normalizedSection = stripTokenSpacing(stripTaskMailNumber(section).trim())
+  return normalizedSection.includes(normalizedSnippet)
+}
 
 const normalizeNamedCategories = (
   categories: MailTemplateCategory[] | undefined,
@@ -404,7 +472,7 @@ const normalizeNamedCategories = (
       name: category.name?.trim() || `Category ${index + 1}`,
     }))
     .filter((category) => category.name.trim())
-  return normalized.length ? normalized : fallbackCategories
+  return Array.isArray(categories) ? normalized : fallbackCategories
 }
 
 const normalizeMailTemplateCategories = (categories: MailTemplateCategory[] | undefined) =>
@@ -594,8 +662,8 @@ const dashboardNewsDateFormatter = new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'long',
 })
 const euroFormatter = new Intl.NumberFormat('fr-FR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
 })
 type TagSuggestionFieldId =
   | 'snippet-title'
@@ -684,7 +752,7 @@ function formatEuroAmount(value: number) {
 }
 
 function formatAmountForCopy(value: number) {
-  return value.toFixed(2).replace('.', ',')
+  return value.toFixed(3).replace('.', ',')
 }
 
 function getSliderProgress(value: number, min: number, max: number) {
@@ -1265,12 +1333,16 @@ const normalizeTaskSectionsInData = (payload: AppData): AppData => {
   const taskTemplateCategories = normalizeTaskTemplateCategories(payload.settings.taskTemplateCategories)
   const firstTemplateCategoryId = templateCategories[0]?.id ?? ''
   const firstTaskTemplateCategoryId = taskTemplateCategories[0]?.id ?? ''
+  const snippetCategoryId = 'cat-general'
+  const categories = payload.categories.filter((category) => category.id !== snippetCategoryId)
   return {
     ...payload,
+    categories,
     taskDraft: ensureStructuredTaskDraft(payload.taskDraft, sectionNames),
     snippets: payload.snippets.map((snippet) => ({
       ...snippet,
       taskSectionId: normalizeTaskSectionId(snippet.taskSectionId),
+      categoryId: snippet.categoryId === snippetCategoryId ? '' : snippet.categoryId,
     })),
     templates: payload.templates.map((template) => ({
       ...template,
@@ -1284,6 +1356,7 @@ const normalizeTaskSectionsInData = (payload: AppData): AppData => {
       taskSections: normalizeTaskTemplateSections(task),
       content: buildTaskTemplateContent(task),
       categoryId: task.categoryId?.trim() || firstTaskTemplateCategoryId,
+      favorite: Boolean(task.favorite),
     })),
     procedures: payload.procedures.map((procedure) => ({
       ...procedure,
@@ -1332,6 +1405,7 @@ const convertLegacyTokensInData = (payload: AppData): AppData =>
       content: convertLegacyTokens(task.content),
       taskSections: normalizeTaskTemplateSections(task).map((section) => convertLegacyTokens(section)),
       categoryId: task.categoryId,
+      favorite: Boolean(task.favorite),
     })),
     procedures: payload.procedures.map((procedure) => ({
       ...procedure,
@@ -1509,9 +1583,7 @@ function App() {
   const [templateBrowserView, setTemplateBrowserView] = useState<TemplateBrowserView>('categories')
   const [taskBrowserView, setTaskBrowserView] = useState<TaskBrowserView>('categories')
   const [activeTemplateCategoryId, setActiveTemplateCategoryId] = useState<string>('favorites')
-  const [activeTaskCategoryId, setActiveTaskCategoryId] = useState<string>(
-    defaultData.settings.taskTemplateCategories[0]?.id ?? '',
-  )
+  const [activeTaskCategoryId, setActiveTaskCategoryId] = useState<string>('favorites')
   const [templatePreview, setTemplatePreview] = useState<TemplatePreviewState | null>(null)
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
@@ -1546,6 +1618,7 @@ function App() {
     Array.from({ length: 2 }, createEmptyTaskBoxSlot),
   )
   const [activeTaskBoxIndex, setActiveTaskBoxIndex] = useState(0)
+  const [taskMailNumber, setTaskMailNumber] = useState(1)
   const [draftBoxTooltip, setDraftBoxTooltip] = useState<DraftBoxTooltipState | null>(null)
   const [callModalOpen, setCallModalOpen] = useState(false)
   const [callDraft, setCallDraft] = useState(PHONE_CALL_TEMPLATE)
@@ -1575,7 +1648,7 @@ function App() {
   )
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
-  const [editTab, setEditTab] = useState<SettingsTab>('categories')
+  const [editTab, setEditTab] = useState<SettingsTab>('dashboard')
   const [settingsValidationTouched, setSettingsValidationTouched] = useState<
     Partial<Record<SettingsValidationScope, boolean>>
   >({})
@@ -1820,6 +1893,7 @@ function App() {
     content: '',
     taskSections: ['', '', '', ''],
     categoryId: defaultData.settings.taskTemplateCategories[0]?.id ?? '',
+    favorite: false,
   })
   const [templateCategoryDraft, setTemplateCategoryDraft] = useState<MailTemplateCategory>({
     id: '',
@@ -1948,6 +2022,7 @@ function App() {
         taskSections: ['', '', '', ''],
         taskSectionId: 'section-3',
         categoryId: taskTemplateCategories[0]?.id ?? '',
+        favorite: false,
       }) as TaskTemplate,
     [taskTemplateCategories],
   )
@@ -2357,7 +2432,6 @@ function App() {
     ? Math.min(400, Math.max(50, Math.round(data.settings.historyLimit)))
     : 200
   const historyOnCopy = data.settings.historyOnCopy !== false
-  const autoFocusEditor = data.settings.autoFocusEditor !== false
   const taskSectionNames = useMemo(
     () => normalizeStoredTaskSectionNames(data.settings.taskSectionNames),
     [data.settings.taskSectionNames],
@@ -2570,10 +2644,6 @@ function App() {
   }, [mailTemplateCategories, templateCategoryDraft, updateSettings])
   const deleteTemplateCategory = useCallback(
     (categoryId: string) => {
-      if (mailTemplateCategories.length <= 1) {
-        setToast('Gardez au moins une catégorie.')
-        return
-      }
       const fallbackId = mailTemplateCategories.find((category) => category.id !== categoryId)?.id ?? ''
       updateSettings({
         mailTemplateCategories: mailTemplateCategories.filter(
@@ -2612,10 +2682,6 @@ function App() {
   }, [taskTemplateCategories, taskTemplateCategoryDraft, updateSettings])
   const deleteTaskTemplateCategory = useCallback(
     (categoryId: string) => {
-      if (taskTemplateCategories.length <= 1) {
-        setToast('Gardez au moins une catégorie.')
-        return
-      }
       const fallbackId =
         taskTemplateCategories.find((category) => category.id !== categoryId)?.id ?? ''
       updateSettings({
@@ -3128,14 +3194,23 @@ function App() {
   }, [activeCategoryId, categoryIdSet])
 
   useEffect(() => {
+    if (activeTemplateCategoryId === 'favorites' || activeTemplateCategoryId === 'all') return
+    if (mailTemplateCategories.some((category) => category.id === activeTemplateCategoryId)) {
+      return
+    }
+    setActiveTemplateCategoryId('all')
+  }, [activeTemplateCategoryId, mailTemplateCategories])
+
+  useEffect(() => {
     if (editSnippetCategoryId === 'all') return
     if (categoryIdSet.has(editSnippetCategoryId)) return
     setEditSnippetCategoryId('all')
   }, [editSnippetCategoryId, categoryIdSet])
 
   useEffect(() => {
+    if (activeTaskCategoryId === 'favorites' || activeTaskCategoryId === 'all') return
     if (taskTemplateCategories.some((category) => category.id === activeTaskCategoryId)) return
-    setActiveTaskCategoryId(taskTemplateCategories[0]?.id ?? '')
+    setActiveTaskCategoryId(taskTemplateCategories[0]?.id ?? 'favorites')
   }, [activeTaskCategoryId, taskTemplateCategories])
 
   useEffect(() => {
@@ -3178,6 +3253,11 @@ function App() {
         ...category,
         count: data.templates.filter((template) => template.categoryId === category.id).length,
       })),
+      {
+        id: 'all',
+        name: 'Tous',
+        count: data.templates.length,
+      },
     ],
     [data.templates, mailTemplateCategories],
   )
@@ -3186,6 +3266,8 @@ function App() {
     const base =
       activeTemplateCategoryId === 'favorites'
         ? data.templates.filter((template) => template.favorite)
+        : activeTemplateCategoryId === 'all'
+        ? data.templates
         : data.templates.filter((template) => template.categoryId === activeTemplateCategoryId)
     if (!query) return base
     return data.templates.filter(
@@ -3725,16 +3807,33 @@ function App() {
 
   const taskBrowserCategories = useMemo(
     () =>
-      taskTemplateCategories.map((category) => ({
-        ...category,
-        count: data.taskTemplates.filter((task) => task.categoryId === category.id).length,
-      })),
+      [
+        {
+          id: 'favorites',
+          name: 'Favoris',
+          count: data.taskTemplates.filter((task) => task.favorite).length,
+        },
+        ...taskTemplateCategories.map((category) => ({
+          ...category,
+          count: data.taskTemplates.filter((task) => task.categoryId === category.id).length,
+        })),
+        {
+          id: 'all',
+          name: 'Tous',
+          count: data.taskTemplates.length,
+        },
+      ],
     [data.taskTemplates, taskTemplateCategories],
   )
   const taskTemplateResults = useMemo(() => {
     const query = taskQuery.trim().toLowerCase()
     if (!taskFocused && !query) return []
-    const base = data.taskTemplates.filter((task) => task.categoryId === activeTaskCategoryId)
+    const base =
+      activeTaskCategoryId === 'favorites'
+        ? data.taskTemplates.filter((task) => task.favorite)
+        : activeTaskCategoryId === 'all'
+        ? data.taskTemplates
+        : data.taskTemplates.filter((task) => task.categoryId === activeTaskCategoryId)
     if (!query) return base
     return data.taskTemplates.filter(
       (task) =>
@@ -3742,6 +3841,14 @@ function App() {
         task.content.toLowerCase().includes(query),
     )
   }, [activeTaskCategoryId, taskFocused, taskQuery, data.taskTemplates])
+
+  const taskHeadingProtectedRanges = useMemo(
+    () =>
+      taskDraftSkeletonEnabled
+        ? getTaskHeadingProtectedRanges(data.taskDraft, taskSectionNames)
+        : [],
+    [data.taskDraft, taskDraftSkeletonEnabled, taskSectionNames],
+  )
 
   const normalizeDraftWithCursor = useCallback((value: string, cursor: number) => {
     const marker = '\uE000'
@@ -3824,24 +3931,66 @@ function App() {
   const insertTaskText = useCallback(
     (text: string, sectionId?: TaskSectionId) => {
       if (!text.trim()) return
-      const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
-      setTaskDraftSkeletonEnabled(useSkeleton)
-      const next = useSkeleton
-        ? insertTaskTextInSection(data.taskDraft, text, sectionId, taskSectionNames)
-        : [data.taskDraft.trimEnd(), padEmptySelectors(text.trimEnd())].filter(Boolean).join('\n')
-      updateTaskDraft(next, next.length, useSkeleton)
+      const targetTaskBoxIndex = activeTaskBoxIndex
+      const nextTaskBoxes = getTaskBoxesSnapshot()
+      const source =
+        targetTaskBoxIndex === activeTaskBoxIndex
+          ? data.taskDraft
+          : nextTaskBoxes[targetTaskBoxIndex]?.task ?? ''
+      const sectionIndex = getTaskSectionIndex(sectionId)
+      const currentSections = parseStructuredTaskDraft(source, taskSectionNames)
+      const currentSection = currentSections[sectionIndex] ?? ''
+      if (taskSectionContainsSnippet(currentSection, text)) return
+      const annotatedText = annotateTaskMailNumber(text, taskMailNumber)
+      const next = insertTaskTextInSection(source, annotatedText, sectionId, taskSectionNames)
+
+      if (targetTaskBoxIndex === activeTaskBoxIndex) {
+        setTaskDraftSkeletonEnabled(true)
+        updateTaskDraft(next, next.length, true)
+        return
+      }
+
+      setTaskDraftBoxes((prev) =>
+        prev.map((slot, index) =>
+          index === targetTaskBoxIndex
+            ? {
+                ...slot,
+                task: getTaskBoxStorageValue(next, targetTaskBoxIndex),
+              }
+            : slot,
+        ),
+      )
     },
-    [activeTaskBoxIndex, data.taskDraft, taskSectionNames, updateTaskDraft],
+    [
+      activeTaskBoxIndex,
+      data.taskDraft,
+      getTaskBoxesSnapshot,
+      getTaskBoxStorageValue,
+      taskMailNumber,
+      taskSectionNames,
+      updateTaskDraft,
+    ],
   )
 
   const handleTaskPaste = useCallback(
     (event: ClipboardEvent<HTMLTextAreaElement>) => {
       const text = event.clipboardData.getData('text/plain')
-      if (!taskBoxUsesSkeleton(activeTaskBoxIndex)) return
-      if (!text.trim() || !hasRecognizedTaskHeadings(text, taskSectionNames)) return
+      if (!text.trim()) return
+
+      const useSkeleton =
+        taskBoxUsesSkeleton(activeTaskBoxIndex) && hasRecognizedTaskHeadings(text, taskSectionNames)
+      if (!useSkeleton) return
 
       event.preventDefault()
-      const next = buildStructuredTaskDraft(parseStructuredTaskDraft(text, taskSectionNames), taskSectionNames)
+      setTaskMailNumber(getNextTaskMailNumber(text))
+      const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
+        text,
+        taskSectionNames,
+      )
+      const next = `${leadingContent}${buildStructuredTaskDraft(
+        contents,
+        taskSectionNames,
+      )}`
       setTaskDraftSkeletonEnabled(true)
       updateTaskDraft(next, next.length, true)
     },
@@ -3921,6 +4070,7 @@ function App() {
       setActiveTaskBoxIndex(index)
       setTaskDraftSkeletonEnabled(useSkeleton)
       updateTaskDraft(nextTask, nextTask.length, useSkeleton)
+      setTaskMailNumber(getNextTaskMailNumber(nextTask))
       closeDraftBoxTooltip()
       requestAnimationFrame(() => taskEditorRef.current?.focus())
     },
@@ -3950,7 +4100,7 @@ function App() {
         previewHtml: buildDraftBoxPreviewHtml(slot),
       })
     },
-    [buildDraftBoxPreviewHtml, draftBoxes, taskSectionNames],
+    [buildDraftBoxPreviewHtml, draftBoxes, hasTaskBoxContent],
   )
 
   const handleTaskBoxHover = useCallback(
@@ -3996,6 +4146,7 @@ function App() {
         setActiveTaskBoxIndex(savedActiveTaskIndex)
         setTaskDraftSkeletonEnabled(useSkeleton)
         updateTaskDraft(activeTask, activeTask.length, useSkeleton)
+        setTaskMailNumber(getNextTaskMailNumber(activeTask))
         requestAnimationFrame(() => {
           setDraftBoxes((prev) =>
             prev.map((item, slotIndex) =>
@@ -4035,9 +4186,10 @@ function App() {
         ),
       )
       updateEmailDraft('')
-      setActiveTaskBoxIndex(0)
-      setTaskDraftSkeletonEnabled(true)
-      updateTaskDraft('', undefined, true)
+      const useActiveSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+      setTaskDraftSkeletonEnabled(useActiveSkeleton)
+      updateTaskDraft('', undefined, useActiveSkeleton)
+      setTaskMailNumber(1)
       setTaskDraftBoxes(Array.from({ length: 2 }, createEmptyTaskBoxSlot))
       closeDraftBoxTooltip()
     },
@@ -4245,6 +4397,15 @@ function App() {
       ...prev,
       templates: prev.templates.map((template) =>
         template.id === templateId ? { ...template, favorite: !template.favorite } : template,
+      ),
+    }))
+  }
+
+  const toggleTaskTemplateFavorite = (taskId: string) => {
+    setData((prev) => ({
+      ...prev,
+      taskTemplates: prev.taskTemplates.map((task) =>
+        task.id === taskId ? { ...task, favorite: !task.favorite } : task,
       ),
     }))
   }
@@ -5541,7 +5702,6 @@ function App() {
   }
 
   const renderDashboardCatalogEditor = ({
-    title,
     subtitle,
     items,
     defaultCategory,
@@ -5550,7 +5710,6 @@ function App() {
     emptySelectionMessage,
     latestVersionPlaceholder,
   }: {
-    title: string
     subtitle: string
     items: DashboardProduct[]
     defaultCategory: DashboardProductCategory
@@ -5569,7 +5728,7 @@ function App() {
       <div className="list-card list-card--form">
         <div className="list-card__header">
           <div className="list-card__title-group">
-            <div className="list-card__title">{title}</div>
+            <div className="list-card__title">Réglages</div>
             <div className="list-card__subtitle">{subtitle}</div>
           </div>
           <div className="list-card__tools">
@@ -5628,8 +5787,8 @@ function App() {
                       </div>
                       <div className="list-item__actions">
                         <button
-                          className="icon-btn-sm danger"
-                          type="button"
+                                className="icon-btn-sm danger"
+                                type="button"
                           title="Supprimer"
                           onClick={(event) => {
                             event.stopPropagation()
@@ -5822,6 +5981,7 @@ function App() {
     setTaskDraftBoxes((prev) =>
       prev.map((slot, index) => (index === activeTaskBoxIndex ? createEmptyTaskBoxSlot() : slot)),
     )
+    setTaskMailNumber(1)
     setTaskClearArmed(false)
   }
 
@@ -5831,7 +5991,9 @@ function App() {
       window.setTimeout(() => setClearAllArmed(false), 2400)
       return
     }
+    const currentZoom = data.settings.zoom
     const nextData = JSON.parse(JSON.stringify(defaultData)) as AppData
+    nextData.settings.zoom = currentZoom
     setData(nextData)
     setActiveCategoryId('all')
     setEditSnippetCategoryId('all')
@@ -5873,6 +6035,7 @@ function App() {
       taskSections: ['', '', '', ''],
       taskSectionId: 'section-3',
       categoryId: defaultData.settings.taskTemplateCategories[0]?.id ?? '',
+      favorite: false,
     })
     setProcedureDraft({
       id: '',
@@ -6013,8 +6176,8 @@ function App() {
     }
     const categoryId = categoryIdSet.has(snippetDraft.categoryId)
       ? snippetDraft.categoryId
-      : data.categories[0]?.id
-    if (!categoryId) {
+      : data.categories[0]?.id ?? ''
+    if (!categoryId && categoryIdSet.size > 0) {
       markSettingsValidationTouched('snippet')
       setToast('Catégorie obligatoire.')
       return
@@ -6105,6 +6268,7 @@ function App() {
       taskSections,
       content: buildTaskTemplateContent({ ...taskDraft, taskSections }).trim(),
       taskSectionId: 'section-1' as TaskSectionId,
+      favorite: Boolean(taskDraft.favorite),
     }
     setData((prev) => {
       const next = exists
@@ -6135,16 +6299,6 @@ function App() {
 
   const handleProcedureReorder = (next: Procedure[]) => {
     setData((prev) => ({ ...prev, procedures: next }))
-  }
-
-  const deleteCategory = (category: Category) => {
-    if (!window.confirm(`Supprimer la catégorie "${category.name}" ?`)) return
-    setData((prev) => ({
-      ...prev,
-      categories: prev.categories.filter((item) => item.id !== category.id),
-      snippets: prev.snippets.filter((snippet) => snippet.categoryId !== category.id),
-    }))
-    if (activeCategoryId === category.id) setActiveCategoryId('all')
   }
 
   const deleteSnippet = (snippet: Snippet) => {
@@ -6258,6 +6412,27 @@ function App() {
   const dashboardProductsTotalHt = dashboardProductsTotalTtc / VAT_DIVISOR
   const dashboardShippingTotalHt = dashboardShippingTotalTtc / VAT_DIVISOR
   const dashboardGrandTotalHt = dashboardGrandTotalTtc / VAT_DIVISOR
+  const dashboardNotesHasContent = data.notes.trim().length > 0
+
+  const renderDashboardPageButton = (
+    page: (typeof workspaceDashboardPageOptions)[number],
+    tabIndex?: number,
+  ) => (
+    <button
+      key={page.id}
+      type="button"
+      className={`dashboard-page-btn${workspaceDashboardPage === page.id ? ' is-active' : ''}`}
+      title={page.title}
+      aria-label={page.title}
+      tabIndex={tabIndex}
+      onClick={() => handleSelectWorkspaceDashboardPage(page.id)}
+    >
+      <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
+      {page.id === 'tools' && dashboardNotesHasContent ? (
+        <span className="dashboard-page-btn__badge" aria-hidden="true" />
+      ) : null}
+    </button>
+  )
 
   const renderSettingsSlider = (
     label: string,
@@ -6328,7 +6503,6 @@ function App() {
           </div>
         </div>
         <div className="dashboard-news-notes__panel dashboard-news-notes__panel--news">
-          <div className="dashboard-news-notes__panel-title">News</div>
           <div className="dashboard-news-list dashboard-news-list--stacked">
             {dashboardNewsSorted.length ? (
               dashboardNewsSorted.map((item) => (
@@ -7285,20 +7459,7 @@ function App() {
 
   const renderDashboardPageNavigation = () => (
     <div className="dashboard-shell__nav">
-      {workspaceDashboardPageOptions.map((page) => (
-        <button
-          key={page.id}
-          type="button"
-          className={`dashboard-page-btn${
-            workspaceDashboardPage === page.id ? ' is-active' : ''
-          }`}
-          title={page.title}
-          aria-label={page.title}
-          onClick={() => handleSelectWorkspaceDashboardPage(page.id)}
-        >
-          <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
-        </button>
-      ))}
+      {workspaceDashboardPageOptions.map((page) => renderDashboardPageButton(page))}
     </div>
   )
 
@@ -7750,7 +7911,16 @@ function App() {
                           }}
                         >
                           <div className="result-name">
-                            {category.id === 'favorites' && <span className="category-star">★</span>}
+                            {category.id === 'favorites' ? (
+                              <span className="category-star">★</span>
+                            ) : (
+                              <span
+                                className="category-star category-star--spacer"
+                                aria-hidden="true"
+                              >
+                                ★
+                              </span>
+                            )}
                             <span className="result-name__text">{category.name}</span>
                             <span className="category-count">({category.count})</span>
                             <span className="category-arrow">›</span>
@@ -7863,25 +8033,13 @@ function App() {
                       {dashboardSectionOpen ? '▾' : '▴'}
                     </span>
                   </button>
-                  <div
-                    className={`dashboard-page-strip${dashboardSectionOpen ? ' is-open' : ''}`}
-                    aria-hidden={!dashboardSectionOpen}
-                  >
-                    {workspaceDashboardPageOptions.map((page) => (
-                      <button
-                        key={page.id}
-                        type="button"
-                        className={`dashboard-page-btn${
-                          workspaceDashboardPage === page.id ? ' is-active' : ''
-                        }`}
-                        title={page.title}
-                        aria-label={page.title}
-                        tabIndex={dashboardSectionOpen ? 0 : -1}
-                        onClick={() => handleSelectWorkspaceDashboardPage(page.id)}
-                      >
-                        <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
-                      </button>
-                    ))}
+                <div
+                  className={`dashboard-page-strip${dashboardSectionOpen ? ' is-open' : ''}`}
+                  aria-hidden={!dashboardSectionOpen}
+                >
+                    {workspaceDashboardPageOptions.map((page) =>
+                      renderDashboardPageButton(page, dashboardSectionOpen ? 0 : -1),
+                    )}
                   </div>
                 </div>
               </div>
@@ -7963,10 +8121,37 @@ function App() {
         </div>
 
         <section className="task-builder">
-          <p className="section-label section-label--tight">
-            <UiIcon name="inbox" className="section-label__icon" />
-            <span>Task</span>
-          </p>
+          <div className="task-builder__header">
+            <div className="task-builder__header-left">
+              <p className="section-label section-label--tight">
+                <UiIcon name="inbox" className="section-label__icon" />
+                <span>Task</span>
+              </p>
+            </div>
+            <div className="task-builder__header-right">
+              <div className="task-mail-counter" aria-label="Compteur de mail">
+                <button
+                  className="task-mail-counter__btn"
+                  type="button"
+                  title="Mail précédent"
+                  aria-label="Mail précédent"
+                  onClick={() => setTaskMailNumber((current) => Math.max(1, current - 1))}
+                >
+                  −
+                </button>
+                <span className="task-mail-counter__value">{taskMailNumber}</span>
+                <button
+                  className="task-mail-counter__btn"
+                  type="button"
+                  title="Mail suivant"
+                  aria-label="Mail suivant"
+                  onClick={() => setTaskMailNumber((current) => current + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="task-template-search">
             <div className="task-search-wrap" ref={taskSearchRef}>
               <UiIcon name="search" className="search-field-icon" />
@@ -8034,8 +8219,15 @@ function App() {
                           setActiveTaskCategoryId(category.id)
                           setTaskBrowserView('templates')
                         }}
-                      >
-                        <div className="result-name">
+                        >
+                          <div className="result-name">
+                          {category.id === 'favorites' ? (
+                            <span className="category-star">★</span>
+                          ) : (
+                            <span className="category-star category-star--spacer" aria-hidden="true">
+                              ★
+                            </span>
+                          )}
                           <span className="result-name__text">{category.name}</span>
                           <span className="category-count">({category.count})</span>
                           <span className="category-arrow">›</span>
@@ -8055,10 +8247,11 @@ function App() {
               onPaste={handleTaskPaste}
               placeholder="Écrivez vos tâches..."
               className="task-editor"
+              protectedRanges={taskHeadingProtectedRanges}
             />
           </div>
           <div className="task-actions">
-            <div className="task-actions-buttons">
+            <div className="task-actions__left">
               <div className="draft-boxes-inline task-draft-boxes-inline" aria-label="Tasks">
                 {taskDraftBoxes.map((slot, index) => {
                   const taskValue = index === activeTaskBoxIndex ? data.taskDraft : slot.task
@@ -8071,11 +8264,7 @@ function App() {
                       className={`draft-box-btn task-draft-box-btn${hasContent ? ' is-filled' : ''}${
                         isActive ? ' is-active' : ''
                       }`}
-                      title={
-                        index === 0
-                          ? 'Task 1 avec squelette'
-                          : 'Task 2 libre sans squelette'
-                      }
+                      title={index === 0 ? 'Task 1 avec squelette' : 'Task 2 libre sans squelette'}
                       aria-label={
                         index === 0
                           ? 'Afficher la task 1 avec squelette'
@@ -8088,15 +8277,17 @@ function App() {
                     >
                       <span className="draft-box-btn__icon" aria-hidden="true">
                         <UiIcon
-                          name={hasContent ? 'folder' : 'folderOpen'}
+                          name={taskBoxUsesSkeleton(index) ? 'template' : 'edit'}
                           className="draft-box-btn__icon-svg"
                         />
-                        <span className="draft-box-btn__badge">{index + 1}</span>
+                        {hasContent ? <span className="draft-box-btn__badge">T</span> : null}
                       </span>
                     </button>
                   )
                 })}
               </div>
+            </div>
+            <div className="task-actions__right">
               <button
                 className={`primary task-copy-btn copy-btn${taskCopied ? ' is-success' : ''}${
                   taskCopyPulse ? ' btn-pulse' : ''
@@ -8258,7 +8449,11 @@ function App() {
                 </div>
                 <div className="modal__subtitle">Choisissez les lignes à importer.</div>
               </div>
-              <button className="close-modal" type="button" onClick={() => setTemplatePreview(null)}>
+              <button
+                className="close-modal close-modal--subtle"
+                type="button"
+                onClick={() => setTemplatePreview(null)}
+              >
                 <CloseIcon />
               </button>
             </div>
@@ -8360,48 +8555,7 @@ function App() {
                   <span className="version-pill version-pill--settings">v{APP_VERSION_LABEL}</span>
                 </div>
               </div>
-              <div className="modal-actions modal-actions--settings">
-                <button
-                  className="btn btn--ghost btn--small btn--with-icon"
-                  type="button"
-                  onClick={handleExportJson}
-                  title="Exporter les données"
-                >
-                  <ExportDataIcon />
-                  Exporter
-                </button>
-                <button
-                  className="btn btn--ghost btn--small btn--with-icon"
-                  type="button"
-                  onClick={handleImportClick}
-                  title="Importer les données (Shift = remplacer)"
-                >
-                  <ImportDataIcon />
-                  Importer
-                </button>
-                <button
-                  className="btn btn--ghost btn--small btn--with-icon"
-                  type="button"
-                  onClick={handleExportHistory}
-                  title="Exporter l’historique (.txt)"
-                  disabled={!data.history.length}
-                >
-                  <ExportEmailsIcon />
-                  Exporter emails
-                  {data.history.length ? ` (${data.history.length})` : ''}
-                </button>
-                <button
-                  className={`btn btn--small btn--danger btn--with-icon${
-                    clearAllArmed ? ' is-armed' : ''
-                  }`}
-                  type="button"
-                  onClick={handleClearData}
-                  title={clearAllArmed ? 'Confirmer suppression des données' : 'Delete all data'}
-                  aria-label="Delete all data"
-                >
-                  <ButtonIcon name="delete" />
-                  {clearAllArmed ? 'Confirmer suppression' : 'Delete all data'}
-                </button>
+            <div className="modal-actions modal-actions--settings">
                 <button
                   className="btn btn--ghost btn--small btn--with-icon"
                   type="button"
@@ -8482,7 +8636,7 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Catégories</div>
+                    <div className="list-card__title">Liste</div>
                   </div>
                   <div className="list-card__body">
                     <SortableList
@@ -8490,17 +8644,15 @@ function App() {
                       getId={(item) => item.id}
                       onReorder={(next) => setData((prev) => ({ ...prev, categories: next }))}
                       renderItem={(category, handleProps) => {
-                        const issues = getCategoryIssues(category)
+                        const categoryTemplates = data.templates
+                          .filter((template) => template.categoryId === category.id)
+                          .slice(0, 2)
                         return (
                           <div
                             className={`list-item list-item--compact${
-                              selectedCategoryId === category.id ? ' is-selected' : ''
-                            }${issues.length ? ' is-incomplete' : ''}`}
-                            onClick={() => {
-                              clearSettingsValidationTouched('category')
-                              setCategoryDraft(category)
-                              setSelectedCategoryId(category.id)
-                            }}
+                              templateCategoryDraft.id === category.id ? ' is-selected' : ''
+                            }`}
+                            onClick={() => setTemplateCategoryDraft(category)}
                           >
                             <button
                               className="drag-handle"
@@ -8512,35 +8664,39 @@ function App() {
                               <MoveIcon />
                             </button>
                             <div className="list-item__content">
-                              <div className="list-item__title">
-                                {category.name || 'Catégorie sans titre'}
+                              <div className="list-item__title">{category.name}</div>
+                              <div className="list-item__meta">
+                                {data.templates.filter(
+                                  (template) => template.categoryId === category.id,
+                                ).length}{' '}
+                                template(s)
                               </div>
-                              {renderIssueBadge(issues)}
+                              {categoryTemplates.length ? (
+                                <div className="list-item__meta list-item__meta--stack category-preview-stack">
+                                  {categoryTemplates.map((template) => (
+                                    <div className="category-preview-item" key={template.id}>
+                                      <strong>{template.name}</strong>
+                                      <span>{template.content.split('\n')[0] || 'Contenu vide'}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="list-item__meta list-item__meta--stack">
+                                  Aucun template dans cette catégorie.
+                                </div>
+                              )}
                             </div>
-                            <span
-                              className="list-item__color"
-                              style={{
-                                background:
-                                  categoryColorMap.get(category.color) ??
-                                  categoryColorMap.get('violet'),
-                              }}
-                            />
                             <div className="list-item__actions">
                               <button
                                 className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer"
                                 onClick={(event) => {
                                   event.stopPropagation()
-                                  deleteCategory(category)
-                                  setSelectedCategoryId((prev) =>
-                                    prev === category.id ? null : prev,
-                                  )
-                                  if (selectedCategoryId === category.id) {
-                                    setCategoryDraft(getEmptyCategoryDraft())
-                                  }
+                                  deleteTemplateCategory(category.id)
                                 }}
-                                title="Supprimer"
                               >
-                            <DeleteIcon />
+                                <DeleteIcon />
                               </button>
                             </div>
                           </div>
@@ -8579,7 +8735,7 @@ function App() {
                     ) : (
                       <div className="form">
                         {renderValidationIssues('category', categoryDraftIssues)}
-                        <div className="workflow-step-label">Titre</div>
+                        <div className="workflow-step-label">Nom</div>
                         <input
                           className="input"
                           placeholder="Nom de catégorie"
@@ -8635,7 +8791,7 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Snippets</div>
+                    <div className="list-card__title">Liste</div>
                     <div className="list-card__tools">
                       <select
                         className="select select--roomy"
@@ -8701,7 +8857,7 @@ function App() {
                                 }}
                                 title="Supprimer"
                               >
-                            <DeleteIcon />
+                                <DeleteIcon />
                               </button>
                             </div>
                           </div>
@@ -8767,10 +8923,10 @@ function App() {
                     ) : (
                       <div className="form">
                         {renderValidationIssues('snippet', snippetDraftIssues)}
-                        <div className="workflow-step-label">Titre</div>
+                        <div className="workflow-step-label">Nom</div>
                         <input
                           className="input"
-                          placeholder="Titre"
+                          placeholder="Nom du snippet"
                           value={snippetDraft.title}
                           ref={snippetTitleRef}
                           data-tag-autocomplete-field="true"
@@ -8875,6 +9031,7 @@ function App() {
                               }))
                             }
                           >
+                            {!data.categories.length ? <option value="">Aucune catégorie</option> : null}
                             {data.categories.map((category) => (
                               <option key={category.id} value={category.id}>
                                 {category.name}
@@ -9086,7 +9243,7 @@ function App() {
                     ) : (
                       <div className="form">
                         {renderValidationIssues('template', templateDraftIssues)}
-                        <div className="workflow-step-label">Titre</div>
+                        <div className="workflow-step-label">Nom</div>
                         <input
                           className="input"
                           placeholder="Nom du template mail"
@@ -9160,25 +9317,40 @@ function App() {
                               }))
                             }
                           >
+                            {!mailTemplateCategories.length ? (
+                              <option value="">Aucune catégorie</option>
+                            ) : null}
                             {mailTemplateCategories.map((category) => (
                               <option key={category.id} value={category.id}>
                                 {category.name}
                               </option>
                             ))}
                           </select>
-                          <label className="portal-code-editor__check">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(templateDraft.favorite)}
-                              onChange={(event) =>
-                                setTemplateDraft((prev) => ({
-                                  ...prev,
-                                  favorite: event.target.checked,
-                                }))
-                              }
-                            />
-                            <span>Favori</span>
-                          </label>
+                          <button
+                            type="button"
+                            className={`template-favorite-toggle${
+                              templateDraft.favorite ? ' is-active' : ''
+                            }`}
+                            title={
+                              templateDraft.favorite
+                                ? 'Retirer des favoris'
+                                : 'Ajouter aux favoris'
+                            }
+                            aria-label={
+                              templateDraft.favorite
+                                ? 'Retirer des favoris'
+                                : 'Ajouter aux favoris'
+                            }
+                            aria-pressed={Boolean(templateDraft.favorite)}
+                            onClick={() =>
+                              setTemplateDraft((prev) => ({
+                                ...prev,
+                                favorite: !prev.favorite,
+                              }))
+                            }
+                          >
+                            ★
+                          </button>
                         </div>
                         <div className="workflow-step-label">Contenu</div>
                         <textarea
@@ -9367,51 +9539,72 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Catégories mail</div>
+                    <div className="list-card__title">Liste</div>
                   </div>
                   <div className="list-card__body">
                     <SortableList
                       items={mailTemplateCategories}
                       getId={(item) => item.id}
                       onReorder={(next) => updateSettings({ mailTemplateCategories: next })}
-                      renderItem={(category, handleProps) => (
-                        <div
-                          className={`list-item list-item--compact${
-                            templateCategoryDraft.id === category.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => setTemplateCategoryDraft(category)}
-                        >
-                          <button
-                            className="drag-handle"
-                            type="button"
-                            {...handleProps.attributes}
-                            {...handleProps.listeners}
-                            onClick={(event) => event.stopPropagation()}
+                      renderItem={(category, handleProps) => {
+                        const categoryTemplates = data.templates
+                          .filter((template) => template.categoryId === category.id)
+                          .slice(0, 2)
+                        return (
+                          <div
+                            className={`list-item list-item--compact${
+                              templateCategoryDraft.id === category.id ? ' is-selected' : ''
+                            }`}
+                            onClick={() => setTemplateCategoryDraft(category)}
                           >
-                            <MoveIcon />
-                          </button>
-                          <div className="list-item__content">
-                            <div className="list-item__title">{category.name}</div>
-                            <div className="list-item__meta">
-                              {data.templates.filter((template) => template.categoryId === category.id).length}{' '}
-                              template(s)
+                            <button
+                              className="drag-handle"
+                              type="button"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <MoveIcon />
+                            </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">{category.name}</div>
+                              <div className="list-item__meta">
+                                {data.templates.filter(
+                                  (template) => template.categoryId === category.id,
+                                ).length}{' '}
+                                template(s)
+                              </div>
+                              {categoryTemplates.length ? (
+                                <div className="list-item__meta list-item__meta--stack category-preview-stack">
+                                  {categoryTemplates.map((template) => (
+                                    <div className="category-preview-item" key={template.id}>
+                                      <strong>{template.name}</strong>
+                                      <span>{template.content.split('\n')[0] || 'Contenu vide'}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="list-item__meta list-item__meta--stack">
+                                  Aucun template dans cette catégorie.
+                                </div>
+                              )}
+                            </div>
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  deleteTemplateCategory(category.id)
+                                }}
+                              >
+                                <DeleteIcon />
+                              </button>
                             </div>
                           </div>
-                          <div className="list-item__actions">
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                deleteTemplateCategory(category.id)
-                              }}
-                            >
-                              <DeleteIcon />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        )
+                      }}
                     />
                   </div>
                 </div>
@@ -9461,51 +9654,72 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Catégories task</div>
+                    <div className="list-card__title">Liste</div>
                   </div>
                   <div className="list-card__body">
                     <SortableList
                       items={taskTemplateCategories}
                       getId={(item) => item.id}
                       onReorder={(next) => updateSettings({ taskTemplateCategories: next })}
-                      renderItem={(category, handleProps) => (
-                        <div
-                          className={`list-item list-item--compact${
-                            taskTemplateCategoryDraft.id === category.id ? ' is-selected' : ''
-                          }`}
-                          onClick={() => setTaskTemplateCategoryDraft(category)}
-                        >
-                          <button
-                            className="drag-handle"
-                            type="button"
-                            {...handleProps.attributes}
-                            {...handleProps.listeners}
-                            onClick={(event) => event.stopPropagation()}
+                      renderItem={(category, handleProps) => {
+                        const categoryTasks = data.taskTemplates
+                          .filter((task) => task.categoryId === category.id)
+                          .slice(0, 2)
+                        return (
+                          <div
+                            className={`list-item list-item--compact${
+                              taskTemplateCategoryDraft.id === category.id ? ' is-selected' : ''
+                            }`}
+                            onClick={() => setTaskTemplateCategoryDraft(category)}
                           >
-                            <MoveIcon />
-                          </button>
-                          <div className="list-item__content">
-                            <div className="list-item__title">{category.name}</div>
-                            <div className="list-item__meta">
-                              {data.taskTemplates.filter((task) => task.categoryId === category.id).length}{' '}
-                              template(s)
+                            <button
+                              className="drag-handle"
+                              type="button"
+                              {...handleProps.attributes}
+                              {...handleProps.listeners}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <MoveIcon />
+                            </button>
+                            <div className="list-item__content">
+                              <div className="list-item__title">{category.name}</div>
+                              <div className="list-item__meta">
+                                {data.taskTemplates.filter(
+                                  (task) => task.categoryId === category.id,
+                                ).length}{' '}
+                                template(s)
+                              </div>
+                              {categoryTasks.length ? (
+                                <div className="list-item__meta list-item__meta--stack category-preview-stack">
+                                  {categoryTasks.map((task) => (
+                                    <div className="category-preview-item" key={task.id}>
+                                      <strong>{task.name}</strong>
+                                      <span>{getTaskTemplatePreviewText(task)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="list-item__meta list-item__meta--stack">
+                                  Aucun template dans cette catégorie.
+                                </div>
+                              )}
+                            </div>
+                            <div className="list-item__actions">
+                              <button
+                                className="icon-btn-sm danger"
+                                type="button"
+                                title="Supprimer"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  deleteTaskTemplateCategory(category.id)
+                                }}
+                              >
+                                <DeleteIcon />
+                              </button>
                             </div>
                           </div>
-                          <div className="list-item__actions">
-                            <button
-                              className="icon-btn-sm danger"
-                              type="button"
-                              title="Supprimer"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                deleteTaskTemplateCategory(category.id)
-                              }}
-                            >
-                              <DeleteIcon />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        )
+                      }}
                     />
                   </div>
                 </div>
@@ -9555,7 +9769,7 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Templates de tâche</div>
+                    <div className="list-card__title">Liste</div>
                   </div>
                   <div className="list-card__body">
                     <SortableList
@@ -9600,6 +9814,28 @@ function App() {
                             </div>
                             <div className="list-item__actions">
                               <button
+                                className={`template-favorite-btn${
+                                  task.favorite ? ' is-active' : ''
+                                }`}
+                                type="button"
+                                title={
+                                  task.favorite
+                                    ? 'Retirer des favoris'
+                                    : 'Ajouter aux favoris'
+                                }
+                                aria-label={
+                                  task.favorite
+                                    ? 'Retirer des favoris'
+                                    : 'Ajouter aux favoris'
+                                }
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  toggleTaskTemplateFavorite(task.id)
+                                }}
+                              >
+                                ★
+                              </button>
+                              <button
                                 className="icon-btn-sm danger"
                                 type="button"
                                 onClick={(event) => {
@@ -9612,7 +9848,7 @@ function App() {
                                 }}
                                 title="Supprimer"
                               >
-                            <DeleteIcon />
+                                <DeleteIcon />
                               </button>
                             </div>
                           </div>
@@ -9678,7 +9914,7 @@ function App() {
                     ) : (
                       <div className="form">
                         {renderValidationIssues('task', taskDraftIssues)}
-                        <div className="workflow-step-label">Titre</div>
+                        <div className="workflow-step-label">Nom</div>
                         <input
                           className="input"
                           placeholder="Nom du template tâche"
@@ -9727,22 +9963,48 @@ function App() {
                           ),
                         )}
                         <div className="workflow-step-label">Catégorie</div>
-                        <select
-                          className="select select--roomy"
-                          value={taskDraft.categoryId ?? taskTemplateCategories[0]?.id ?? ''}
-                          onChange={(event) =>
-                            setTaskDraft((prev) => ({
-                              ...prev,
-                              categoryId: event.target.value,
-                            }))
-                          }
-                        >
-                          {taskTemplateCategories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="form__row two">
+                          <select
+                            className="select select--roomy"
+                            value={taskDraft.categoryId ?? taskTemplateCategories[0]?.id ?? ''}
+                            onChange={(event) =>
+                              setTaskDraft((prev) => ({
+                                ...prev,
+                                categoryId: event.target.value,
+                              }))
+                            }
+                          >
+                            {!taskTemplateCategories.length ? (
+                              <option value="">Aucune catégorie</option>
+                            ) : null}
+                            {taskTemplateCategories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className={`template-favorite-toggle${
+                              taskDraft.favorite ? ' is-active' : ''
+                            }`}
+                            title={
+                              taskDraft.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'
+                            }
+                            aria-label={
+                              taskDraft.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'
+                            }
+                            aria-pressed={Boolean(taskDraft.favorite)}
+                            onClick={() =>
+                              setTaskDraft((prev) => ({
+                                ...prev,
+                                favorite: !prev.favorite,
+                              }))
+                            }
+                          >
+                            ★
+                          </button>
+                        </div>
                         <div className="workflow-step-label">Sections</div>
                         <div className="task-template-sections">
                           {TASK_SECTION_IDS.map((sectionId, sectionIndex) => {
@@ -9792,7 +10054,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Task Format</div>
+                      <div className="list-card__title">Structure</div>
                       <div className="list-card__subtitle">
                         Squelette permanent utilisé par la zone task et les templates.
                       </div>
@@ -9834,7 +10096,7 @@ function App() {
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
-                    <div className="list-card__title">Tags prédéfinis</div>
+                    <div className="list-card__title">Gestion</div>
                   </div>
                   <div className="list-card__body">
                     <div className="tag-settings">
@@ -9891,7 +10153,7 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Produits</div>
+                    <div className="list-card__title">Liste</div>
                     <div className="list-card__subtitle">
                       Types, tags, éditions, compatibilités et spare parts.
                     </div>
@@ -9965,7 +10227,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Détails produit</div>
+                      <div className="list-card__title">Détails</div>
                       <div className="list-card__subtitle">
                         Liaisons avec les produits, logiciels, drivers et firmwares.
                       </div>
@@ -10397,7 +10659,7 @@ function App() {
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Procédures</div>
+                    <div className="list-card__title">Liste</div>
                     <div className="list-card__tools">
                       <button className="btn btn--ghost btn--small" onClick={handleOpenProcedure}>
                         Ouvrir
@@ -11020,15 +11282,6 @@ function App() {
             {editTab === 'callHistory' ? (
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Historique des appels</div>
-                      <div className="list-card__subtitle">
-                        Les {CALL_HISTORY_LIMIT} derniers appels enregistrés depuis le bouton
-                        téléphone.
-                      </div>
-                    </div>
-                  </div>
                   <div className="list-card__body">
                     <div className="settings-history-section">
                       <div className="settings-row">
@@ -11071,14 +11324,8 @@ function App() {
             {editTab === 'callTemplate' ? (
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Template d’appel</div>
-                      <div className="list-card__subtitle">
-                        Utilisé comme base à l’ouverture d’un nouvel appel téléphonique.
-                      </div>
-                    </div>
-                    <div className="list-card__tools">
+                  <div className="list-card__body">
+                    <div className="settings-block">
                       <button
                         className="btn btn--ghost btn--small btn--with-icon"
                         type="button"
@@ -11086,10 +11333,6 @@ function App() {
                       >
                         Réinitialiser
                       </button>
-                    </div>
-                  </div>
-                  <div className="list-card__body">
-                    <div className="settings-block">
                       <div className="token-buttons">
                         <button
                           type="button"
@@ -11287,55 +11530,27 @@ function App() {
 
             {editTab === 'general' ? (
               <div className="list-card list-card--form">
-                <div className="list-card__header">
-                  <div className="list-card__title-group">
-                    <div className="list-card__title">Général</div>
-                    <div className="list-card__subtitle">Comportements et langue.</div>
-                  </div>
-                </div>
                 <div className="list-card__body">
                   <div className="settings-block">
-                    <div className="settings-option">
+                    <div className="settings-option settings-option--danger">
                       <div className="settings-option__info">
-                        <div className="settings-option__title">Focus auto sur l'éditeur</div>
+                        <div className="settings-option__title">Suppression des données</div>
                         <div className="settings-option__desc">
-                          Revient dans l'email après fermeture de l'édition.
+                          Efface l'ensemble du contenu et restaure les réglages par défaut.
                         </div>
                       </div>
-                      <label className="settings-toggle">
-                        <input
-                          type="checkbox"
-                          checked={autoFocusEditor}
-                          onChange={(event) =>
-                            updateSettings({ autoFocusEditor: event.target.checked })
-                          }
-                        />
-                        <span className="settings-toggle__track">
-                          <span className="settings-toggle__thumb" />
-                        </span>
-                      </label>
-                    </div>
-                    <div className="settings-option">
-                      <div className="settings-option__info">
-                        <div className="settings-option__title">Langue des templates</div>
-                        <div className="settings-option__desc">
-                          Filtre par défaut des templates mail.
-                        </div>
-                      </div>
-                      <div className="settings-segment">
-                        {(['fr', 'en'] as Language[]).map((lang) => (
-                          <button
-                            key={lang}
-                            type="button"
-                            className={`settings-pill${
-                              data.settings.language === lang ? ' is-active' : ''
-                            }`}
-                            onClick={() => updateSettings({ language: lang })}
-                          >
-                            {lang.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
+                      <button
+                        className={`btn btn--small btn--danger btn--with-icon${
+                          clearAllArmed ? ' is-armed' : ''
+                        }`}
+                        type="button"
+                        onClick={handleClearData}
+                        title={clearAllArmed ? 'Confirmer suppression des données' : 'Delete all data'}
+                        aria-label="Delete all data"
+                      >
+                        <ButtonIcon name="delete" />
+                        {clearAllArmed ? 'Confirmer suppression' : 'Delete all data'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -11344,42 +11559,17 @@ function App() {
 
             {editTab === 'snippetSettings' ? (
               <div className="list-card list-card--form">
-                <div className="list-card__header">
-                  <div className="list-card__title-group">
-                    <div className="list-card__title">Réglages snippets</div>
-                    <div className="list-card__subtitle">Règles de création rapide.</div>
-                  </div>
-                </div>
                 <div className="list-card__body">
                     <div className="settings-block">
                       <div className="settings-option">
                         <div className="settings-option__info">
-                          <div className="settings-option__title">Affichage des catégories</div>
-                        <div className="settings-option__desc">
-                          Affiche les catégories des snippets en 7 boutons ou en liste déroulante.
+                          <div className="settings-option__title">Réglages déplacés</div>
+                          <div className="settings-option__desc">
+                            Les options de comportement et d'affichage ont été regroupées dans
+                            l'onglet Préférences.
+                          </div>
                         </div>
                       </div>
-                      <div className="settings-segment">
-                        <button
-                          type="button"
-                          className={`settings-pill${
-                            snippetCategoryDisplay === 'buttons' ? ' is-active' : ''
-                          }`}
-                          onClick={() => updateSettings({ snippetCategoryDisplay: 'buttons' })}
-                        >
-                          7 boutons
-                        </button>
-                        <button
-                          type="button"
-                          className={`settings-pill${
-                            snippetCategoryDisplay === 'dropdown' ? ' is-active' : ''
-                          }`}
-                          onClick={() => updateSettings({ snippetCategoryDisplay: 'dropdown' })}
-                        >
-                          Liste déroulante
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -11389,7 +11579,7 @@ function App() {
               <div className="list-card list-card--form">
                 <div className="list-card__header">
                   <div className="list-card__title-group">
-                    <div className="list-card__title">Historique</div>
+                    <div className="list-card__title">Mémoire</div>
                     <div className="list-card__subtitle">Mémoire de copie.</div>
                   </div>
                 </div>
@@ -11445,10 +11635,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Liens rapides</div>
-                      <div className="list-card__subtitle">
-                        URLs utilisées par les boutons d’accès rapides en haut de l’éditeur.
-                      </div>
+                      <div className="list-card__title">Configuration</div>
                     </div>
                   </div>
                   <div className="list-card__body">
@@ -11465,11 +11652,9 @@ function App() {
                             <div className="quick-link-editor__head">
                               <div className="quick-link-editor__identity">
                                 <img src={link.icon} alt="" width={22} height={22} />
-                                <div>
+                                  <div>
                                   <div className="quick-link-editor__title">{link.label}</div>
-                                  <div className="quick-link-editor__meta">
-                                    Bouton {link.label}
-                                  </div>
+                                  <div className="quick-link-editor__meta">Accès rapide</div>
                                 </div>
                               </div>
                               <button
@@ -11503,7 +11688,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Templates mailto procédures</div>
+                      <div className="list-card__title">Configuration</div>
                       <div className="list-card__subtitle">
                         Destinataires, titre et texte utilisés par le bouton mailto des procédures.
                       </div>
@@ -11611,100 +11796,90 @@ function App() {
             {editTab === 'preferences' ? (
               <div className="modal__grid modal__grid--single">
                 <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Préférences</div>
-                      <div className="list-card__subtitle">
-                        Réglages globaux, snippets et format d’export regroupés au même endroit.
-                      </div>
-                    </div>
-                  </div>
                   <div className="list-card__body">
                     <div className="settings-stack">
                       <section className="settings-group">
-                        <div className="settings-group__title">Général</div>
+                        <div className="settings-group__title">Affichage</div>
                         <div className="settings-block">
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">
-                                Focus auto sur l'éditeur
-                              </div>
-                              <div className="settings-option__desc">
-                                Revient dans l'email après fermeture des settings.
-                              </div>
-                            </div>
-                            <label className="settings-toggle">
-                              <input
-                                type="checkbox"
-                                checked={autoFocusEditor}
-                                onChange={(event) =>
-                                  updateSettings({ autoFocusEditor: event.target.checked })
-                                }
-                              />
-                              <span className="settings-toggle__track">
-                                <span className="settings-toggle__thumb" />
-                              </span>
-                            </label>
-                          </div>
-                          <div className="settings-option">
-                            <div className="settings-option__info">
-                              <div className="settings-option__title">Langue des templates</div>
-                              <div className="settings-option__desc">
-                                Filtre par défaut des templates mail.
-                              </div>
-                            </div>
-                            <div className="settings-segment">
-                              {(['fr', 'en'] as Language[]).map((lang) => (
-                                <button
-                                  key={lang}
-                                  type="button"
-                                  className={`settings-pill${
-                                    data.settings.language === lang ? ' is-active' : ''
-                                  }`}
-                                  onClick={() => updateSettings({ language: lang })}
-                                >
-                                  {lang.toUpperCase()}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                          {renderSettingsSlider(
+                            'Taille du texte',
+                            `${Math.round(textScale * 100)}%`,
+                            '85%',
+                            '140%',
+                            textScale,
+                            0.85,
+                            1.4,
+                            0.05,
+                            (nextScale) => {
+                              const nextTextScale = Math.min(1.4, Math.max(0.85, nextScale))
+                              updateSettings({ textScale: nextTextScale })
+                            },
+                            {
+                              description:
+                                'Ajuste la densité globale de lecture dans toute l’application.',
+                            },
+                          )}
+                          {renderSettingsSlider(
+                            'Zoom',
+                            `${Math.round(zoomValue * 100)}%`,
+                            '80%',
+                            '130%',
+                            zoomValue,
+                            0.8,
+                            1.3,
+                            0.05,
+                            (nextZoom) => {
+                              const zoom = Math.min(1.3, Math.max(0.8, nextZoom))
+                              updateSettings({ zoom })
+                            },
+                            {
+                              description: 'Modifie l’échelle générale des panneaux et des cartes.',
+                            },
+                          )}
+                          {renderSettingsSlider(
+                            'Interligne éditeur',
+                            `${editorLineHeight.toFixed(2)}x`,
+                            '1.30x',
+                            '2.00x',
+                            editorLineHeight,
+                            1.3,
+                            2,
+                            0.05,
+                            (nextHeight) => {
+                              const nextEditorLineHeight = Math.min(2, Math.max(1.3, nextHeight))
+                              updateSettings({ editorLineHeight: nextEditorLineHeight })
+                            },
+                            {
+                              description: 'Laisse plus ou moins d’air entre les lignes de l’éditeur.',
+                            },
+                          )}
                         </div>
                       </section>
 
                       <section className="settings-group">
-                        <div className="settings-group__title">Snippets</div>
+                        <div className="settings-group__title">Général</div>
                         <div className="settings-block">
-                          <div className="settings-option">
+                          <div className="settings-option settings-option--danger">
                             <div className="settings-option__info">
-                              <div className="settings-option__title">
-                                Affichage des catégories
-                              </div>
+                              <div className="settings-option__title">Suppression des données</div>
                               <div className="settings-option__desc">
-                                Choix entre boutons rapides et liste déroulante.
+                                Efface l'ensemble du contenu et restaure les réglages par défaut.
                               </div>
                             </div>
-                            <div className="settings-segment">
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  snippetCategoryDisplay === 'buttons' ? ' is-active' : ''
-                                }`}
-                                onClick={() => updateSettings({ snippetCategoryDisplay: 'buttons' })}
-                              >
-                                7 boutons
-                              </button>
-                              <button
-                                type="button"
-                                className={`settings-pill${
-                                  snippetCategoryDisplay === 'dropdown' ? ' is-active' : ''
-                                }`}
-                                onClick={() =>
-                                  updateSettings({ snippetCategoryDisplay: 'dropdown' })
-                                }
-                              >
-                                Liste déroulante
-                              </button>
-                            </div>
+                            <button
+                              className={`btn btn--small btn--danger btn--with-icon${
+                                clearAllArmed ? ' is-armed' : ''
+                              }`}
+                              type="button"
+                              onClick={handleClearData}
+                              title={
+                                clearAllArmed ? 'Confirmer suppression des données' : 'Delete all data'
+                              }
+                              aria-label="Delete all data"
+                            >
+                              <ButtonIcon name="delete" />
+                              {clearAllArmed ? 'Confirmer suppression' : 'Delete all data'}
+                            </button>
                           </div>
                         </div>
                       </section>
@@ -11763,7 +11938,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Procédures Portal</div>
+                      <div className="list-card__title">Configuration</div>
                       <div className="list-card__subtitle">
                         Liste à gauche, aperçu à droite, édition dans une fenêtre dédiée.
                       </div>
@@ -11798,7 +11973,6 @@ function App() {
 
             {editTab === 'dashboardVersions'
               ? renderDashboardCatalogEditor({
-                  title: 'Firmwares',
                   subtitle: 'Versions firmware disponibles pour les éditions produit.',
                   items: dashboardFirmwareProducts,
                   defaultCategory: 'firmware',
@@ -11813,7 +11987,6 @@ function App() {
 
             {editTab === 'dashboardSoftwares'
               ? renderDashboardCatalogEditor({
-                  title: 'Logiciels',
                   subtitle: 'Déclarez les logiciels et les versions produit compatibles.',
                   items: dashboardSoftwareProducts,
                   defaultCategory: 'software',
@@ -11828,7 +12001,6 @@ function App() {
 
             {editTab === 'dashboardDriverPacks'
               ? renderDashboardCatalogEditor({
-                  title: 'Packs drivers',
                   subtitle: 'Déclarez les packs drivers et les produits qu’ils contiennent.',
                   items: dashboardDriverProducts,
                   defaultCategory: 'driver',
@@ -11846,7 +12018,7 @@ function App() {
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Produits</div>
+                      <div className="list-card__title">Liste</div>
                       <div className="list-card__subtitle">
                         Chaque produit possède sa propre liste de spare parts.
                       </div>
@@ -11902,7 +12074,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Spare Parts</div>
+                      <div className="list-card__title">Détails</div>
                       <div className="list-card__subtitle">
                         Nom, SKU et disponibilité du guide pour chaque pièce.
                       </div>
@@ -12030,7 +12202,7 @@ function App() {
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">News</div>
+                      <div className="list-card__title">Liste</div>
                       <div className="list-card__subtitle">
                         Liste affichée dans la page 6 du dashboard.
                       </div>
@@ -12098,7 +12270,7 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Détails news</div>
+                      <div className="list-card__title">Détails</div>
                       <div className="list-card__subtitle">
                         Date, titre et contenu affichés dans le dashboard.
                       </div>
@@ -12147,7 +12319,7 @@ function App() {
                         />
                         <input
                           className="input"
-                          placeholder="Titre"
+                          placeholder="Titre de l'actualité"
                           value={dashboardNewsDraft.title}
                           onChange={(event) =>
                             setDashboardNewsDraft((prev) => ({
@@ -12189,330 +12361,144 @@ function App() {
             ) : null}
 
             {editTab === 'dashboard' ? (
-              <div className="modal__grid modal__grid--settings">
-                <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Procédures Portal</div>
-                      <div className="list-card__subtitle">
-                        Liste à gauche, aperçu à droite, édition dans une fenêtre dédiée.
-                      </div>
+              <div className="modal__grid modal__grid--single settings-home">
+                <div className="settings-home__hero">
+                  <div className="settings-home__hero-main">
+                    <div className="settings-home__title-row">
+                      <div className="settings-home__title">Agentor</div>
+                      <div className="version-pill version-pill--settings">v{APP_VERSION_LABEL}</div>
                     </div>
-                    <div className="list-card__tools">
-                      {selectedPortalProcedureId ? (
-                        <button
-                          className="btn btn--ghost btn--small btn--with-icon"
-                          type="button"
-                          onClick={() => setPortalProcedureEditorOpen(true)}
-                        >
-                          <ButtonIcon name="edit" />
-                          Modifier
-                        </button>
-                      ) : null}
-                      <button
-                        className="btn btn--ghost btn--small btn--with-icon"
-                        type="button"
-                        onClick={handleAddPortalProcedure}
-                      >
-                        <ButtonIcon name="add" />
-                        Nouveau
-                      </button>
-                    </div>
-                  </div>
-                  <div className="list-card__body list-card__body--portal-editor">
-                    {renderPortalCodeEditorSettings()}
                   </div>
                 </div>
 
-                <div className="list-card list-card--form">
-                  <div className="list-card__header">
-                    <div className="list-card__title-group">
-                      <div className="list-card__title">Catalogue versions</div>
-                      <div className="list-card__subtitle">
-                        Logiciels, drivers et produits affichés dans le dashboard versions.
+                <div className="settings-home__grid">
+                  <section className="list-card list-card--form">
+                    <div className="list-card__header">
+                      <div className="list-card__title-group">
+                        <div className="list-card__title">Récapitulatif global</div>
+                        <div className="list-card__subtitle">
+                          Données présentes dans l’application.
+                        </div>
                       </div>
                     </div>
-                    <div className="list-card__tools">
-                      <button
-                        className="btn btn--ghost btn--small btn--with-icon"
-                        type="button"
-                        onClick={() => {
-                          setDashboardProductDraft(getEmptyDashboardProductDraft())
-                          setSelectedDashboardProductId('new')
-                        }}
-                      >
-                        <ButtonIcon name="add" />
-                        Nouveau
-                      </button>
-                      <button
-                        className="btn btn--primary btn--small btn--with-icon"
-                        type="button"
-                        onClick={handleSaveDashboardProduct}
-                      >
-                        <ButtonIcon name="save" />
-                        Sauver
-                      </button>
-                    </div>
-                  </div>
-                  <div className="list-card__body">
-                    <div className="dashboard-product-editor">
-                      <div className="dashboard-product-editor__list">
-                        {dashboardProducts.length ? (
-                          dashboardProducts.map((product) => (
-                            <div
-                              key={product.id}
-                              className={`list-item list-item--compact${
-                                selectedDashboardProductId === product.id ? ' is-selected' : ''
-                              }`}
-                              onClick={() => {
-                                setDashboardProductDraft({
-                                  ...product,
-                                  softwareIds: [...(product.softwareIds ?? [])],
-                                  driverIds: [...(product.driverIds ?? [])],
-                                })
-                                setSelectedDashboardProductId(product.id)
-                              }}
-                            >
-                              <div className="list-item__content">
-                              <div className="list-item__title">{product.name}</div>
-                              <div className="list-item__meta">
-                                {dashboardProductCategoryLabels[product.category]}
-                                {product.latestVersion.trim() ? ` • ${product.latestVersion.trim()}` : ''}
-                              </div>
-                            </div>
-                              <div className="list-item__actions">
-                                <button
-                                  className="icon-btn-sm danger"
-                                  type="button"
-                                  title="Supprimer"
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    handleDeleteDashboardProduct(product)
-                                  }}
-                                >
-                            <DeleteIcon />
-                                </button>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="empty-state">Aucun élément configuré.</div>
-                        )}
-                      </div>
-
-                      <div className="dashboard-product-editor__form">
-                        {isDashboardProductSelectionEmpty ? (
-                          <div className="empty-state">
-                            Sélectionnez un élément pour l’éditer ou appuyez sur Nouveau.
+                    <div className="list-card__body">
+                      <div className="settings-home__metrics">
+                        {[
+                          ['Catégories', data.categories.length],
+                          ['Snippets', data.snippets.length],
+                          ['Templates mail', data.templates.length],
+                          ['Templates task', data.taskTemplates.length],
+                          ['Procédures', data.procedures.length],
+                          ['News', dashboardNews.length],
+                          ['Historique mail', data.history.length],
+                          ['Appels', data.callHistory.length],
+                        ].map(([label, value]) => (
+                          <div className="settings-home__metric" key={label as string}>
+                            <span>{label}</span>
+                            <strong>{value as number}</strong>
                           </div>
-                        ) : (
-                          <div className="form">
-                            <input
-                              className="input"
-                              placeholder="Nom"
-                              value={dashboardProductDraft.name}
-                              onChange={(event) =>
-                                setDashboardProductDraft((prev) => ({
-                                  ...prev,
-                                  name: event.target.value,
-                                }))
-                              }
-                            />
-
-                            <select
-                              className="select select--roomy"
-                              value={dashboardProductDraft.category}
-                              onChange={(event) =>
-                                setDashboardProductDraft((prev) => {
-                                  const category = event.target.value as DashboardProductCategory
-                                  return {
-                                    ...prev,
-                                    category,
-                                    softwareIds:
-                                      category === 'driver' || category === 'product'
-                                        ? prev.softwareIds ?? []
-                                        : [],
-                                    driverIds: category === 'product' ? prev.driverIds ?? [] : [],
-                                  }
-                                })
-                              }
-                            >
-                              {dashboardProductCategoryOrder.map((category) => (
-                                <option key={category} value={category}>
-                                  {dashboardProductCategoryLabels[category]}
-                                </option>
-                              ))}
-                            </select>
-
-                            <input
-                              className="input"
-                              placeholder="Dernière version disponible"
-                              value={dashboardProductDraft.latestVersion}
-                              onChange={(event) =>
-                                setDashboardProductDraft((prev) => ({
-                                  ...prev,
-                                  latestVersion: event.target.value,
-                                }))
-                              }
-                            />
-
-                            <input
-                              className="input"
-                              placeholder="URL support (optionnel)"
-                              value={dashboardProductDraft.supportUrl ?? ''}
-                              onChange={(event) =>
-                                setDashboardProductDraft((prev) => ({
-                                  ...prev,
-                                  supportUrl: event.target.value,
-                                }))
-                              }
-                            />
-
-                            {dashboardProductDraft.category !== 'software' ? (
-                              <div className="dashboard-product-editor__relations">
-                                <div className="settings-label">Logiciels compatibles</div>
-                                {dashboardSoftwareProducts.filter(
-                                  (product) => product.id !== dashboardProductDraft.id,
-                                ).length ? (
-                                  <div className="dashboard-product-editor__relation-list">
-                                    {dashboardSoftwareProducts
-                                      .filter((product) => product.id !== dashboardProductDraft.id)
-                                      .map((product) => {
-                                        const checked = (
-                                          dashboardProductDraft.softwareIds ?? []
-                                        ).includes(product.id)
-                                        return (
-                                          <label
-                                            className="dashboard-product-editor__relation-item"
-                                            key={product.id}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={checked}
-                                              onChange={(event) =>
-                                                setDashboardProductDraft((prev) => ({
-                                                  ...prev,
-                                                  softwareIds: event.target.checked
-                                                    ? [...(prev.softwareIds ?? []), product.id]
-                                                    : (prev.softwareIds ?? []).filter(
-                                                        (id) => id !== product.id,
-                                                      ),
-                                                }))
-                                              }
-                                            />
-                                            <span>
-                                              {product.name}
-                                              {product.latestVersion.trim()
-                                                ? ` (${product.latestVersion.trim()})`
-                                                : ''}
-                                            </span>
-                                          </label>
-                                        )
-                                      })}
-                                  </div>
-                                ) : (
-                                  <div className="list-item__meta">
-                                    Aucun logiciel configuré pour le moment.
-                                  </div>
-                                )}
-                              </div>
-                            ) : null}
-
-                            {dashboardProductDraft.category === 'product' ? (
-                              <div className="dashboard-product-editor__relations">
-                                <div className="settings-label">Drivers utilisés</div>
-                                {dashboardDriverProducts.filter(
-                                  (product) => product.id !== dashboardProductDraft.id,
-                                ).length ? (
-                                  <div className="dashboard-product-editor__relation-list">
-                                    {dashboardDriverProducts
-                                      .filter((product) => product.id !== dashboardProductDraft.id)
-                                      .map((product) => {
-                                        const checked = (
-                                          dashboardProductDraft.driverIds ?? []
-                                        ).includes(product.id)
-                                        return (
-                                          <label
-                                            className="dashboard-product-editor__relation-item"
-                                            key={product.id}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={checked}
-                                              onChange={(event) =>
-                                                setDashboardProductDraft((prev) => ({
-                                                  ...prev,
-                                                  driverIds: event.target.checked
-                                                    ? [...(prev.driverIds ?? []), product.id]
-                                                    : (prev.driverIds ?? []).filter(
-                                                        (id) => id !== product.id,
-                                                      ),
-                                                }))
-                                              }
-                                            />
-                                            <span>
-                                              {product.name}
-                                              {product.latestVersion.trim()
-                                                ? ` (${product.latestVersion.trim()})`
-                                                : ''}
-                                            </span>
-                                          </label>
-                                        )
-                                      })}
-                                  </div>
-                                ) : (
-                                  <div className="list-item__meta">
-                                    Aucun driver configuré pour le moment.
-                                  </div>
-                                )}
-                              </div>
-                            ) : null}
-
-                            <div className="token-buttons">
-                              <button
-                                type="button"
-                                className="token-btn token-btn--bold"
-                                title="Gras"
-                                onClick={() => insertDashboardProductSheetWrap('[b]', '[/b]', 'texte')}
-                              >
-                                B
-                              </button>
-                              <button
-                                type="button"
-                                className="token-btn token-btn--italic"
-                                title="Italique"
-                                onClick={() => insertDashboardProductSheetWrap('[i]', '[/i]', 'texte')}
-                              >
-                                I
-                              </button>
-                              <button
-                                type="button"
-                                className="token-btn token-btn--link"
-                                title="Lien"
-                                onClick={insertDashboardProductSheetLink}
-                              >
-                                L
-                              </button>
-                            </div>
-
-                            <textarea
-                              className="textarea textarea--tall"
-                              ref={dashboardProductSheetRef}
-                              placeholder="Notes, firmware, compatibilité, liens..."
-                              value={dashboardProductDraft.sheet}
-                              onChange={(event) =>
-                                setDashboardProductDraft((prev) => ({
-                                  ...prev,
-                                  sheet: event.target.value,
-                                }))
-                              }
-                            />
-
-                          </div>
-                        )}
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  </section>
+
+                  <section className="list-card list-card--form">
+                    <div className="list-card__header">
+                      <div className="list-card__title-group">
+                        <div className="list-card__title">Export / Import</div>
+                        <div className="list-card__subtitle">
+                          Sauvegarde complète de l’application et restauration manuelle.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="list-card__body">
+                      <div className="settings-stack settings-stack--tight">
+                        <button
+                          className="btn btn--primary btn--small btn--with-icon settings-home__export-btn"
+                          type="button"
+                          onClick={handleExportJson}
+                        >
+                          <ExportDataIcon />
+                          Exporter contenu + paramètres
+                        </button>
+                        <button
+                          className="btn btn--ghost btn--small btn--with-icon settings-home__export-btn"
+                          type="button"
+                          onClick={handleImportClick}
+                          title="Importer les données (Shift = remplacer)"
+                        >
+                          <ImportDataIcon />
+                          Importer contenu + paramètres
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="list-card list-card--form">
+                    <div className="list-card__header">
+                      <div className="list-card__title-group">
+                        <div className="list-card__title">Mémoire des emails</div>
+                        <div className="list-card__subtitle">
+                          Active ou désactive la mise en mémoire des mails copiés.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="list-card__body">
+                      <div className="settings-block">
+                        <div className="settings-option">
+                          <div className="settings-option__info">
+                            <div className="settings-option__title">
+                              Sauvegarder les copies email
+                            </div>
+                            <div className="settings-option__desc">
+                              Ajoute l’email copié dans l’historique.
+                            </div>
+                          </div>
+                          <label className="settings-toggle">
+                            <input
+                              type="checkbox"
+                              checked={historyOnCopy}
+                              onChange={(event) =>
+                                updateSettings({ historyOnCopy: event.target.checked })
+                              }
+                            />
+                            <span className="settings-toggle__track">
+                              <span className="settings-toggle__thumb" />
+                            </span>
+                          </label>
+                        </div>
+                        {renderSettingsSlider(
+                          'Taille max',
+                          `${historyLimit} entrées`,
+                          '50',
+                          '400',
+                          historyLimit,
+                          50,
+                          400,
+                          10,
+                          (nextLimit) => {
+                            const nextHistoryLimit = Math.min(400, Math.max(50, nextLimit))
+                            updateSettings({ historyLimit: nextHistoryLimit })
+                          },
+                          {
+                            description: 'Détermine combien de copies email sont conservées.',
+                            disabled: !historyOnCopy,
+                          },
+                        )}
+                        <button
+                          className="btn btn--ghost btn--small btn--with-icon settings-home__download-btn"
+                          type="button"
+                          onClick={handleExportHistory}
+                          title="Exporter l’historique (.txt)"
+                          disabled={!data.history.length}
+                        >
+                          <ExportEmailsIcon />
+                          Télécharger les emails
+                          {data.history.length ? ` (${data.history.length})` : ''}
+                        </button>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               </div>
             ) : null}
@@ -12523,9 +12509,6 @@ function App() {
                   <div className="list-card__header">
                     <div className="list-card__title-group">
                       <div className="list-card__title">Mise à jour</div>
-                      <div className="list-card__subtitle">
-                        Vérification et statut de l’application.
-                      </div>
                     </div>
                   </div>
                   <div className="list-card__body">
