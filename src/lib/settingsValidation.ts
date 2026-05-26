@@ -37,7 +37,7 @@ export function getSnippetIssues(snippet: Snippet, categoryIds: Set<string>) {
   const issues: string[] = []
   if (isBlank(snippet.title)) issues.push('Titre obligatoire.')
   if (isBlank(snippet.content)) issues.push('Contenu obligatoire.')
-  if (!snippet.categoryId || !categoryIds.has(snippet.categoryId)) {
+  if (categoryIds.size > 0 && (!snippet.categoryId || !categoryIds.has(snippet.categoryId))) {
     issues.push('Categorie obligatoire.')
   }
   return issues

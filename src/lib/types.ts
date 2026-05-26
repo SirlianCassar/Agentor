@@ -60,6 +60,7 @@ export interface TaskTemplate {
   taskSectionId?: TaskSectionId
   taskSections?: string[]
   categoryId?: string
+  favorite?: boolean
 }
 
 export type ProcedureBrand = 'hercules' | 'thrustmaster'

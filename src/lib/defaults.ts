@@ -2,20 +2,14 @@ import type { AppData } from './types'
 
 export const defaultData: AppData = {
   version: 29,
-  categories: [
-    {
-      id: 'cat-general',
-      name: 'General',
-      color: 'bleu',
-    },
-  ],
+  categories: [],
   snippets: [],
   templates: [],
   taskTemplates: [],
   procedures: [],
   notes: '',
   emailDraft: '',
-  taskDraft: '\n\n► Current Contact\n\n► Previous Actions / History\n\n► Next Steps\n\n► Internal Notes',
+  taskDraft: '\n\n► ─ CASE OVERVIEW ─\n\n► ─ TIMELINE ─\n\n► ─ NEXT ─\n\n► ─ NOTES ─',
   history: [],
   callHistory: [],
   settings: {
@@ -46,7 +40,7 @@ export const defaultData: AppData = {
     products: [],
     dashboardNews: [],
     dashboardReminders: '',
-    taskSectionNames: ['Current Contact', 'Previous Actions / History', 'Next Steps', 'Internal Notes'],
+    taskSectionNames: ['─ CASE OVERVIEW ─', '─ TIMELINE ─', '─ NEXT ─', '─ NOTES ─'],
     mailTemplateCategories: [{ id: 'template-cat-general', name: 'General' }],
     taskTemplateCategories: [{ id: 'task-template-cat-general', name: 'General' }],
   },

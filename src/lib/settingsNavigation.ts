@@ -34,7 +34,7 @@ export type SettingsTab =
 export type SettingsIconName = AppIconName
 
 export type SettingsNavSection = {
-  id: 'content' | 'procedures' | 'catalogs' | 'support' | 'application'
+  id: 'home' | 'content' | 'procedures' | 'catalogs' | 'support' | 'application'
   label: string
   icon: SettingsIconName
   items: Array<{
@@ -47,13 +47,26 @@ export type SettingsNavSection = {
 
 export const settingsNavigation: SettingsNavSection[] = [
   {
+    id: 'home',
+    label: 'Accueil',
+    icon: 'settings',
+    items: [
+      {
+        id: 'dashboard',
+        label: 'Accueil',
+        description: 'Version, mise à jour, récapitulatif global et export/import.',
+        icon: 'dashboard',
+      },
+    ],
+  },
+  {
     id: 'content',
     label: 'Contenu',
     icon: 'mail',
     items: [
       {
         id: 'categories',
-        label: 'Catégories',
+        label: 'Catégories des snippets',
         description: 'Familles, couleurs et aperçu des snippets liés.',
         icon: 'channels',
       },
@@ -189,15 +202,9 @@ export const settingsNavigation: SettingsNavSection[] = [
     items: [
       {
         id: 'preferences',
-        label: 'Préférences',
-        description: 'Réglages globaux, snippets et format d’export.',
+        label: 'Affichage & Préférences',
+        description: 'Options visuelles, réglages globaux, snippets et export.',
         icon: 'preferences',
-      },
-      {
-        id: 'display',
-        label: 'Affichage',
-        description: 'Zoom global, densité et confort de lecture.',
-        icon: 'display',
       },
       {
         id: 'quickLinks',
