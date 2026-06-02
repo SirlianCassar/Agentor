@@ -1,47 +1,4 @@
+import seedData from '../data/agentor-export2.json'
 import type { AppData } from './types'
 
-export const defaultData: AppData = {
-  version: 29,
-  categories: [],
-  snippets: [],
-  templates: [],
-  taskTemplates: [],
-  procedures: [],
-  notes: '',
-  emailDraft: '',
-  taskDraft: '\n\n► ─ CASE OVERVIEW ─\n\n► ─ TIMELINE ─\n\n► ─ NEXT ─\n\n► ─ NOTES ─',
-  history: [],
-  callHistory: [],
-  settings: {
-    language: 'fr',
-    zoom: 1,
-    textScale: 1,
-    editorLineHeight: 1.6,
-    exportFont: 'Calibri, "Segoe UI", Arial, sans-serif',
-    exportFontSize: 12,
-    historyOnCopy: true,
-    historyLimit: 200,
-    callTemplate:
-      'Appel téléphonique\n\nClient :\nProduit :\nMotif :\nRésumé :\nActions réalisées :\nProchaine étape :',
-    autoFocusEditor: true,
-    defaultSnippetInsertMode: 'line',
-    snippetCategoryDisplay: 'dropdown',
-    quickLinkUrls: {
-      crm: '',
-      share: '',
-      global: '',
-      portal: '',
-      assist: '',
-    },
-    procedureMailtoLinks: [],
-    predefinedTags: ['<CLIENT>', '<PRODUIT>', '<SERIAL>', '<FIRMWARE>', '<DRIVER>', '<DOSSIER>'],
-    customerPortalCodes: [],
-    dashboardProducts: [],
-    products: [],
-    dashboardNews: [],
-    dashboardReminders: '',
-    taskSectionNames: ['─ CASE OVERVIEW ─', '─ TIMELINE ─', '─ NEXT ─', '─ NOTES ─'],
-    mailTemplateCategories: [{ id: 'template-cat-general', name: 'General' }],
-    taskTemplateCategories: [{ id: 'task-template-cat-general', name: 'General' }],
-  },
-}
+export const defaultData: AppData = seedData as AppData
