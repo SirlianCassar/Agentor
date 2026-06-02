@@ -5348,22 +5348,6 @@ function App() {
                                     <span className="portal-code-editor__draft-pill">Draft</span>
                                   ) : null}
                                 </div>
-                                {portalEditorLines.length > 1 ? (
-                                  <button
-                                    className="icon-btn-sm danger"
-                                    type="button"
-                                    title="Supprimer cette étape"
-                                    onClick={() =>
-                                      removeCustomerPortalCodeLine(
-                                        selectedPortalProcedure.id,
-                                        codeLine.id,
-                                        portalEditorLineSet,
-                                      )
-                                    }
-                                  >
-                            <DeleteIcon />
-                                  </button>
-                                ) : null}
                               </div>
 
                               <input
@@ -5634,6 +5618,26 @@ function App() {
                                   </div>
                                 ) : null}
                               </div>
+
+                              {portalEditorLines.length > 1 ? (
+                                <div className="portal-code-editor__step-actions">
+                                  <button
+                                    className="icon-btn-sm danger portal-code-editor__step-delete"
+                                    type="button"
+                                    title="Supprimer cette étape"
+                                    aria-label="Supprimer cette étape"
+                                    onClick={() =>
+                                      removeCustomerPortalCodeLine(
+                                        selectedPortalProcedure.id,
+                                        codeLine.id,
+                                        portalEditorLineSet,
+                                      )
+                                    }
+                                  >
+                                    <span>X</span>
+                                  </button>
+                                </div>
+                              ) : null}
 
                             </div>
                           </article>
@@ -8286,7 +8290,7 @@ function App() {
                           name={taskBoxUsesSkeleton(index) ? 'template' : 'edit'}
                           className="draft-box-btn__icon-svg"
                         />
-                        {hasContent ? <span className="draft-box-btn__badge">T</span> : null}
+                        {hasContent ? <span className="draft-box-btn__badge">X</span> : null}
                       </span>
                     </button>
                   )
