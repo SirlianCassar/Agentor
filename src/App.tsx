@@ -98,6 +98,7 @@ const ADDITION_TOKEN = '§texte§'
 const PROCEDURE_CHECK_MARKER = '[ ]'
 const PROCEDURE_CHANNEL = 'agentor-procedure'
 const TASK_SECTION_IDS: TaskSectionId[] = ['section-1', 'section-2', 'section-3', 'section-4']
+const DEFAULT_SNIPPET_TASK_SECTION_ID: TaskSectionId = 'section-2'
 const LEGACY_TASK_SECTION_NAMES = ['Diagnostic', 'SAV', 'Infos client', 'Suivi']
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
@@ -207,6 +208,11 @@ const getTaskSectionIndex = (sectionId: TaskSectionId | undefined) => {
 
 const normalizeTaskSectionId = (sectionId: unknown): TaskSectionId =>
   TASK_SECTION_IDS.includes(sectionId as TaskSectionId) ? (sectionId as TaskSectionId) : 'section-3'
+
+const normalizeSnippetTaskSectionId = (sectionId: unknown): TaskSectionId =>
+  TASK_SECTION_IDS.includes(sectionId as TaskSectionId)
+    ? (sectionId as TaskSectionId)
+    : DEFAULT_SNIPPET_TASK_SECTION_ID
 
 const getTaskSectionLabel = (sectionId: TaskSectionId | undefined, sectionNames: string[]) =>
   sectionNames[getTaskSectionIndex(sectionId)] ?? sectionNames[0] ?? 'Section 1'
@@ -1341,7 +1347,7 @@ const normalizeTaskSectionsInData = (payload: AppData): AppData => {
     taskDraft: ensureStructuredTaskDraft(payload.taskDraft, sectionNames),
     snippets: payload.snippets.map((snippet) => ({
       ...snippet,
-      taskSectionId: normalizeTaskSectionId(snippet.taskSectionId),
+      taskSectionId: normalizeSnippetTaskSectionId(snippet.taskSectionId),
       categoryId: snippet.categoryId === snippetCategoryId ? '' : snippet.categoryId,
     })),
     templates: payload.templates.map((template) => ({
@@ -1870,7 +1876,7 @@ function App() {
     content: '',
     insertMode: defaultData.settings.defaultSnippetInsertMode,
     taskText: '',
-    taskSectionId: 'section-3',
+    taskSectionId: DEFAULT_SNIPPET_TASK_SECTION_ID,
     taskOptional: false,
     categoryId: defaultData.categories[0]?.id ?? '',
   })
@@ -1990,7 +1996,7 @@ function App() {
         content: '',
         insertMode: defaultSnippetInsertMode,
         taskText: '',
-        taskSectionId: 'section-3',
+        taskSectionId: DEFAULT_SNIPPET_TASK_SECTION_ID,
         taskOptional: false,
         categoryId: getDefaultSnippetCategoryId(),
       }) as Snippet,
@@ -4368,7 +4374,7 @@ function App() {
       updateEmailDraft(next, before.length + content.length)
     }
     if (snippet.taskText) {
-      insertTaskText(snippet.taskText, snippet.taskSectionId)
+      insertTaskText(snippet.taskText, normalizeSnippetTaskSectionId(snippet.taskSectionId))
     }
   }
 
@@ -6190,7 +6196,7 @@ function App() {
       title: snippetDraft.title.trim(),
       content: snippetDraft.content.trim(),
       taskText: snippetDraft.taskText?.trim() ?? '',
-      taskSectionId: normalizeTaskSectionId(snippetDraft.taskSectionId),
+      taskSectionId: normalizeSnippetTaskSectionId(snippetDraft.taskSectionId),
       categoryId,
     }
     setData((prev) => {
@@ -9043,7 +9049,7 @@ function App() {
                         <div className="form__row">
                           <select
                             className="select select--roomy"
-                            value={normalizeTaskSectionId(snippetDraft.taskSectionId)}
+                            value={normalizeSnippetTaskSectionId(snippetDraft.taskSectionId)}
                             onChange={(event) =>
                               setSnippetDraft((prev) => ({
                                 ...prev,
