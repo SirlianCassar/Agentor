@@ -98,7 +98,6 @@ const ADDITION_TOKEN = '§texte§'
 const PROCEDURE_CHECK_MARKER = '[ ]'
 const PROCEDURE_CHANNEL = 'agentor-procedure'
 const TASK_SECTION_IDS: TaskSectionId[] = ['section-1', 'section-2', 'section-3', 'section-4']
-const DEFAULT_SNIPPET_TASK_SECTION_ID: TaskSectionId = 'section-2'
 const LEGACY_TASK_SECTION_NAMES = ['Diagnostic', 'SAV', 'Infos client', 'Suivi']
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
@@ -208,11 +207,6 @@ const getTaskSectionIndex = (sectionId: TaskSectionId | undefined) => {
 
 const normalizeTaskSectionId = (sectionId: unknown): TaskSectionId =>
   TASK_SECTION_IDS.includes(sectionId as TaskSectionId) ? (sectionId as TaskSectionId) : 'section-3'
-
-const normalizeSnippetTaskSectionId = (sectionId: unknown): TaskSectionId =>
-  TASK_SECTION_IDS.includes(sectionId as TaskSectionId)
-    ? (sectionId as TaskSectionId)
-    : DEFAULT_SNIPPET_TASK_SECTION_ID
 
 const getTaskSectionLabel = (sectionId: TaskSectionId | undefined, sectionNames: string[]) =>
   sectionNames[getTaskSectionIndex(sectionId)] ?? sectionNames[0] ?? 'Section 1'
@@ -1347,7 +1341,7 @@ const normalizeTaskSectionsInData = (payload: AppData): AppData => {
     taskDraft: ensureStructuredTaskDraft(payload.taskDraft, sectionNames),
     snippets: payload.snippets.map((snippet) => ({
       ...snippet,
-      taskSectionId: normalizeSnippetTaskSectionId(snippet.taskSectionId),
+      taskSectionId: normalizeTaskSectionId(snippet.taskSectionId),
       categoryId: snippet.categoryId === snippetCategoryId ? '' : snippet.categoryId,
     })),
     templates: payload.templates.map((template) => ({
@@ -1876,7 +1870,7 @@ function App() {
     content: '',
     insertMode: defaultData.settings.defaultSnippetInsertMode,
     taskText: '',
-    taskSectionId: DEFAULT_SNIPPET_TASK_SECTION_ID,
+    taskSectionId: 'section-3',
     taskOptional: false,
     categoryId: defaultData.categories[0]?.id ?? '',
   })
@@ -1996,7 +1990,7 @@ function App() {
         content: '',
         insertMode: defaultSnippetInsertMode,
         taskText: '',
-        taskSectionId: DEFAULT_SNIPPET_TASK_SECTION_ID,
+        taskSectionId: 'section-3',
         taskOptional: false,
         categoryId: getDefaultSnippetCategoryId(),
       }) as Snippet,
@@ -4374,7 +4368,7 @@ function App() {
       updateEmailDraft(next, before.length + content.length)
     }
     if (snippet.taskText) {
-      insertTaskText(snippet.taskText, normalizeSnippetTaskSectionId(snippet.taskSectionId))
+      insertTaskText(snippet.taskText, snippet.taskSectionId)
     }
   }
 
@@ -5348,6 +5342,22 @@ function App() {
                                     <span className="portal-code-editor__draft-pill">Draft</span>
                                   ) : null}
                                 </div>
+                                {portalEditorLines.length > 1 ? (
+                                  <button
+                                    className="icon-btn-sm danger"
+                                    type="button"
+                                    title="Supprimer cette étape"
+                                    onClick={() =>
+                                      removeCustomerPortalCodeLine(
+                                        selectedPortalProcedure.id,
+                                        codeLine.id,
+                                        portalEditorLineSet,
+                                      )
+                                    }
+                                  >
+                            <DeleteIcon />
+                                  </button>
+                                ) : null}
                               </div>
 
                               <input
@@ -5618,26 +5628,6 @@ function App() {
                                   </div>
                                 ) : null}
                               </div>
-
-                              {portalEditorLines.length > 1 ? (
-                                <div className="portal-code-editor__step-actions">
-                                  <button
-                                    className="icon-btn-sm danger portal-code-editor__step-delete"
-                                    type="button"
-                                    title="Supprimer cette étape"
-                                    aria-label="Supprimer cette étape"
-                                    onClick={() =>
-                                      removeCustomerPortalCodeLine(
-                                        selectedPortalProcedure.id,
-                                        codeLine.id,
-                                        portalEditorLineSet,
-                                      )
-                                    }
-                                  >
-                                    <span>X</span>
-                                  </button>
-                                </div>
-                              ) : null}
 
                             </div>
                           </article>
@@ -6200,7 +6190,7 @@ function App() {
       title: snippetDraft.title.trim(),
       content: snippetDraft.content.trim(),
       taskText: snippetDraft.taskText?.trim() ?? '',
-      taskSectionId: normalizeSnippetTaskSectionId(snippetDraft.taskSectionId),
+      taskSectionId: normalizeTaskSectionId(snippetDraft.taskSectionId),
       categoryId,
     }
     setData((prev) => {
@@ -8290,7 +8280,7 @@ function App() {
                           name={taskBoxUsesSkeleton(index) ? 'template' : 'edit'}
                           className="draft-box-btn__icon-svg"
                         />
-                        {hasContent ? <span className="draft-box-btn__badge">X</span> : null}
+                        {hasContent ? <span className="draft-box-btn__badge">T</span> : null}
                       </span>
                     </button>
                   )
@@ -9053,7 +9043,7 @@ function App() {
                         <div className="form__row">
                           <select
                             className="select select--roomy"
-                            value={normalizeSnippetTaskSectionId(snippetDraft.taskSectionId)}
+                            value={normalizeTaskSectionId(snippetDraft.taskSectionId)}
                             onChange={(event) =>
                               setSnippetDraft((prev) => ({
                                 ...prev,
