@@ -19,6 +19,15 @@ export type ProtectedTextRange = {
   end: number
 }
 
+// Wraps task-skeleton headings (► …) and mail numbers (N) in styled spans for
+// readability. Only color/background may be applied via these classes — never
+// font-weight/size/padding — so the highlight layer keeps aligning with the
+// transparent textarea underneath.
+const decorateTaskSkeletonHtml = (html: string) =>
+  html
+    .replace(/►([^\n<]*)/g, '<span class="editor__task-heading">►$1</span>')
+    .replace(/\((\d+)\)/g, '<span class="editor__task-number">($1)</span>')
+
 export interface TextEditorHandle {
   focus: () => void
   getSelection: () => { start: number; end: number }
@@ -36,6 +45,7 @@ interface TextEditorProps {
   onContextMenu?: MouseEventHandler<HTMLDivElement>
   onPaste?: ClipboardEventHandler<HTMLTextAreaElement>
   protectedRanges?: ProtectedTextRange[]
+  decorateTaskSkeleton?: boolean
 }
 
 export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
@@ -51,6 +61,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
       onContextMenu,
       onPaste,
       protectedRanges = [],
+      decorateTaskSkeleton = false,
     },
     ref,
   ) => {
@@ -80,10 +91,11 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(
     )
 
     const highlighted = useMemo(() => {
-      const html = highlightText(value)
+      const base = highlightText(value)
+      const html = decorateTaskSkeleton ? decorateTaskSkeletonHtml(base) : base
       if (!value) return ' '
       return value.endsWith('\n') ? `${html}\n ` : html
-    }, [value])
+    }, [value, decorateTaskSkeleton])
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
