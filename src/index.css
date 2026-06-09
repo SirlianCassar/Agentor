@@ -1,3 +1,8 @@
+@import "@fontsource/space-grotesk/400.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
+
 @font-face {
   font-family: "Agentor Herios";
   src: url("./assets/HeriosRegular.ttf") format("truetype");
@@ -7,55 +12,57 @@
 }
 
 :root {
-  --bg: #1b1c20;
-  --bg-secondary: #202126;
-  --panel: #24252b;
-  --panel-strong: #1f2025;
-  --panel-hover: #2a2b32;
-  --border: rgba(198, 112, 248, 0.16);
-  --border-hover: rgba(214, 135, 244, 0.28);
-  --border-active: rgba(165, 87, 218, 0.58);
-  --text: #eff4ff;
-  --text-secondary: #d9e1f0;
-  --muted: #9aa6bb;
-  --muted-light: #78859a;
-  --accent: #a557da;
-  --accent-light: #d18cf5;
-  --accent-dark: #6f28af;
-  --accent-glow: rgba(165, 87, 218, 0.2);
-  --danger: #df7b78;
-  --danger-light: #ec9f9b;
-  --success: #b76adf;
-  --warning: #f2c94c;
-  --info: #c79af0;
-  --tag: #ad7eff;
-  --selector: #66dacd;
-  --field-bg: #25262c;
-  --field-bg-focus: #2b2c34;
-  --field-bg-disabled: #202126;
-  --shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.18);
-  --shadow-md: 0 2px 0 rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 4px 0 rgba(0, 0, 0, 0.22);
-  --shadow-xl: 0 6px 0 rgba(0, 0, 0, 0.24);
+  --bg: #0f0e0d;
+  --bg-secondary: #131211;
+  --panel: #1b1918;
+  --panel-strong: #141312;
+  --panel-hover: #211f1d;
+  --border: rgba(210, 195, 178, 0.07);
+  --border-hover: rgba(210, 195, 178, 0.13);
+  --border-active: rgba(124, 58, 237, 0.62);
+  --text: #d8d4ce;
+  --text-secondary: #96908a;
+  --muted: #5a5450;
+  --muted-light: #4a4440;
+  --accent: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-dark: #5b21b6;
+  --accent-glow: rgba(124, 58, 237, 0.22);
+  --danger: #f87171;
+  --danger-light: #fca5a5;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --info: #38bdf8;
+  --tag: #c084fc;
+  --selector: #2dd4bf;
+  --field-bg: #1b1918;
+  --field-bg-focus: #211f1d;
+  --field-bg-disabled: #131211;
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.65);
   --shadow-glow: none;
-  --gradient-primary: #a557da;
-  --gradient-secondary: #6f28af;
+  --gradient-primary: #7c3aed;
+  --gradient-secondary: #5b21b6;
   --gradient-bg:
-    radial-gradient(circle at 18% 12%, rgba(165, 87, 218, 0.055), transparent 22%),
-    radial-gradient(circle at 84% 18%, rgba(209, 140, 245, 0.04), transparent 20%),
-    linear-gradient(180deg, #1b1c20 0%, #202126 100%);
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --surface-soft: rgba(255, 255, 255, 0.04);
-  --surface-soft-hover: rgba(255, 255, 255, 0.065);
-  --surface-strong: rgba(255, 255, 255, 0.1);
+    radial-gradient(ellipse at 15% 6%, rgba(124, 58, 237, 0.07), transparent 30%),
+    #0f0e0d;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --surface-soft: rgba(210, 195, 178, 0.03);
+  --surface-soft-hover: rgba(210, 195, 178, 0.06);
+  --surface-strong: rgba(210, 195, 178, 0.09);
   --font-ui:
-    "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", -apple-system,
-    BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    "Space Grotesk", "Segoe UI Variable Display", "Segoe UI Variable Text",
+    "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:
+    "SFMono-Regular", "SF Mono", "Fira Code", "Cascadia Code", Consolas,
+    "Courier New", monospace;
   --font-brand: "Agentor Herios", var(--font-ui);
-  --transition-fast: 0.12s ease;
-  --transition-base: 0.16s ease;
+  --transition-fast: 0.1s ease;
+  --transition-base: 0.15s ease;
   --transition-slow: 0.2s ease;
   --text-scale: 1;
   --editor-line-height: 1.6;
@@ -74,6 +81,7 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  border-radius: 0 !important;
 }
 
 html,
@@ -86,9 +94,7 @@ body,
 body {
   margin: 0;
   font-family: var(--font-ui);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 18%),
-    var(--gradient-bg);
+  background: var(--gradient-bg);
   color: var(--text);
   font-size: calc(16px * var(--text-scale));
   min-height: 100vh;
@@ -124,38 +130,35 @@ select {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.015);
-  border-radius: 999px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
+  background: rgba(210, 195, 178, 0.18);
   border: 1px solid transparent;
   background-clip: padding-box;
   transition: background var(--transition-base);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(210, 195, 178, 0.32);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.015);
+  scrollbar-color: rgba(210, 195, 178, 0.18) transparent;
 }
 
 input[type='checkbox'] {
   appearance: none;
   width: 18px;
   height: 18px;
-  border-radius: 2px;
-  border: 1px solid rgba(227, 236, 246, 0.14);
+  border: 1px solid rgba(210, 195, 178, 0.2);
   background: var(--surface-soft);
   display: inline-grid;
   place-items: center;
@@ -170,15 +173,14 @@ input[type='checkbox']::after {
   content: '';
   width: 8px;
   height: 8px;
-  border-radius: 2px;
-  background: var(--accent);
+  background: var(--accent-light);
   transform: scale(0);
   transition: transform var(--transition-fast);
 }
 
 input[type='checkbox']:checked {
-  border-color: var(--accent);
-  background: rgba(165, 87, 218, 0.18);
+  border-color: var(--accent-light);
+  background: rgba(124, 58, 237, 0.2);
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
@@ -192,6 +194,6 @@ input[type='checkbox']:focus-visible {
 }
 
 input[type='checkbox']:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }

@@ -169,6 +169,7 @@ type TemplatePreviewState = {
   templateId: string
   selectedEmailLines: boolean[]
   selectedTaskSections: boolean[]
+  importTask: boolean
 }
 
 const createEmptyTaskBoxSlot = (): TaskBoxSlot => ({
@@ -185,7 +186,8 @@ const createEmptyDraftBoxSlot = (): DraftBoxSlot => ({
   savedAt: '',
 })
 
-const taskBoxUsesSkeleton = (index: number) => index === 0
+const TASK_SKELETON_BOX_INDEX = 0
+const taskBoxUsesSkeleton = (index: number) => index === TASK_SKELETON_BOX_INDEX
 
 const normalizeTaskSectionNames = (names: string[] | undefined) =>
   TASK_SECTION_IDS.map((_, index) => {
@@ -229,10 +231,15 @@ const simplifyTaskHeading = (value: string) =>
     .trim()
     .toLowerCase()
 
-const hasMeaningfulTaskContent = (taskContent: string, sectionNames: string[]) =>
-  parseStructuredTaskDraft(stripTokenSpacing(taskContent), sectionNames).some((section) =>
-    stripTokenSpacing(section).trim(),
+const hasMeaningfulTaskContent = (taskContent: string, sectionNames: string[]) => {
+  const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
+    stripTokenSpacing(taskContent),
+    sectionNames,
   )
+  // A lone title number (e.g. just "(1)") does not count as real content.
+  if (stripTaskTitleNumber(leadingContent).trim()) return true
+  return contents.some((section) => stripTokenSpacing(section).trim())
+}
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -276,12 +283,26 @@ const findInlineTaskSectionHeading = (line: string, sectionNames: string[]) => {
   return null
 }
 
-const buildStructuredTaskDraft = (contents: string[], sectionNames: string[]) =>
-  `\n\n${TASK_SECTION_IDS.map((_, index) => {
+const buildStructuredTaskDraftWithTitle = (
+  title: string,
+  contents: string[],
+  sectionNames: string[],
+) => {
+  const body = TASK_SECTION_IDS.map((_, index) => {
     const content = (contents[index] ?? '').trimEnd()
     const heading = getTaskSectionHeading(index, sectionNames)
     return content ? `${heading}\n${content}` : heading
-  }).join('\n\n')}\n`
+  }).join('\n\n')
+  // Title written -> "(N) Titre" on the first line, one blank line, then the
+  // first section. Title empty -> two blank lines above the first section.
+  const lead = title ? `${title}\n\n` : '\n\n'
+  return `${lead}${body}\n`
+}
+
+const buildStructuredTaskDraft = (contents: string[], sectionNames: string[]) =>
+  buildStructuredTaskDraftWithTitle('', contents, sectionNames)
+
+const stripLeadingBlankLines = (value: string) => value.replace(/^(?:[ \t]*\r?\n)+/, '')
 
 const parseStructuredTaskDraftWithLeadingContent = (value: string, sectionNames: string[]) => {
   const contents = TASK_SECTION_IDS.map(() => '')
@@ -375,10 +396,24 @@ const getTaskHeadingProtectedRanges = (
 ): ProtectedTextRange[] => {
   const ranges: ProtectedTextRange[] = []
   let offset = 0
+  let seenHeading = false
+  let titleResolved = false
 
   value.replace(/\r\n/g, '\n').split('\n').forEach((line) => {
     if (findTaskSectionHeadingIndex(line, sectionNames) !== -1) {
       ranges.push({ start: offset, end: offset + line.length })
+      seenHeading = true
+    } else if (!seenHeading && !titleResolved) {
+      // The auto-managed task number lives at the very start of the title and
+      // is protected so it always stays first and can't be corrupted by typing.
+      const match = line.match(/^(\s*)(\(\d+\))/)
+      if (match) {
+        const start = offset + match[1].length
+        ranges.push({ start, end: start + match[2].length })
+        titleResolved = true
+      } else if (line.trim()) {
+        titleResolved = true
+      }
     }
     offset += line.length + 1
   })
@@ -392,11 +427,11 @@ const insertTaskTextInSection = (
   sectionId: TaskSectionId | undefined,
   sectionNames: string[],
 ) => {
-  const contents = parseStructuredTaskDraft(value, sectionNames)
+  const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(value, sectionNames)
   const index = getTaskSectionIndex(sectionId)
   const insert = padEmptySelectors(text.trimEnd())
   contents[index] = [contents[index].trimEnd(), insert].filter(Boolean).join('\n')
-  return buildStructuredTaskDraft(contents, sectionNames)
+  return buildStructuredTaskDraftWithTitle(leadingContent, contents, sectionNames)
 }
 
 const normalizeTaskTemplateSections = (task: Partial<TaskTemplate>) => {
@@ -442,23 +477,108 @@ const getHighestTaskMailNumber = (value: string) => {
 
 const getNextTaskMailNumber = (value: string) => Math.max(1, getHighestTaskMailNumber(value) + 1)
 
-const annotateTaskMailNumber = (value: string, mailNumber: number) => {
-  const trimmed = value.trimEnd()
-  if (!trimmed) return value
+// Strips a leading (N) mail number from a task title so it can be re-applied.
+const stripTaskTitleNumber = (title: string) => title.replace(/^\s*\(\d+\)\s*/, '')
+
+// Ensures the task number is always present and first in the title.
+const applyTaskTitleNumber = (title: string, taskNumber: number) => {
+  const rest = stripTaskTitleNumber(title).trimStart()
+  return rest ? `(${taskNumber}) ${rest}` : `(${taskNumber}) `
+}
+
+const formatPortalTimelineTitle = (value: string, taskNumber: number) => {
+  const trimmed = stripTokenSpacing(value).trim()
+  if (!trimmed) return ''
+  return `${trimmed} (${taskNumber})`
+}
+
+const formatTaskCopyText = (value: string, sectionNames: string[], taskNumber: number) => {
+  const normalized = stripTokenSpacing(value).replace(/\r\n/g, '\n')
+  const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
+    normalized,
+    sectionNames,
+  )
+  const titleText = stripTaskTitleNumber(stripTokenSpacing(leadingContent).trim()).trim() || 'Task'
+  const titleLine = `${taskNumber ? `(${taskNumber}) ` : ''}${titleText}`.trim()
+  const body = TASK_SECTION_IDS.map((_, index) => {
+    const sectionLabel = stripTokenSpacing(sectionNames[index] ?? '').trim() || `Section ${index + 1}`
+    const sectionText = stripTokenSpacing(contents[index] ?? '').trimEnd()
+    return sectionText ? `${sectionLabel}\n${sectionText}` : sectionLabel
+  }).join('\n\n')
+  return `${titleLine}\n\n${body}\n`
+}
+
+const normalizeCallDraftForCopy = (value: string) =>
+  stripLeadingBlankLines(normalizeCallDraft(value))
+
+// Appends the current mail number to a manually-typed timeline line once the
+// caret leaves it: the line holding the \uE000 cursor marker is left untouched
+// so Enter and further typing behave normally. Existing numbers are kept.
+const numberTimelineLine = (line: string, taskNumber: number) => {
+  if (line.includes('\uE000')) return line
+  const trimmed = stripTokenSpacing(line).trimEnd()
+  if (!trimmed.trim()) return line
+  if (/\(\d+\)\s*$/.test(trimmed)) return line
+  return `${line.trimEnd()} (${taskNumber})`
+}
+
+const normalizeTaskDraftNumbering = (
+  value: string,
+  taskNumber: number,
+  sectionNames: string[],
+) => {
+  const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
+    value,
+    sectionNames,
+  )
+  // The mail number is always first in the title (even when the title is empty
+  // or the task was cleared) and appended to every timeline line.
+  const title = applyTaskTitleNumber(leadingContent, taskNumber)
+  const numbered = contents.map((section, index) =>
+    index === 1
+      ? section
+          .replace(/\r\n/g, '\n')
+          .split('\n')
+          .map((sectionLine) => numberTimelineLine(sectionLine, taskNumber))
+          .join('\n')
+      : section,
+  )
+  return buildStructuredTaskDraftWithTitle(title, numbered, sectionNames)
+}
+
+// Appends the current mail number to a timeline fragment, e.g.
+// "Data Gathering" -> "Data Gathering (3)". Keeps an already-numbered fragment.
+const annotateTaskFragment = (text: string, mailNumber: number) => {
+  const trimmed = text.trimEnd()
+  if (!trimmed.trim()) return text
   if (/\(\d+\)\s*$/.test(trimmed)) return trimmed
   return `${trimmed} (${mailNumber})`
 }
 
-const stripTaskMailNumber = (value: string) => value.replace(/\s*\(\d+\)\s*$/, '').trimEnd()
+// True when the section already holds this fragment (any trailing number is
+// ignored, so it also matches fragments saved by older numbered versions).
+const taskSectionHasFragment = (section: string, text: string) => {
+  const target = stripTokenSpacing(text).replace(/\s*\(\d+\)\s*$/, '').trim()
+  if (!target) return false
+  return section
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .some((line) => stripTokenSpacing(line).replace(/\s*\(\d+\)\s*$/, '').trim() === target)
+}
 
-const normalizeTaskSnippetInsert = (value: string) =>
-  stripTokenSpacing(stripTaskMailNumber(value).trim())
-
-const taskSectionContainsSnippet = (section: string, snippetText: string) => {
-  const normalizedSnippet = normalizeTaskSnippetInsert(snippetText)
-  if (!normalizedSnippet) return false
-  const normalizedSection = stripTokenSpacing(stripTaskMailNumber(section).trim())
-  return normalizedSection.includes(normalizedSnippet)
+// True when the timeline already holds this exact fragment for this mail number,
+// so "Data Gathering (3)" is a duplicate but "Data Gathering (2)" is not.
+const taskSectionHasNumberedFragment = (
+  section: string,
+  text: string,
+  mailNumber: number,
+) => {
+  const target = stripTokenSpacing(annotateTaskFragment(text, mailNumber)).trim()
+  if (!target) return false
+  return section
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .some((line) => stripTokenSpacing(line).trim() === target)
 }
 
 const normalizeNamedCategories = (
@@ -557,6 +677,7 @@ type WorkspaceDashboardPage =
   | 'portal'
   | 'catalog'
   | 'parts'
+  | 'screen'
 
 const workspaceDashboardPageOptions: Array<{
   id: WorkspaceDashboardPage
@@ -568,6 +689,33 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'portal', title: 'Procédures', icon: 'list' },
   { id: 'catalog', title: 'Catalogue produits', icon: 'book' },
   { id: 'parts', title: 'SKU et pièces', icon: 'maintenance' },
+  { id: 'screen', title: 'Émulateur d’écran', icon: 'display' },
+]
+
+type ScreenEmulProduct = {
+  id: string
+  name: string
+  subtitle: string
+}
+
+// Produits émulés. L'écran réel (rendu) sera fourni plus tard ; pour l'instant
+// chaque produit affiche un menu de navigation factice pilotable au pavé.
+const SCREEN_EMUL_PRODUCTS: ScreenEmulProduct[] = [
+  { id: 't598', name: 'T598', subtitle: 'Direct Drive' },
+  { id: 't248', name: 'T248', subtitle: 'Racing Wheel' },
+  { id: 'sf1000', name: 'SF1000', subtitle: 'Wheel Add-On' },
+  { id: 'sf25', name: 'SF-25', subtitle: 'Wheel Add-On' },
+  { id: 't128', name: 'T128', subtitle: 'Racing Wheel' },
+]
+
+// Menu factice affiché sur l'écran émulé (à remplacer par le vrai rendu).
+const SCREEN_EMUL_MENU_ITEMS = [
+  'Réglages',
+  'Calibration',
+  'Sensibilité',
+  'Force Feedback',
+  'Mapping boutons',
+  'Informations',
 ]
 
 const quickLinks = [
@@ -1700,6 +1848,21 @@ function App() {
   >({})
   const [workspaceDashboardPage, setWorkspaceDashboardPage] =
     useState<WorkspaceDashboardPage>('tools')
+  const [screenEmulProductId, setScreenEmulProductId] = useState<string>(
+    SCREEN_EMUL_PRODUCTS[0]?.id ?? '',
+  )
+  const [screenEmulMenuIndex, setScreenEmulMenuIndex] = useState(0)
+  const [screenEmulEntered, setScreenEmulEntered] = useState(false)
+  const [screenEmulPressedKey, setScreenEmulPressedKey] = useState<string | null>(null)
+  const screenEmulPressTimeoutRef = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (screenEmulPressTimeoutRef.current) {
+        window.clearTimeout(screenEmulPressTimeoutRef.current)
+      }
+    },
+    [],
+  )
   const isCategorySelectionEmpty = selectedCategoryId === null
   const isSnippetSelectionEmpty = selectedSnippetId === null
   const isTemplateSelectionEmpty = selectedTemplateId === null
@@ -3875,19 +4038,62 @@ function App() {
     setData((prev) => ({ ...prev, emailDraft: normalized }))
   }, [normalizeDraftWithCursor])
 
-  const updateTaskDraft = useCallback((next: string, cursor?: number, useSkeleton = taskDraftSkeletonEnabled) => {
-    const structuredNext = useSkeleton ? ensureStructuredTaskDraft(next, taskSectionNames) : next
-    if (cursor !== undefined) {
-      const normalized = normalizeDraftWithCursor(structuredNext, cursor)
-      setData((prev) => ({ ...prev, taskDraft: normalized.value }))
-      requestAnimationFrame(() =>
-        taskEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
+  const normalizeTaskDraftWithCursor = useCallback(
+    (value: string, cursor: number, useSkeleton: boolean) => {
+      const marker = '\uE000'
+      const safeCursor = Math.max(0, Math.min(cursor, value.length))
+      const markedValue = `${value.slice(0, safeCursor)}${marker}${value.slice(safeCursor)}`
+      const structuredNext = useSkeleton ? ensureStructuredTaskDraft(markedValue, taskSectionNames) : markedValue
+      const timelineNext = useSkeleton
+        ? normalizeTaskDraftNumbering(structuredNext, taskMailNumber, taskSectionNames)
+        : structuredNext
+      const normalizedMarkedValue = normalizeTokenSpacing(timelineNext)
+      const nextCursor = normalizedMarkedValue.indexOf(marker)
+      return {
+        value: normalizedMarkedValue.replace(marker, ''),
+        cursor: nextCursor === -1 ? safeCursor : nextCursor,
+      }
+    },
+    [taskMailNumber, taskSectionNames],
+  )
+
+  const updateTaskDraft = useCallback(
+    (next: string, cursor?: number, useSkeleton = taskDraftSkeletonEnabled) => {
+      const structuredNext = useSkeleton ? ensureStructuredTaskDraft(next, taskSectionNames) : next
+      const timelineNext = useSkeleton
+        ? normalizeTaskDraftNumbering(structuredNext, taskMailNumber, taskSectionNames)
+        : structuredNext
+      if (cursor !== undefined) {
+        const normalized = normalizeTaskDraftWithCursor(next, cursor, useSkeleton)
+        setData((prev) => ({ ...prev, taskDraft: normalized.value }))
+        requestAnimationFrame(() =>
+          taskEditorRef.current?.setSelection(normalized.cursor, normalized.cursor),
+        )
+        return
+      }
+      const normalized = normalizeTokenSpacing(timelineNext)
+      setData((prev) => ({ ...prev, taskDraft: normalized }))
+    },
+    [
+      normalizeTaskDraftWithCursor,
+      taskDraftSkeletonEnabled,
+      taskMailNumber,
+      taskSectionNames,
+    ],
+  )
+
+  useEffect(() => {
+    if (!taskDraftSkeletonEnabled) return
+    setData((prev) => {
+      const nextTaskDraft = normalizeTaskDraftNumbering(
+        ensureStructuredTaskDraft(prev.taskDraft, taskSectionNames),
+        taskMailNumber,
+        taskSectionNames,
       )
-      return
-    }
-    const normalized = normalizeTokenSpacing(structuredNext)
-    setData((prev) => ({ ...prev, taskDraft: normalized }))
-  }, [normalizeDraftWithCursor, taskDraftSkeletonEnabled, taskSectionNames])
+      if (nextTaskDraft === prev.taskDraft) return prev
+      return { ...prev, taskDraft: nextTaskDraft }
+    })
+  }, [taskDraftSkeletonEnabled, taskMailNumber, taskSectionNames])
 
   const hasTaskBoxContent = useCallback(
     (task: string, index: number) => {
@@ -3931,39 +4137,43 @@ function App() {
   const insertTaskText = useCallback(
     (text: string, sectionId?: TaskSectionId) => {
       if (!text.trim()) return
-      const targetTaskBoxIndex = activeTaskBoxIndex
-      const nextTaskBoxes = getTaskBoxesSnapshot()
-      const source =
-        targetTaskBoxIndex === activeTaskBoxIndex
-          ? data.taskDraft
-          : nextTaskBoxes[targetTaskBoxIndex]?.task ?? ''
-      const sectionIndex = getTaskSectionIndex(sectionId)
-      const currentSections = parseStructuredTaskDraft(source, taskSectionNames)
-      const currentSection = currentSections[sectionIndex] ?? ''
-      if (taskSectionContainsSnippet(currentSection, text)) return
-      const annotatedText = annotateTaskMailNumber(text, taskMailNumber)
-      const next = insertTaskTextInSection(source, annotatedText, sectionId, taskSectionNames)
-
-      if (targetTaskBoxIndex === activeTaskBoxIndex) {
-        setTaskDraftSkeletonEnabled(true)
-        updateTaskDraft(next, next.length, true)
-        return
-      }
-
-      setTaskDraftBoxes((prev) =>
-        prev.map((slot, index) =>
-          index === targetTaskBoxIndex
-            ? {
-                ...slot,
-                task: getTaskBoxStorageValue(next, targetTaskBoxIndex),
-              }
-            : slot,
-        ),
+      // Snippet task fragments always land in the skeleton task (box 0). If the
+      // free box is open, switch back to the skeleton box before inserting.
+      const skeletonIndex = TASK_SKELETON_BOX_INDEX
+      const snapshot = getTaskBoxesSnapshot()
+      const skeletonSource = ensureStructuredTaskDraft(
+        snapshot[skeletonIndex]?.task ?? '',
+        taskSectionNames,
       )
+      const sectionIndex = getTaskSectionIndex(sectionId)
+      const currentSection =
+        parseStructuredTaskDraft(skeletonSource, taskSectionNames)[sectionIndex] ?? ''
+      // Timeline steps carry the mail number (dedup per number); other sections
+      // hold the plain fragment (dedup ignoring any number).
+      const isTimeline = sectionIndex === 1
+      const alreadyPresent = isTimeline
+        ? taskSectionHasNumberedFragment(currentSection, text, taskMailNumber)
+        : taskSectionHasFragment(currentSection, text)
+      const fragment = isTimeline ? annotateTaskFragment(text, taskMailNumber) : text
+      const next = alreadyPresent
+        ? skeletonSource
+        : insertTaskTextInSection(skeletonSource, fragment, sectionId, taskSectionNames)
+
+      if (activeTaskBoxIndex !== skeletonIndex) {
+        setTaskDraftBoxes(
+          snapshot.map((slot, index) =>
+            index === skeletonIndex
+              ? { ...slot, task: getTaskBoxStorageValue(next, skeletonIndex) }
+              : slot,
+          ),
+        )
+        setActiveTaskBoxIndex(skeletonIndex)
+      }
+      setTaskDraftSkeletonEnabled(true)
+      updateTaskDraft(next, next.length, true)
     },
     [
       activeTaskBoxIndex,
-      data.taskDraft,
       getTaskBoxesSnapshot,
       getTaskBoxStorageValue,
       taskMailNumber,
@@ -4070,7 +4280,8 @@ function App() {
       setActiveTaskBoxIndex(index)
       setTaskDraftSkeletonEnabled(useSkeleton)
       updateTaskDraft(nextTask, nextTask.length, useSkeleton)
-      setTaskMailNumber(getNextTaskMailNumber(nextTask))
+      // Switching task boxes must not change the mail counter (it would look
+      // like a freshly pasted skeleton and bump the number).
       closeDraftBoxTooltip()
       requestAnimationFrame(() => taskEditorRef.current?.focus())
     },
@@ -4383,12 +4594,13 @@ function App() {
   }
 
   const openTemplatePreview = (template: MailTemplate) => {
+    const taskSections = getTemplateTaskSections(template, data.taskTemplates)
+    const hasTaskContent = taskSections.some((section) => section.trim())
     setTemplatePreview({
       templateId: template.id,
       selectedEmailLines: getTemplateEmailLines(template).map((line) => Boolean(line.trim())),
-      selectedTaskSections: getTemplateTaskSections(template, data.taskTemplates).map((section) =>
-        Boolean(section.trim()),
-      ),
+      selectedTaskSections: taskSections.map((section) => Boolean(section.trim())),
+      importTask: hasTaskContent,
     })
   }
 
@@ -4419,17 +4631,21 @@ function App() {
       .filter((_, index) => templatePreview.selectedEmailLines[index])
       .join('\n')
       .trim()
-    const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
-      templatePreview.selectedTaskSections[index] ? section : '',
-    )
 
     if (emailLines) updateEmailDraft(padEmptySelectors(emailLines), emailLines.length)
-    const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
-    const nextTaskDraft = useSkeleton
-      ? buildStructuredTaskDraft(taskSections, taskSectionNames)
-      : buildTaskTemplateContent({ taskSections })
-    setTaskDraftSkeletonEnabled(useSkeleton)
-    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
+
+    if (templatePreview.importTask) {
+      const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
+        templatePreview.selectedTaskSections[index] ? section : '',
+      )
+      const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+      const nextTaskDraft = useSkeleton
+        ? buildStructuredTaskDraft(taskSections, taskSectionNames)
+        : buildTaskTemplateContent({ taskSections })
+      setTaskDraftSkeletonEnabled(useSkeleton)
+      updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
+    }
+
     setTemplatePreview(null)
     closeTemplateSearch()
     requestAnimationFrame(() => emailEditorRef.current?.focus())
@@ -4496,7 +4712,7 @@ function App() {
     taskCopyTimeoutRef.current = window.setTimeout(() => setTaskCopied(false), 1600)
 
     if (!hasMeaningfulTaskContent(data.taskDraft, taskSectionNames)) return
-    const cleaned = stripTokenSpacing(data.taskDraft)
+    const cleaned = formatTaskCopyText(data.taskDraft, taskSectionNames, taskMailNumber)
     const didCopy = await copyText(cleaned, buildExportHtml(cleaned))
     if (!didCopy) {
       setToast('Copie impossible.')
@@ -4635,7 +4851,7 @@ function App() {
   }
 
   const handleCopyCall = async () => {
-    const content = normalizeCallDraft(callDraft)
+    const content = normalizeCallDraftForCopy(callDraft)
     if (!content.trim()) return
     if (callCopyTimeoutRef.current !== null) {
       window.clearTimeout(callCopyTimeoutRef.current)
@@ -5151,7 +5367,8 @@ function App() {
                     {selectedPortalProcedure.codes.map((line, index) => (
                       <article className="portal-code-editor__preview-step" key={line.id}>
                         <div className="portal-code-editor__preview-step-title">
-                          {line.title?.trim() || `Étape ${index + 1}`}
+                          {formatPortalTimelineTitle(line.title ?? '', taskMailNumber) ||
+                            `Étape ${index + 1}`}
                         </div>
                         <div className="list-item__meta">
                           {line.showDraft ? 'Draft • ' : ''}
@@ -5337,7 +5554,10 @@ function App() {
                             <div className="portal-code-editor__code-card">
                               <div className="portal-code-editor__step-head">
                                 <div className="portal-code-editor__step-title-row">
-                                  <span className="list-item__meta">Étape {index + 1}</span>
+                                  <span className="list-item__meta">
+                                    {formatPortalTimelineTitle(codeLine.title ?? '', taskMailNumber) ||
+                                      `Étape ${index + 1}`}
+                                  </span>
                                   {codeLine.showDraft ? (
                                     <span className="portal-code-editor__draft-pill">Draft</span>
                                   ) : null}
@@ -5355,7 +5575,7 @@ function App() {
                                       )
                                     }
                                   >
-                            <DeleteIcon />
+                                    <DeleteIcon />
                                   </button>
                                 ) : null}
                               </div>
@@ -7405,6 +7625,146 @@ function App() {
     )
   }
 
+  const selectedScreenEmulProduct =
+    SCREEN_EMUL_PRODUCTS.find((product) => product.id === screenEmulProductId) ??
+    SCREEN_EMUL_PRODUCTS[0]
+
+  const selectScreenEmulProduct = (productId: string) => {
+    setScreenEmulProductId(productId)
+    setScreenEmulMenuIndex(0)
+    setScreenEmulEntered(false)
+  }
+
+  const flashScreenEmulKey = (key: string) => {
+    setScreenEmulPressedKey(key)
+    if (screenEmulPressTimeoutRef.current) {
+      window.clearTimeout(screenEmulPressTimeoutRef.current)
+    }
+    screenEmulPressTimeoutRef.current = window.setTimeout(
+      () => setScreenEmulPressedKey(null),
+      160,
+    )
+  }
+
+  const handleScreenEmulKey = (key: string) => {
+    flashScreenEmulKey(key)
+    const itemCount = SCREEN_EMUL_MENU_ITEMS.length
+    switch (key) {
+      case 'up':
+      case 'left':
+        setScreenEmulEntered(false)
+        setScreenEmulMenuIndex((index) => (index - 1 + itemCount) % itemCount)
+        break
+      case 'down':
+      case 'right':
+        setScreenEmulEntered(false)
+        setScreenEmulMenuIndex((index) => (index + 1) % itemCount)
+        break
+      case 'ok':
+        setScreenEmulEntered(true)
+        break
+      case 'back':
+        setScreenEmulEntered(false)
+        break
+      case 'menu':
+        setScreenEmulEntered(false)
+        setScreenEmulMenuIndex(0)
+        break
+      default:
+        break
+    }
+  }
+
+  const renderScreenEmulKey = (
+    key: string,
+    label: string,
+    extraClass = '',
+  ) => (
+    <button
+      type="button"
+      className={`screen-emul__key${extraClass ? ` ${extraClass}` : ''}${
+        screenEmulPressedKey === key ? ' is-pressed' : ''
+      }`}
+      onClick={() => handleScreenEmulKey(key)}
+      aria-label={label}
+      title={label}
+    >
+      {label}
+    </button>
+  )
+
+  const renderWorkspaceDashboardScreenPanel = (title: string) => (
+    <article className="workspace-dashboard__panel screen-emul-panel">
+      <div className="workspace-dashboard__panel-title">{title}</div>
+      <div className="screen-emul">
+        <div className="screen-emul__products" role="listbox" aria-label="Produits">
+          {SCREEN_EMUL_PRODUCTS.map((product) => (
+            <button
+              key={product.id}
+              type="button"
+              role="option"
+              aria-selected={product.id === selectedScreenEmulProduct?.id}
+              className={`screen-emul__product${
+                product.id === selectedScreenEmulProduct?.id ? ' is-active' : ''
+              }`}
+              onClick={() => selectScreenEmulProduct(product.id)}
+            >
+              <span className="screen-emul__product-name">{product.name}</span>
+              <span className="screen-emul__product-sub">{product.subtitle}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="screen-emul__device">
+          <div className="screen-emul__bezel">
+            <div className="screen-emul__display">
+              <div className="screen-emul__display-head">
+                <span className="screen-emul__display-product">
+                  {selectedScreenEmulProduct?.name ?? '—'}
+                </span>
+                <span className="screen-emul__display-hint">Aperçu écran</span>
+              </div>
+              <ul className="screen-emul__menu">
+                {SCREEN_EMUL_MENU_ITEMS.map((item, index) => (
+                  <li
+                    key={item}
+                    className={`screen-emul__menu-item${
+                      index === screenEmulMenuIndex ? ' is-selected' : ''
+                    }${index === screenEmulMenuIndex && screenEmulEntered ? ' is-entered' : ''}`}
+                  >
+                    <span className="screen-emul__menu-caret" aria-hidden="true">
+                      ▸
+                    </span>
+                    <span className="screen-emul__menu-label">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="screen-emul__display-foot">
+                {screenEmulEntered
+                  ? `▸ ${SCREEN_EMUL_MENU_ITEMS[screenEmulMenuIndex]}`
+                  : 'Rendu écran à intégrer'}
+              </div>
+            </div>
+          </div>
+
+          <div className="screen-emul__controls">
+            <div className="screen-emul__dpad">
+              {renderScreenEmulKey('up', '▲', 'screen-emul__key--up')}
+              {renderScreenEmulKey('left', '◀', 'screen-emul__key--left')}
+              {renderScreenEmulKey('ok', 'OK', 'screen-emul__key--ok')}
+              {renderScreenEmulKey('right', '▶', 'screen-emul__key--right')}
+              {renderScreenEmulKey('down', '▼', 'screen-emul__key--down')}
+            </div>
+            <div className="screen-emul__softkeys">
+              {renderScreenEmulKey('menu', 'MENU', 'screen-emul__key--soft')}
+              {renderScreenEmulKey('back', 'BACK', 'screen-emul__key--soft')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+
   const renderWorkspaceDashboardContent = () => {
     if (workspaceDashboardPage === 'tools') {
       return (
@@ -7446,6 +7806,14 @@ function App() {
       return (
         <div className="workspace-dashboard__single">
           {renderWorkspaceDashboardSparePartsPanel('SKU & spare parts')}
+        </div>
+      )
+    }
+
+    if (workspaceDashboardPage === 'screen') {
+      return (
+        <div className="workspace-dashboard__single">
+          {renderWorkspaceDashboardScreenPanel('Émulateur d’écran')}
         </div>
       )
     }
@@ -7855,7 +8223,8 @@ function App() {
                             onClick={() => setTemplateBrowserView('categories')}
                             title="Retour aux catégories"
                           >
-                            ←
+                            <span className="search-result-back__arrow" aria-hidden="true">←</span>
+                            <span className="search-result-back__label">Catégories</span>
                           </button>
                         ) : null}
                         {templateBrowserTemplates.length ? (
@@ -8183,7 +8552,8 @@ function App() {
                           onClick={() => setTaskBrowserView('categories')}
                           title="Retour aux catégories"
                         >
-                          ←
+                          <span className="search-result-back__arrow" aria-hidden="true">←</span>
+                          <span className="search-result-back__label">Catégories</span>
                         </button>
                       ) : null}
                       {taskTemplateResults.length ? (
@@ -8243,11 +8613,15 @@ function App() {
             <TextEditor
               ref={taskEditorRef}
               value={data.taskDraft}
-              onChange={(value) => updateTaskDraft(value)}
+              onChange={(value) => {
+                const cursor = taskEditorRef.current?.getSelection().start
+                updateTaskDraft(value, cursor)
+              }}
               onPaste={handleTaskPaste}
               placeholder="Écrivez vos tâches..."
               className="task-editor"
               protectedRanges={taskHeadingProtectedRanges}
+              decorateTaskSkeleton={taskDraftSkeletonEnabled}
             />
           </div>
           <div className="task-actions">
@@ -8494,15 +8868,36 @@ function App() {
                     )}
                   </div>
                 </section>
-                <section className="troubleshootgun-preview-modal__section troubleshootgun-preview-modal__section--task">
-                  <div className="troubleshootgun-preview-modal__label">Task</div>
+                <section
+                  className={`troubleshootgun-preview-modal__section troubleshootgun-preview-modal__section--task${
+                    templatePreview.importTask ? '' : ' is-disabled'
+                  }`}
+                >
+                  <div className="troubleshootgun-preview-modal__label troubleshootgun-preview-modal__label--task">
+                    <span>Task</span>
+                    <label className="import-task-toggle">
+                      <input
+                        type="checkbox"
+                        checked={templatePreview.importTask}
+                        onChange={(event) =>
+                          setTemplatePreview((prev) =>
+                            prev ? { ...prev, importTask: event.target.checked } : prev,
+                          )
+                        }
+                      />
+                      <span>Importer la task</span>
+                    </label>
+                  </div>
                   <div className="troubleshootgun-preview-sections">
                     {TASK_SECTION_IDS.map((sectionId, index) => (
                       <label className="troubleshootgun-preview-section" key={sectionId}>
                         <input
                           type="checkbox"
-                          checked={Boolean(templatePreview.selectedTaskSections[index])}
-                          disabled={!taskSections[index]?.trim()}
+                          checked={
+                            templatePreview.importTask &&
+                            Boolean(templatePreview.selectedTaskSections[index])
+                          }
+                          disabled={!templatePreview.importTask || !taskSections[index]?.trim()}
                           onChange={(event) =>
                             setTemplatePreview((prev) =>
                               prev
@@ -9546,65 +9941,46 @@ function App() {
                       items={mailTemplateCategories}
                       getId={(item) => item.id}
                       onReorder={(next) => updateSettings({ mailTemplateCategories: next })}
-                      renderItem={(category, handleProps) => {
-                        const categoryTemplates = data.templates
-                          .filter((template) => template.categoryId === category.id)
-                          .slice(0, 2)
-                        return (
-                          <div
-                            className={`list-item list-item--compact${
-                              templateCategoryDraft.id === category.id ? ' is-selected' : ''
-                            }`}
-                            onClick={() => setTemplateCategoryDraft(category)}
+                      renderItem={(category, handleProps) => (
+                        <div
+                          className={`list-item list-item--compact${
+                            templateCategoryDraft.id === category.id ? ' is-selected' : ''
+                          }`}
+                          onClick={() => setTemplateCategoryDraft(category)}
+                        >
+                          <button
+                            className="drag-handle"
+                            type="button"
+                            {...handleProps.attributes}
+                            {...handleProps.listeners}
+                            onClick={(event) => event.stopPropagation()}
                           >
-                            <button
-                              className="drag-handle"
-                              type="button"
-                              {...handleProps.attributes}
-                              {...handleProps.listeners}
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <MoveIcon />
-                            </button>
-                            <div className="list-item__content">
-                              <div className="list-item__title">{category.name}</div>
-                              <div className="list-item__meta">
-                                {data.templates.filter(
-                                  (template) => template.categoryId === category.id,
-                                ).length}{' '}
-                                template(s)
-                              </div>
-                              {categoryTemplates.length ? (
-                                <div className="list-item__meta list-item__meta--stack category-preview-stack">
-                                  {categoryTemplates.map((template) => (
-                                    <div className="category-preview-item" key={template.id}>
-                                      <strong>{template.name}</strong>
-                                      <span>{template.content.split('\n')[0] || 'Contenu vide'}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="list-item__meta list-item__meta--stack">
-                                  Aucun template dans cette catégorie.
-                                </div>
-                              )}
-                            </div>
-                            <div className="list-item__actions">
-                              <button
-                                className="icon-btn-sm danger"
-                                type="button"
-                                title="Supprimer"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  deleteTemplateCategory(category.id)
-                                }}
-                              >
-                                <DeleteIcon />
-                              </button>
+                            <MoveIcon />
+                          </button>
+                          <div className="list-item__content">
+                            <div className="list-item__title">{category.name}</div>
+                            <div className="list-item__meta">
+                              {data.templates.filter(
+                                (template) => template.categoryId === category.id,
+                              ).length}{' '}
+                              template(s)
                             </div>
                           </div>
-                        )
-                      }}
+                          <div className="list-item__actions">
+                            <button
+                              className="icon-btn-sm danger"
+                              type="button"
+                              title="Supprimer"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                deleteTemplateCategory(category.id)
+                              }}
+                            >
+                              <DeleteIcon />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     />
                   </div>
                 </div>
@@ -9644,6 +10020,27 @@ function App() {
                           }))
                         }
                       />
+                      {templateCategoryDraft.id ? (
+                        <div className="category-snippet-preview">
+                          <div className="category-snippet-preview__title">Aperçu des templates</div>
+                          {data.templates.filter(
+                            (template) => template.categoryId === templateCategoryDraft.id,
+                          ).length ? (
+                            <div className="category-snippet-preview__list">
+                              {data.templates
+                                .filter((template) => template.categoryId === templateCategoryDraft.id)
+                                .map((template) => (
+                                  <div className="category-snippet-preview__item" key={template.id}>
+                                    <span>{template.name}</span>
+                                    <small>{template.content.split('\n')[0] || 'Contenu vide'}</small>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className="list-item__meta">Aucun template dans cette catégorie.</div>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -9661,65 +10058,46 @@ function App() {
                       items={taskTemplateCategories}
                       getId={(item) => item.id}
                       onReorder={(next) => updateSettings({ taskTemplateCategories: next })}
-                      renderItem={(category, handleProps) => {
-                        const categoryTasks = data.taskTemplates
-                          .filter((task) => task.categoryId === category.id)
-                          .slice(0, 2)
-                        return (
-                          <div
-                            className={`list-item list-item--compact${
-                              taskTemplateCategoryDraft.id === category.id ? ' is-selected' : ''
-                            }`}
-                            onClick={() => setTaskTemplateCategoryDraft(category)}
+                      renderItem={(category, handleProps) => (
+                        <div
+                          className={`list-item list-item--compact${
+                            taskTemplateCategoryDraft.id === category.id ? ' is-selected' : ''
+                          }`}
+                          onClick={() => setTaskTemplateCategoryDraft(category)}
+                        >
+                          <button
+                            className="drag-handle"
+                            type="button"
+                            {...handleProps.attributes}
+                            {...handleProps.listeners}
+                            onClick={(event) => event.stopPropagation()}
                           >
-                            <button
-                              className="drag-handle"
-                              type="button"
-                              {...handleProps.attributes}
-                              {...handleProps.listeners}
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <MoveIcon />
-                            </button>
-                            <div className="list-item__content">
-                              <div className="list-item__title">{category.name}</div>
-                              <div className="list-item__meta">
-                                {data.taskTemplates.filter(
-                                  (task) => task.categoryId === category.id,
-                                ).length}{' '}
-                                template(s)
-                              </div>
-                              {categoryTasks.length ? (
-                                <div className="list-item__meta list-item__meta--stack category-preview-stack">
-                                  {categoryTasks.map((task) => (
-                                    <div className="category-preview-item" key={task.id}>
-                                      <strong>{task.name}</strong>
-                                      <span>{getTaskTemplatePreviewText(task)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="list-item__meta list-item__meta--stack">
-                                  Aucun template dans cette catégorie.
-                                </div>
-                              )}
-                            </div>
-                            <div className="list-item__actions">
-                              <button
-                                className="icon-btn-sm danger"
-                                type="button"
-                                title="Supprimer"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  deleteTaskTemplateCategory(category.id)
-                                }}
-                              >
-                                <DeleteIcon />
-                              </button>
+                            <MoveIcon />
+                          </button>
+                          <div className="list-item__content">
+                            <div className="list-item__title">{category.name}</div>
+                            <div className="list-item__meta">
+                              {data.taskTemplates.filter(
+                                (task) => task.categoryId === category.id,
+                              ).length}{' '}
+                              template(s)
                             </div>
                           </div>
-                        )
-                      }}
+                          <div className="list-item__actions">
+                            <button
+                              className="icon-btn-sm danger"
+                              type="button"
+                              title="Supprimer"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                deleteTaskTemplateCategory(category.id)
+                              }}
+                            >
+                              <DeleteIcon />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     />
                   </div>
                 </div>
@@ -9759,6 +10137,27 @@ function App() {
                           }))
                         }
                       />
+                      {taskTemplateCategoryDraft.id ? (
+                        <div className="category-snippet-preview">
+                          <div className="category-snippet-preview__title">Aperçu des tasks</div>
+                          {data.taskTemplates.filter(
+                            (task) => task.categoryId === taskTemplateCategoryDraft.id,
+                          ).length ? (
+                            <div className="category-snippet-preview__list">
+                              {data.taskTemplates
+                                .filter((task) => task.categoryId === taskTemplateCategoryDraft.id)
+                                .map((task) => (
+                                  <div className="category-snippet-preview__item" key={task.id}>
+                                    <span>{task.name}</span>
+                                    <small>{getTaskTemplatePreviewText(task)}</small>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className="list-item__meta">Aucune task dans cette catégorie.</div>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -10063,19 +10462,12 @@ function App() {
                   <div className="list-card__body">
                     <div className="settings-block">
                       {TASK_SECTION_IDS.map((sectionId, index) => (
-                        <div className="settings-option" key={sectionId}>
-                          <div className="settings-option__info">
-                            <div className="settings-option__title">Partie {index + 1}</div>
-                            <div className="settings-option__desc">
-                              Titre fixe dans chaque task.
-                            </div>
-                          </div>
-                          <input
-                            className="input"
-                            value={taskSectionNames[index]}
-                            onChange={(event) => updateTaskSectionName(index, event.target.value)}
-                          />
-                        </div>
+                        <input
+                          key={sectionId}
+                          className="input"
+                          value={taskSectionNames[index]}
+                          onChange={(event) => updateTaskSectionName(index, event.target.value)}
+                        />
                       ))}
                     </div>
                     <div className="task-template-preview-settings">
@@ -10083,7 +10475,9 @@ function App() {
                       <div
                         className="task-template-preview-settings__content settings-token-preview"
                         dangerouslySetInnerHTML={{
-                          __html: highlightText(buildStructuredTaskDraft(['', '', '', ''], taskSectionNames)),
+                          __html: highlightText(
+                            buildStructuredTaskDraft(['', '', '', ''], taskSectionNames).trim(),
+                          ),
                         }}
                       />
                     </div>
@@ -11360,7 +11754,7 @@ function App() {
                         </button>
                       </div>
                       <textarea
-                        className="textarea textarea--tall"
+                        className="textarea textarea--tall textarea--call-template"
                         ref={callTemplateRef}
                         value={callTemplate}
                         placeholder="Template d’appel"
