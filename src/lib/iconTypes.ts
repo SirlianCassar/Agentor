@@ -1,6 +1,8 @@
 export type AppIconName =
   | 'add'
   | 'archive'
+  | 'asciiWall'
+  | 'screenEmulator'
   | 'book'
   | 'box'
   | 'call'

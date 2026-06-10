@@ -465,6 +465,9 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
       dashboardNews: Array.isArray(raw.settings?.dashboardNews)
         ? raw.settings.dashboardNews
         : fallback.settings.dashboardNews,
+      dashboardDecorations: Array.isArray(raw.settings?.dashboardDecorations)
+        ? raw.settings.dashboardDecorations
+        : fallback.settings.dashboardDecorations,
       dashboardReminders:
         typeof raw.settings?.dashboardReminders === 'string'
           ? raw.settings.dashboardReminders
@@ -512,6 +515,9 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
       dashboardNews: Array.isArray(normalized.settings.dashboardNews)
         ? normalized.settings.dashboardNews
         : fallback.settings.dashboardNews,
+      dashboardDecorations: Array.isArray(normalized.settings.dashboardDecorations)
+        ? normalized.settings.dashboardDecorations
+        : fallback.settings.dashboardDecorations,
       dashboardReminders:
         typeof normalized.settings.dashboardReminders === 'string'
           ? normalized.settings.dashboardReminders

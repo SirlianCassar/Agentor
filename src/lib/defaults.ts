@@ -39,6 +39,13 @@ export const defaultData: AppData = {
     dashboardProducts: [],
     products: [],
     dashboardNews: [],
+    dashboardDecorations: [
+      { id: 'decor-separator-heavy', title: 'Séparateur', content: '━━━━━━━━━━━━━━━━━━━━' },
+      { id: 'decor-separator-light', title: 'Ligne fine', content: '--------------------' },
+      { id: 'decor-arrow', title: 'Flèche', content: '→ ' },
+      { id: 'decor-warning', title: 'Attention', content: '/!\\ ' },
+      { id: 'decor-check', title: 'Check', content: '[OK] ' },
+    ],
     dashboardReminders: '',
     taskSectionNames: ['─ CASE OVERVIEW ─', '─ TIMELINE ─', '─ NEXT ─', '─ NOTES ─'],
     mailTemplateCategories: [{ id: 'template-cat-general', name: 'General' }],
