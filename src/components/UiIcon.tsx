@@ -1,6 +1,8 @@
 import type { AppIconName } from '../lib/iconTypes'
 import addIcon from '../assets/Icons8-2/icons8-plus-70.png'
 import archiveIcon from '../assets/Icons8-2/icons8-dossier-70.png'
+import asciiWallIcon from '../assets/Icons8-2/Ascii Wall.png'
+import screenEmulatorIcon from '../assets/Icons8-2/Screen Emulator.png'
 import bookIcon from '../assets/Icons8-2/icons8-livre-70.png'
 import calculatorIcon from '../assets/Icons8-2/icons8-calculatrice-70.png'
 import channelsIcon from '../assets/Icons8-2/icons8-contenu-70.png'
@@ -32,6 +34,8 @@ import versionIcon from '../assets/Icons8-2/icons8-téléchargement-des-mises-à
 const rasterIcons: Partial<Record<AppIconName, string>> = {
   add: addIcon,
   archive: folderIcon,
+  asciiWall: asciiWallIcon,
+  screenEmulator: screenEmulatorIcon,
   book: bookIcon,
   box: archiveIcon,
   call: phoneIcon,

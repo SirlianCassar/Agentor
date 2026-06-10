@@ -179,6 +179,12 @@ export interface DashboardNewsItem {
   content: string
 }
 
+export interface DashboardDecorationItem {
+  id: string
+  title: string
+  content: string
+}
+
 export interface MailTemplateCategory {
   id: string
   name: string
@@ -204,6 +210,7 @@ export interface AppSettings {
   dashboardProducts: DashboardProduct[]
   products: ProductCatalogItem[]
   dashboardNews: DashboardNewsItem[]
+  dashboardDecorations: DashboardDecorationItem[]
   dashboardReminders: string
   taskSectionNames: string[]
   mailTemplateCategories: MailTemplateCategory[]

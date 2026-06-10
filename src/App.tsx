@@ -8,6 +8,7 @@ import {
   type MouseEvent,
   type RefObject,
   type TransitionEvent,
+  type WheelEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { TextEditor, type ProtectedTextRange, type TextEditorHandle } from './components/TextEditor'
@@ -31,6 +32,12 @@ import {
 } from './lib/storage'
 import type { AppIconName } from './lib/iconTypes'
 import {
+  T598_SCREENS,
+  T598_SCREENS_BY_ID,
+  T598_ENTRY_POINTS,
+  type T598Button,
+} from './lib/screenEmulT598'
+import {
   settingsNavigation,
   settingsTabIndex,
   tokenReferenceItems,
@@ -53,6 +60,7 @@ import type {
   Category,
   CustomerPortalCode,
   CustomerPortalCodeLine,
+  DashboardDecorationItem,
   DashboardNewsItem,
   DashboardProduct,
   DashboardProductCategory,
@@ -187,6 +195,7 @@ const createEmptyDraftBoxSlot = (): DraftBoxSlot => ({
 })
 
 const TASK_SKELETON_BOX_INDEX = 0
+const TASK_FREE_BOX_INDEX = 1
 const taskBoxUsesSkeleton = (index: number) => index === TASK_SKELETON_BOX_INDEX
 
 const normalizeTaskSectionNames = (names: string[] | undefined) =>
@@ -486,10 +495,9 @@ const applyTaskTitleNumber = (title: string, taskNumber: number) => {
   return rest ? `(${taskNumber}) ${rest}` : `(${taskNumber}) `
 }
 
-const formatPortalTimelineTitle = (value: string, taskNumber: number) => {
+const formatPortalTimelineTitle = (value: string) => {
   const trimmed = stripTokenSpacing(value).trim()
-  if (!trimmed) return ''
-  return `${trimmed} (${taskNumber})`
+  return trimmed
 }
 
 const formatTaskCopyText = (value: string, sectionNames: string[], taskNumber: number) => {
@@ -678,6 +686,7 @@ type WorkspaceDashboardPage =
   | 'catalog'
   | 'parts'
   | 'screen'
+  | 'decorations'
 
 const workspaceDashboardPageOptions: Array<{
   id: WorkspaceDashboardPage
@@ -689,7 +698,8 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'portal', title: 'Procédures', icon: 'list' },
   { id: 'catalog', title: 'Catalogue produits', icon: 'book' },
   { id: 'parts', title: 'SKU et pièces', icon: 'maintenance' },
-  { id: 'screen', title: 'Émulateur d’écran', icon: 'display' },
+  { id: 'screen', title: 'Émulateur d’écran', icon: 'screenEmulator' },
+  { id: 'decorations', title: 'Ascii Wall', icon: 'asciiWall' },
 ]
 
 type ScreenEmulProduct = {
@@ -698,24 +708,11 @@ type ScreenEmulProduct = {
   subtitle: string
 }
 
-// Produits émulés. L'écran réel (rendu) sera fourni plus tard ; pour l'instant
-// chaque produit affiche un menu de navigation factice pilotable au pavé.
 const SCREEN_EMUL_PRODUCTS: ScreenEmulProduct[] = [
   { id: 't598', name: 'T598', subtitle: 'Direct Drive' },
   { id: 't248', name: 'T248', subtitle: 'Racing Wheel' },
   { id: 'sf1000', name: 'SF1000', subtitle: 'Wheel Add-On' },
   { id: 'sf25', name: 'SF-25', subtitle: 'Wheel Add-On' },
-  { id: 't128', name: 'T128', subtitle: 'Racing Wheel' },
-]
-
-// Menu factice affiché sur l'écran émulé (à remplacer par le vrai rendu).
-const SCREEN_EMUL_MENU_ITEMS = [
-  'Réglages',
-  'Calibration',
-  'Sensibilité',
-  'Force Feedback',
-  'Mapping boutons',
-  'Informations',
 ]
 
 const quickLinks = [
@@ -809,10 +806,19 @@ const historyTimestampFormatter = new Intl.DateTimeFormat('fr-FR', {
 const dashboardNewsDateFormatter = new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'long',
 })
-const euroFormatter = new Intl.NumberFormat('fr-FR', {
+const euroFormatter2 = new Intl.NumberFormat('fr-FR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+const euroFormatter3 = new Intl.NumberFormat('fr-FR', {
   minimumFractionDigits: 3,
   maximumFractionDigits: 3,
 })
+// 2 décimales par défaut ; 3 décimales quand un 3e chiffre significatif
+// disparaîtrait à l'arrondi sur 2 décimales (ex. 14,995 → « 14,995 »).
+function euroFractionDigits(value: number) {
+  return Math.round(value * 1000) % 10 === 0 ? 2 : 3
+}
 type TagSuggestionFieldId =
   | 'snippet-title'
   | 'snippet-content'
@@ -896,11 +902,268 @@ function parseDashboardAmount(value: string) {
 }
 
 function formatEuroAmount(value: number) {
-  return euroFormatter.format(value)
+  return (euroFractionDigits(value) === 3 ? euroFormatter3 : euroFormatter2).format(value)
 }
 
 function formatAmountForCopy(value: number) {
-  return value.toFixed(3).replace('.', ',')
+  return value.toFixed(euroFractionDigits(value)).replace('.', ',')
+}
+
+// Direction spatiale de chaque bouton : on respecte la logique des menus
+// (haut/bas empilés verticalement, gauche/droite côte à côte).
+// L'écran de départ : T598 boot, mode bleu (id 1).
+const SCREEN_MAP_ROOT_ID = T598_ENTRY_POINTS.boot
+
+type ScreenMapNode = {
+  id: number
+  x: number
+  y: number
+  label: string
+  screenIds: number[]
+  buttons: T598Button[]
+}
+type ScreenMapEdge = { fromId: number; toId: number; button: T598Button }
+type ScreenMapLayout = {
+  startId: number
+  nodes: Map<number, ScreenMapNode>
+  edges: ScreenMapEdge[]
+  parent: Map<number, { from: number; button: T598Button }>
+  width: number
+  height: number
+  rootX: number
+  rootY: number
+}
+
+const SCREEN_MAP_NODE_W = 176
+const SCREEN_MAP_NODE_H = 96
+const SCREEN_MAP_COL_SPACING = 220
+const SCREEN_MAP_ROW_SPACING = 118
+const SCREEN_MAP_PAD = 44
+
+function getScreenFunctionInfo(screenId: number) {
+  const screen = T598_SCREENS_BY_ID[screenId]
+  const content = screen?.content ?? ''
+  const upper = content.toUpperCase()
+  const category = screen?.category ?? 'SCREEN'
+  if (!screen) return { key: `screen-${screenId}`, label: `Screen ${screenId}` }
+
+  if (category === 'BOOT') return { key: 'boot', label: 'Boot' }
+  if (category === 'HOME') return { key: 'home', label: 'Home' }
+  if (category.startsWith('MODE SELECT')) return { key: 'compatibility', label: 'Compatibility Mode' }
+  if (category === 'REBOOT') return { key: 'reboot', label: 'Reboot Confirm' }
+  if (category === 'FACTORY RESET') return { key: 'factory-reset', label: 'Factory Reset' }
+  if (category === 'FIRMWARE') return { key: 'firmware', label: 'Firmware Info' }
+  if (category.startsWith('INFO')) return { key: 'info', label: 'Serial / QR Info' }
+  if (category === 'BRIGHTNESS') return { key: 'brightness', label: 'Brightness Setting' }
+  if (category === 'FFB PROFILE SELECT') return { key: 'ffb-profile', label: 'FFB Profile Select' }
+  if (upper.includes('MASTER')) {
+    return {
+      key: upper.includes('FFBD') ? 'ffbd-master' : 'ffb1-master',
+      label: upper.includes('FFBD') ? 'FFBD Master' : 'FFB1 Master',
+    }
+  }
+  if (upper.includes('MODE BSPE')) return { key: 'ffb-mode', label: 'FFB Mode Setting' }
+  if (upper.includes('INERTIA')) return { key: 'inertia', label: 'Inertia Setting' }
+  if (upper.includes('FRICTION')) return { key: 'friction', label: 'Friction Setting' }
+  if (upper.includes('BOOST LOW')) return { key: 'boost-low', label: 'Boost Low Setting' }
+  if (upper.includes('BOOST HIGH')) return { key: 'boost-high', label: 'Boost High Setting' }
+  if (upper.includes('SPEED')) return { key: 'speed', label: 'Speed Setting' }
+  if (upper.includes('WHEEL DAMPER')) return { key: 'wheel-damper', label: 'Wheel Damper Setting' }
+  if (upper.includes('GAME DAMPER')) return { key: 'game-damper', label: 'Game Damper Setting' }
+  if (upper.includes('SPRING')) return { key: 'spring', label: 'Spring Setting' }
+  if (upper.includes('GEAR JOLT')) return { key: 'gear-jolt', label: 'Gear Jolt Setting' }
+  if (upper.includes('ENGINE ROAR')) return { key: 'engine-roar', label: 'Engine Roar Setting' }
+  if (upper.includes('END STOP')) return { key: 'end-stop', label: 'End Stop Setting' }
+  if (category === 'ROTATION') return { key: 'rotation', label: 'Rotation Setting' }
+  if (category === 'CALIBRATION') return { key: 'wheel-calibration', label: 'Wheel Calibration' }
+  if (category.startsWith('PEDALS (type)')) return { key: 'pedal-type', label: 'Pedal Type Setting' }
+  if (category.startsWith('PEDALS (deadzone)')) return { key: 'pedal-deadzone', label: 'Pedal Deadzone Setting' }
+  if (category.startsWith('PEDALS (reset)')) return { key: 'pedal-reset', label: 'Pedal Reset' }
+  if (category.startsWith('DASHBOARD (layout)')) return { key: 'dashboard-layout', label: 'Dashboard Layout' }
+  if (category.startsWith('DASHBOARD (telemetry)')) return { key: 'dashboard-telemetry', label: 'Dashboard Telemetry' }
+  return { key: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'), label: category }
+}
+
+const SCREEN_MAP_MODIFIER_BUTTONS: T598Button[] = [
+  'LEFT',
+  'RIGHT',
+  'UP',
+  'DOWN',
+  'LPADDLE',
+  'RPADDLE',
+  'CENTER',
+  'MODE',
+]
+
+// Arbre « tidy » de gauche à droite depuis l'écran T598 bleu. BFS = plus court
+// chemin (parent) ; chaque branche s'arrête au premier écran déjà visité.
+// x = nombre d'étapes depuis le départ ; chaque feuille occupe sa propre ligne
+// (parents centrés sur leurs enfants) → un menu à plusieurs directions se divise
+// en autant de lignes que nécessaire, sans chevauchement.
+function buildScreenMapLayout(): ScreenMapLayout {
+  const startId = SCREEN_MAP_ROOT_ID
+  const depth = new Map<number, number>([[startId, 0]])
+  const screenParent = new Map<number, { from: number; button: T598Button }>()
+  const screenTreeEdges: ScreenMapEdge[] = []
+  const queue: number[] = [startId]
+  while (queue.length) {
+    const cur = queue.shift() as number
+    const screen = T598_SCREENS_BY_ID[cur]
+    if (!screen) continue
+    const transitions = Object.entries(screen.transitions) as [T598Button, number][]
+    for (const [button, target] of transitions) {
+      if (target === cur || depth.has(target)) continue
+      depth.set(target, (depth.get(cur) ?? 0) + 1)
+      screenParent.set(target, { from: cur, button })
+      screenTreeEdges.push({ fromId: cur, toId: target, button })
+      queue.push(target)
+    }
+  }
+
+  const groupsByKey = new Map<
+    string,
+    { key: string; label: string; representativeId: number; screenIds: number[]; depth: number }
+  >()
+  for (const [screenId, screenDepth] of depth) {
+    const info = getScreenFunctionInfo(screenId)
+    const group = groupsByKey.get(info.key)
+    if (!group) {
+      groupsByKey.set(info.key, {
+        key: info.key,
+        label: info.label,
+        representativeId: screenId,
+        screenIds: [screenId],
+        depth: screenDepth,
+      })
+    } else {
+      group.screenIds.push(screenId)
+      if (screenDepth < group.depth || (screenDepth === group.depth && screenId < group.representativeId)) {
+        group.representativeId = screenId
+        group.depth = screenDepth
+      }
+    }
+  }
+
+  const groupKeyByScreenId = new Map<number, string>()
+  groupsByKey.forEach((group) => {
+    group.screenIds.sort((a, b) => a - b)
+    group.screenIds.forEach((screenId) => groupKeyByScreenId.set(screenId, group.key))
+  })
+
+  const representativeByKey = new Map(
+    Array.from(groupsByKey.values()).map((group) => [group.key, group.representativeId]),
+  )
+  const rootRepresentative = representativeByKey.get(getScreenFunctionInfo(startId).key) ?? startId
+
+  const parent = new Map<number, { from: number; button: T598Button }>()
+  const children = new Map<number, number[]>()
+  const edgeKeys = new Set<string>()
+  const edges: ScreenMapEdge[] = []
+
+  screenTreeEdges.forEach((edge) => {
+    const fromKey = groupKeyByScreenId.get(edge.fromId)
+    const toKey = groupKeyByScreenId.get(edge.toId)
+    if (!fromKey || !toKey || fromKey === toKey) return
+    const fromRepresentative = representativeByKey.get(fromKey)
+    const toRepresentative = representativeByKey.get(toKey)
+    if (!fromRepresentative || !toRepresentative) return
+    if (toRepresentative === rootRepresentative) return
+    const edgeKey = `${fromRepresentative}->${toRepresentative}`
+    if (edgeKeys.has(edgeKey)) return
+    edgeKeys.add(edgeKey)
+    edges.push({ fromId: fromRepresentative, toId: toRepresentative, button: edge.button })
+    if (!parent.has(toRepresentative)) {
+      parent.set(toRepresentative, { from: fromRepresentative, button: edge.button })
+      const kids = children.get(fromRepresentative)
+      if (kids) kids.push(toRepresentative)
+      else children.set(fromRepresentative, [toRepresentative])
+    }
+  })
+
+  const internalButtonsByRepresentative = new Map<number, Set<T598Button>>()
+  groupsByKey.forEach((group) => internalButtonsByRepresentative.set(group.representativeId, new Set()))
+  T598_SCREENS.forEach((screen) => {
+    if (!depth.has(screen.id)) return
+    const groupKey = groupKeyByScreenId.get(screen.id)
+    const representative = groupKey ? representativeByKey.get(groupKey) : undefined
+    if (!groupKey || !representative) return
+    ;(Object.entries(screen.transitions) as [T598Button, number][]).forEach(([button, target]) => {
+      if (groupKeyByScreenId.get(target) === groupKey && SCREEN_MAP_MODIFIER_BUTTONS.includes(button)) {
+        internalButtonsByRepresentative.get(representative)?.add(button)
+      }
+    })
+  })
+
+  // Attribution des lignes en post-ordre : chaque feuille = ligne suivante,
+  // chaque nœud interne = milieu de ses enfants.
+  const rowOf = new Map<number, number>()
+  let nextLeafRow = 0
+  const visitingRows = new Set<number>()
+  const assignRows = (id: number): number => {
+    if (rowOf.has(id)) return rowOf.get(id) as number
+    if (visitingRows.has(id)) {
+      const row = nextLeafRow
+      nextLeafRow += 1
+      rowOf.set(id, row)
+      return row
+    }
+    visitingRows.add(id)
+    const kids = children.get(id)
+    if (!kids || kids.length === 0) {
+      const row = nextLeafRow
+      nextLeafRow += 1
+      rowOf.set(id, row)
+      visitingRows.delete(id)
+      return row
+    }
+    const childRows = kids.map((kid) => assignRows(kid))
+    const row = (Math.min(...childRows) + Math.max(...childRows)) / 2
+    rowOf.set(id, row)
+    visitingRows.delete(id)
+    return row
+  }
+  assignRows(rootRepresentative)
+
+  const groupDepth = new Map<number, number>([[rootRepresentative, 0]])
+  const groupQueue = [rootRepresentative]
+  while (groupQueue.length) {
+    const cur = groupQueue.shift() as number
+    const curDepth = groupDepth.get(cur) ?? 0
+    ;(children.get(cur) ?? []).forEach((kid) => {
+      if (groupDepth.has(kid)) return
+      groupDepth.set(kid, curDepth + 1)
+      groupQueue.push(kid)
+    })
+  }
+
+  const maxDepth = Math.max(0, ...groupDepth.values())
+  const maxRow = Math.max(0, nextLeafRow - 1)
+  const nodes = new Map<number, ScreenMapNode>()
+  groupsByKey.forEach((group) => {
+    const id = group.representativeId
+    const d = groupDepth.get(id) ?? group.depth
+    const buttons = Array.from(internalButtonsByRepresentative.get(id) ?? [])
+    const sortedButtons = SCREEN_MAP_MODIFIER_BUTTONS.filter((button) => buttons.includes(button))
+    nodes.set(id, {
+      id,
+      label: group.label,
+      screenIds: group.screenIds,
+      buttons: sortedButtons,
+      x: SCREEN_MAP_PAD + d * SCREEN_MAP_COL_SPACING + SCREEN_MAP_NODE_W / 2,
+      y: SCREEN_MAP_PAD + (rowOf.get(id) ?? 0) * SCREEN_MAP_ROW_SPACING + SCREEN_MAP_NODE_H / 2,
+    })
+  })
+  const root = nodes.get(rootRepresentative)
+  return {
+    startId: rootRepresentative,
+    nodes,
+    edges,
+    parent,
+    width: SCREEN_MAP_PAD * 2 + maxDepth * SCREEN_MAP_COL_SPACING + SCREEN_MAP_NODE_W,
+    height: SCREEN_MAP_PAD * 2 + maxRow * SCREEN_MAP_ROW_SPACING + SCREEN_MAP_NODE_H,
+    rootX: root?.x ?? 0,
+    rootY: root?.y ?? 0,
+  }
 }
 
 function getSliderProgress(value: number, min: number, max: number) {
@@ -1759,6 +2022,10 @@ function App() {
   const [sparePartCopiedId, setSparePartCopiedId] = useState<string | null>(null)
   const [dashboardCalculatorCopiedKey, setDashboardCalculatorCopiedKey] =
     useState<DashboardCalculatorCopyKey | null>(null)
+  const [dashboardDecorationCopiedId, setDashboardDecorationCopiedId] = useState<string | null>(null)
+  const [dashboardDecorationComposerOpen, setDashboardDecorationComposerOpen] = useState(false)
+  const [dashboardDecorationDraft, setDashboardDecorationDraft] = useState('')
+  const dashboardDecorationDraftRef = useRef<HTMLTextAreaElement | null>(null)
   const [draftBoxes, setDraftBoxes] = useState<DraftBoxSlot[]>(() =>
     Array.from({ length: 3 }, createEmptyDraftBoxSlot),
   )
@@ -1851,10 +2118,23 @@ function App() {
   const [screenEmulProductId, setScreenEmulProductId] = useState<string>(
     SCREEN_EMUL_PRODUCTS[0]?.id ?? '',
   )
-  const [screenEmulMenuIndex, setScreenEmulMenuIndex] = useState(0)
-  const [screenEmulEntered, setScreenEmulEntered] = useState(false)
+  // État de l'émulateur T598 = un id d'écran OLED (graphe de navigation FORAI).
+  const [screenEmulScreenId, setScreenEmulScreenId] = useState<number>(T598_ENTRY_POINTS.boot)
   const [screenEmulPressedKey, setScreenEmulPressedKey] = useState<string | null>(null)
+  const [screenEmulBackStack, setScreenEmulBackStack] = useState<number[]>([])
+  const [screenEmulForwardStack, setScreenEmulForwardStack] = useState<number[]>([])
   const screenEmulPressTimeoutRef = useRef<number | null>(null)
+  // Carte des écrans (popup loupe) : arbre d'accès depuis l'accueil (mode bleu).
+  const [screenMapOpen, setScreenMapOpen] = useState(false)
+  const [screenMapPanning, setScreenMapPanning] = useState(false)
+  const [screenMapZoom, setScreenMapZoom] = useState(0.78)
+  const screenMapWrapRef = useRef<HTMLDivElement | null>(null)
+  const screenMapPanRef = useRef<{
+    x: number
+    y: number
+    scrollLeft: number
+    scrollTop: number
+  } | null>(null)
   useEffect(
     () => () => {
       if (screenEmulPressTimeoutRef.current) {
@@ -1872,6 +2152,18 @@ function App() {
   const isProductCatalogSelectionEmpty = selectedProductCatalogId === null
   const isDashboardNewsSelectionEmpty = selectedDashboardNewsId === null
   const dashboardReminders = data.settings.dashboardReminders ?? ''
+  const dashboardDecorations = useMemo(
+    () =>
+      (Array.isArray(data.settings.dashboardDecorations)
+        ? data.settings.dashboardDecorations
+        : defaultData.settings.dashboardDecorations
+      ).map((item, index) => ({
+        id: item.id?.trim() || `decor-${index + 1}`,
+        title: item.title?.trim() || `Décor ${index + 1}`,
+        content: item.content ?? '',
+      })),
+    [data.settings.dashboardDecorations],
+  )
   const normalizedProcedureMailtos = useMemo(
     () =>
       (data.settings.procedureMailtoLinks ?? defaultProcedureMailtos).map((link, index) =>
@@ -1890,6 +2182,7 @@ function App() {
   const portalQuickCopyTimeoutRef = useRef<number | null>(null)
   const sparePartCopyTimeoutRef = useRef<number | null>(null)
   const dashboardCalculatorCopyTimeoutRef = useRef<number | null>(null)
+  const dashboardDecorationCopyTimeoutRef = useRef<number | null>(null)
   const callCopyTimeoutRef = useRef<number | null>(null)
   const callHistoryCopyTimeoutRef = useRef<number | null>(null)
   const snippetTitleRef = useRef<HTMLInputElement>(null)
@@ -2821,6 +3114,60 @@ function App() {
       }))
     },
     [mailTemplateCategories, updateSettings],
+  )
+
+  const deleteCategory = useCallback(
+    (categoryId: string) => {
+      const category = data.categories.find((item) => item.id === categoryId)
+      if (!category) return
+      if (!window.confirm(`Supprimer la catégorie "${category.name}" ?`)) return
+      const fallbackId = data.categories.find((item) => item.id !== categoryId)?.id ?? ''
+      setData((prev) => ({
+        ...prev,
+        categories: prev.categories.filter((item) => item.id !== categoryId),
+        snippets: prev.snippets.map((snippet) =>
+          snippet.categoryId === categoryId ? { ...snippet, categoryId: fallbackId } : snippet,
+        ),
+      }))
+      if (selectedCategoryId === categoryId) {
+        setSelectedCategoryId(null)
+        setCategoryDraft(getEmptyCategoryDraft())
+      }
+    },
+    [data.categories, getEmptyCategoryDraft, selectedCategoryId],
+  )
+  const openDashboardDecorationComposer = useCallback(() => {
+    setDashboardDecorationComposerOpen(true)
+    window.requestAnimationFrame(() => dashboardDecorationDraftRef.current?.focus())
+  }, [])
+  const closeDashboardDecorationComposer = useCallback(() => {
+    setDashboardDecorationComposerOpen(false)
+    setDashboardDecorationDraft('')
+  }, [])
+  const addDashboardDecoration = useCallback(() => {
+    const content = dashboardDecorationDraft.trimEnd()
+    if (!content.trim()) {
+      setToast('Décoration vide.')
+      window.requestAnimationFrame(() => dashboardDecorationDraftRef.current?.focus())
+      return
+    }
+    updateSettings({
+      dashboardDecorations: [
+        ...dashboardDecorations,
+        { id: createId('decor'), title: '', content },
+      ],
+    })
+    setDashboardDecorationDraft('')
+    setDashboardDecorationComposerOpen(false)
+  }, [dashboardDecorationDraft, dashboardDecorations, updateSettings])
+  const deleteDashboardDecoration = useCallback(
+    (decorationId: string) => {
+      updateSettings({
+        dashboardDecorations: dashboardDecorations.filter((item) => item.id !== decorationId),
+      })
+      setDashboardDecorationCopiedId((current) => (current === decorationId ? null : current))
+    },
+    [dashboardDecorations, updateSettings],
   )
   const saveTaskTemplateCategory = useCallback(() => {
     const name = taskTemplateCategoryDraft.name.trim()
@@ -4584,12 +4931,16 @@ function App() {
   }
 
   const applyTaskTemplate = (template: TaskTemplate) => {
-    const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
-    const nextTaskDraft = useSkeleton
-      ? buildTaskDraftFromTemplate(template, taskSectionNames)
-      : buildTaskTemplateContent(template)
-    setTaskDraftSkeletonEnabled(useSkeleton)
-    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
+    const nextTaskDraft = buildTaskTemplateContent(template)
+    const snapshot = getTaskBoxesSnapshot()
+    setTaskDraftBoxes(
+      snapshot.map((slot, index) =>
+        index === TASK_FREE_BOX_INDEX ? { ...slot, task: nextTaskDraft } : slot,
+      ),
+    )
+    setActiveTaskBoxIndex(TASK_FREE_BOX_INDEX)
+    setTaskDraftSkeletonEnabled(false)
+    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, false)
     requestAnimationFrame(() => taskEditorRef.current?.focus())
   }
 
@@ -4635,15 +4986,26 @@ function App() {
     if (emailLines) updateEmailDraft(padEmptySelectors(emailLines), emailLines.length)
 
     if (templatePreview.importTask) {
+      const templateUsesCustomTask =
+        template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
       const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
         templatePreview.selectedTaskSections[index] ? section : '',
       )
-      const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
-      const nextTaskDraft = useSkeleton
-        ? buildStructuredTaskDraft(taskSections, taskSectionNames)
-        : buildTaskTemplateContent({ taskSections })
-      setTaskDraftSkeletonEnabled(useSkeleton)
-      updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
+      if (templateUsesCustomTask) {
+        const timelineText = taskSections.filter((section) => section.trim()).join('\n')
+        insertTaskText(timelineText, 'section-2')
+      } else {
+        const nextTaskDraft = buildTaskTemplateContent({ taskSections })
+        const snapshot = getTaskBoxesSnapshot()
+        setTaskDraftBoxes(
+          snapshot.map((slot, index) =>
+            index === TASK_FREE_BOX_INDEX ? { ...slot, task: nextTaskDraft } : slot,
+          ),
+        )
+        setActiveTaskBoxIndex(TASK_FREE_BOX_INDEX)
+        setTaskDraftSkeletonEnabled(false)
+        updateTaskDraft(nextTaskDraft, nextTaskDraft.length, false)
+      }
     }
 
     setTemplatePreview(null)
@@ -4711,8 +5073,14 @@ function App() {
     setTaskCopied(true)
     taskCopyTimeoutRef.current = window.setTimeout(() => setTaskCopied(false), 1600)
 
-    if (!hasMeaningfulTaskContent(data.taskDraft, taskSectionNames)) return
-    const cleaned = formatTaskCopyText(data.taskDraft, taskSectionNames, taskMailNumber)
+    const useSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
+    const hasContent = useSkeleton
+      ? hasMeaningfulTaskContent(data.taskDraft, taskSectionNames)
+      : Boolean(stripTokenSpacing(data.taskDraft).trim())
+    if (!hasContent) return
+    const cleaned = useSkeleton
+      ? formatTaskCopyText(data.taskDraft, taskSectionNames, taskMailNumber)
+      : stripTokenSpacing(data.taskDraft).trim()
     const didCopy = await copyText(cleaned, buildExportHtml(cleaned))
     if (!didCopy) {
       setToast('Copie impossible.')
@@ -4814,6 +5182,24 @@ function App() {
     setDashboardCalculatorCopiedKey(key)
     dashboardCalculatorCopyTimeoutRef.current = window.setTimeout(
       () => setDashboardCalculatorCopiedKey((current) => (current === key ? null : current)),
+      1600,
+    )
+  }
+
+  const handleCopyDashboardDecoration = async (item: DashboardDecorationItem) => {
+    const value = item.content.trimEnd()
+    if (!value.trim()) return
+    const didCopy = await copyText(value)
+    if (!didCopy) {
+      setToast('Copie impossible.')
+      return
+    }
+    if (dashboardDecorationCopyTimeoutRef.current) {
+      window.clearTimeout(dashboardDecorationCopyTimeoutRef.current)
+    }
+    setDashboardDecorationCopiedId(item.id)
+    dashboardDecorationCopyTimeoutRef.current = window.setTimeout(
+      () => setDashboardDecorationCopiedId((current) => (current === item.id ? null : current)),
       1600,
     )
   }
@@ -5367,7 +5753,7 @@ function App() {
                     {selectedPortalProcedure.codes.map((line, index) => (
                       <article className="portal-code-editor__preview-step" key={line.id}>
                         <div className="portal-code-editor__preview-step-title">
-                          {formatPortalTimelineTitle(line.title ?? '', taskMailNumber) ||
+                          {formatPortalTimelineTitle(line.title ?? '') ||
                             `Étape ${index + 1}`}
                         </div>
                         <div className="list-item__meta">
@@ -5555,7 +5941,7 @@ function App() {
                               <div className="portal-code-editor__step-head">
                                 <div className="portal-code-editor__step-title-row">
                                   <span className="list-item__meta">
-                                    {formatPortalTimelineTitle(codeLine.title ?? '', taskMailNumber) ||
+                                    {formatPortalTimelineTitle(codeLine.title ?? '') ||
                                       `Étape ${index + 1}`}
                                   </span>
                                   {codeLine.showDraft ? (
@@ -6747,6 +7133,76 @@ function App() {
     </article>
   )
 
+  const renderWorkspaceDashboardDecorationsPanel = (title: string) => (
+    <article className="workspace-dashboard__panel workspace-dashboard__panel--decorations">
+      <div className="workspace-dashboard__panel-title">
+        <span>{title}</span>
+        <button
+          type="button"
+          className="btn btn--ghost btn--small btn--with-icon"
+          onClick={openDashboardDecorationComposer}
+        >
+          <ButtonIcon name="add" />
+          Ajouter
+        </button>
+      </div>
+      {dashboardDecorationComposerOpen ? (
+        <div className="dashboard-decoration-composer">
+          <textarea
+            ref={dashboardDecorationDraftRef}
+            className="textarea dashboard-decoration-composer__input"
+            value={dashboardDecorationDraft}
+            onChange={(event) => setDashboardDecorationDraft(event.target.value)}
+            placeholder="ASCII à copier rapidement"
+            rows={2}
+          />
+          <div className="dashboard-decoration-composer__actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              onClick={closeDashboardDecorationComposer}
+            >
+              Annuler
+            </button>
+            <button type="button" className="btn btn--small" onClick={addDashboardDecoration}>
+              Ajouter
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <div className="dashboard-decorations">
+        {dashboardDecorations.length ? (
+          dashboardDecorations.map((item) => (
+            <div className="dashboard-decoration-item" key={item.id}>
+              <button
+                type="button"
+                className="icon-btn-sm danger dashboard-decoration-item__delete"
+                title="Supprimer"
+                onClick={() => deleteDashboardDecoration(item.id)}
+              >
+                <DeleteIcon />
+              </button>
+              <pre className="dashboard-decoration-item__preview">
+                {item.content.trimEnd() || ' '}
+              </pre>
+              <button
+                type="button"
+                className={`btn btn--small dashboard-decoration-item__copy${
+                  dashboardDecorationCopiedId === item.id ? ' is-success' : ''
+                }`}
+                onClick={() => void handleCopyDashboardDecoration(item)}
+              >
+                {dashboardDecorationCopiedId === item.id ? 'Copié' : 'Copier'}
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="dashboard-empty">Aucun décor configuré.</div>
+        )}
+      </div>
+    </article>
+  )
+
   const renderWorkspaceDashboardVatPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--calculator">
       <div className="workspace-dashboard__panel-title">{title}</div>
@@ -7507,8 +7963,6 @@ function App() {
                                 {entry.showDraft ? (
                                   <span className="dashboard-portal-step__draft">DRAFT</span>
                                 ) : null}
-                              </div>
-                              <div className="dashboard-portal-step__actions-inline">
                                 {quickLinkUrl ? (
                                   <button
                                     className="dashboard-portal-step__link-btn"
@@ -7533,6 +7987,8 @@ function App() {
                                     </svg>
                                   </button>
                                 ) : null}
+                              </div>
+                              <div className="dashboard-portal-step__actions-inline">
                                 {quickMailtoHref ? (
                                   <button
                                     className="dashboard-portal-step__link-btn dashboard-portal-step__link-btn--mailto"
@@ -7628,11 +8084,82 @@ function App() {
   const selectedScreenEmulProduct =
     SCREEN_EMUL_PRODUCTS.find((product) => product.id === screenEmulProductId) ??
     SCREEN_EMUL_PRODUCTS[0]
+  const isT598ScreenEmul = selectedScreenEmulProduct?.id === 't598'
+  // Écran OLED courant = un nœud du graphe de navigation FORAI.
+  const currentScreenEmulScreen =
+    T598_SCREENS_BY_ID[screenEmulScreenId] ?? T598_SCREENS_BY_ID[T598_ENTRY_POINTS.boot]
+  const screenEmulImageSrc = currentScreenEmulScreen
+    ? assetUrl(`/agentor/${currentScreenEmulScreen.image}`)
+    : ''
+  const canScreenEmulGoBack = screenEmulBackStack.length > 0
+  const canScreenEmulGoForward = screenEmulForwardStack.length > 0
+
+  // Boutons de l'UI → boutons physiques du T598 (table de navigation FORAI).
+  //   ⚙ = SET (sortie/accueil), L3 = réglages, R3 = dashboard, MODE = compatibilité,
+  //   OK = validation des écrans REBOOT / RESET.
+  const screenEmulKeyToButton: Record<string, T598Button> = {
+    up: 'UP',
+    down: 'DOWN',
+    left: 'LEFT',
+    right: 'RIGHT',
+    l3: 'L3',
+    r3: 'R3',
+    settings: 'SET',
+    mode: 'MODE',
+    center: 'CENTER',
+  }
+
+  // Destination d'un bouton sur l'écran courant. ◄►/D-pad retombent sur les
+  // palettes (LPADDLE/RPADDLE) quand seul le pas de calibration est défini.
+  const resolveScreenEmulTarget = (button: T598Button): number | undefined => {
+    const transitions = currentScreenEmulScreen?.transitions ?? {}
+    if (transitions[button] !== undefined) return transitions[button]
+    if (button === 'LEFT') return transitions.LPADDLE
+    if (button === 'RIGHT') return transitions.RPADDLE
+    return undefined
+  }
+
+  // Un bouton est « actif » s'il déclenche une transition sur l'écran courant.
+  const isScreenEmulKeyActive = (key: string) => {
+    if (!isT598ScreenEmul) return false
+    const button = screenEmulKeyToButton[key]
+    return button ? resolveScreenEmulTarget(button) !== undefined : false
+  }
 
   const selectScreenEmulProduct = (productId: string) => {
     setScreenEmulProductId(productId)
-    setScreenEmulMenuIndex(0)
-    setScreenEmulEntered(false)
+    setScreenEmulScreenId(T598_ENTRY_POINTS.boot)
+    setScreenEmulBackStack([])
+    setScreenEmulForwardStack([])
+  }
+
+  const goToScreenEmulScreen = (nextId: number) => {
+    if (nextId === screenEmulScreenId) return
+    setScreenEmulBackStack((stack) => [...stack, screenEmulScreenId].slice(-48))
+    setScreenEmulForwardStack([])
+    setScreenEmulScreenId(nextId)
+  }
+
+  const goScreenEmulHistoryBack = () => {
+    setScreenEmulBackStack((stack) => {
+      const previous = stack[stack.length - 1]
+      if (previous === undefined) return stack
+      setScreenEmulForwardStack((forwardStack) =>
+        [screenEmulScreenId, ...forwardStack].slice(0, 48),
+      )
+      setScreenEmulScreenId(previous)
+      return stack.slice(0, -1)
+    })
+  }
+
+  const goScreenEmulHistoryForward = () => {
+    setScreenEmulForwardStack((stack) => {
+      const next = stack[0]
+      if (next === undefined) return stack
+      setScreenEmulBackStack((backStack) => [...backStack, screenEmulScreenId].slice(-48))
+      setScreenEmulScreenId(next)
+      return stack.slice(1)
+    })
   }
 
   const flashScreenEmulKey = (key: string) => {
@@ -7646,45 +8173,37 @@ function App() {
     )
   }
 
+  // Chaque appui suit l'arête du graphe : on lit la transition de l'écran courant
+  // pour le bouton pressé et on saute à l'écran destination (sinon aucun effet).
+  //   ↩ ↪ → historique de navigation local à l'émulateur.
   const handleScreenEmulKey = (key: string) => {
     flashScreenEmulKey(key)
-    const itemCount = SCREEN_EMUL_MENU_ITEMS.length
-    switch (key) {
-      case 'up':
-      case 'left':
-        setScreenEmulEntered(false)
-        setScreenEmulMenuIndex((index) => (index - 1 + itemCount) % itemCount)
-        break
-      case 'down':
-      case 'right':
-        setScreenEmulEntered(false)
-        setScreenEmulMenuIndex((index) => (index + 1) % itemCount)
-        break
-      case 'ok':
-        setScreenEmulEntered(true)
-        break
-      case 'back':
-        setScreenEmulEntered(false)
-        break
-      case 'menu':
-        setScreenEmulEntered(false)
-        setScreenEmulMenuIndex(0)
-        break
-      default:
-        break
+    if (key === 'back') {
+      goScreenEmulHistoryBack()
+      return
     }
+    if (key === 'forward') {
+      goScreenEmulHistoryForward()
+      return
+    }
+    const button = screenEmulKeyToButton[key]
+    if (!button) return
+    const target = resolveScreenEmulTarget(button)
+    if (target !== undefined) goToScreenEmulScreen(target)
   }
 
   const renderScreenEmulKey = (
     key: string,
     label: string,
     extraClass = '',
+    disabled = false,
   ) => (
     <button
       type="button"
       className={`screen-emul__key${extraClass ? ` ${extraClass}` : ''}${
         screenEmulPressedKey === key ? ' is-pressed' : ''
-      }`}
+      }${isScreenEmulKeyActive(key) ? ' is-available' : ''}`}
+      disabled={disabled}
       onClick={() => handleScreenEmulKey(key)}
       aria-label={label}
       title={label}
@@ -7692,6 +8211,68 @@ function App() {
       {label}
     </button>
   )
+
+  const openScreenMap = () => {
+    setScreenMapOpen(true)
+  }
+  const closeScreenMap = () => setScreenMapOpen(false)
+
+  const screenMapLayout = useMemo(() => buildScreenMapLayout(), [])
+
+  // À l'ouverture, on centre la vue sur l'écran de départ. La zone reste librement
+  // scrollable/draggable ensuite.
+  useEffect(() => {
+    if (!screenMapOpen) return
+    const frame = requestAnimationFrame(() => {
+      const wrap = screenMapWrapRef.current
+      const layout = screenMapLayout
+      if (!wrap || !layout) return
+      wrap.scrollLeft = layout.rootX * screenMapZoom - wrap.clientWidth / 2
+      wrap.scrollTop = layout.rootY * screenMapZoom - wrap.clientHeight / 2
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [screenMapOpen, screenMapLayout, screenMapZoom])
+
+  const handleScreenMapPanStart = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
+    const target = event.target
+    if (target instanceof Element && target.closest('button')) return
+    const wrap = screenMapWrapRef.current
+    if (!wrap) return
+    screenMapPanRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: wrap.scrollLeft,
+      scrollTop: wrap.scrollTop,
+    }
+    setScreenMapPanning(true)
+  }
+
+  const handleScreenMapPanMove = (event: MouseEvent<HTMLDivElement>) => {
+    const start = screenMapPanRef.current
+    const wrap = screenMapWrapRef.current
+    if (event.buttons !== 1) {
+      stopScreenMapPan()
+      return
+    }
+    if (!start || !wrap) return
+    wrap.scrollLeft = start.scrollLeft - (event.clientX - start.x)
+    wrap.scrollTop = start.scrollTop - (event.clientY - start.y)
+  }
+
+  const stopScreenMapPan = () => {
+    screenMapPanRef.current = null
+    setScreenMapPanning(false)
+  }
+
+  const updateScreenMapZoom = (nextZoom: number) => {
+    setScreenMapZoom(Math.min(1, Math.max(0.45, nextZoom)))
+  }
+
+  const handleScreenMapWheel = (event: WheelEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    updateScreenMapZoom(screenMapZoom + (event.deltaY > 0 ? -0.06 : 0.06))
+  }
 
   const renderWorkspaceDashboardScreenPanel = (title: string) => (
     <article className="workspace-dashboard__panel screen-emul-panel">
@@ -7710,56 +8291,93 @@ function App() {
               onClick={() => selectScreenEmulProduct(product.id)}
             >
               <span className="screen-emul__product-name">{product.name}</span>
-              <span className="screen-emul__product-sub">{product.subtitle}</span>
             </button>
           ))}
         </div>
 
         <div className="screen-emul__device">
-          <div className="screen-emul__bezel">
-            <div className="screen-emul__display">
-              <div className="screen-emul__display-head">
-                <span className="screen-emul__display-product">
-                  {selectedScreenEmulProduct?.name ?? '—'}
-                </span>
-                <span className="screen-emul__display-hint">Aperçu écran</span>
-              </div>
-              <ul className="screen-emul__menu">
-                {SCREEN_EMUL_MENU_ITEMS.map((item, index) => (
-                  <li
-                    key={item}
-                    className={`screen-emul__menu-item${
-                      index === screenEmulMenuIndex ? ' is-selected' : ''
-                    }${index === screenEmulMenuIndex && screenEmulEntered ? ' is-entered' : ''}`}
-                  >
-                    <span className="screen-emul__menu-caret" aria-hidden="true">
-                      ▸
-                    </span>
-                    <span className="screen-emul__menu-label">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="screen-emul__display-foot">
-                {screenEmulEntered
-                  ? `▸ ${SCREEN_EMUL_MENU_ITEMS[screenEmulMenuIndex]}`
-                  : 'Rendu écran à intégrer'}
-              </div>
-            </div>
-          </div>
+          {isT598ScreenEmul && currentScreenEmulScreen ? (
+            <div className="screen-emul__preview">
+              <div className="screen-emul__screen-row">
+                <div className="screen-emul__side-buttons screen-emul__side-buttons--left">
+                  {renderScreenEmulKey('settings', '⚙', 'screen-emul__key--round screen-emul__key--settings')}
+                  {renderScreenEmulKey('l3', 'L3', 'screen-emul__key--round screen-emul__key--label')}
+                </div>
 
-          <div className="screen-emul__controls">
-            <div className="screen-emul__dpad">
-              {renderScreenEmulKey('up', '▲', 'screen-emul__key--up')}
-              {renderScreenEmulKey('left', '◀', 'screen-emul__key--left')}
-              {renderScreenEmulKey('ok', 'OK', 'screen-emul__key--ok')}
-              {renderScreenEmulKey('right', '▶', 'screen-emul__key--right')}
-              {renderScreenEmulKey('down', '▼', 'screen-emul__key--down')}
+                <div className="screen-emul__bezel">
+                  <div className="screen-emul__display">
+                    <div className="screen-emul__oled">
+                      <img
+                        key={currentScreenEmulScreen.id}
+                        className="screen-emul__oled-img"
+                        src={screenEmulImageSrc}
+                        alt={currentScreenEmulScreen.content}
+                        draggable={false}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="screen-emul__side-buttons screen-emul__side-buttons--right">
+                  {renderScreenEmulKey('mode', 'MODE', 'screen-emul__key--round screen-emul__key--mode')}
+                  {renderScreenEmulKey('r3', 'R3', 'screen-emul__key--round screen-emul__key--label')}
+                </div>
+              </div>
+
+              <div className="screen-emul__lower-controls">
+                <div className="screen-emul__map-control">
+                  <button
+                    type="button"
+                    className="screen-emul__key screen-emul__key--history screen-emul__key--map"
+                    onClick={() => openScreenMap()}
+                    aria-label="Ouvrir la carte des écrans"
+                    title="Carte des écrans"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="M20 20l-3.5-3.5" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="screen-emul__nav-controls">
+                  <div className="screen-emul__dpad">
+                    {renderScreenEmulKey('up', '▲', 'screen-emul__key--up')}
+                    {renderScreenEmulKey('left', '◀', 'screen-emul__key--left')}
+                    {renderScreenEmulKey('center', 'OK', 'screen-emul__key--center')}
+                    {renderScreenEmulKey('right', '▶', 'screen-emul__key--right')}
+                    {renderScreenEmulKey('down', '▼', 'screen-emul__key--down')}
+                  </div>
+                </div>
+                <div className="screen-emul__history-controls">
+                  {renderScreenEmulKey(
+                    'back',
+                    '↩',
+                    'screen-emul__key--history',
+                    !canScreenEmulGoBack,
+                  )}
+                  {renderScreenEmulKey(
+                    'forward',
+                    '↪',
+                    'screen-emul__key--history',
+                    !canScreenEmulGoForward,
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="screen-emul__softkeys">
-              {renderScreenEmulKey('menu', 'MENU', 'screen-emul__key--soft')}
-              {renderScreenEmulKey('back', 'BACK', 'screen-emul__key--soft')}
+          ) : (
+            <div className="screen-emul__wip">
+              <strong>{selectedScreenEmulProduct?.name}</strong>
+              <span className="screen-emul__wip-tag">WIP</span>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </article>
@@ -7814,6 +8432,14 @@ function App() {
       return (
         <div className="workspace-dashboard__single">
           {renderWorkspaceDashboardScreenPanel('Émulateur d’écran')}
+        </div>
+      )
+    }
+
+    if (workspaceDashboardPage === 'decorations') {
+      return (
+        <div className="workspace-dashboard__single">
+          {renderWorkspaceDashboardDecorationsPanel('Ascii Wall')}
         </div>
       )
     }
@@ -8807,11 +9433,59 @@ function App() {
         </div>
       ) : null}
 
+    {screenMapOpen ? (
+        <div className="modal-backdrop" onClick={closeScreenMap}>
+          <div
+            className="modal screen-map-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal__header">
+              <div className="brand__title brand__title--with-icon">
+                <UiIcon name="screenEmulator" className="brand__title-icon" />
+                <span>Carte des écrans T598</span>
+              </div>
+              <div className="screen-map-modal__legend">
+                Canvas temporairement vide.
+              </div>
+              <button className="close-modal" type="button" onClick={closeScreenMap}>
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="screen-map-modal__body">
+              <div className="screen-map-modal__map screen-map-modal__map--empty">
+                <div className="screen-map-modal__zoom-readout" aria-label="Zoom de la carte">
+                  <span>{Math.round(screenMapZoom * 100)}%</span>
+                </div>
+                <div
+                  className={`screen-map-modal__canvas-wrap${screenMapPanning ? ' is-panning' : ''}`}
+                  ref={screenMapWrapRef}
+                  onMouseDown={handleScreenMapPanStart}
+                  onMouseMove={handleScreenMapPanMove}
+                  onMouseUp={stopScreenMapPan}
+                  onMouseLeave={stopScreenMapPan}
+                  onWheel={handleScreenMapWheel}
+                >
+                  <div
+                    className="screen-map-modal__zoom-space"
+                    style={{
+                      width: Math.max(1200, (screenMapLayout?.width ?? 0) * screenMapZoom),
+                      height: Math.max(720, (screenMapLayout?.height ?? 0) * screenMapZoom),
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
     {templatePreview ? (() => {
       const template = data.templates.find((item) => item.id === templatePreview.templateId)
       if (!template) return null
       const emailLines = getTemplateEmailLines(template)
       const taskSections = getTemplateTaskSections(template, data.taskTemplates)
+      const templateUsesCustomTask =
+        template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
       return (
         <div className="modal-backdrop">
           <div className="modal troubleshootgun-preview-modal" onClick={(event) => event.stopPropagation()}>
@@ -8821,7 +9495,11 @@ function App() {
                   <UiIcon name="template" className="brand__title-icon" />
                   <span>{template.name}</span>
                 </div>
-                <div className="modal__subtitle">Choisissez les lignes à importer.</div>
+                <div className="modal__subtitle">
+                  {templateUsesCustomTask
+                    ? 'Le texte de task sera ajouté à la timeline du squelette.'
+                    : 'La task complète sera placée dans la task libre.'}
+                </div>
               </div>
               <button
                 className="close-modal close-modal--subtle"
@@ -8885,7 +9563,7 @@ function App() {
                           )
                         }
                       />
-                      <span>Importer la task</span>
+                      <span>{templateUsesCustomTask ? 'Ajouter à la timeline' : 'Importer en libre'}</span>
                     </label>
                   </div>
                   <div className="troubleshootgun-preview-sections">
@@ -8912,7 +9590,11 @@ function App() {
                           }
                         />
                         <span className="troubleshootgun-preview-section__body">
-                          <strong>{getTaskSectionLabel(sectionId, taskSectionNames)}</strong>
+                          <strong>
+                            {templateUsesCustomTask
+                              ? 'Timeline'
+                              : getTaskSectionLabel(sectionId, taskSectionNames)}
+                          </strong>
                           <span
                             className="troubleshootgun-preview-modal__content"
                             dangerouslySetInnerHTML={{
@@ -9038,16 +9720,16 @@ function App() {
                       items={data.categories}
                       getId={(item) => item.id}
                       onReorder={(next) => setData((prev) => ({ ...prev, categories: next }))}
-                      renderItem={(category, handleProps) => {
-                        const categoryTemplates = data.templates
-                          .filter((template) => template.categoryId === category.id)
-                          .slice(0, 2)
-                        return (
+                      renderItem={(category, handleProps) => (
                           <div
                             className={`list-item list-item--compact${
-                              templateCategoryDraft.id === category.id ? ' is-selected' : ''
+                              selectedCategoryId === category.id ? ' is-selected' : ''
                             }`}
-                            onClick={() => setTemplateCategoryDraft(category)}
+                            onClick={() => {
+                              clearSettingsValidationTouched('category')
+                              setCategoryDraft(category)
+                              setSelectedCategoryId(category.id)
+                            }}
                           >
                             <button
                               className="drag-handle"
@@ -9061,25 +9743,11 @@ function App() {
                             <div className="list-item__content">
                               <div className="list-item__title">{category.name}</div>
                               <div className="list-item__meta">
-                                {data.templates.filter(
-                                  (template) => template.categoryId === category.id,
+                                {data.snippets.filter(
+                                  (snippet) => snippet.categoryId === category.id,
                                 ).length}{' '}
-                                template(s)
+                                snippet(s)
                               </div>
-                              {categoryTemplates.length ? (
-                                <div className="list-item__meta list-item__meta--stack category-preview-stack">
-                                  {categoryTemplates.map((template) => (
-                                    <div className="category-preview-item" key={template.id}>
-                                      <strong>{template.name}</strong>
-                                      <span>{template.content.split('\n')[0] || 'Contenu vide'}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="list-item__meta list-item__meta--stack">
-                                  Aucun template dans cette catégorie.
-                                </div>
-                              )}
                             </div>
                             <div className="list-item__actions">
                               <button
@@ -9088,15 +9756,14 @@ function App() {
                                 title="Supprimer"
                                 onClick={(event) => {
                                   event.stopPropagation()
-                                  deleteTemplateCategory(category.id)
+                                  deleteCategory(category.id)
                                 }}
                               >
                                 <DeleteIcon />
                               </button>
                             </div>
                           </div>
-                        )
-                      }}
+                        )}
                     />
                   </div>
                 </div>
@@ -9434,7 +10101,7 @@ function App() {
                             ))}
                           </select>
                         </div>
-                        <div className="workflow-step-label">Texte de task</div>
+                        <div className="workflow-step-label">Texte ajouté à la task squelette</div>
                         <div className="form__row">
                           <select
                             className="select select--roomy"
@@ -9455,7 +10122,7 @@ function App() {
                         </div>
                         <textarea
                           className="textarea"
-                          placeholder="Texte de tâche associé (optionnel)"
+                          placeholder="Texte ajouté à la section choisie du squelette (optionnel)"
                           value={snippetDraft.taskText ?? ''}
                           ref={snippetTaskRef}
                           data-tag-autocomplete-field="true"
@@ -9501,7 +10168,7 @@ function App() {
                           ),
                         )}
                         <div className="list-item__meta">
-                          Si le texte de tâche reste vide, aucune tâche n’est ajoutée.
+                          Si ce champ reste vide, le snippet ne modifie pas la task.
                         </div>
                       </div>
                     )}
@@ -9795,34 +10462,15 @@ function App() {
                             tag,
                           ),
                         )}
-                        <div className="workflow-step-label">Task</div>
-                        {templateUsesCustomTask ? (
-                          <div className="form__row">
-                            <select
-                              className="select select--roomy"
-                              value={normalizeTaskSectionId(templateDraft.taskSectionId)}
-                              onChange={(event) =>
-                                setTemplateDraft((prev) => ({
-                                  ...prev,
-                                  taskSectionId: event.target.value as TaskSectionId,
-                                }))
-                              }
-                              disabled={templateDraft.taskOptional ?? false}
-                            >
-                              {TASK_SECTION_IDS.map((sectionId) => (
-                                <option key={sectionId} value={sectionId}>
-                                  {getTaskSectionLabel(sectionId, taskSectionNames)}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        ) : null}
+                        <div className="workflow-step-label">
+                          Task liée au mail
+                        </div>
                         {templateUsesCustomTask ? (
                           <textarea
                             className={`textarea${
                               templateDraft.taskOptional ? ' textarea--disabled' : ''
                             }`}
-                            placeholder="Tâche custom"
+                            placeholder="Texte ajouté à la timeline du squelette"
                             value={templateDraft.taskText ?? ''}
                             ref={templateTaskRef}
                             data-tag-autocomplete-field="true"
@@ -9906,7 +10554,7 @@ function App() {
                                 }))
                               }
                             />{' '}
-                            Tâche optionnelle
+                            Ne rien importer dans la task
                           </label>
                           <label className="list-item__meta">
                             <input
@@ -9920,7 +10568,7 @@ function App() {
                               }
                               disabled={templateDraft.taskOptional ?? false}
                             />{' '}
-                            Tâche custom
+                            Texte timeline custom
                           </label>
                         </div>
                       </div>
@@ -10308,7 +10956,7 @@ function App() {
                     {isTaskSelectionEmpty ? (
                       <div className="empty-state">
                         Sélectionnez un template de tâche pour éditer ou appuyez sur Nouveau pour
-                        créer un template de tâche.
+                          créer un template de task libre.
                       </div>
                     ) : (
                       <div className="form">
@@ -10316,7 +10964,7 @@ function App() {
                         <div className="workflow-step-label">Nom</div>
                         <input
                           className="input"
-                          placeholder="Nom du template tâche"
+                          placeholder="Nom du template de task libre"
                           value={taskDraft.name}
                           ref={taskTemplateNameRef}
                           data-tag-autocomplete-field="true"
@@ -10453,9 +11101,9 @@ function App() {
                 <div className="list-card list-card--form">
                   <div className="list-card__header">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Structure</div>
+                      <div className="list-card__title">Structure du squelette</div>
                       <div className="list-card__subtitle">
-                        Squelette permanent utilisé par la zone task et les templates.
+                        Les mails custom peuvent ajouter du texte à la timeline. Les templates de task restent dans la task libre.
                       </div>
                     </div>
                   </div>
@@ -12737,7 +13385,7 @@ function App() {
                         </div>
                         <textarea
                           ref={dashboardNewsContentRef}
-                          className="textarea textarea--tall"
+                          className="textarea textarea--tall textarea--dashboard-news"
                           placeholder="Contenu. Couleurs disponibles : (1*TEXTE*1), (2*TEXTE*2), (3*TEXTE*3)."
                           value={dashboardNewsDraft.content}
                           onChange={(event) =>

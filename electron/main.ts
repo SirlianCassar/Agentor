@@ -52,6 +52,7 @@ const defaultData = {
     snippetCategoryDisplay: 'dropdown',
     customerPortalCodes: [],
     dashboardProducts: [],
+    dashboardDecorations: [],
     dashboardReminders: '',
     taskSectionNames: ['Current Contact', 'Previous Actions / History', 'Next Steps', 'Internal Notes'],
     mailTemplateCategories: [],
@@ -173,7 +174,10 @@ const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
 const AUTO_UPDATE_REPO = 'Agentor'
 const AUTO_UPDATE_GH_TOKEN =
-  process.env.GH_TOKEN || process.env.GITHUB_TOKEN || __AUTO_UPDATE_GH_TOKEN__
+  process.env.GH_TOKEN ||
+  process.env.GITHUB_TOKEN ||
+  process.env.AUTO_UPDATE_GH_TOKEN ||
+  __AUTO_UPDATE_GH_TOKEN__
 
 type UpdatePhase =
   | 'idle'
@@ -255,25 +259,16 @@ function configureAutoUpdater() {
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = false
 
-  if (!AUTO_UPDATE_GH_TOKEN) {
-    pushUpdateStatus({
-      phase: 'error',
-      message:
-        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub pour accéder au dépôt privé de mises à jour.',
-    })
-    console.warn(`${AUTO_UPDATE_LOG_PREFIX} missing GH_TOKEN/GITHUB_TOKEN for private repository`)
-    return
-  }
-
-  autoUpdater.setFeedURL({
+  const feedOptions = {
     provider: 'github',
     owner: AUTO_UPDATE_OWNER,
     repo: AUTO_UPDATE_REPO,
-    private: true,
-    token: AUTO_UPDATE_GH_TOKEN,
-  })
+    ...(AUTO_UPDATE_GH_TOKEN ? { private: true, token: AUTO_UPDATE_GH_TOKEN } : {}),
+  } as Parameters<typeof autoUpdater.setFeedURL>[0]
 
-  console.log(`${AUTO_UPDATE_LOG_PREFIX} private GitHub feed configured: ${AUTO_UPDATE_OWNER}/${AUTO_UPDATE_REPO}`)
+  autoUpdater.setFeedURL(feedOptions)
+
+  console.log(`${AUTO_UPDATE_LOG_PREFIX} GitHub feed configured: ${AUTO_UPDATE_OWNER}/${AUTO_UPDATE_REPO}`)
 
   autoUpdater.on('checking-for-update', () => {
     updateCheckInProgress = true
@@ -347,15 +342,6 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
     return { ok: false, reason: 'disabled' as const }
   }
 
-  if (!AUTO_UPDATE_GH_TOKEN) {
-    pushUpdateStatus({
-      phase: 'error',
-      message:
-        'GH_TOKEN/GITHUB_TOKEN manquant. Définis un token GitHub pour accéder au dépôt privé de mises à jour.',
-    })
-    return { ok: false, reason: 'missing-token' as const }
-  }
-
   if (restartScheduled) {
     return { ok: false, reason: 'restart-pending' as const }
   }
@@ -399,10 +385,6 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
 function installDownloadedUpdate() {
   if (!isStartupAutoUpdateEnabled()) {
     return { ok: false, reason: 'disabled' as const }
-  }
-
-  if (!AUTO_UPDATE_GH_TOKEN) {
-    return { ok: false, reason: 'missing-token' as const }
   }
 
   if (restartScheduled) {
