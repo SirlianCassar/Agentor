@@ -4,6 +4,7 @@
   "appId": "com.agentor.app",
   "asar": true,
   "productName": "Agentor",
+  "beforeBuild": "build/before-build.cjs",
   "directories": {
     "output": "release/${version}"
   },
