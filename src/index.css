@@ -35,22 +35,38 @@
   --info: #38bdf8;
   --tag: #c084fc;
   --selector: #2dd4bf;
+  --addition: #f5d66f;
+  --primary: var(--accent);
+  --surface: var(--surface-soft-hover);
   --field-bg: #2a2622;
   --field-bg-focus: #322d28;
   --field-bg-disabled: #1d1a17;
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.22);
-  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.6);
-  --shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.65);
-  --shadow-glow: none;
+
+  /* Flat depth: hairline contact shadows, reserved for floating layers */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.45);
+  /* Floating layers (menus, tooltips, popovers) */
+  --shadow-pop: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  /* Disabled (flat look) — kept as a transparent shadow so multi-shadow
+     declarations like "var(--shadow-sm), var(--edge-highlight)" stay valid */
+  --edge-highlight: 0 0 0 0 rgba(0, 0, 0, 0);
+  --focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.28);
   --gradient-primary: #7c3aed;
-  --gradient-secondary: #5b21b6;
   --gradient-bg:
     radial-gradient(ellipse at 15% 6%, rgba(124, 58, 237, 0.07), transparent 30%),
+    radial-gradient(ellipse at 85% 110%, rgba(210, 195, 178, 0.025), transparent 42%),
     #171513;
+
+  /* Square geometry everywhere (user choice 2026-06-11): tokens stay so the
+     whole app can be re-rounded from this single block if needed */
+  --radius-xs: 0px;
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
+  --radius-full: 0px;
+
   --surface-soft: rgba(210, 195, 178, 0.03);
   --surface-soft-hover: rgba(210, 195, 178, 0.06);
   --surface-strong: rgba(210, 195, 178, 0.09);
@@ -61,9 +77,14 @@
     "SFMono-Regular", "SF Mono", "Fira Code", "Cascadia Code", Consolas,
     "Courier New", monospace;
   --font-brand: "Agentor Herios", var(--font-ui);
-  --transition-fast: 0.1s ease;
-  --transition-base: 0.15s ease;
-  --transition-slow: 0.2s ease;
+
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.25, 0.5, 1);
+  --transition-fast: 0.12s var(--ease-out);
+  --transition-base: 0.18s var(--ease-out);
+  --transition-slow: 0.3s var(--ease-ios);
+
   --text-scale: 1;
   --editor-line-height: 1.6;
   --app-zoom: 1;
@@ -81,7 +102,6 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  border-radius: 0 !important;
 }
 
 html,
@@ -106,15 +126,16 @@ body {
   background-color: var(--bg);
 }
 
-* {
-  letter-spacing: 0 !important;
-}
-
 #root {
   transform: scale(var(--app-zoom));
   transform-origin: top left;
   width: calc(100% / var(--app-zoom));
   height: calc(100% / var(--app-zoom));
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.38);
+  color: var(--text);
 }
 
 a {
@@ -129,9 +150,14 @@ select {
   font-family: inherit;
 }
 
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -140,7 +166,7 @@ select {
 
 ::-webkit-scrollbar-thumb {
   background: rgba(210, 195, 178, 0.18);
-  border: 1px solid transparent;
+  border-radius: var(--radius-full);
   background-clip: padding-box;
   transition: background var(--transition-base);
 }
@@ -159,6 +185,7 @@ input[type='checkbox'] {
   width: 18px;
   height: 18px;
   border: 1px solid rgba(210, 195, 178, 0.2);
+  border-radius: var(--radius-xs);
   background: var(--surface-soft);
   display: inline-grid;
   place-items: center;
@@ -171,17 +198,18 @@ input[type='checkbox'] {
 
 input[type='checkbox']::after {
   content: '';
-  width: 8px;
-  height: 8px;
-  background: var(--accent-light);
+  width: 10px;
+  height: 10px;
+  background: white;
+  clip-path: polygon(14% 50%, 5% 62%, 38% 88%, 95% 24%, 84% 14%, 36% 67%);
   transform: scale(0);
-  transition: transform var(--transition-fast);
+  transition: transform var(--transition-base);
+  transition-timing-function: var(--ease-spring);
 }
 
 input[type='checkbox']:checked {
-  border-color: var(--accent-light);
-  background: rgba(124, 58, 237, 0.2);
-  box-shadow: 0 0 0 2px var(--accent-glow);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 input[type='checkbox']:checked::after {
@@ -190,10 +218,20 @@ input[type='checkbox']:checked::after {
 
 input[type='checkbox']:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent-glow);
+  box-shadow: var(--focus-ring);
 }
 
 input[type='checkbox']:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
