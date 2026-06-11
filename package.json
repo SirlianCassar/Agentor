@@ -1,13 +1,13 @@
 {
   "name": "agentor",
   "private": true,
-  "version": "2.0.38",
+  "version": "2.0.39",
   "author": "Sirlian",
   "description": "Agentor local email and task template composer",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder --win",
+    "build": "tsc && vite build && electron-builder --win --publish never",
     "build:win": "tsc && vite build && electron-builder --win",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
