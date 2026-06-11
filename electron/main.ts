@@ -168,7 +168,7 @@ function writeData(data: unknown) {
 }
 
 const AUTO_UPDATE_LOG_PREFIX = '[auto-update]'
-const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin'])
+const AUTO_UPDATE_SUPPORTED_PLATFORMS = new Set(['win32'])
 const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
@@ -208,6 +208,10 @@ let updateCheckTimeout: ReturnType<typeof setTimeout> | null = null
 
 function isStartupAutoUpdateEnabled() {
   return app.isPackaged && !VITE_DEV_SERVER_URL && AUTO_UPDATE_SUPPORTED_PLATFORMS.has(process.platform)
+}
+
+function isAutoUpdateTokenMissing() {
+  return !AUTO_UPDATE_GH_TOKEN
 }
 
 function getUpdateErrorMessage(error: unknown) {
@@ -344,6 +348,15 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
 
   if (restartScheduled) {
     return { ok: false, reason: 'restart-pending' as const }
+  }
+
+  if (isAutoUpdateTokenMissing()) {
+    pushUpdateStatus({
+      phase: 'error',
+      message: 'Mise à jour impossible: token GitHub absent pour accéder au repo privé.',
+      checkedAt: new Date().toISOString(),
+    })
+    return { ok: false, reason: 'missing-token' as const }
   }
 
   if (updateCheckInProgress) {
