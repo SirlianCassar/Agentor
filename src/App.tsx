@@ -16,19 +16,14 @@ import { SortableList } from './components/SortableList'
 import { UiIcon } from './components/UiIcon'
 import { defaultData } from './lib/defaults'
 import {
-  checkForUpdatesNow,
-  installDownloadedUpdate,
   exportJson,
   exportHistory,
-  getUpdateStatus,
   importJson,
   loadData,
-  onUpdateStatus,
   openExternal,
   openProcedure,
   saveData,
   copyText,
-  type UpdateStatus,
 } from './lib/storage'
 import type { AppIconName } from './lib/iconTypes'
 import {
@@ -219,6 +214,7 @@ import {
   mergeSeedIntoData,
   normalizeTaskSectionsInData,
 } from './lib/appData'
+import { useAppUpdates } from './hooks/useAppUpdates'
 import './App.css'
 
 const TAG_TOKEN = '<TAG>'
@@ -312,9 +308,13 @@ function App() {
   const [procedureQuery, setProcedureQuery] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
-  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
-  const [checkingUpdateManually, setCheckingUpdateManually] = useState(false)
-  const [installingDownloadedUpdate, setInstallingDownloadedUpdate] = useState(false)
+  const {
+    updateStatus,
+    checkingUpdateManually,
+    installingDownloadedUpdate,
+    handleCheckUpdatesNow,
+    handleInstallDownloadedUpdate,
+  } = useAppUpdates(setToast)
   const [clearArmed, setClearArmed] = useState(false)
   const [clearAllArmed, setClearAllArmed] = useState(false)
   const [taskClearArmed, setTaskClearArmed] = useState(false)
@@ -510,7 +510,6 @@ function App() {
   const callModalBackdropPointerDownRef = useRef(false)
 
   callDraftLengthRef.current = callDraft.length
-  const manualUpdateCheckRequestedRef = useRef(false)
   const dashboardOpenFrameRef = useRef<number | null>(null)
   const undoStackRef = useRef<AppData[]>([])
   const redoStackRef = useRef<AppData[]>([])
@@ -897,52 +896,6 @@ function App() {
     }
   }, [])
 
-  useEffect(() => {
-    let active = true
-
-    getUpdateStatus()
-      .then((status) => {
-        if (!active) return
-        setUpdateStatus(status)
-      })
-      .catch(() => {
-        if (!active) return
-        setUpdateStatus({
-          phase: 'error',
-          message: 'Impossible de récupérer le statut de mise à jour.',
-        })
-      })
-
-    const unsubscribe = onUpdateStatus((status) => {
-      if (!active) return
-      setUpdateStatus(status)
-
-      if (!manualUpdateCheckRequestedRef.current) return
-
-      if (status.phase === 'not-available') {
-        setToast('Aucune mise à jour disponible.')
-        manualUpdateCheckRequestedRef.current = false
-        setCheckingUpdateManually(false)
-      } else if (status.phase === 'available' || status.phase === 'downloading') {
-        setToast('Mise à jour trouvée. Téléchargement en cours…')
-        manualUpdateCheckRequestedRef.current = false
-        setCheckingUpdateManually(false)
-      } else if (status.phase === 'downloaded') {
-        setToast('Mise à jour prête. Ouvre Paramètres > Mise à jour pour l’installer.')
-        manualUpdateCheckRequestedRef.current = false
-        setCheckingUpdateManually(false)
-      } else if (status.phase === 'error') {
-        setToast(status.message)
-        manualUpdateCheckRequestedRef.current = false
-        setCheckingUpdateManually(false)
-      }
-    })
-
-    return () => {
-      active = false
-      unsubscribe()
-    }
-  }, [])
 
   useEffect(() => {
     if (!loaded) return
@@ -1911,68 +1864,6 @@ function App() {
     },
     [updateDashboardNews],
   )
-
-  const handleCheckUpdatesNow = useCallback(async () => {
-    manualUpdateCheckRequestedRef.current = true
-    setCheckingUpdateManually(true)
-    try {
-      const result = await checkForUpdatesNow()
-      if (!result.ok) {
-        if (result.reason === 'disabled') {
-          setToast('Recherche de MAJ disponible uniquement sur l’application installée.')
-        } else if (result.reason === 'missing-token') {
-          setToast('GH_TOKEN/GITHUB_TOKEN manquant pour accéder au repo privé.')
-        } else if (result.reason === 'already-checking') {
-          setToast('Une recherche de MAJ est déjà en cours.')
-        } else if (result.reason === 'restart-pending') {
-          setToast('Redémarrage déjà en cours pour installer la MAJ.')
-        } else {
-          setToast('Recherche de MAJ impossible.')
-        }
-        manualUpdateCheckRequestedRef.current = false
-        setCheckingUpdateManually(false)
-      }
-    } catch {
-      setToast('Recherche de MAJ impossible.')
-      manualUpdateCheckRequestedRef.current = false
-      setCheckingUpdateManually(false)
-    }
-  }, [])
-
-  const handleInstallDownloadedUpdate = useCallback(async (skipConfirmation = false) => {
-    if (updateStatus?.phase !== 'downloaded') return
-    if (!skipConfirmation) {
-      const confirmed = window.confirm(
-        'Une mise à jour est prête. Voulez-vous redémarrer maintenant pour l’installer ?',
-      )
-      if (!confirmed) return
-    }
-
-    setInstallingDownloadedUpdate(true)
-    try {
-      const result = await installDownloadedUpdate()
-      if (!result.ok) {
-        if (result.reason === 'not-downloaded') {
-          setToast('La mise à jour n’est pas encore prête.')
-        } else if (result.reason === 'disabled') {
-          setToast('Installation MAJ disponible uniquement sur l’application installée.')
-        } else if (result.reason === 'missing-token') {
-          setToast('GH_TOKEN/GITHUB_TOKEN manquant pour installer la MAJ.')
-        } else if (result.reason === 'restart-pending') {
-          setToast('Redémarrage déjà en cours pour installer la MAJ.')
-        } else {
-          setToast('Installation de la MAJ impossible.')
-        }
-        setInstallingDownloadedUpdate(false)
-        return
-      }
-      setToast('Redémarrage pour installer la mise à jour…')
-      window.setTimeout(() => setInstallingDownloadedUpdate(false), 5000)
-    } catch {
-      setToast('Installation de la MAJ impossible.')
-      setInstallingDownloadedUpdate(false)
-    }
-  }, [updateStatus])
 
   useEffect(() => {
     const safeZoom = zoomValue > 0 ? zoomValue : 1
