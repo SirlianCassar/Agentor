@@ -90,10 +90,63 @@ import {
   stripTokenSpacing,
   normalizeData,
 } from './lib/utils'
+import {
+  formatAmountForCopy,
+  formatDashboardNewsDate,
+  formatEuroAmount,
+  formatHistoryTimestamp,
+  formatUpdateCheckedAt,
+  getSliderProgress,
+  getTodayIsoDate,
+  parseDashboardAmount,
+} from './lib/formatting'
+import {
+  assetUrl,
+  CALL_HISTORY_LIMIT,
+  PHONE_CALL_TEMPLATE,
+  productEditionPlatformLabels,
+  productEditionPlatformOptions,
+  quickLinks,
+} from './lib/constants'
+import {
+  getUpdateAvailableVersionLabel,
+  getUpdatePhaseTitle,
+  getUpdatePhaseTone,
+  getUpdateSettingsLabel,
+} from './lib/updateStatusView'
+import {
+  getTagAutocompleteContext,
+  normalizePredefinedTag,
+  normalizePredefinedTags,
+  type TagSuggestionFieldId,
+  type TagSuggestionState,
+} from './lib/tags'
+import {
+  buildProcedureMailtoHref,
+  defaultProcedureMailtos,
+  normalizeProcedureMailtoLink,
+} from './lib/mailto'
+import {
+  createDashboardCalculatorItem,
+  getDashboardCalculatorQuantity,
+  VAT_DIVISOR,
+  type DashboardCalculatorCopyKey,
+  type DashboardCalculatorItem,
+  type DashboardCalculatorPriceField,
+} from './lib/calculator'
+import { trimDoubleClickSelection } from './lib/dom'
+import {
+  AddIcon,
+  ButtonIcon,
+  CloseIcon,
+  DeleteIcon,
+  ExportDataIcon,
+  ExportEmailsIcon,
+  ImportDataIcon,
+  MoveIcon,
+} from './components/AppIcons'
 import './App.css'
 
-const assetBase = import.meta.env.BASE_URL
-const assetUrl = (path: string) => `${assetBase}${path.replace(/^\//, '')}`
 const TAG_TOKEN = '<TAG>'
 const SELECTOR_TOKEN = '[Option1/Option2]'
 const ADDITION_TOKEN = '§texte§'
@@ -104,7 +157,6 @@ const LEGACY_TASK_SECTION_NAMES = ['Diagnostic', 'SAV', 'Infos client', 'Suivi']
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
 const APP_VERSION_LABEL = APP_VERSION.replace(/\.0$/, '')
-const VAT_DIVISOR = 1.2
 const DATA_HISTORY_LIMIT = 160
 const dashboardProductCategoryLabels: Record<DashboardProductCategory, string> = {
   software: 'Logiciel',
@@ -112,36 +164,6 @@ const dashboardProductCategoryLabels: Record<DashboardProductCategory, string> =
   firmware: 'Firmware',
   product: 'Legacy',
 }
-const productEditionPlatformOptions: Array<{
-  value: ProductEditionPlatform
-  label: string
-}> = [
-  { value: 'pc', label: 'PC' },
-  { value: 'xbox', label: 'Xbox' },
-  { value: 'playstation', label: 'PlayStation' },
-  { value: 'custom', label: 'Autre' },
-]
-const productEditionPlatformLabels: Record<ProductEditionPlatform, string> = {
-  pc: 'PC',
-  xbox: 'Xbox',
-  playstation: 'PlayStation',
-  custom: 'Autre',
-}
-type DashboardCalculatorItem = {
-  id: string
-  quantity: number
-  productPrice: string
-  shippingPrice: string
-  importFee: string
-}
-type DashboardCalculatorPriceField = keyof Omit<DashboardCalculatorItem, 'id' | 'quantity'>
-type DashboardCalculatorCopyKey =
-  | 'productsTtc'
-  | 'productsHt'
-  | 'shippingTtc'
-  | 'shippingHt'
-  | 'totalTtc'
-  | 'totalHt'
 
 type TaskBoxSlot = {
   task: string
@@ -651,57 +673,8 @@ const getTemplateTaskSections = (
 
 const getTemplateEmailLines = (template: MailTemplate) => template.content.split(/\r?\n/)
 
-const createDashboardCalculatorItem = (): DashboardCalculatorItem => ({
-  id: createId('dashboard-calculator'),
-  quantity: 1,
-  productPrice: '',
-  shippingPrice: '',
-  importFee: '',
-})
 
-const getDashboardCalculatorQuantity = (quantity: number | undefined) =>
-  Math.max(1, Math.min(99, Math.round(quantity || 1)))
 
-const CloseIcon = () => <UiIcon name="close" className="close-icon" />
-const DeleteIcon = () => <UiIcon name="delete" className="action-icon" />
-const AddIcon = () => <UiIcon name="add" className="action-icon" />
-const MoveIcon = () => <UiIcon name="exchange" className="action-icon" />
-const ButtonIcon = ({ name }: { name: AppIconName }) => (
-  <span className="btn__icon" aria-hidden="true">
-    <UiIcon name={name} className="action-icon" />
-  </span>
-)
-const ExportDataIcon = () => (
-  <span className="btn__icon" aria-hidden="true">
-    <svg className="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 21V9" />
-      <path d="M17 14l-5-5-5 5" />
-      <path d="M5 3h14" />
-    </svg>
-  </span>
-)
-const ImportDataIcon = () => (
-  <span className="btn__icon" aria-hidden="true">
-    <svg className="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 3v12" />
-      <path d="M7 10l5 5 5-5" />
-      <path d="M5 21h14" />
-    </svg>
-  </span>
-)
-const ExportEmailsIcon = () => (
-  <span className="btn__icon" aria-hidden="true">
-    <svg className="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M8 6h8" />
-      <path d="M8 12h8" />
-      <path d="M8 18h5" />
-      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-    </svg>
-  </span>
-)
-
-const PHONE_CALL_TEMPLATE = defaultData.settings.callTemplate
-const CALL_HISTORY_LIMIT = 5
 type WorkspaceDashboardPage =
   | 'tools'
   | 'calculator'
@@ -723,78 +696,7 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'decorations', title: 'Ascii Wall', icon: 'asciiWall' },
 ]
 
-const quickLinks = [
-  {
-    id: 'crm',
-    label: 'CRM',
-    icon: assetUrl('/agentor/assets/crm.ico'),
-    defaultUrl: defaultData.settings.quickLinkUrls.crm,
-  },
-  {
-    id: 'share',
-    label: 'ShareConseiller',
-    icon: assetUrl('/agentor/assets/share.ico'),
-    defaultUrl: defaultData.settings.quickLinkUrls.share,
-  },
-  {
-    id: 'global',
-    label: 'Global Action',
-    icon: assetUrl('/agentor/assets/global.ico'),
-    defaultUrl: defaultData.settings.quickLinkUrls.global,
-  },
-  {
-    id: 'portal',
-    label: 'Portal',
-    icon: assetUrl('/agentor/assets/portal.png'),
-    defaultUrl: defaultData.settings.quickLinkUrls.portal,
-  },
-  {
-    id: 'assist',
-    label: 'AssistBot',
-    icon: assetUrl('/agentor/assets/Bot.png'),
-    defaultUrl: defaultData.settings.quickLinkUrls.assist,
-  },
-]
 
-const defaultProcedureMailtos = defaultData.settings.procedureMailtoLinks ?? []
-
-const normalizeMailRecipients = (value: string) =>
-  value
-    .trim()
-    .replace(/^mailto:/i, '')
-    .split(/[;,]/)
-    .map((recipient) => recipient.trim())
-    .filter(Boolean)
-    .join(',')
-
-const encodeMailtoValue = (value: string) => encodeURIComponent(value)
-
-function normalizeProcedureMailtoLink(link: ProcedureMailtoLink, fallbackId: string) {
-  const to = normalizeMailRecipients(link.to)
-  const cc = normalizeMailRecipients(link.cc ?? '')
-  const subject = link.subject?.trim() ?? ''
-  const body = link.body?.trim() ?? ''
-  return {
-    id: link.id.trim() || fallbackId,
-    label: link.label.trim() || 'Mailto',
-    to,
-    cc,
-    subject,
-    body,
-  }
-}
-
-function buildProcedureMailtoHref(link: ProcedureMailtoLink) {
-  const to = normalizeMailRecipients(link.to)
-  if (!to) return ''
-  const params: string[] = []
-  const cc = normalizeMailRecipients(link.cc ?? '')
-  if (cc) params.push(`cc=${encodeMailtoValue(cc)}`)
-  if (link.subject?.trim()) params.push(`subject=${encodeMailtoValue(link.subject.trim())}`)
-  if (link.body?.trim()) params.push(`body=${encodeMailtoValue(link.body.trim())}`)
-  const query = params.join('&')
-  return `mailto:${to}${query ? `?${query}` : ''}`
-}
 
 const categoryColorMap = new Map(categoryColors.map((color) => [color.id, color.hex]))
 const exportFontOptions = [
@@ -807,168 +709,9 @@ const exportFontOptions = [
 ]
 const EXPORT_FONT_SIZE_MIN = 10
 const EXPORT_FONT_SIZE_MAX = 22
-const historyTimestampFormatter = new Intl.DateTimeFormat('fr-FR', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
-const dashboardNewsDateFormatter = new Intl.DateTimeFormat('fr-FR', {
-  dateStyle: 'long',
-})
-const euroFormatter2 = new Intl.NumberFormat('fr-FR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-const euroFormatter3 = new Intl.NumberFormat('fr-FR', {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-})
-// 2 décimales par défaut ; 3 décimales quand un 3e chiffre significatif
-// disparaîtrait à l'arrondi sur 2 décimales (ex. 14,995 → « 14,995 »).
-function euroFractionDigits(value: number) {
-  return Math.round(value * 1000) % 10 === 0 ? 2 : 3
-}
-type TagSuggestionFieldId =
-  | 'snippet-title'
-  | 'snippet-content'
-  | 'snippet-task'
-  | 'template-name'
-  | 'template-content'
-  | 'template-task'
-  | 'task-name'
-  | 'task-content'
-  | 'call-template'
-  | 'procedure-name'
-  | 'procedure-product'
-  | 'procedure-info'
-  | 'procedure-notes'
-  | 'procedure-steps'
-  | 'procedure-task'
 
-type TagSuggestionState = {
-  fieldId: TagSuggestionFieldId
-  start: number
-  end: number
-  query: string
-}
 
-function getUpdateSettingsLabel(status: UpdateStatus | null) {
-  if (!status) return 'Statut inconnu.'
-  if (status.phase === 'disabled') return 'Mises à jour auto disponibles sur l’application installée.'
-  return status.message
-}
 
-function formatVersionLabel(value?: string | null) {
-  const normalized = value?.trim()
-  if (!normalized) return null
-  return normalized.replace(/\.0$/, '')
-}
-
-function getUpdateAvailableVersionLabel(status: UpdateStatus | null, currentVersion: string) {
-  const remoteVersion = formatVersionLabel(status?.version)
-  if (remoteVersion) return remoteVersion
-  switch (status?.phase) {
-    case 'not-available':
-      return currentVersion
-    case 'checking':
-      return 'Recherche...'
-    case 'error':
-      return 'Indisponible'
-    default:
-      return 'En attente'
-  }
-}
-
-function formatHistoryTimestamp(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return historyTimestampFormatter.format(date)
-}
-
-function getTodayIsoDate() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = `${now.getMonth() + 1}`.padStart(2, '0')
-  const day = `${now.getDate()}`.padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function formatDashboardNewsDate(value: string) {
-  if (!value.trim()) return 'Date non renseignée'
-  const [year, month, day] = value.split('-').map((item) => Number(item))
-  if (!year || !month || !day) return value
-  const date = new Date(year, month - 1, day)
-  if (Number.isNaN(date.getTime())) return value
-  return dashboardNewsDateFormatter.format(date)
-}
-
-function parseDashboardAmount(value: string) {
-  const normalized = value.replace(/\s+/g, '').replace(',', '.').trim()
-  if (!normalized) return null
-  const parsed = Number.parseFloat(normalized)
-  if (!Number.isFinite(parsed)) return null
-  return Math.max(0, parsed)
-}
-
-function formatEuroAmount(value: number) {
-  return (euroFractionDigits(value) === 3 ? euroFormatter3 : euroFormatter2).format(value)
-}
-
-function formatAmountForCopy(value: number) {
-  return value.toFixed(euroFractionDigits(value)).replace('.', ',')
-}
-
-function getSliderProgress(value: number, min: number, max: number) {
-  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
-    return '0%'
-  }
-  const clamped = Math.min(max, Math.max(min, value))
-  return `${((clamped - min) / (max - min)) * 100}%`
-}
-
-function formatUpdateCheckedAt(value?: string) {
-  if (!value) return 'Aucune vérification récente.'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return historyTimestampFormatter.format(date)
-}
-
-function getUpdatePhaseTitle(status: UpdateStatus | null) {
-  switch (status?.phase) {
-    case 'checking':
-      return 'Recherche en cours'
-    case 'available':
-      return 'Mise à jour trouvée'
-    case 'downloading':
-      return 'Téléchargement en cours'
-    case 'downloaded':
-      return 'Prête à installer'
-    case 'not-available':
-      return 'Application à jour'
-    case 'error':
-      return 'Vérification impossible'
-    case 'disabled':
-      return 'Mises à jour désactivées'
-    default:
-      return 'Statut inconnu'
-  }
-}
-
-function getUpdatePhaseTone(status: UpdateStatus | null) {
-  switch (status?.phase) {
-    case 'checking':
-    case 'available':
-    case 'downloading':
-      return 'active'
-    case 'downloaded':
-      return 'ready'
-    case 'not-available':
-      return 'success'
-    case 'error':
-      return 'error'
-    default:
-      return 'idle'
-  }
-}
 
 type ProcedureStepItem = {
   id: string
@@ -1006,43 +749,6 @@ function cloneAppData(payload: AppData): AppData {
   return JSON.parse(JSON.stringify(payload)) as AppData
 }
 
-function normalizePredefinedTag(value: string) {
-  const inner = value.trim().replace(/^<+|>+$/g, '').replace(/\s+/g, ' ').trim()
-  if (!inner) return null
-  return `<${inner.toUpperCase()}>`
-}
-
-function normalizePredefinedTags(values: string[]) {
-  const seen = new Set<string>()
-  const normalized: string[] = []
-  values.forEach((value) => {
-    const tag = normalizePredefinedTag(value)
-    if (!tag || seen.has(tag)) return
-    seen.add(tag)
-    normalized.push(tag)
-  })
-  return normalized
-}
-
-function getTagAutocompleteContext(value: string, cursor: number | null | undefined) {
-  if (cursor === null || cursor === undefined) return null
-
-  const beforeCursor = value.slice(0, cursor)
-  const start = beforeCursor.lastIndexOf('<')
-  if (start === -1) return null
-
-  const rawPrefix = beforeCursor.slice(start)
-  if (rawPrefix.includes('>') || /[\r\n]/.test(rawPrefix)) return null
-
-  const afterCursor = value.slice(cursor)
-  const closingOffset = afterCursor.indexOf('>')
-  const lineBreakOffset = afterCursor.search(/[\r\n]/)
-  const hasClosingTag = closingOffset !== -1 && (lineBreakOffset === -1 || closingOffset < lineBreakOffset)
-  const end = hasClosingTag ? cursor + closingOffset + 1 : cursor
-  const query = stripTokenSpacing(value.slice(start + 1, cursor)).trim().toUpperCase()
-
-  return { start, end, query }
-}
 
 function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
   const map = new Map(current.map((item) => [item.id, item]))
@@ -1691,47 +1397,6 @@ function mergeSeedIntoData(current: AppData, seed: AppData) {
   }
 }
 
-function trimDoubleClickSelection() {
-  const active = document.activeElement
-  if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
-    const start = active.selectionStart
-    const end = active.selectionEnd
-    if (start === null || end === null || start === end) return
-    let nextStart = start
-    let nextEnd = end
-    while (nextStart < nextEnd && /\s/.test(active.value[nextStart] ?? '')) nextStart += 1
-    while (nextEnd > nextStart && /\s/.test(active.value[nextEnd - 1] ?? '')) nextEnd -= 1
-    if (nextStart !== start || nextEnd !== end) {
-      active.setSelectionRange(nextStart, nextEnd)
-    }
-    return
-  }
-
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount !== 1 || selection.isCollapsed) return
-  const selectedText = selection.toString()
-  const leading = selectedText.match(/^\s+/)?.[0].length ?? 0
-  const trailing = selectedText.match(/\s+$/)?.[0].length ?? 0
-  if (!leading && !trailing) return
-
-  const range = selection.getRangeAt(0)
-  if (
-    leading &&
-    range.startContainer.nodeType === Node.TEXT_NODE &&
-    range.startOffset + leading <= range.startContainer.textContent!.length
-  ) {
-    range.setStart(range.startContainer, range.startOffset + leading)
-  }
-  if (
-    trailing &&
-    range.endContainer.nodeType === Node.TEXT_NODE &&
-    range.endOffset - trailing >= 0
-  ) {
-    range.setEnd(range.endContainer, range.endOffset - trailing)
-  }
-  selection.removeAllRanges()
-  selection.addRange(range)
-}
 
 function App() {
   const [data, setData] = useState<AppData>(defaultData)
