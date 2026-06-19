@@ -69,7 +69,6 @@ import type {
   Procedure,
   ProcedureBrand,
   ProcedureCoverage,
-  PortalQuickLinkId,
   SparePart,
   Snippet,
   TaskSectionId,
@@ -84,7 +83,6 @@ import {
   highlightText,
   highlightTextPreview,
   formatProcedureText,
-  normalizeDashboardNewsColorTags,
   normalizeTokenSpacing,
   padEmptySelectors,
   stripTokenSpacing,
@@ -174,7 +172,6 @@ import {
   normalizeTaskTemplateSections,
   parseStructuredTaskDraft,
   parseStructuredTaskDraftWithLeadingContent,
-  stripLeadingBlankLines,
   TASK_FREE_BOX_INDEX,
   TASK_SECTION_IDS,
   TASK_SKELETON_BOX_INDEX,
@@ -188,12 +185,45 @@ import {
   normalizeMailTemplateCategories,
   normalizeTaskTemplateCategories,
 } from './lib/categories'
+import {
+  getMeaningfulCallDraft,
+  normalizeCallDraft,
+  normalizeCallDraftForCopy,
+} from './lib/calls'
+import {
+  formatPortalForwardLabel,
+  parseProcedureStepItems,
+  PROCEDURE_CHECK_MARKER,
+  sanitizeProcedureDraft,
+  shouldShowPortalForwardIndicator,
+} from './lib/procedure'
+import {
+  createEmptyPortalCodeLine,
+  createProductEditionDraft,
+  getProductDashboardVersionIds,
+  normalizeDashboardData,
+  normalizeDashboardNews,
+  normalizeDashboardProducts,
+  normalizeIdList,
+  normalizePortalProcedures,
+  normalizeProductEditionPlatform,
+  normalizeProducts,
+  parseProductTags,
+  type PortalCodeLineSet,
+  type PortalCodeOptionalModule,
+} from './lib/dashboardData'
+import {
+  cloneAppData,
+  convertLegacyTokensInData,
+  mergeData,
+  mergeSeedIntoData,
+  normalizeTaskSectionsInData,
+} from './lib/appData'
 import './App.css'
 
 const TAG_TOKEN = '<TAG>'
 const SELECTOR_TOKEN = '[Option1/Option2]'
 const ADDITION_TOKEN = '§texte§'
-const PROCEDURE_CHECK_MARKER = '[ ]'
 const PROCEDURE_CHANNEL = 'agentor-procedure'
 const showLegacyProcedureUI = false
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION || '2.0.0').trim()
@@ -223,12 +253,6 @@ type TemplatePreviewState = {
   selectedTaskSections: boolean[]
   importTask: boolean
 }
-
-
-const normalizeCallDraftForCopy = (value: string) =>
-  stripLeadingBlankLines(normalizeCallDraft(value))
-
-
 
 
 type WorkspaceDashboardPage =
@@ -267,691 +291,6 @@ const EXPORT_FONT_SIZE_MIN = 10
 const EXPORT_FONT_SIZE_MAX = 22
 
 
-
-
-type ProcedureStepItem = {
-  id: string
-  text: string
-  isCheckable: boolean
-}
-
-function parseProcedureStepItems(steps: string): ProcedureStepItem[] {
-  return steps
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.trim() !== '')
-    .map((line, index) => {
-      const trimmed = line.trimStart()
-      const isCheckable = trimmed.startsWith(PROCEDURE_CHECK_MARKER)
-      const text = isCheckable
-        ? trimmed.slice(PROCEDURE_CHECK_MARKER.length).trimStart()
-        : trimmed
-      return { id: `${index}-${text}`, text, isCheckable }
-    })
-}
-
-function normalizeCallDraft(value: string) {
-  return stripTokenSpacing(value).replace(/\r\n/g, '\n').trimEnd()
-}
-
-function getMeaningfulCallDraft(value: string, template: string) {
-  const normalized = normalizeCallDraft(value)
-  if (!normalized.trim()) return null
-  if (normalized.trim() === normalizeCallDraft(template).trim()) return null
-  return normalized
-}
-
-function cloneAppData(payload: AppData): AppData {
-  return JSON.parse(JSON.stringify(payload)) as AppData
-}
-
-
-function mergeById<T extends { id: string }>(current: T[], incoming: T[]) {
-  const map = new Map(current.map((item) => [item.id, item]))
-  for (const item of incoming) map.set(item.id, item)
-  return Array.from(map.values())
-}
-
-const sanitizeProcedureDraft = (procedure: Procedure & { categoryId?: string }) => {
-  const { categoryId, ...rest } = procedure
-  void categoryId
-  return {
-    ...rest,
-    productName: rest.productName ?? '',
-    optionalNotes: rest.optionalNotes ?? '',
-    taskSectionId: normalizeTaskSectionId(rest.taskSectionId),
-  }
-}
-
-const convertLegacyTokens = (value: string) =>
-  value.replace(/\*([^*\r\n]+)\*/g, '<$1>').replace(/#([^#\r\n]+)#/g, '§$1§')
-
-const convertLegacyTokensMaybe = (value?: string) =>
-  typeof value === 'string' ? convertLegacyTokens(value) : value
-
-type LegacyCustomerPortalCode = Partial<
-  Omit<CustomerPortalCode, 'codes'> &
-    CustomerPortalCodeLine & {
-      showForward: unknown
-      forwardTarget: unknown
-      hasVariant: unknown
-      mainVersionName: unknown
-      variantVersionName: unknown
-      variantCodes: unknown
-      codes: unknown
-    }
->
-type LegacyCustomerPortalCodeLine = Partial<CustomerPortalCodeLine> & {
-  quickLinkId?: unknown
-  quickLinkUrl?: unknown
-}
-type LegacyDashboardProduct = Partial<
-  DashboardProduct & {
-    category: unknown
-    latestVersion: unknown
-    compatibleProductIds: unknown
-    softwareIds: unknown
-    driverIds: unknown
-  } & {
-    supportUrl: unknown
-    sheet: unknown
-  }
->
-type LegacySparePart = Partial<
-  SparePart & {
-    guideAvailable: unknown
-  }
->
-type LegacyProductEdition = Partial<
-  ProductEdition & {
-    platform: unknown
-    firmwareIds: unknown
-    compatibleProductIds: unknown
-    supportUrl: unknown
-    shareUrl: unknown
-    portalUrl: unknown
-    note: unknown
-  }
->
-type LegacyProductCatalogItem = Partial<
-  ProductCatalogItem & {
-    note: unknown
-    tags: unknown
-    packingGuideAvailable: unknown
-    compatibleProductIds: unknown
-    softwareIds: unknown
-    driverIds: unknown
-    firmwareIds: unknown
-    editions: unknown
-    spareParts: unknown
-  }
->
-type LegacyDashboardNewsItem = Partial<
-  DashboardNewsItem & {
-    date: unknown
-    title: unknown
-    content: unknown
-  }
->
-
-const createEmptyPortalCodeLine = (id = createId('portal-code')): CustomerPortalCodeLine => ({
-  id,
-  title: '',
-  code: '',
-  showDraft: false,
-  quickLinkUrl: '',
-  quickCopyText: '',
-  quickMailtoTemplateId: '',
-  quickMailtoLabel: '',
-  quickMailtoHref: '',
-  infoNote: '',
-})
-
-type PortalCodeLineSet = 'codes' | 'variantCodes'
-type PortalCodeOptionalModule = 'code' | 'quickLink' | 'quickCopy' | 'mailto'
-
-const isPortalQuickLinkId = (value: unknown): value is PortalQuickLinkId =>
-  value === 'crm' || value === 'share' || value === 'global' || value === 'portal' || value === 'assist'
-
-const normalizePortalCodeLine = (raw: unknown, fallbackId: string): CustomerPortalCodeLine => {
-  const item =
-    raw && typeof raw === 'object'
-      ? (raw as LegacyCustomerPortalCodeLine)
-      : createEmptyPortalCodeLine(fallbackId)
-  const legacyItem = item as LegacyCustomerPortalCodeLine
-  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
-  const legacyQuickLinkUrl =
-    typeof legacyItem.quickLinkId === 'string' && isPortalQuickLinkId(legacyItem.quickLinkId)
-      ? quickLinks.find((link) => link.id === legacyItem.quickLinkId)?.defaultUrl ?? ''
-      : ''
-  return {
-    id,
-    title: typeof item.title === 'string' ? item.title : '',
-    code: typeof item.code === 'string' ? item.code : '',
-    showDraft: Boolean(item.showDraft),
-    quickLinkUrl:
-      typeof item.quickLinkUrl === 'string'
-        ? item.quickLinkUrl.trim()
-        : legacyQuickLinkUrl,
-    quickCopyText: typeof item.quickCopyText === 'string' ? item.quickCopyText : '',
-    quickMailtoTemplateId:
-      typeof item.quickMailtoTemplateId === 'string' ? item.quickMailtoTemplateId.trim() : '',
-    quickMailtoLabel: typeof item.quickMailtoLabel === 'string' ? item.quickMailtoLabel : '',
-    quickMailtoHref:
-      typeof item.quickMailtoHref === 'string' ? item.quickMailtoHref.trim() : '',
-    infoNote: typeof item.infoNote === 'string' ? item.infoNote : '',
-  }
-}
-
-const normalizePortalProcedure = (raw: unknown, index: number): CustomerPortalCode => {
-  const item =
-    raw && typeof raw === 'object'
-      ? (raw as LegacyCustomerPortalCode)
-      : ({}) as LegacyCustomerPortalCode
-  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `portal-${index + 1}`
-  const rawCodes = Array.isArray(item.codes) ? item.codes : []
-  const legacyForwardSource = rawCodes.find(
-    (entry) =>
-      Boolean(entry && typeof entry === 'object' && (entry as LegacyCustomerPortalCode).showForward),
-  ) as LegacyCustomerPortalCode | undefined
-  const legacyForwardTarget =
-    legacyForwardSource && typeof legacyForwardSource.forwardTarget === 'string'
-      ? legacyForwardSource.forwardTarget.trim()
-      : ''
-  const forwardTargetCandidate =
-    typeof item.forwardTarget === 'string' && item.forwardTarget.trim()
-      ? item.forwardTarget.trim()
-      : legacyForwardTarget
-  const hasForward = Boolean(item.showForward) || Boolean(forwardTargetCandidate)
-  const codes = rawCodes.length
-    ? rawCodes.map((entry, codeIndex) =>
-        normalizePortalCodeLine(entry, `${id}-code-${codeIndex + 1}`),
-      )
-    : [normalizePortalCodeLine(item, `${id}-code-1`)]
-  const rawVariantCodes = Array.isArray(item.variantCodes) ? item.variantCodes : []
-  const variantCodes = rawVariantCodes.map((entry, codeIndex) =>
-    normalizePortalCodeLine(entry, `${id}-variant-code-${codeIndex + 1}`),
-  )
-  const hasVariant = Boolean(item.hasVariant) || variantCodes.length > 0
-
-  return {
-    id,
-    procedureName: typeof item.procedureName === 'string' ? item.procedureName : '',
-    showForward: hasForward,
-    forwardTarget: hasForward ? forwardTargetCandidate : '',
-    codes,
-    hasVariant,
-    mainVersionName: typeof item.mainVersionName === 'string' ? item.mainVersionName : '',
-    variantVersionName: typeof item.variantVersionName === 'string' ? item.variantVersionName : '',
-    variantCodes,
-  }
-}
-
-const normalizePortalProcedures = (raw: unknown): CustomerPortalCode[] => {
-  if (!Array.isArray(raw)) return []
-  return raw.map((item, index) => normalizePortalProcedure(item, index))
-}
-
-const formatPortalForwardLabel = (
-  procedure: CustomerPortalCode,
-  inactiveLabel = 'Forward',
-) => {
-  if (!procedure.showForward) return inactiveLabel
-  const target = procedure.forwardTarget?.trim()
-  return target ? `Forward vers ${target}` : 'Forward vers cible non renseignée'
-}
-
-const shouldShowPortalForwardIndicator = (procedure: CustomerPortalCode) => {
-  if (!procedure.showForward) return false
-  const target = procedure.forwardTarget?.trim()
-  if (!target) return false
-  const normalized = target
-    .toLowerCase()
-    .replace(/[àâä]/g, 'a')
-    .replace(/\s+/g, ' ')
-    .trim()
-  if (!normalized) return false
-  return !['personne', 'a personne', 'vers personne', 'fwrd a personne', 'fwd a personne'].includes(
-    normalized,
-  )
-}
-
-const normalizePortalProceduresInData = (payload: AppData): AppData => ({
-  ...payload,
-  settings: {
-    ...payload.settings,
-    customerPortalCodes: normalizePortalProcedures(payload.settings.customerPortalCodes),
-  },
-})
-
-const normalizeDashboardProductCategory = (value: unknown): DashboardProductCategory => {
-  if (
-    value === 'software' ||
-    value === 'firmware' ||
-    value === 'driver' ||
-    value === 'product'
-  ) {
-    return value
-  }
-  return 'product'
-}
-
-const normalizeIdList = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return []
-  return Array.from(
-    new Set(
-      value
-        .filter((item): item is string => typeof item === 'string')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  )
-}
-
-const normalizeTextList = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return []
-  return Array.from(
-    new Set(
-      value
-        .filter((item): item is string => typeof item === 'string')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  )
-}
-
-const parseProductTags = (value: string) => normalizeTextList(value.split(/[,;\n]/))
-
-const normalizeDashboardProduct = (raw: unknown, index: number): DashboardProduct => {
-  const item =
-    raw && typeof raw === 'object'
-      ? (raw as LegacyDashboardProduct)
-      : ({}) as LegacyDashboardProduct
-  const id =
-    typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `dashboard-item-${index + 1}`
-
-  return {
-    id,
-    name: typeof item.name === 'string' ? item.name : '',
-    category: normalizeDashboardProductCategory(item.category),
-    latestVersion: typeof item.latestVersion === 'string' ? item.latestVersion : '',
-    sheet: typeof item.sheet === 'string' ? item.sheet : '',
-    supportUrl: typeof item.supportUrl === 'string' ? item.supportUrl : '',
-    compatibleProductIds: normalizeIdList(item.compatibleProductIds),
-    softwareIds: normalizeIdList(item.softwareIds),
-    driverIds: normalizeIdList(item.driverIds),
-  }
-}
-
-const normalizeDashboardProducts = (raw: unknown): DashboardProduct[] => {
-  if (!Array.isArray(raw)) return []
-  return raw.map((item, index) => normalizeDashboardProduct(item, index))
-}
-
-const normalizeDashboardProductsInData = (payload: AppData): AppData => ({
-  ...payload,
-  settings: {
-    ...payload.settings,
-    dashboardProducts: normalizeDashboardProducts(payload.settings.dashboardProducts),
-  },
-})
-
-const normalizeSparePart = (raw: unknown, fallbackId: string): SparePart => {
-  const item =
-    raw && typeof raw === 'object' ? (raw as LegacySparePart) : ({} as LegacySparePart)
-  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
-  return {
-    id,
-    name: typeof item.name === 'string' ? item.name : '',
-    sku: typeof item.sku === 'string' ? item.sku : '',
-    guideAvailable: Boolean(item.guideAvailable),
-  }
-}
-
-const normalizeProductEditionPlatform = (value: unknown): ProductEditionPlatform => {
-  if (value === 'pc' || value === 'xbox' || value === 'playstation' || value === 'custom') {
-    return value
-  }
-  if (typeof value !== 'string') return 'custom'
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'ps' || normalized === 'playstation' || normalized === 'playstation 5') {
-    return 'playstation'
-  }
-  if (normalized === 'windows' || normalized === 'mac' || normalized === 'pc') return 'pc'
-  if (normalized === 'xbox') return 'xbox'
-  return 'custom'
-}
-
-const normalizeProductEdition = (raw: unknown, fallbackId: string): ProductEdition => {
-  const item =
-    raw && typeof raw === 'object'
-      ? (raw as LegacyProductEdition)
-      : ({} as LegacyProductEdition)
-  const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : fallbackId
-  const platform = normalizeProductEditionPlatform(item.platform)
-  return {
-    id,
-    platform,
-    name:
-      typeof item.name === 'string' && item.name.trim()
-        ? item.name
-        : productEditionPlatformLabels[platform],
-    firmwareIds: normalizeIdList(item.firmwareIds),
-    compatibleProductIds: normalizeIdList(item.compatibleProductIds),
-    supportUrl: typeof item.supportUrl === 'string' ? item.supportUrl.trim() : '',
-    shareUrl: typeof item.shareUrl === 'string' ? item.shareUrl.trim() : '',
-    portalUrl: typeof item.portalUrl === 'string' ? item.portalUrl.trim() : '',
-    note: typeof item.note === 'string' ? item.note : '',
-  }
-}
-
-const createProductEditionDraft = (
-  platform: ProductEditionPlatform = 'pc',
-): ProductEdition => ({
-  id: createId('edition'),
-  platform,
-  name: productEditionPlatformLabels[platform],
-  firmwareIds: [],
-  compatibleProductIds: [],
-  supportUrl: '',
-  shareUrl: '',
-  portalUrl: '',
-  note: '',
-})
-
-const getProductDashboardVersionIds = (
-  product: ProductCatalogItem,
-  category: DashboardProductCategory,
-) => {
-  if (category === 'software') return product.softwareIds ?? []
-  if (category === 'driver') return product.driverIds ?? []
-  if (category === 'firmware') {
-    return normalizeIdList([
-      ...(product.firmwareIds ?? []),
-      ...(product.editions ?? []).flatMap((edition) => edition.firmwareIds ?? []),
-    ])
-  }
-  return []
-}
-
-const normalizeProductCatalogItem = (raw: unknown, index: number): ProductCatalogItem => {
-  const item =
-    raw && typeof raw === 'object'
-      ? (raw as LegacyProductCatalogItem)
-      : ({} as LegacyProductCatalogItem)
-  const id =
-    typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `catalog-product-${index + 1}`
-  const rawSpareParts = Array.isArray(item.spareParts) ? item.spareParts : []
-  const rawEditions = Array.isArray(item.editions) ? item.editions : []
-  return {
-    id,
-    name: typeof item.name === 'string' ? item.name : '',
-    productType: typeof item.productType === 'string' ? item.productType : '',
-    note: typeof item.note === 'string' ? item.note : '',
-    tags: normalizeTextList(item.tags),
-    packingGuideAvailable: Boolean(item.packingGuideAvailable),
-    compatibleProductIds: normalizeIdList(item.compatibleProductIds),
-    softwareIds: normalizeIdList(item.softwareIds),
-    driverIds: normalizeIdList(item.driverIds),
-    firmwareIds: normalizeIdList(item.firmwareIds),
-    editions: rawEditions.map((entry, editionIndex) =>
-      normalizeProductEdition(entry, `${id}-edition-${editionIndex + 1}`),
-    ),
-    spareParts: rawSpareParts.map((entry, spareIndex) =>
-      normalizeSparePart(entry, `${id}-spare-${spareIndex + 1}`),
-    ),
-  }
-}
-
-const normalizeProducts = (raw: unknown): ProductCatalogItem[] => {
-  if (!Array.isArray(raw)) return []
-  return raw.map((item, index) => normalizeProductCatalogItem(item, index))
-}
-
-const normalizeProductsInData = (payload: AppData): AppData => ({
-  ...payload,
-  settings: {
-    ...payload.settings,
-    products: normalizeProducts(payload.settings.products),
-  },
-})
-
-const normalizeDashboardNewsItem = (raw: unknown, index: number): DashboardNewsItem => {
-  const item =
-    raw && typeof raw === 'object'
-      ? (raw as LegacyDashboardNewsItem)
-      : ({} as LegacyDashboardNewsItem)
-  const id =
-    typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `dashboard-news-${index + 1}`
-  return {
-    id,
-    date: typeof item.date === 'string' ? item.date.trim() : '',
-    title: typeof item.title === 'string' ? item.title : '',
-    content: typeof item.content === 'string' ? normalizeDashboardNewsColorTags(item.content) : '',
-  }
-}
-
-const normalizeDashboardNews = (raw: unknown): DashboardNewsItem[] => {
-  if (!Array.isArray(raw)) return []
-  return raw.map((item, index) => normalizeDashboardNewsItem(item, index))
-}
-
-const normalizeDashboardNewsInData = (payload: AppData): AppData => ({
-  ...payload,
-  settings: {
-    ...payload.settings,
-    dashboardNews: normalizeDashboardNews(payload.settings.dashboardNews),
-  },
-})
-
-const normalizeDashboardData = (payload: AppData): AppData =>
-  normalizeDashboardNewsInData(
-    normalizeProductsInData(
-      normalizeDashboardProductsInData(normalizePortalProceduresInData(payload)),
-    ),
-  )
-
-const normalizeTaskSectionsInData = (payload: AppData): AppData => {
-  const sectionNames = normalizeStoredTaskSectionNames(payload.settings.taskSectionNames)
-  const templateCategories = normalizeMailTemplateCategories(payload.settings.mailTemplateCategories)
-  const taskTemplateCategories = normalizeTaskTemplateCategories(payload.settings.taskTemplateCategories)
-  const firstTemplateCategoryId = templateCategories[0]?.id ?? ''
-  const firstTaskTemplateCategoryId = taskTemplateCategories[0]?.id ?? ''
-  const snippetCategoryId = 'cat-general'
-  const categories = payload.categories.filter((category) => category.id !== snippetCategoryId)
-  return {
-    ...payload,
-    categories,
-    taskDraft: ensureStructuredTaskDraft(payload.taskDraft, sectionNames),
-    snippets: payload.snippets.map((snippet) => ({
-      ...snippet,
-      taskSectionId: normalizeTaskSectionId(snippet.taskSectionId),
-      categoryId: snippet.categoryId === snippetCategoryId ? '' : snippet.categoryId,
-    })),
-    templates: payload.templates.map((template) => ({
-      ...template,
-      taskSectionId: normalizeTaskSectionId(template.taskSectionId),
-      categoryId: template.categoryId?.trim() || firstTemplateCategoryId,
-      favorite: Boolean(template.favorite),
-    })),
-    taskTemplates: payload.taskTemplates.map((task) => ({
-      ...task,
-      taskSectionId: normalizeTaskSectionId(task.taskSectionId),
-      taskSections: normalizeTaskTemplateSections(task),
-      content: buildTaskTemplateContent(task),
-      categoryId: task.categoryId?.trim() || firstTaskTemplateCategoryId,
-      favorite: Boolean(task.favorite),
-    })),
-    procedures: payload.procedures.map((procedure) => ({
-      ...procedure,
-      taskSectionId: normalizeTaskSectionId(procedure.taskSectionId),
-    })),
-    settings: {
-      ...payload.settings,
-      taskSectionNames: sectionNames,
-      mailTemplateCategories: templateCategories,
-      taskTemplateCategories,
-    },
-  }
-}
-
-const convertLegacyTokensInData = (payload: AppData): AppData =>
-  normalizeTaskSectionsInData(normalizeDashboardData({
-    ...payload,
-    notes: convertLegacyTokens(payload.notes),
-    emailDraft: convertLegacyTokens(payload.emailDraft),
-    taskDraft: convertLegacyTokens(payload.taskDraft),
-    history: payload.history.map((item) => ({
-      ...item,
-      content: convertLegacyTokens(item.content),
-    })),
-    callHistory: payload.callHistory.map((item) => ({
-      ...item,
-      content: convertLegacyTokens(item.content),
-    })),
-    snippets: payload.snippets.map((snippet) => ({
-      ...snippet,
-      title: convertLegacyTokens(snippet.title),
-      content: convertLegacyTokens(snippet.content),
-      taskText: convertLegacyTokensMaybe(snippet.taskText),
-    })),
-    templates: payload.templates.map((template) => ({
-      ...template,
-      name: convertLegacyTokens(template.name),
-      content: convertLegacyTokens(template.content),
-      taskText: convertLegacyTokensMaybe(template.taskText),
-      categoryId: template.categoryId,
-      favorite: Boolean(template.favorite),
-    })),
-    taskTemplates: payload.taskTemplates.map((task) => ({
-      ...task,
-      name: convertLegacyTokens(task.name),
-      content: convertLegacyTokens(task.content),
-      taskSections: normalizeTaskTemplateSections(task).map((section) => convertLegacyTokens(section)),
-      categoryId: task.categoryId,
-      favorite: Boolean(task.favorite),
-    })),
-    procedures: payload.procedures.map((procedure) => ({
-      ...procedure,
-      name: convertLegacyTokens(procedure.name),
-      productName: convertLegacyTokensMaybe(procedure.productName),
-      infoText: convertLegacyTokens(procedure.infoText),
-      optionalNotes: convertLegacyTokensMaybe(procedure.optionalNotes),
-      steps: convertLegacyTokens(procedure.steps),
-      taskText: convertLegacyTokensMaybe(procedure.taskText),
-    })),
-    settings: {
-      ...payload.settings,
-      callTemplate: convertLegacyTokens(payload.settings.callTemplate ?? PHONE_CALL_TEMPLATE),
-      dashboardProducts: normalizeDashboardProducts(payload.settings.dashboardProducts).map(
-        (product) => ({
-          ...product,
-          name: convertLegacyTokens(product.name),
-          sheet: convertLegacyTokens(product.sheet),
-        }),
-      ),
-      products: normalizeProducts(payload.settings.products).map((product) => ({
-        ...product,
-        name: convertLegacyTokens(product.name),
-        productType: convertLegacyTokens(product.productType ?? ''),
-        note: convertLegacyTokens(product.note ?? ''),
-        tags: (product.tags ?? []).map((tag) => convertLegacyTokens(tag)),
-        editions: (product.editions ?? []).map((edition) => ({
-          ...edition,
-          name: convertLegacyTokens(edition.name),
-        })),
-        spareParts: product.spareParts.map((sparePart) => ({
-          ...sparePart,
-          name: convertLegacyTokens(sparePart.name),
-          sku: convertLegacyTokens(sparePart.sku),
-        })),
-      })),
-      dashboardNews: normalizeDashboardNews(payload.settings.dashboardNews).map((item) => ({
-        ...item,
-        title: convertLegacyTokens(item.title),
-        content: normalizeDashboardNewsColorTags(item.content),
-      })),
-    },
-  }))
-
-function mergeData(current: AppData, incoming: AppData) {
-  return {
-    ...current,
-    categories: mergeById(current.categories, incoming.categories),
-    snippets: mergeById(current.snippets, incoming.snippets),
-    templates: mergeById(current.templates, incoming.templates),
-    taskTemplates: mergeById(current.taskTemplates, incoming.taskTemplates),
-    procedures: mergeById(current.procedures, incoming.procedures),
-    history: mergeById(current.history, incoming.history).sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    ),
-    callHistory: mergeById(current.callHistory, incoming.callHistory)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, CALL_HISTORY_LIMIT),
-    settings: {
-      ...current.settings,
-      ...incoming.settings,
-    },
-  }
-}
-
-function addMissingById<T extends { id: string }>(current: T[], seed: T[]) {
-  const currentIds = new Set(current.map((item) => item.id))
-  return [...current, ...seed.filter((item) => !currentIds.has(item.id))]
-}
-
-function mergeSeedIntoData(current: AppData, seed: AppData) {
-  if ((current.version ?? 0) >= seed.version) return current
-
-  return {
-    ...current,
-    version: seed.version,
-    categories: addMissingById(current.categories, seed.categories),
-    snippets: addMissingById(current.snippets, seed.snippets),
-    templates: addMissingById(current.templates, seed.templates),
-    taskTemplates: addMissingById(current.taskTemplates, seed.taskTemplates),
-    procedures: addMissingById(current.procedures, seed.procedures),
-    notes: current.notes.trim() ? current.notes : seed.notes,
-    emailDraft: current.emailDraft.trim() ? current.emailDraft : seed.emailDraft,
-    taskDraft: current.taskDraft.trim() ? current.taskDraft : seed.taskDraft,
-    history: addMissingById(current.history, seed.history),
-    callHistory: addMissingById(current.callHistory, seed.callHistory).slice(0, CALL_HISTORY_LIMIT),
-    settings: {
-      ...current.settings,
-      quickLinkUrls: {
-        ...seed.settings.quickLinkUrls,
-        ...(current.settings.quickLinkUrls ?? {}),
-      },
-      predefinedTags: Array.from(
-        new Set([...(current.settings.predefinedTags ?? []), ...seed.settings.predefinedTags]),
-      ),
-      customerPortalCodes: addMissingById(
-        normalizePortalProcedures(current.settings.customerPortalCodes),
-        normalizePortalProcedures(seed.settings.customerPortalCodes),
-      ),
-      dashboardProducts: addMissingById(
-        normalizeDashboardProducts(current.settings.dashboardProducts),
-        normalizeDashboardProducts(seed.settings.dashboardProducts),
-      ),
-      products: addMissingById(
-        normalizeProducts(current.settings.products),
-        normalizeProducts(seed.settings.products),
-      ),
-      dashboardNews: addMissingById(
-        normalizeDashboardNews(current.settings.dashboardNews),
-        normalizeDashboardNews(seed.settings.dashboardNews),
-      ),
-      mailTemplateCategories: addMissingById(
-        normalizeMailTemplateCategories(current.settings.mailTemplateCategories),
-        normalizeMailTemplateCategories(seed.settings.mailTemplateCategories),
-      ),
-      taskTemplateCategories: addMissingById(
-        normalizeTaskTemplateCategories(current.settings.taskTemplateCategories),
-        normalizeTaskTemplateCategories(seed.settings.taskTemplateCategories),
-      ),
-    },
-  }
-}
 
 
 function App() {
