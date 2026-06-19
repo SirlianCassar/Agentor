@@ -2696,7 +2696,7 @@ function App() {
   const categoryColorById = useMemo(() => {
     const map = new Map<string, string>()
     data.categories.forEach((category) => {
-      map.set(category.id, categoryColorMap.get(category.color) ?? '#8b6fc9')
+      map.set(category.id, categoryColorMap.get(category.color) ?? '#a392d5')
     })
     return map
   }, [data.categories])
@@ -8197,7 +8197,7 @@ function App() {
                   <span
                     className="category-tab__dot"
                     style={{
-                      background: categoryColorMap.get(category.color) ?? '#8b6fc9',
+                      background: categoryColorMap.get(category.color) ?? '#a392d5',
                     }}
                   />
                   <span className="category-tab__label">{category.name}</span>
@@ -8240,7 +8240,7 @@ function App() {
                 <span
                   className="bullet-color-indicator"
                   style={{
-                    background: categoryColorById.get(snippet.categoryId) ?? '#8b6fc9',
+                    background: categoryColorById.get(snippet.categoryId) ?? '#a392d5',
                   }}
                 />
                 <div className="bullet-meta">

@@ -12,64 +12,64 @@
 }
 
 :root {
-  --bg: #171513;
-  --bg-secondary: #1c1916;
-  --panel: #24211e;
-  --panel-strong: #201d1a;
-  --panel-hover: #2b2723;
-  --border: rgba(230, 218, 204, 0.12);
-  --border-hover: rgba(230, 218, 204, 0.2);
-  --border-active: rgba(124, 58, 237, 0.62);
-  --text: #f0ece6;
-  --text-secondary: #d7cec4;
-  --muted: #b8aca1;
-  --muted-light: #a79b91;
-  --accent: #7c3aed;
-  --accent-light: #a78bfa;
-  --accent-dark: #5b21b6;
-  --accent-glow: rgba(124, 58, 237, 0.22);
-  --danger: #f87171;
-  --danger-light: #fca5a5;
-  --success: #34d399;
-  --warning: #fbbf24;
-  --info: #38bdf8;
-  --tag: #c084fc;
-  --selector: #2dd4bf;
-  --addition: #f5d66f;
+  /* Studio rework (2026-06-11): base sombre teintée violet, relief par
+     ombres de cartes, radius léger. Réf : design/ui-directions.html?dir=studio */
+  --bg: #17151e;
+  --bg-secondary: #1b1922;
+  --panel: #211f29;
+  --panel-strong: #1e1c26;
+  --panel-hover: #282533;
+  --border: rgba(236, 234, 242, 0.1);
+  --border-hover: rgba(236, 234, 242, 0.2);
+  --border-active: rgba(122, 106, 209, 0.62);
+  --text: #eceaf2;
+  --text-secondary: #c2bfcf;
+  --muted: #908ca3;
+  --muted-light: #847f98;
+  --accent: #7a6ad1;
+  --accent-light: #a593e2;
+  --accent-dark: #5e53ac;
+  --accent-glow: rgba(122, 106, 209, 0.22);
+  --danger: #e77f7c;
+  --danger-light: #f0acab;
+  --success: #63cd9f;
+  --warning: #f0c25f;
+  --info: #60bbe8;
+  --tag: #c7bced;
+  --selector: #62cfbe;
+  --addition: #efd78b;
   --primary: var(--accent);
   --surface: var(--surface-soft-hover);
-  --field-bg: #2a2622;
-  --field-bg-focus: #322d28;
-  --field-bg-disabled: #1d1a17;
+  --field-bg: #262330;
+  --field-bg-focus: #2d2a3a;
+  --field-bg-disabled: #1a1820;
 
-  /* Flat depth: hairline contact shadows, reserved for floating layers */
+  /* Depth: cards get a soft contact shadow, floating layers pop stronger */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.35);
   --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.28);
   /* Floating layers (menus, tooltips, popovers) */
   --shadow-pop: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
   /* Disabled (flat look) — kept as a transparent shadow so multi-shadow
      declarations like "var(--shadow-sm), var(--edge-highlight)" stay valid */
   --edge-highlight: 0 0 0 0 rgba(0, 0, 0, 0);
-  --focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.28);
-  --gradient-primary: #7c3aed;
-  --gradient-bg:
-    radial-gradient(ellipse at 15% 6%, rgba(124, 58, 237, 0.07), transparent 30%),
-    radial-gradient(ellipse at 85% 110%, rgba(210, 195, 178, 0.025), transparent 42%),
-    #171513;
+  --focus-ring: 0 0 0 3px rgba(122, 106, 209, 0.3);
+  --gradient-primary: #7a6ad1;
+  --gradient-bg: #17151e;
 
-  /* Square geometry everywhere (user choice 2026-06-11): tokens stay so the
-     whole app can be re-rounded from this single block if needed */
-  --radius-xs: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-full: 0px;
+  /* Géométrie Studio (choix user 2026-06-11) : radius léger, à peine
+     perceptible — toute l'app se re-règle depuis ce bloc */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-full: 999px;
 
-  --surface-soft: rgba(210, 195, 178, 0.03);
-  --surface-soft-hover: rgba(210, 195, 178, 0.06);
-  --surface-strong: rgba(210, 195, 178, 0.09);
+  --surface-soft: rgba(236, 234, 242, 0.03);
+  --surface-soft-hover: rgba(236, 234, 242, 0.06);
+  --surface-strong: rgba(236, 234, 242, 0.09);
   --font-ui:
     "Space Grotesk", "Segoe UI Variable Display", "Segoe UI Variable Text",
     "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -88,13 +88,13 @@
   --text-scale: 1;
   --editor-line-height: 1.6;
   --app-zoom: 1;
-  --icon-size-xs: 14px;
-  --icon-size-sm: 16px;
-  --icon-size-md: 18px;
-  --icon-size-lg: 20px;
-  --control-size-sm: 32px;
-  --control-size-md: 36px;
-  --control-size-lg: 40px;
+  --icon-size-xs: 12px;
+  --icon-size-sm: 14px;
+  --icon-size-md: 16px;
+  --icon-size-lg: 18px;
+  --control-size-sm: 28px;
+  --control-size-md: 32px;
+  --control-size-lg: 36px;
   color-scheme: dark;
 }
 
@@ -116,7 +116,7 @@ body {
   font-family: var(--font-ui);
   background: var(--gradient-bg);
   color: var(--text);
-  font-size: calc(16px * var(--text-scale));
+  font-size: calc(14px * var(--text-scale));
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -134,7 +134,7 @@ body {
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.38);
+  background: rgba(124, 92, 240, 0.38);
   color: var(--text);
 }
 
@@ -165,26 +165,26 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(210, 195, 178, 0.18);
+  background: rgba(236, 234, 242, 0.18);
   border-radius: var(--radius-full);
   background-clip: padding-box;
   transition: background var(--transition-base);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(210, 195, 178, 0.32);
+  background: rgba(236, 234, 242, 0.32);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(210, 195, 178, 0.18) transparent;
+  scrollbar-color: rgba(236, 234, 242, 0.18) transparent;
 }
 
 input[type='checkbox'] {
   appearance: none;
   width: 18px;
   height: 18px;
-  border: 1px solid rgba(210, 195, 178, 0.2);
+  border: 1px solid rgba(236, 234, 242, 0.2);
   border-radius: var(--radius-xs);
   background: var(--surface-soft);
   display: inline-grid;
