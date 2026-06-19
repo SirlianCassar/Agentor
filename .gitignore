@@ -30,3 +30,8 @@ typefast-snippets.csv
 *.njsproj
 *.sln
 *.sw?
+
+# Rework Qt
+rework_qt/.venv/
+__pycache__/
+*.pyc
