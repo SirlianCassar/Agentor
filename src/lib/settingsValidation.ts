@@ -61,10 +61,7 @@ export function getMailTemplateIssues(template: MailTemplate, taskTemplateIds: S
 export function getTaskTemplateIssues(task: TaskTemplate) {
   const issues: string[] = []
   if (isBlank(task.name)) issues.push('Titre obligatoire.')
-  const hasSectionContent = Array.isArray(task.taskSections)
-    ? task.taskSections.some((section) => !isBlank(section))
-    : false
-  if (isBlank(task.content) && !hasSectionContent) issues.push('Contenu obligatoire.')
+  if (isBlank(task.content)) issues.push('Contenu obligatoire.')
   return issues
 }
 

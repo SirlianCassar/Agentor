@@ -28,6 +28,7 @@ import {
 import type { AppIconName } from './lib/iconTypes'
 import {
   settingsNavigation,
+  settingsRelatedTabs,
   settingsTabIndex,
   tokenReferenceItems,
   type SettingsTab,
@@ -60,6 +61,7 @@ import type {
   ProductEdition,
   ProductEditionPlatform,
   ProductCatalogItem,
+  RqtReminder,
   ProcedureMailtoLink,
   Procedure,
   ProcedureBrand,
@@ -68,6 +70,7 @@ import type {
   Snippet,
   TaskSectionId,
   TaskTemplate,
+  TroubleshootgunFolder,
 } from './lib/types'
 import {
   categoryColors,
@@ -132,6 +135,7 @@ import {
   AddIcon,
   ButtonIcon,
   CloseIcon,
+  CopyIcon,
   DeleteIcon,
   ExportDataIcon,
   ExportEmailsIcon,
@@ -142,7 +146,6 @@ import {
   annotateTaskFragment,
   buildCompactTaskPreviewText,
   buildStructuredTaskDraft,
-  buildTaskDraftFromTemplate,
   buildTaskTemplateContent,
   createEmptyDraftBoxSlot,
   createEmptyTaskBoxSlot,
@@ -164,7 +167,6 @@ import {
   normalizeTaskDraftNumbering,
   normalizeTaskSectionId,
   normalizeTaskSectionNames,
-  normalizeTaskTemplateSections,
   parseStructuredTaskDraft,
   parseStructuredTaskDraftWithLeadingContent,
   TASK_FREE_BOX_INDEX,
@@ -245,6 +247,7 @@ type TaskBrowserView = 'categories' | 'templates'
 
 type TemplatePreviewState = {
   templateId: string
+  folderId?: string
   selectedEmailLines: boolean[]
   selectedTaskSections: boolean[]
   importTask: boolean
@@ -264,7 +267,7 @@ const workspaceDashboardPageOptions: Array<{
   title: string
   icon: AppIconName
 }> = [
-  { id: 'tools', title: 'Notes et actus', icon: 'news' },
+  { id: 'tools', title: 'Rappels et actus', icon: 'news' },
   { id: 'calculator', title: 'Calculateur prix', icon: 'money' },
   { id: 'portal', title: 'Procédures', icon: 'list' },
   { id: 'catalog', title: 'Catalogue produits', icon: 'book' },
@@ -323,6 +326,14 @@ function App() {
   const [taskCopyPulse, setTaskCopyPulse] = useState(false)
   const [taskClearPulse, setTaskClearPulse] = useState(false)
   const [templateFocused, setTemplateFocused] = useState(false)
+  const [troubleshootgunOpen, setTroubleshootgunOpen] = useState(false)
+  const [selectedTroubleshootgunFolderId, setSelectedTroubleshootgunFolderId] = useState<string | null>(null)
+  const [troubleshootgunFolderNameDraft, setTroubleshootgunFolderNameDraft] = useState('')
+  const [reminderModalOpen, setReminderModalOpen] = useState(false)
+  const [reminderRqtDraft, setReminderRqtDraft] = useState('')
+  const [reminderDurationDraft, setReminderDurationDraft] = useState<24 | 48 | 72>(24)
+  const [expiredReminders, setExpiredReminders] = useState<RqtReminder[] | null>(null)
+  const [reminderNow, setReminderNow] = useState(() => Date.now())
   const [taskFocused, setTaskFocused] = useState(false)
   const [templateListKey, setTemplateListKey] = useState(0)
   const [taskListKey, setTaskListKey] = useState(0)
@@ -375,6 +386,7 @@ function App() {
   const [procedureChecks, setProcedureChecks] = useState<Record<number, boolean>>({})
   const [procedureInfoDraft, setProcedureInfoDraft] = useState('')
   const [editTab, setEditTab] = useState<SettingsTab>('dashboard')
+  const [settingsSearch, setSettingsSearch] = useState('')
   const [settingsValidationTouched, setSettingsValidationTouched] = useState<
     Partial<Record<SettingsValidationScope, boolean>>
   >({})
@@ -415,8 +427,8 @@ function App() {
   const [templateActiveField, setTemplateActiveField] = useState<'name' | 'content' | 'task'>(
     'content',
   )
-  const [taskTemplateActiveField, setTaskTemplateActiveField] = useState<'name' | TaskSectionId>(
-    'section-1',
+  const [taskTemplateActiveField, setTaskTemplateActiveField] = useState<'name' | 'content'>(
+    'content',
   )
   const [taskDraftSkeletonEnabled, setTaskDraftSkeletonEnabled] = useState(true)
   const [procedureActiveField, setProcedureActiveField] = useState<'info' | 'notes' | 'steps'>(
@@ -449,7 +461,14 @@ function App() {
   const isDashboardProductSelectionEmpty = selectedDashboardProductId === null
   const isProductCatalogSelectionEmpty = selectedProductCatalogId === null
   const isDashboardNewsSelectionEmpty = selectedDashboardNewsId === null
-  const dashboardReminders = data.settings.dashboardReminders ?? ''
+  const rqtReminders = data.settings.rqtReminders ?? []
+  const troubleshootgunFolders = data.settings.troubleshootgunFolders ?? []
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setReminderNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   const dashboardDecorations = useMemo(
     () =>
       (Array.isArray(data.settings.dashboardDecorations)
@@ -491,12 +510,7 @@ function App() {
   const templateTaskRef = useRef<HTMLTextAreaElement>(null)
   const callTemplateRef = useRef<HTMLTextAreaElement>(null)
   const taskTemplateNameRef = useRef<HTMLInputElement>(null)
-  const taskTemplateSectionRefs = useRef<Record<TaskSectionId, HTMLTextAreaElement | null>>({
-    'section-1': null,
-    'section-2': null,
-    'section-3': null,
-    'section-4': null,
-  })
+  const taskTemplateContentRef = useRef<HTMLTextAreaElement>(null)
   const procedureNameRef = useRef<HTMLInputElement>(null)
   const procedureProductNameRef = useRef<HTMLInputElement>(null)
   const procedureInfoRef = useRef<HTMLTextAreaElement>(null)
@@ -1177,6 +1191,21 @@ function App() {
     updateStatus?.phase === 'downloaded'
   const activeSettingsTab =
     settingsTabIndex.find((tab) => tab.id === editTab) ?? settingsTabIndex[0]
+  const filteredSettingsNavigation = useMemo(() => {
+    const query = settingsSearch.trim().toLocaleLowerCase('fr')
+    if (!query) return settingsNavigation
+    return settingsNavigation
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) =>
+          `${item.label} ${item.description} ${section.label}`.toLocaleLowerCase('fr').includes(query),
+        ),
+      }))
+      .filter((section) => section.items.length > 0)
+  }, [settingsSearch])
+  const relatedSettingsTabs = (settingsRelatedTabs[editTab] ?? [])
+    .map((tabId) => settingsTabIndex.find((tab) => tab.id === tabId))
+    .filter((tab): tab is (typeof settingsTabIndex)[number] => Boolean(tab))
   const callHistory = useMemo(
     () => [...data.callHistory].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [data.callHistory],
@@ -1300,6 +1329,24 @@ function App() {
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }, [])
+  useEffect(() => {
+    const newlyExpired = rqtReminders.filter(
+      (reminder) => !reminder.notifiedAt && new Date(reminder.dueAt).getTime() <= reminderNow,
+    )
+    if (!newlyExpired.length) return
+    const allExpired = rqtReminders.filter(
+      (reminder) => new Date(reminder.dueAt).getTime() <= reminderNow,
+    )
+    setExpiredReminders(allExpired)
+    const newlyExpiredIds = new Set(newlyExpired.map((reminder) => reminder.id))
+    updateSettings({
+      rqtReminders: rqtReminders.map((reminder) =>
+        newlyExpiredIds.has(reminder.id)
+          ? { ...reminder, notifiedAt: new Date().toISOString() }
+          : reminder,
+      ),
+    })
+  }, [reminderNow, rqtReminders, updateSettings])
   const updateTaskSectionName = useCallback((index: number, name: string) => {
     setData((prev) => {
       const currentNames = normalizeStoredTaskSectionNames(prev.settings.taskSectionNames)
@@ -2357,6 +2404,15 @@ function App() {
 
   const templateUsesCustomTask =
     templateDraft.taskCustom ?? (!!templateDraft.taskText && !templateDraft.taskTemplateId)
+  const templateTaskMode = templateDraft.taskImportMode ?? (
+    templateDraft.taskOptional
+      ? 'none'
+      : templateUsesCustomTask
+        ? 'custom'
+        : templateDraft.taskTemplateId
+          ? 'template'
+          : 'none'
+  )
   const procedureUsesCustomTask =
     procedureDraft.taskCustom ?? (!!procedureDraft.taskText && !procedureDraft.taskTemplateId)
 
@@ -2403,24 +2459,10 @@ function App() {
       token)
       return
     }
-    const sectionId = taskTemplateActiveField
-    const sectionIndex = getTaskSectionIndex(sectionId)
-    const sections = normalizeTaskTemplateSections(taskDraft)
-    const value = sections[sectionIndex] ?? ''
-    const target = { current: taskTemplateSectionRefs.current[sectionId] }
     insertTokenAtCursor(
-      target,
-      value,
-      (next) =>
-        setTaskDraft((prev) => {
-          const nextSections = normalizeTaskTemplateSections(prev)
-          nextSections[sectionIndex] = next
-          return {
-            ...prev,
-            taskSections: nextSections,
-            content: buildTaskTemplateContent({ ...prev, taskSections: nextSections }),
-          }
-        }),
+      taskTemplateContentRef,
+      taskDraft.content,
+      (next) => setTaskDraft((prev) => ({ ...prev, content: next })),
       token,
     )
   }
@@ -2745,6 +2787,7 @@ function App() {
 
   const buildDraftBoxPreviewHtml = useCallback((slot: DraftBoxSlot) => {
     const email = stripTokenSpacing(slot.email).trim()
+    const notes = stripTokenSpacing(slot.notes ?? '').trim()
     const savedTaskBoxes = (slot.taskBoxes ?? []).map((box) => stripTokenSpacing(box.task).trim())
     const filledTaskBoxes = savedTaskBoxes
       .map((boxTask, index) => ({ task: boxTask, index }))
@@ -2755,7 +2798,7 @@ function App() {
     const hasFallbackTask =
       !filledTaskBoxes.length && hasTaskBoxContent(fallbackTask, fallbackIndex)
 
-    if (!email && !filledTaskBoxes.length && !hasFallbackTask) {
+    if (!email && !notes && !filledTaskBoxes.length && !hasFallbackTask) {
       return '<div class="draft-box-tooltip__empty">Aucun contenu sauvegardé.</div>'
     }
 
@@ -2772,6 +2815,7 @@ function App() {
     if (email) {
       pushSection('Mail', email)
     }
+    if (notes) pushSection('Note', notes)
     filledTaskBoxes.forEach(({ task: boxTask, index }) => {
       pushSection(
         taskBoxUsesSkeleton(index) ? 'Task formatée' : 'Task libre',
@@ -2835,6 +2879,7 @@ function App() {
       if (
         !slot ||
         (!slot.email.trim() &&
+          !(slot.notes ?? '').trim() &&
           !hasTaskBoxContent(slot.task, slot.activeTaskBoxIndex ?? 0) &&
           !(slot.taskBoxes ?? []).some((box, boxIndex) =>
             hasTaskBoxContent(box.task, boxIndex),
@@ -2885,7 +2930,7 @@ function App() {
       const hasSavedTaskBoxes = (slot.taskBoxes ?? []).some((box, boxIndex) =>
         hasTaskBoxContent(box.task, boxIndex),
       )
-      const hasSavedContent = Boolean(slot.email.trim() || hasSavedTask || hasSavedTaskBoxes)
+      const hasSavedContent = Boolean(slot.email.trim() || (slot.notes ?? '').trim() || hasSavedTask || hasSavedTaskBoxes)
       if (hasSavedContent) {
         const restoredTaskBoxes = Array.from({ length: 2 }, (_, taskBoxIndex) => ({
           ...createEmptyTaskBoxSlot(),
@@ -2894,6 +2939,7 @@ function App() {
         const activeTask = restoredTaskBoxes[savedActiveTaskIndex]?.task || slot.task || ''
         const useSkeleton = taskBoxUsesSkeleton(savedActiveTaskIndex)
         updateEmailDraft(slot.email, slot.email.length)
+        setData((prev) => ({ ...prev, notes: slot.notes ?? '' }))
         setTaskDraftBoxes(restoredTaskBoxes)
         setActiveTaskBoxIndex(savedActiveTaskIndex)
         setTaskDraftSkeletonEnabled(useSkeleton)
@@ -2920,7 +2966,7 @@ function App() {
       const hasNextTaskBoxContent = nextTaskBoxes.some((slot, boxIndex) =>
         hasTaskBoxContent(slot.task, boxIndex),
       )
-      if (!nextEmail.trim() && !hasNextTaskContent && !hasNextTaskBoxContent) {
+      if (!nextEmail.trim() && !data.notes.trim() && !hasNextTaskContent && !hasNextTaskBoxContent) {
         setToast('Ajoutez du texte avant de le stocker.')
         return
       }
@@ -2931,6 +2977,7 @@ function App() {
           slotIndex === index
             ? {
                 email: nextEmail,
+                notes: data.notes,
                 task: hasNextTaskContent ? activeTask : '',
                 taskSkeletonEnabled: taskBoxUsesSkeleton(activeTaskBoxIndex),
                 taskBoxes: nextTaskBoxes,
@@ -2941,6 +2988,7 @@ function App() {
         ),
       )
       updateEmailDraft('')
+      setData((prev) => ({ ...prev, notes: '' }))
       const useActiveSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
       setTaskDraftSkeletonEnabled(useActiveSkeleton)
       updateTaskDraft('', undefined, useActiveSkeleton)
@@ -2952,6 +3000,7 @@ function App() {
       closeDraftBoxTooltip,
       activeTaskBoxIndex,
       data.emailDraft,
+      data.notes,
       draftBoxes,
       getTaskBoxesSnapshot,
       hasTaskBoxContent,
@@ -3050,19 +3099,6 @@ function App() {
     })
   }
 
-  const updateTaskTemplateSectionDraft = (sectionId: TaskSectionId, value: string) => {
-    const sectionIndex = getTaskSectionIndex(sectionId)
-    setTaskDraft((prev) => {
-      const nextSections = normalizeTaskTemplateSections(prev)
-      nextSections[sectionIndex] = value
-      return {
-        ...prev,
-        taskSections: nextSections,
-        content: buildTaskTemplateContent({ ...prev, taskSections: nextSections }),
-      }
-    })
-  }
-
   const insertDashboardProductSheetWrap = (before: string, after: string, placeholder: string) => {
     const target = dashboardProductSheetRef.current
     const value = dashboardProductDraft.sheet
@@ -3141,11 +3177,12 @@ function App() {
     requestAnimationFrame(() => taskEditorRef.current?.focus())
   }
 
-  const openTemplatePreview = (template: MailTemplate) => {
+  const openTemplatePreview = (template: MailTemplate, folderId?: string) => {
     const taskSections = getTemplateTaskSections(template, data.taskTemplates)
     const hasTaskContent = taskSections.some((section) => section.trim())
     setTemplatePreview({
       templateId: template.id,
+      folderId,
       selectedEmailLines: getTemplateEmailLines(template).map((line) => Boolean(line.trim())),
       selectedTaskSections: taskSections.map((section) => Boolean(section.trim())),
       importTask: hasTaskContent,
@@ -3172,7 +3209,9 @@ function App() {
 
   const importTemplatePreview = () => {
     if (!templatePreview) return
-    const template = data.templates.find((item) => item.id === templatePreview.templateId)
+    const template = templatePreview.folderId
+      ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((item) => item.id === templatePreview.templateId)
+      : data.templates.find((item) => item.id === templatePreview.templateId)
     if (!template) return
 
     const emailLines = getTemplateEmailLines(template)
@@ -3183,14 +3222,28 @@ function App() {
     if (emailLines) updateEmailDraft(padEmptySelectors(emailLines), emailLines.length)
 
     if (templatePreview.importTask) {
-      const templateUsesCustomTask =
-        template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
+      const templateMode = template.taskImportMode ?? (
+        template.taskOptional
+          ? 'none'
+          : (template.taskCustom ?? (!!template.taskText && !template.taskTemplateId))
+            ? 'custom'
+            : 'template'
+      )
       const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
         templatePreview.selectedTaskSections[index] ? section : '',
       )
-      if (templateUsesCustomTask) {
-        const timelineText = taskSections.filter((section) => section.trim()).join('\n')
-        insertTaskText(timelineText, 'section-2')
+      if (templateMode === 'custom' || templateMode === 'sections') {
+        let nextTaskDraft = data.taskDraft
+        taskSections.forEach((section, index) => {
+          if (!section.trim()) return
+          nextTaskDraft = insertTaskTextInSection(
+            nextTaskDraft,
+            section,
+            TASK_SECTION_IDS[index],
+            taskSectionNames,
+          )
+        })
+        updateTaskDraft(nextTaskDraft, nextTaskDraft.length, true)
       } else {
         const nextTaskDraft = buildTaskTemplateContent({ taskSections })
         const snapshot = getTaskBoxesSnapshot()
@@ -5059,15 +5112,14 @@ function App() {
     }
     const exists = data.taskTemplates.some((task) => task.id === taskDraft.id)
     const id = exists ? taskDraft.id : createId('task')
-    const taskSections = normalizeTaskTemplateSections(taskDraft).map((section) => section.trim())
     const savedTask = {
       ...taskDraft,
       id,
       name: taskDraft.name.trim(),
       categoryId: taskDraft.categoryId?.trim() || taskTemplateCategories[0]?.id || '',
-      taskSections,
-      content: buildTaskTemplateContent({ ...taskDraft, taskSections }).trim(),
-      taskSectionId: 'section-1' as TaskSectionId,
+      content: taskDraft.content.trim(),
+      taskSections: undefined,
+      taskSectionId: undefined,
       favorite: Boolean(taskDraft.favorite),
     }
     setData((prev) => {
@@ -5214,7 +5266,37 @@ function App() {
   const dashboardGrandTotalHt = dashboardGrandTotalTtc / VAT_DIVISOR
   // The badge reflects the note on the news/notes dashboard page itself, and
   // only when it holds real text (invisible token chars don't count).
-  const dashboardNotesHasContent = stripTokenSpacing(dashboardReminders).trim().length > 0
+  const dashboardNotesHasContent = rqtReminders.some(
+    (reminder) => new Date(reminder.dueAt).getTime() <= reminderNow,
+  )
+
+  const formatReminderCountdown = (reminder: RqtReminder) => {
+    const remaining = new Date(reminder.dueAt).getTime() - reminderNow
+    if (remaining <= 0) return 'Échu'
+    if (remaining < 60_000) return "Moins d’une minute"
+    const hours = Math.floor(remaining / 3_600_000)
+    const minutes = Math.floor((remaining % 3_600_000) / 60_000)
+    return hours > 0
+      ? `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`
+      : `${String(minutes).padStart(2, '0')} min`
+  }
+
+  const addRqtReminder = () => {
+    const rqt = reminderRqtDraft.trim()
+    if (!rqt) {
+      setToast('Renseignez un numéro de RQT.')
+      return
+    }
+    const reminder: RqtReminder = {
+      id: createId('rqt-reminder'),
+      rqt,
+      durationHours: reminderDurationDraft,
+      dueAt: new Date(Date.now() + reminderDurationDraft * 3_600_000).toISOString(),
+    }
+    updateSettings({ rqtReminders: [...rqtReminders, reminder] })
+    setReminderRqtDraft('')
+    setReminderModalOpen(false)
+  }
 
   const renderDashboardPageButton = (
     page: (typeof workspaceDashboardPageOptions)[number],
@@ -5231,7 +5313,7 @@ function App() {
     >
       <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
       {page.id === 'tools' && dashboardNotesHasContent ? (
-        <span className="dashboard-page-btn__badge" aria-hidden="true" />
+        <span className="dashboard-page-btn__notification" aria-hidden="true">🔔</span>
       ) : null}
     </button>
   )
@@ -5285,30 +5367,38 @@ function App() {
     <article className="workspace-dashboard__panel workspace-dashboard__panel--news-notes">
       <div className="workspace-dashboard__panel-title">{title}</div>
       <div className="workspace-dashboard__news-notes-grid">
-        <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes">
-          <div className="dashboard-news-notes__editor">
-            <textarea
-              className="textarea dashboard-news-notes__textarea"
-              value={dashboardReminders}
-              placeholder="Ajoutez vos notes libres..."
-              onChange={(event) => updateSettings({ dashboardReminders: event.target.value })}
-              onBlur={(event) => {
-                // A note made only of spaces or invisible characters is noise:
-                // clear it so the badge doesn't light up for nothing.
-                if (!stripTokenSpacing(event.target.value).trim()) {
-                  updateSettings({ dashboardReminders: '' })
+        <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes dashboard-reminders">
+          <div className="dashboard-reminders__head">
+            <span>Rappels RQT</span>
+            <div className="dashboard-reminders__head-actions">
+              <button
+                className="btn btn--ghost btn--small dashboard-reminders__test"
+                type="button"
+                onClick={() =>
+                  setExpiredReminders([{
+                    id: 'temporary-notification-test',
+                    rqt: 'TEST',
+                    durationHours: 24,
+                    dueAt: new Date().toISOString(),
+                  }])
                 }
-              }}
-            />
-            <button
-              type="button"
-              className="note-clear-btn dashboard-news-notes__clear"
-              onClick={() => updateSettings({ dashboardReminders: '' })}
-              title="Effacer la note"
-              aria-label="Effacer la note"
-            >
-              <CloseIcon />
-            </button>
+                title="Tester la notification de rappel"
+              >
+                Test notification
+              </button>
+              <button className="icon-btn-sm" type="button" onClick={() => setReminderModalOpen(true)} title="Ajouter un rappel" aria-label="Ajouter un rappel"><AddIcon /></button>
+            </div>
+          </div>
+          <div className="dashboard-reminders__list">
+            {rqtReminders.length ? [...rqtReminders].sort((a, b) => a.dueAt.localeCompare(b.dueAt)).map((reminder) => {
+              const expired = new Date(reminder.dueAt).getTime() <= reminderNow
+              return <div className={`dashboard-reminder${expired ? ' is-expired' : ''}`} key={reminder.id}>
+                <span className="dashboard-reminder__status" aria-hidden="true">{expired ? '🔔' : '◷'}</span>
+                <strong>{reminder.rqt}</strong>
+                <span className="dashboard-reminder__countdown">{formatReminderCountdown(reminder)}</span>
+                <button className="icon-btn-sm danger" type="button" onClick={() => updateSettings({ rqtReminders: rqtReminders.filter((item) => item.id !== reminder.id) })} title="Supprimer"><DeleteIcon /></button>
+              </div>
+            }) : <div className="dashboard-empty">Aucun rappel en attente.</div>}
           </div>
         </div>
         <div className="dashboard-news-notes__panel dashboard-news-notes__panel--news">
@@ -5527,10 +5617,7 @@ function App() {
                       void handleCopyDashboardAmount('productsHt', dashboardProductsTotalHt)
                     }
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
+                    <CopyIcon />
                   </button>
                 </div>
               </div>
@@ -5549,10 +5636,7 @@ function App() {
                       void handleCopyDashboardAmount('productsTtc', dashboardProductsTotalTtc)
                     }
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
+                    <CopyIcon />
                   </button>
                 </div>
               </div>
@@ -5579,10 +5663,7 @@ function App() {
                       void handleCopyDashboardAmount('shippingHt', dashboardShippingTotalHt)
                     }
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
+                    <CopyIcon />
                   </button>
                 </div>
               </div>
@@ -5601,10 +5682,7 @@ function App() {
                       void handleCopyDashboardAmount('shippingTtc', dashboardShippingTotalTtc)
                     }
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
+                    <CopyIcon />
                   </button>
                 </div>
               </div>
@@ -5629,10 +5707,7 @@ function App() {
                     aria-label="Copier le total HT"
                     onClick={() => void handleCopyDashboardAmount('totalHt', dashboardGrandTotalHt)}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
+                    <CopyIcon />
                   </button>
                 </div>
               </div>
@@ -5649,10 +5724,7 @@ function App() {
                     aria-label="Copier le total TTC"
                     onClick={() => void handleCopyDashboardAmount('totalTtc', dashboardGrandTotalTtc)}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="11" height="11" rx="2" />
-                      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                    </svg>
+                    <CopyIcon />
                   </button>
                 </div>
               </div>
@@ -6174,20 +6246,7 @@ function App() {
                                     aria-label={`Ouvrir l'accès rapide pour ${lineTitle}`}
                                     title="Accès rapide"
                                   >
-                                    <svg
-                                      className="dashboard-portal-step__link-icon"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      aria-hidden="true"
-                                    >
-                                      <path d="M14 4h6v6" />
-                                      <path d="M20 4l-9 9" />
-                                      <path d="M10 6H7a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-3" />
-                                    </svg>
+                                    <UiIcon name="link" className="dashboard-portal-step__link-icon" />
                                   </button>
                                 ) : null}
                               </div>
@@ -6200,7 +6259,7 @@ function App() {
                                     aria-label={`Ouvrir le mailto ${quickMailtoLabel}`}
                                     title={quickMailtoLabel}
                                   >
-                                    @
+                                    <UiIcon name="mail" />
                                   </button>
                                 ) : null}
                                 {code ? (
@@ -6221,15 +6280,7 @@ function App() {
                                       title="Copier le code portal"
                                       aria-label={`Copier le code portal ${code}`}
                                     >
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                      >
-                                        <rect x="9" y="9" width="11" height="11" rx="2" />
-                                        <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-                                      </svg>
+                                      <CopyIcon />
                                     </button>
                                   </>
                                 ) : null}
@@ -6288,7 +6339,7 @@ function App() {
     if (workspaceDashboardPage === 'tools') {
       return (
         <div className="workspace-dashboard__single workspace-dashboard__single--news-notes">
-          {renderWorkspaceDashboardNewsNotesPanel('News et Notes')}
+          {renderWorkspaceDashboardNewsNotesPanel('News et Rappels')}
         </div>
       )
     }
@@ -6339,7 +6390,7 @@ function App() {
 
     return (
       <div className="workspace-dashboard__single">
-        {renderWorkspaceDashboardNewsNotesPanel('News et Notes')}
+        {renderWorkspaceDashboardNewsNotesPanel('News et Rappels')}
       </div>
     )
   }
@@ -6819,6 +6870,32 @@ function App() {
                   </div>
                 ) : null}
               </div>
+              <div className="troubleshootgun-menu-wrap">
+                <button
+                  className={`btn btn--ghost troubleshootgun-menu-btn${troubleshootgunOpen ? ' is-active' : ''}`}
+                  type="button"
+                  onClick={() => setTroubleshootgunOpen((open) => !open)}
+                  title="Troubleshotgun — templates par produit"
+                  aria-label="Ouvrir Troubleshotgun"
+                >
+                  <UiIcon name="target" />
+                  <span>Troubleshotgun</span>
+                </button>
+                {troubleshootgunOpen ? (
+                  <div className="troubleshootgun-menu">
+                    {troubleshootgunFolders.length ? troubleshootgunFolders.map((folder) => (
+                      <div className="troubleshootgun-menu__folder" key={folder.id}>
+                        <div className="troubleshootgun-menu__folder-name">{folder.name}</div>
+                        {folder.templates.length ? folder.templates.map((template) => (
+                          <button type="button" className="troubleshootgun-menu__template" key={template.id} onClick={() => { openTemplatePreview(template, folder.id); setTroubleshootgunOpen(false) }}>
+                            <span>{template.name}</span><small>{template.language.toUpperCase()}</small>
+                          </button>
+                        )) : <div className="search-result-empty">Aucun template</div>}
+                      </div>
+                    )) : <div className="search-result-empty">Configurez vos produits dans Paramètres › Troubleshotgun.</div>}
+                  </div>
+                ) : null}
+              </div>
             </div>
     <div className="workspace-head__action-group">
               <button
@@ -6834,6 +6911,7 @@ function App() {
                 {draftBoxes.map((slot, index) => {
                   const hasContent = Boolean(
                     slot.email.trim() ||
+                      (slot.notes ?? '').trim() ||
                       hasTaskBoxContent(slot.task, slot.activeTaskBoxIndex ?? 0) ||
                       (slot.taskBoxes ?? []).some((box, boxIndex) =>
                         hasTaskBoxContent(box.task, boxIndex),
@@ -7328,13 +7406,43 @@ function App() {
       ) : null}
 
 
+    {reminderModalOpen ? (
+      <div className="modal-backdrop" onMouseDown={() => setReminderModalOpen(false)}>
+        <div className="modal reminder-modal" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="modal__header"><div className="brand__title">Nouveau rappel RQT</div><button className="close-modal" type="button" onClick={() => setReminderModalOpen(false)}><CloseIcon /></button></div>
+          <div className="reminder-modal__body">
+            <label className="workflow-step-label" htmlFor="reminder-rqt">Numéro de RQT</label>
+            <input id="reminder-rqt" className="input" autoFocus value={reminderRqtDraft} onChange={(event) => setReminderRqtDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addRqtReminder() }} placeholder="Ex. 123456" />
+            <div className="workflow-step-label">Durée</div>
+            <div className="reminder-duration-options">{([24, 48, 72] as const).map((hours) => <button type="button" className={`btn ${reminderDurationDraft === hours ? 'btn--primary' : 'btn--ghost'}`} key={hours} onClick={() => setReminderDurationDraft(hours)}>{hours} h</button>)}</div>
+            <button className="btn btn--primary" type="button" onClick={addRqtReminder}>Créer le rappel</button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    {expiredReminders?.length ? (
+      <div className="modal-backdrop reminder-warning-backdrop">
+        <div className="modal reminder-warning" role="alertdialog" aria-modal="true">
+          <div className="reminder-warning__icon">⚠</div>
+          <div className="reminder-warning__message">
+            <span>Vérifier</span>
+            <ul>{expiredReminders.map((reminder) => <li key={reminder.id}>{reminder.rqt}</li>)}</ul>
+          </div>
+          <button className="btn btn--primary btn--small reminder-warning__ok" type="button" onClick={() => setExpiredReminders(null)}>OK</button>
+        </div>
+      </div>
+    ) : null}
     {templatePreview ? (() => {
-      const template = data.templates.find((item) => item.id === templatePreview.templateId)
+      const template = templatePreview.folderId
+        ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((item) => item.id === templatePreview.templateId)
+        : data.templates.find((item) => item.id === templatePreview.templateId)
       if (!template) return null
       const emailLines = getTemplateEmailLines(template)
       const taskSections = getTemplateTaskSections(template, data.taskTemplates)
       const templateUsesCustomTask =
-        template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
+        template.taskImportMode === 'custom' ||
+        template.taskImportMode === 'sections' ||
+        (template.taskCustom ?? (!!template.taskText && !template.taskTemplateId))
       return (
         <div className="modal-backdrop">
           <div className="modal troubleshootgun-preview-modal" onClick={(event) => event.stopPropagation()}>
@@ -7346,8 +7454,8 @@ function App() {
                 </div>
                 <div className="modal__subtitle">
                   {templateUsesCustomTask
-                    ? 'Le texte de task sera ajouté à la timeline du squelette.'
-                    : 'La task complète sera placée dans la task libre.'}
+                    ? 'Le contenu sera ajouté aux sections choisies.'
+                    : 'La task complète sera importée.'}
                 </div>
               </div>
               <button
@@ -7412,7 +7520,7 @@ function App() {
                           )
                         }
                       />
-                      <span>{templateUsesCustomTask ? 'Ajouter à la timeline' : 'Importer en libre'}</span>
+                      <span>{templateUsesCustomTask ? 'Ajouter aux sections' : 'Importer la task'}</span>
                     </label>
                   </div>
                   <div className="troubleshootgun-preview-sections">
@@ -7440,9 +7548,7 @@ function App() {
                         />
                         <span className="troubleshootgun-preview-section__body">
                           <strong>
-                            {templateUsesCustomTask
-                              ? 'Timeline'
-                              : getTaskSectionLabel(sectionId, taskSectionNames)}
+                            {getTaskSectionLabel(sectionId, taskSectionNames)}
                           </strong>
                           <span
                             className="troubleshootgun-preview-modal__content"
@@ -7477,7 +7583,7 @@ function App() {
               <div className="modal__title-group">
                 <div className="brand__title brand__title--with-icon">
                   <UiIcon name="settings" className="brand__title-icon" />
-                  <span>Settings</span>
+                  <span>Paramètres</span>
                   <span className="version-pill version-pill--settings">v{APP_VERSION_LABEL}</span>
                 </div>
               </div>
@@ -7495,7 +7601,18 @@ function App() {
 
             <div className="settings-layout edit-layout">
               <aside className="settings-layout__nav">
-                {settingsNavigation.map((section) => (
+                <div className="settings-layout__nav-search">
+                  <UiIcon name="search" className="settings-layout__nav-search-icon" />
+                  <input
+                    type="search"
+                    value={settingsSearch}
+                    placeholder="Rechercher un réglage"
+                    aria-label="Rechercher dans les paramètres"
+                    onChange={(event) => setSettingsSearch(event.target.value)}
+                  />
+                </div>
+                <div className="settings-layout__nav-scroll">
+                {filteredSettingsNavigation.map((section) => (
                   <div className="settings-layout__nav-section" key={section.id}>
                     <div className="settings-layout__nav-title">
                       <UiIcon name={section.icon} className="settings-layout__nav-title-icon" />
@@ -7526,6 +7643,10 @@ function App() {
                     </div>
                   </div>
                 ))}
+                {!filteredSettingsNavigation.length ? (
+                  <div className="settings-layout__nav-empty">Aucun réglage trouvé.</div>
+                ) : null}
+                </div>
               </aside>
 
               <div className="settings-layout__content">
@@ -7553,6 +7674,17 @@ function App() {
                             dangerouslySetInnerHTML={{ __html: highlightText(item.token) }}
                           />
                         </article>
+                      ))}
+                    </div>
+                  ) : null}
+                  {relatedSettingsTabs.length ? (
+                    <div className="settings-layout__related" aria-label="Réglages associés">
+                      <span>Associés</span>
+                      {relatedSettingsTabs.map((tab) => (
+                        <button key={tab.id} type="button" onClick={() => setEditTab(tab.id)}>
+                          <UiIcon name={tab.icon} />
+                          {tab.label}
+                        </button>
                       ))}
                     </div>
                   ) : null}
@@ -8308,15 +8440,45 @@ function App() {
                             tag,
                           ),
                         )}
-                        <div className="workflow-step-label">
-                          Task liée au mail
-                        </div>
-                        {templateUsesCustomTask ? (
+                        <section className="content-sequence-editor">
+                          <div className="content-sequence-editor__head">
+                            <strong>Task associée</strong>
+                            <span>Choisissez comment ce mail alimente la task.</span>
+                          </div>
+                          <div className="content-mode-tabs" role="tablist" aria-label="Mode d’import de la task">
+                            {([
+                              ['none', 'Aucune'],
+                              ['custom', 'Bloc ciblé'],
+                              ['sections', 'Par section'],
+                              ['template', 'Task complète'],
+                            ] as const).map(([mode, label]) => (
+                              <button
+                                key={mode}
+                                type="button"
+                                className={`content-mode-tab${templateTaskMode === mode ? ' is-active' : ''}`}
+                                onClick={() => setTemplateDraft((prev) => ({
+                                  ...prev,
+                                  taskImportMode: mode,
+                                  taskOptional: mode === 'none',
+                                  taskCustom: mode === 'custom',
+                                }))}
+                              >{label}</button>
+                            ))}
+                          </div>
+                        {templateTaskMode === 'custom' ? (
+                          <div className="content-sequence-step">
+                            <div className="content-sequence-step__marker">1</div>
+                            <div className="content-sequence-step__body">
+                              <select
+                                className="select"
+                                value={templateDraft.taskSectionId ?? 'section-2'}
+                                onChange={(event) => setTemplateDraft((prev) => ({ ...prev, taskSectionId: event.target.value as TaskSectionId }))}
+                              >
+                                {TASK_SECTION_IDS.map((sectionId) => <option key={sectionId} value={sectionId}>{getTaskSectionLabel(sectionId, taskSectionNames)}</option>)}
+                              </select>
                           <textarea
-                            className={`textarea${
-                              templateDraft.taskOptional ? ' textarea--disabled' : ''
-                            }`}
-                            placeholder="Texte ajouté à la timeline du squelette"
+                            className="textarea"
+                            placeholder="Contenu ajouté à cette section"
                             value={templateDraft.taskText ?? ''}
                             ref={templateTaskRef}
                             data-tag-autocomplete-field="true"
@@ -8354,9 +8516,36 @@ function App() {
                                 nextValue,
                               )
                             }}
-                            readOnly={templateDraft.taskOptional ?? false}
                           />
-                        ) : (
+                            </div>
+                          </div>
+                        ) : null}
+                        {templateTaskMode === 'sections' ? (
+                          <div className="content-sequence-list">
+                            {TASK_SECTION_IDS.map((sectionId, index) => (
+                              <div className="content-sequence-step" key={sectionId}>
+                                <div className="content-sequence-step__marker">{index + 1}</div>
+                                <label className="content-sequence-step__body">
+                                  <span>{getTaskSectionLabel(sectionId, taskSectionNames)}</span>
+                                  <textarea
+                                    className="textarea"
+                                    placeholder="Laisser vide pour ne rien ajouter"
+                                    value={templateDraft.taskSections?.[index] ?? ''}
+                                    onChange={(event) => setTemplateDraft((prev) => {
+                                      const sections = TASK_SECTION_IDS.map((_, sectionIndex) => prev.taskSections?.[sectionIndex] ?? '')
+                                      sections[index] = event.target.value
+                                      return { ...prev, taskSections: sections }
+                                    })}
+                                  />
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        {templateTaskMode === 'template' ? (
+                          <div className="content-sequence-step">
+                            <div className="content-sequence-step__marker">1</div>
+                            <div className="content-sequence-step__body">
                           <select
                             className="select select--roomy"
                             value={templateDraft.taskTemplateId ?? ''}
@@ -8366,17 +8555,18 @@ function App() {
                                 taskTemplateId: event.target.value,
                               }))
                             }
-                            disabled={templateDraft.taskOptional ?? false}
                           >
-                            <option value="">Choisir une tâche...</option>
+                            <option value="">Choisir une task complète</option>
                             {data.taskTemplates.map((task) => (
                               <option key={task.id} value={task.id}>
                                 {task.name}
                               </option>
                             ))}
                           </select>
-                        )}
-                        {templateUsesCustomTask
+                            </div>
+                          </div>
+                        ) : null}
+                        {templateTaskMode === 'custom'
                           ? renderTagSuggestions('template-task', (tag) =>
                               applySuggestedTag(
                                 'template-task',
@@ -8388,37 +8578,52 @@ function App() {
                               ),
                             )
                           : null}
-                        <div className="form__row form__row--inline">
-                          <label className="list-item__meta">
-                            <input
-                              type="checkbox"
-                              checked={templateDraft.taskOptional ?? false}
-                              onChange={(event) =>
-                                setTemplateDraft((prev) => ({
-                                  ...prev,
-                                  taskOptional: event.target.checked,
-                                }))
-                              }
-                            />{' '}
-                            Ne rien importer dans la task
-                          </label>
-                          <label className="list-item__meta">
-                            <input
-                              type="checkbox"
-                              checked={templateUsesCustomTask}
-                              onChange={(event) =>
-                                setTemplateDraft((prev) => ({
-                                  ...prev,
-                                  taskCustom: event.target.checked,
-                                }))
-                              }
-                              disabled={templateDraft.taskOptional ?? false}
-                            />{' '}
-                            Texte timeline custom
-                          </label>
-                        </div>
+                        </section>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editTab === 'troubleshootgun' ? (
+              <div className="modal__grid troubleshootgun-settings">
+                <div className="list-card">
+                  <div className="list-card__header"><div className="list-card__title">Dossiers produits</div></div>
+                  <div className="list-card__body">
+                    <div className="form__row two">
+                      <input className="input" value={troubleshootgunFolderNameDraft} onChange={(event) => setTroubleshootgunFolderNameDraft(event.target.value)} placeholder="Nom du produit" />
+                      <button className="btn btn--primary" type="button" onClick={() => {
+                        const name = troubleshootgunFolderNameDraft.trim()
+                        if (!name) return
+                        const folder: TroubleshootgunFolder = { id: createId('troubleshootgun-folder'), name, templates: [] }
+                        updateSettings({ troubleshootgunFolders: [...troubleshootgunFolders, folder] })
+                        setSelectedTroubleshootgunFolderId(folder.id)
+                        setTroubleshootgunFolderNameDraft('')
+                      }}><AddIcon /> Créer</button>
+                    </div>
+                    {troubleshootgunFolders.map((folder) => <div className={`list-item${selectedTroubleshootgunFolderId === folder.id ? ' is-selected' : ''}`} key={folder.id} onClick={() => setSelectedTroubleshootgunFolderId(folder.id)}>
+                      <div className="list-item__content"><div className="list-item__title">{folder.name}</div><div className="list-item__meta">{folder.templates.length} template(s)</div></div>
+                      <button className="icon-btn-sm danger" type="button" onClick={(event) => { event.stopPropagation(); updateSettings({ troubleshootgunFolders: troubleshootgunFolders.filter((item) => item.id !== folder.id) }); if (selectedTroubleshootgunFolderId === folder.id) setSelectedTroubleshootgunFolderId(null) }}><DeleteIcon /></button>
+                    </div>)}
+                  </div>
+                </div>
+                <div className="list-card list-card--form">
+                  <div className="list-card__header"><div className="list-card__title">Templates du produit</div>{selectedTroubleshootgunFolderId ? <button className="btn btn--ghost btn--small" type="button" onClick={() => updateSettings({ troubleshootgunFolders: troubleshootgunFolders.map((folder) => folder.id === selectedTroubleshootgunFolderId ? { ...folder, templates: [...folder.templates, { id: createId('troubleshootgun-template'), name: 'Nouveau template', content: '', language: 'fr' }] } : folder) })}><AddIcon /> Nouveau template</button> : null}</div>
+                  <div className="list-card__body">
+                    {(() => {
+                      const folder = troubleshootgunFolders.find((item) => item.id === selectedTroubleshootgunFolderId)
+                      if (!folder) return <div className="empty-state">Sélectionnez ou créez un dossier produit.</div>
+                      const patchFolder = (patch: Partial<TroubleshootgunFolder>) => updateSettings({ troubleshootgunFolders: troubleshootgunFolders.map((item) => item.id === folder.id ? { ...item, ...patch } : item) })
+                      const patchTemplate = (templateId: string, patch: Partial<MailTemplate>) => patchFolder({ templates: folder.templates.map((template) => template.id === templateId ? { ...template, ...patch } : template) })
+                      return <div className="form"><div className="workflow-step-label">Nom du dossier</div><input className="input" value={folder.name} onChange={(event) => patchFolder({ name: event.target.value })} />
+                        {folder.templates.map((template) => <div className="troubleshootgun-template-editor" key={template.id}>
+                          <div className="form__row two"><input className="input" value={template.name} onChange={(event) => patchTemplate(template.id, { name: event.target.value })} placeholder="Nom du template" /><select className="select" value={template.language} onChange={(event) => patchTemplate(template.id, { language: event.target.value as Language })}><option value="fr">Français</option><option value="en">Anglais</option></select></div>
+                          <textarea className="textarea textarea--tall" value={template.content} onChange={(event) => patchTemplate(template.id, { content: event.target.value })} placeholder="Contenu du mail" />
+                          <div className="form__row two"><select className="select" value={template.taskTemplateId ?? ''} onChange={(event) => patchTemplate(template.id, { taskTemplateId: event.target.value, taskCustom: false })}><option value="">Aucune task liée</option>{data.taskTemplates.map((task) => <option key={task.id} value={task.id}>{task.name}</option>)}</select><button className="btn btn--danger" type="button" onClick={() => patchFolder({ templates: folder.templates.filter((item) => item.id !== template.id) })}><DeleteIcon /> Supprimer</button></div>
+                        </div>)}
+                      </div>
+                    })()}
                   </div>
                 </div>
               </div>
@@ -8680,7 +8885,6 @@ function App() {
                               clearSettingsValidationTouched('task')
                               setTaskDraft({
                                 ...task,
-                                taskSections: normalizeTaskTemplateSections(task),
                                 content: buildTaskTemplateContent(task),
                                 categoryId: task.categoryId ?? taskTemplateCategories[0]?.id ?? '',
                               })
@@ -8897,38 +9101,27 @@ function App() {
                             ★
                           </button>
                         </div>
-                        <div className="workflow-step-label">Sections</div>
-                        <div className="task-template-sections">
-                          {TASK_SECTION_IDS.map((sectionId, sectionIndex) => {
-                            const sections = normalizeTaskTemplateSections(taskDraft)
-                            return (
-                              <label className="task-template-section" key={sectionId}>
-                                <span className="task-template-section__title">
-                                  {getTaskSectionLabel(sectionId, taskSectionNames)}
-                                </span>
-                                <textarea
-                                  className="textarea textarea--task-template-section"
-                                  placeholder="Texte de cette section"
-                                  value={sections[sectionIndex] ?? ''}
-                                  ref={(node) => {
-                                    taskTemplateSectionRefs.current[sectionId] = node
-                                  }}
-                                  onFocus={() => setTaskTemplateActiveField(sectionId)}
-                                  onChange={(event) =>
-                                    updateTaskTemplateSectionDraft(sectionId, event.target.value)
-                                  }
-                                />
-                              </label>
-                            )
-                          })}
-                        </div>
+                        <label className="workflow-step-label" htmlFor="task-template-content">
+                          Contenu
+                        </label>
+                        <textarea
+                          id="task-template-content"
+                          className="textarea"
+                          placeholder="Contenu du template"
+                          value={taskDraft.content}
+                          ref={taskTemplateContentRef}
+                          onFocus={() => setTaskTemplateActiveField('content')}
+                          onChange={(event) =>
+                            setTaskDraft((prev) => ({ ...prev, content: event.target.value }))
+                          }
+                        />
                         <div className="task-template-preview-settings">
                           <div className="task-template-preview-settings__title">Aperçu</div>
                           <div
                             className="task-template-preview-settings__content settings-token-preview"
                             dangerouslySetInnerHTML={{
                               __html: highlightText(
-                                buildTaskDraftFromTemplate(taskDraft, taskSectionNames).trim() ||
+                                taskDraft.content.trim() ||
                                   'Le contenu du template apparaîtra ici.',
                               ),
                             }}
@@ -10581,18 +10774,14 @@ function App() {
                   <div className="list-card__body">
                     <div className="settings-stack settings-stack--tight">
                       {normalizedProcedureMailtos.length ? (
-                        normalizedProcedureMailtos.map((link) => (
-                          <section className="quick-link-editor" key={link.id}>
+                        normalizedProcedureMailtos.map((link, linkIndex) => (
+                          <section className="quick-link-editor mailto-sequence-card" key={link.id}>
                             <div className="quick-link-editor__head">
                               <div className="quick-link-editor__identity">
-                                <div className="quick-link-editor__badge">M</div>
+                                <div className="quick-link-editor__badge">{linkIndex + 1}</div>
                                 <div>
                                   <div className="quick-link-editor__title">{link.label}</div>
-                                  <div className="quick-link-editor__meta">
-                                    {[link.to, link.cc ? `CC ${link.cc}` : '']
-                                      .filter(Boolean)
-                                      .join(' - ') || 'Destinataires non renseignés'}
-                                  </div>
+                                  <div className="quick-link-editor__meta">Séquence mailto</div>
                                 </div>
                               </div>
                               <button

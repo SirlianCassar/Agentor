@@ -1,7 +1,7 @@
 import type { AppData } from './types'
 
 export const defaultData: AppData = {
-  version: 29,
+  version: 30,
   categories: [],
   snippets: [],
   templates: [],
@@ -47,6 +47,8 @@ export const defaultData: AppData = {
       { id: 'decor-check', title: 'Check', content: '[OK] ' },
     ],
     dashboardReminders: '',
+    rqtReminders: [],
+    troubleshootgunFolders: [],
     taskSectionNames: ['─ CASE OVERVIEW ─', '─ TIMELINE ─', '─ NEXT ─', '─ NOTES ─'],
     mailTemplateCategories: [{ id: 'template-cat-general', name: 'General' }],
     taskTemplateCategories: [{ id: 'task-template-cat-general', name: 'General' }],

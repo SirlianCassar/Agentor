@@ -1,98 +1,106 @@
 import type { AppIconName } from '../lib/iconTypes'
-import {
-  AppWindow,
-  Archive,
-  Book,
-  CircleDollarSign,
-  ClipboardList,
-  Download,
-  Equal,
-  FileText,
-  Folder,
-  FolderOpen,
-  GitBranch,
-  Hammer,
-  History,
-  Inbox,
-  Info,
-  LayoutDashboard,
-  LayoutGrid,
-  Layers,
-  Link,
-  List,
-  Mail,
-  Monitor,
-  MonitorCog,
-  Newspaper,
-  Package,
-  Pencil,
-  Phone,
-  Plus,
-  Save,
-  Search,
-  Settings,
-  ShieldCheck,
-  SlidersHorizontal,
-  SquareTerminal,
-  StickyNote,
-  Tag,
-  Trash2,
-  Warehouse,
-  Wrench,
-  X,
-  type LucideIcon,
-} from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react/lib'
+import { AppWindow } from '@phosphor-icons/react/AppWindow'
+import { Archive } from '@phosphor-icons/react/Archive'
+import { BookOpen } from '@phosphor-icons/react/BookOpen'
+import { ClipboardText } from '@phosphor-icons/react/ClipboardText'
+import { CopySimple } from '@phosphor-icons/react/CopySimple'
+import { Crosshair } from '@phosphor-icons/react/Crosshair'
+import { CurrencyDollar } from '@phosphor-icons/react/CurrencyDollar'
+import { Desktop } from '@phosphor-icons/react/Desktop'
+import { DotsSixVertical } from '@phosphor-icons/react/DotsSixVertical'
+import { DownloadSimple } from '@phosphor-icons/react/DownloadSimple'
+import { EnvelopeSimple } from '@phosphor-icons/react/EnvelopeSimple'
+import { FileArrowDown } from '@phosphor-icons/react/FileArrowDown'
+import { FileArrowUp } from '@phosphor-icons/react/FileArrowUp'
+import { Files } from '@phosphor-icons/react/Files'
+import { FloppyDisk } from '@phosphor-icons/react/FloppyDisk'
+import { Folder } from '@phosphor-icons/react/Folder'
+import { FolderOpen } from '@phosphor-icons/react/FolderOpen'
+import { GearSix } from '@phosphor-icons/react/GearSix'
+import { GitCommit } from '@phosphor-icons/react/GitCommit'
+import { Info } from '@phosphor-icons/react/Info'
+import { Link } from '@phosphor-icons/react/Link'
+import { ListBullets } from '@phosphor-icons/react/ListBullets'
+import { ListChecks } from '@phosphor-icons/react/ListChecks'
+import { MagnifyingGlass } from '@phosphor-icons/react/MagnifyingGlass'
+import { Monitor } from '@phosphor-icons/react/Monitor'
+import { Newspaper } from '@phosphor-icons/react/Newspaper'
+import { Note } from '@phosphor-icons/react/Note'
+import { Package } from '@phosphor-icons/react/Package'
+import { PencilSimple } from '@phosphor-icons/react/PencilSimple'
+import { Phone } from '@phosphor-icons/react/Phone'
+import { Plus } from '@phosphor-icons/react/Plus'
+import { ShieldCheck } from '@phosphor-icons/react/ShieldCheck'
+import { SlidersHorizontal } from '@phosphor-icons/react/SlidersHorizontal'
+import { SquaresFour } from '@phosphor-icons/react/SquaresFour'
+import { Stack } from '@phosphor-icons/react/Stack'
+import { Tag } from '@phosphor-icons/react/Tag'
+import { TerminalWindow } from '@phosphor-icons/react/TerminalWindow'
+import { Trash } from '@phosphor-icons/react/Trash'
+import { Tray } from '@phosphor-icons/react/Tray'
+import { Warehouse } from '@phosphor-icons/react/Warehouse'
+import { Wrench } from '@phosphor-icons/react/Wrench'
+import { X } from '@phosphor-icons/react/X'
 
-/* Set d'icônes Lucide (successeur maintenu de Feather) — un seul style de
-   trait pour toute l'app. Les quick links (configurables par l'utilisateur)
-   restent des images et ne passent pas par ici. */
-const icons: Record<AppIconName, LucideIcon> = {
+const icons: Record<AppIconName, Icon> = {
   add: Plus,
   archive: Archive,
-  asciiWall: SquareTerminal,
-  screenEmulator: MonitorCog,
-  book: Book,
+  asciiWall: TerminalWindow,
+  screenEmulator: Desktop,
+  book: BookOpen,
   box: Package,
   call: Phone,
-  channels: Layers,
+  channels: Stack,
   close: X,
-  dashboard: LayoutDashboard,
-  delete: Trash2,
+  copy: CopySimple,
+  dashboard: SquaresFour,
+  delete: Trash,
   display: Monitor,
-  download: Download,
-  edit: Pencil,
-  exchange: Equal,
+  download: DownloadSimple,
+  edit: PencilSimple,
+  exchange: DotsSixVertical,
+  exportData: FileArrowUp,
+  exportMail: EnvelopeSimple,
   folder: Folder,
   folderOpen: FolderOpen,
-  grid: LayoutGrid,
+  grid: SquaresFour,
   hangar: Warehouse,
-  history: History,
-  inbox: Inbox,
+  history: Archive,
+  inbox: Tray,
   info: Info,
+  importData: FileArrowDown,
   link: Link,
-  list: List,
-  mail: Mail,
+  list: ListBullets,
+  mail: EnvelopeSimple,
   maintenance: Wrench,
-  money: CircleDollarSign,
+  money: CurrencyDollar,
   news: Newspaper,
-  notes: StickyNote,
+  notes: Note,
   phone: Phone,
   portal: AppWindow,
   preferences: SlidersHorizontal,
-  save: Save,
-  search: Search,
-  settings: Settings,
+  save: FloppyDisk,
+  search: MagnifyingGlass,
+  settings: GearSix,
   shield: ShieldCheck,
-  systemReport: ClipboardList,
+  systemReport: ClipboardText,
   tag: Tag,
-  template: FileText,
-  tool: Hammer,
-  version: GitBranch,
+  target: Crosshair,
+  template: Files,
+  tool: ListChecks,
+  version: GitCommit,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {
-  const Icon = icons[name]
-  /* size = défaut quand aucune classe ne dimensionne (sinon Lucide rend 24px) ;
-     les règles CSS width/height priment toujours sur l'attribut */
-  return <Icon aria-hidden className={className} strokeWidth={1.75} size={14} />
+  const IconComponent = icons[name]
+  return (
+    <IconComponent
+      aria-hidden
+      className={`ui-icon${className ? ` ${className}` : ''}`}
+      data-icon={name}
+      weight="fill"
+      size={16}
+    />
+  )
 }

@@ -6,6 +6,7 @@ export type SettingsTab =
   | 'templates'
   | 'tasks'
   | 'templateCategories'
+  | 'troubleshootgun'
   | 'taskCategories'
   | 'tags'
   | 'products'
@@ -87,6 +88,12 @@ export const settingsNavigation: SettingsNavSection[] = [
         label: 'Catégories mail',
         description: 'Catégories utilisées par la recherche et le Troubleshootgun.',
         icon: 'channels',
+      },
+      {
+        id: 'troubleshootgun',
+        label: 'Troubleshotgun',
+        description: 'Dossiers produits et templates indépendants des mails classiques.',
+        icon: 'folder',
       },
       {
         id: 'tasks',
@@ -229,6 +236,27 @@ export const settingsTabIndex = settingsNavigation.flatMap((section) =>
     sectionLabel: section.label,
   })),
 )
+
+export const settingsRelatedTabs: Partial<Record<SettingsTab, SettingsTab[]>> = {
+  categories: ['snippets'],
+  snippets: ['categories', 'tags', 'snippetSettings'],
+  templates: ['templateCategories', 'tasks', 'tags'],
+  templateCategories: ['templates', 'troubleshootgun'],
+  troubleshootgun: ['templateCategories', 'templates'],
+  tasks: ['taskCategories', 'taskFormat', 'templates'],
+  taskCategories: ['tasks'],
+  taskFormat: ['tasks'],
+  dashboardPortal: ['procedureMailtos', 'products'],
+  procedureMailtos: ['dashboardPortal'],
+  products: ['dashboardVersions', 'dashboardSoftwares', 'dashboardDriverPacks', 'dashboardSpareParts'],
+  dashboardVersions: ['products'],
+  dashboardSoftwares: ['products'],
+  dashboardDriverPacks: ['products'],
+  dashboardSpareParts: ['products'],
+  callTemplate: ['callHistory'],
+  callHistory: ['callTemplate'],
+  preferences: ['quickLinks', 'updates'],
+}
 
 export const tokenReferenceItems = [
   {

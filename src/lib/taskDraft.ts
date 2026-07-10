@@ -14,6 +14,7 @@ export type TaskBoxSlot = {
 
 export type DraftBoxSlot = {
   email: string
+  notes: string
   task: string
   taskSkeletonEnabled: boolean
   taskBoxes: TaskBoxSlot[]
@@ -27,6 +28,7 @@ export const createEmptyTaskBoxSlot = (): TaskBoxSlot => ({
 
 export const createEmptyDraftBoxSlot = (): DraftBoxSlot => ({
   email: '',
+  notes: '',
   task: '',
   taskSkeletonEnabled: true,
   taskBoxes: Array.from({ length: 2 }, createEmptyTaskBoxSlot),
@@ -458,6 +460,10 @@ export const getTemplateTaskSections = (
   template: MailTemplate,
   taskTemplates: TaskTemplate[],
 ): string[] => {
+  if (template.taskImportMode === 'none') return TASK_SECTION_IDS.map(() => '')
+  if (template.taskImportMode === 'sections') {
+    return TASK_SECTION_IDS.map((_, index) => template.taskSections?.[index] ?? '')
+  }
   const usesCustom = template.taskCustom ?? (!!template.taskText && !template.taskTemplateId)
   if (usesCustom) {
     const sections = TASK_SECTION_IDS.map(() => '')
