@@ -14,35 +14,35 @@
 :root {
   /* Studio rework (2026-06-11): base sombre teintée violet, relief par
      ombres de cartes, radius léger. Réf : design/ui-directions.html?dir=studio */
-  --bg: #17151e;
-  --bg-secondary: #1b1922;
-  --panel: #211f29;
-  --panel-strong: #1e1c26;
-  --panel-hover: #282533;
+  --bg: #121212;
+  --bg-secondary: #181818;
+  --panel: #202020;
+  --panel-strong: #1b1b1b;
+  --panel-hover: #292929;
   --border: rgba(236, 234, 242, 0.1);
   --border-hover: rgba(236, 234, 242, 0.2);
-  --border-active: rgba(122, 106, 209, 0.62);
+  --border-active: rgba(145, 0, 255, 0.78);
   --text: #eceaf2;
   --text-secondary: #c2bfcf;
   --muted: #908ca3;
   --muted-light: #847f98;
-  --accent: #7a6ad1;
-  --accent-light: #a593e2;
-  --accent-dark: #5e53ac;
-  --accent-glow: rgba(122, 106, 209, 0.22);
+  --accent: #8f00ff;
+  --accent-light: #b23cff;
+  --accent-dark: #6500b8;
+  --accent-glow: rgba(143, 0, 255, 0.28);
   --danger: #e77f7c;
   --danger-light: #f0acab;
   --success: #63cd9f;
   --warning: #f0c25f;
-  --info: #60bbe8;
+  --info: #b23cff;
   --tag: #c7bced;
   --selector: #62cfbe;
   --addition: #efd78b;
   --primary: var(--accent);
   --surface: var(--surface-soft-hover);
-  --field-bg: #262330;
-  --field-bg-focus: #2d2a3a;
-  --field-bg-disabled: #1a1820;
+  --field-bg: #262626;
+  --field-bg-focus: #303030;
+  --field-bg-disabled: #181818;
 
   /* Depth: cards get a soft contact shadow, floating layers pop stronger */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
@@ -55,17 +55,17 @@
   /* Disabled (flat look) — kept as a transparent shadow so multi-shadow
      declarations like "var(--shadow-sm), var(--edge-highlight)" stay valid */
   --edge-highlight: 0 0 0 0 rgba(0, 0, 0, 0);
-  --focus-ring: 0 0 0 3px rgba(122, 106, 209, 0.3);
-  --gradient-primary: #7a6ad1;
-  --gradient-bg: #17151e;
+  --focus-ring: 0 0 0 3px rgba(143, 0, 255, 0.34);
+  --gradient-primary: #8f00ff;
+  --gradient-bg: #121212;
 
   /* Géométrie Studio (choix user 2026-06-11) : radius léger, à peine
      perceptible — toute l'app se re-règle depuis ce bloc */
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 4px;
-  --radius-lg: 4px;
-  --radius-full: 999px;
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-full: 0;
 
   --surface-soft: rgba(236, 234, 242, 0.03);
   --surface-soft-hover: rgba(236, 234, 242, 0.06);

@@ -51,6 +51,22 @@ export interface MailTemplate {
   taskOptional?: boolean
   taskTemplateId?: string
   taskCustom?: boolean
+  taskImportMode?: 'none' | 'custom' | 'sections' | 'template'
+  taskSections?: string[]
+}
+
+export interface TroubleshootgunFolder {
+  id: string
+  name: string
+  templates: MailTemplate[]
+}
+
+export interface RqtReminder {
+  id: string
+  rqt: string
+  dueAt: string
+  durationHours: 24 | 48 | 72
+  notifiedAt?: string
 }
 
 export interface TaskTemplate {
@@ -212,6 +228,8 @@ export interface AppSettings {
   dashboardNews: DashboardNewsItem[]
   dashboardDecorations: DashboardDecorationItem[]
   dashboardReminders: string
+  rqtReminders: RqtReminder[]
+  troubleshootgunFolders: TroubleshootgunFolder[]
   taskSectionNames: string[]
   mailTemplateCategories: MailTemplateCategory[]
   taskTemplateCategories: MailTemplateCategory[]

@@ -474,6 +474,12 @@ export function normalizeData(raw: Partial<AppData> | null | undefined, fallback
         typeof raw.settings?.dashboardReminders === 'string'
           ? raw.settings.dashboardReminders
           : fallback.settings.dashboardReminders,
+      rqtReminders: Array.isArray(raw.settings?.rqtReminders)
+        ? raw.settings.rqtReminders
+        : fallback.settings.rqtReminders,
+      troubleshootgunFolders: Array.isArray(raw.settings?.troubleshootgunFolders)
+        ? raw.settings.troubleshootgunFolders
+        : fallback.settings.troubleshootgunFolders,
       taskSectionNames: normalizeFixedStringList(
         raw.settings?.taskSectionNames,
         fallback.settings.taskSectionNames,
@@ -524,6 +530,12 @@ export function createExportData(raw: Partial<AppData> | null | undefined, fallb
         typeof normalized.settings.dashboardReminders === 'string'
           ? normalized.settings.dashboardReminders
           : fallback.settings.dashboardReminders,
+      rqtReminders: Array.isArray(normalized.settings.rqtReminders)
+        ? normalized.settings.rqtReminders
+        : fallback.settings.rqtReminders,
+      troubleshootgunFolders: Array.isArray(normalized.settings.troubleshootgunFolders)
+        ? normalized.settings.troubleshootgunFolders
+        : fallback.settings.troubleshootgunFolders,
       taskSectionNames: normalizeFixedStringList(
         normalized.settings.taskSectionNames,
         fallback.settings.taskSectionNames,

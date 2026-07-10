@@ -7,7 +7,6 @@ declare namespace NodeJS {
   }
 }
 
-declare const __AUTO_UPDATE_GH_TOKEN__: string
 
 interface Window {
   agentor: {

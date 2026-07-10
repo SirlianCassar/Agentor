@@ -70,8 +70,6 @@ export function useAppUpdates(onToast: (message: string) => void) {
       if (!result.ok) {
         if (result.reason === 'disabled') {
           onToast('Recherche de MAJ disponible uniquement sur l’application installée.')
-        } else if (result.reason === 'missing-token') {
-          onToast('GH_TOKEN/GITHUB_TOKEN manquant pour accéder au repo privé.')
         } else if (result.reason === 'already-checking') {
           onToast('Une recherche de MAJ est déjà en cours.')
         } else if (result.reason === 'restart-pending') {
@@ -107,8 +105,6 @@ export function useAppUpdates(onToast: (message: string) => void) {
             onToast('La mise à jour n’est pas encore prête.')
           } else if (result.reason === 'disabled') {
             onToast('Installation MAJ disponible uniquement sur l’application installée.')
-          } else if (result.reason === 'missing-token') {
-            onToast('GH_TOKEN/GITHUB_TOKEN manquant pour installer la MAJ.')
           } else if (result.reason === 'restart-pending') {
             onToast('Redémarrage déjà en cours pour installer la MAJ.')
           } else {

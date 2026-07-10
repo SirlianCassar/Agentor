@@ -173,12 +173,6 @@ const AUTO_UPDATE_STATUS_CHANNEL = 'updates:status'
 const AUTO_UPDATE_TIMEOUT_MS = 120_000
 const AUTO_UPDATE_OWNER = 'SirlianCassar'
 const AUTO_UPDATE_REPO = 'Agentor'
-const AUTO_UPDATE_GH_TOKEN =
-  process.env.GH_TOKEN ||
-  process.env.GITHUB_TOKEN ||
-  process.env.AUTO_UPDATE_GH_TOKEN ||
-  __AUTO_UPDATE_GH_TOKEN__
-
 type UpdatePhase =
   | 'idle'
   | 'disabled'
@@ -208,10 +202,6 @@ let updateCheckTimeout: ReturnType<typeof setTimeout> | null = null
 
 function isStartupAutoUpdateEnabled() {
   return app.isPackaged && !VITE_DEV_SERVER_URL && AUTO_UPDATE_SUPPORTED_PLATFORMS.has(process.platform)
-}
-
-function isAutoUpdateTokenMissing() {
-  return !AUTO_UPDATE_GH_TOKEN
 }
 
 function getUpdateErrorMessage(error: unknown) {
@@ -267,7 +257,6 @@ function configureAutoUpdater() {
     provider: 'github',
     owner: AUTO_UPDATE_OWNER,
     repo: AUTO_UPDATE_REPO,
-    ...(AUTO_UPDATE_GH_TOKEN ? { private: true, token: AUTO_UPDATE_GH_TOKEN } : {}),
   } as Parameters<typeof autoUpdater.setFeedURL>[0]
 
   autoUpdater.setFeedURL(feedOptions)
@@ -348,15 +337,6 @@ async function checkForUpdates(reason: 'startup' | 'manual') {
 
   if (restartScheduled) {
     return { ok: false, reason: 'restart-pending' as const }
-  }
-
-  if (isAutoUpdateTokenMissing()) {
-    pushUpdateStatus({
-      phase: 'error',
-      message: 'Mise à jour impossible: token GitHub absent pour accéder au repo privé.',
-      checkedAt: new Date().toISOString(),
-    })
-    return { ok: false, reason: 'missing-token' as const }
   }
 
   if (updateCheckInProgress) {

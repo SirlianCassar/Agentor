@@ -1,7 +1,7 @@
 {
   "name": "agentor",
   "private": true,
-  "version": "2.0.39",
+  "version": "2.0.40",
   "author": "Sirlian",
   "description": "Agentor local email and task template composer",
   "type": "module",
@@ -17,12 +17,12 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/space-grotesk": "^5.2.10",
+    "@phosphor-icons/react": "^2.1.10",
     "@tiptap/core": "^3.14.0",
     "@tiptap/extension-highlight": "^3.14.0",
     "@tiptap/react": "^3.14.0",
     "@tiptap/starter-kit": "^3.14.0",
     "electron-updater": "^6.8.3",
-    "lucide-react": "^1.17.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
