@@ -14,6 +14,7 @@ import {
   ensureStructuredTaskDraft,
   normalizeStoredTaskSectionNames,
   normalizeTaskSectionId,
+  normalizeTaskTemplateKind,
   normalizeTaskTemplateSections,
 } from './taskDraft'
 import type { AppData } from './types'
@@ -41,7 +42,24 @@ export const normalizeTaskSectionsInData = (payload: AppData): AppData => {
   const templateCategories = normalizeMailTemplateCategories(payload.settings.mailTemplateCategories)
   const taskTemplateCategories = normalizeTaskTemplateCategories(payload.settings.taskTemplateCategories)
   const firstTemplateCategoryId = templateCategories[0]?.id ?? ''
-  const firstTaskTemplateCategoryId = taskTemplateCategories[0]?.id ?? ''
+  const taskCategoryIdsByKind = {
+    's-task': new Set(
+      taskTemplateCategories
+        .filter((category) => category.kind === 's-task')
+        .map((category) => category.id),
+    ),
+    'f-task': new Set(
+      taskTemplateCategories
+        .filter((category) => category.kind === 'f-task')
+        .map((category) => category.id),
+    ),
+  }
+  const firstTaskTemplateCategoryId = {
+    's-task':
+      taskTemplateCategories.find((category) => category.kind === 's-task')?.id ?? '',
+    'f-task':
+      taskTemplateCategories.find((category) => category.kind === 'f-task')?.id ?? '',
+  }
   const snippetCategoryId = 'cat-general'
   const categories = payload.categories.filter((category) => category.id !== snippetCategoryId)
   return {
@@ -59,14 +77,22 @@ export const normalizeTaskSectionsInData = (payload: AppData): AppData => {
       categoryId: template.categoryId?.trim() || firstTemplateCategoryId,
       favorite: Boolean(template.favorite),
     })),
-    taskTemplates: payload.taskTemplates.map((task) => ({
-      ...task,
-      taskSectionId: normalizeTaskSectionId(task.taskSectionId),
-      taskSections: normalizeTaskTemplateSections(task),
-      content: buildTaskTemplateContent(task),
-      categoryId: task.categoryId?.trim() || firstTaskTemplateCategoryId,
-      favorite: Boolean(task.favorite),
-    })),
+    taskTemplates: payload.taskTemplates.map((task) => {
+      const kind = normalizeTaskTemplateKind(task)
+      return {
+        ...task,
+        kind,
+        taskSectionId:
+          kind === 's-task' ? undefined : normalizeTaskSectionId(task.taskSectionId),
+        taskSections: normalizeTaskTemplateSections(task),
+        content: buildTaskTemplateContent(task),
+        categoryId:
+          task.categoryId && taskCategoryIdsByKind[kind].has(task.categoryId)
+            ? task.categoryId
+            : firstTaskTemplateCategoryId[kind],
+        favorite: Boolean(task.favorite),
+      }
+    }),
     procedures: payload.procedures.map((procedure) => ({
       ...procedure,
       taskSectionId: normalizeTaskSectionId(procedure.taskSectionId),
@@ -111,6 +137,7 @@ export const convertLegacyTokensInData = (payload: AppData): AppData =>
     taskTemplates: payload.taskTemplates.map((task) => ({
       ...task,
       name: convertLegacyTokens(task.name),
+      taskTitle: convertLegacyTokensMaybe(task.taskTitle),
       content: convertLegacyTokens(task.content),
       taskSections: normalizeTaskTemplateSections(task).map((section) => convertLegacyTokens(section)),
       categoryId: task.categoryId,
@@ -237,5 +264,3 @@ export function mergeSeedIntoData(current: AppData, seed: AppData) {
     },
   }
 }
-
-

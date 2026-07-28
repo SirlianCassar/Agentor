@@ -2,11 +2,13 @@
    numbering, and template-section helpers. Pure string logic. */
 import type { ProtectedTextRange } from '../components/TextEditor'
 import { defaultData } from './defaults'
-import type { MailTemplate, TaskSectionId, TaskTemplate } from './types'
+import type { MailTemplate, TaskSectionId, TaskTemplate, TaskTemplateKind } from './types'
 import { padEmptySelectors, stripTokenSpacing } from './utils'
 
 export const TASK_SECTION_IDS: TaskSectionId[] = ['section-1', 'section-2', 'section-3', 'section-4']
 export const LEGACY_TASK_SECTION_NAMES = ['Diagnostic', 'SAV', 'Infos client', 'Suivi']
+export const DRAFT_BOX_COUNT = 5
+export const TASK_BOX_COUNT = 2
 export type TaskBoxSlot = {
   task: string
   savedAt: string
@@ -31,7 +33,7 @@ export const createEmptyDraftBoxSlot = (): DraftBoxSlot => ({
   notes: '',
   task: '',
   taskSkeletonEnabled: true,
-  taskBoxes: Array.from({ length: 2 }, createEmptyTaskBoxSlot),
+  taskBoxes: Array.from({ length: TASK_BOX_COUNT }, createEmptyTaskBoxSlot),
   activeTaskBoxIndex: 0,
   savedAt: '',
 })
@@ -39,6 +41,8 @@ export const createEmptyDraftBoxSlot = (): DraftBoxSlot => ({
 export const TASK_SKELETON_BOX_INDEX = 0
 export const TASK_FREE_BOX_INDEX = 1
 export const taskBoxUsesSkeleton = (index: number) => index === TASK_SKELETON_BOX_INDEX
+export const normalizeTaskTemplateKind = (task: Partial<TaskTemplate>): TaskTemplateKind =>
+  task.kind === 's-task' ? 's-task' : 'f-task'
 export const normalizeTaskSectionNames = (names: string[] | undefined) =>
   TASK_SECTION_IDS.map((_, index) => {
     const fallback = defaultData.settings.taskSectionNames[index] ?? `Section ${index + 1}`
@@ -298,6 +302,8 @@ export const normalizeTaskTemplateSections = (task: Partial<TaskTemplate>) => {
 }
 
 export const getTaskTemplatePreviewText = (task: Partial<TaskTemplate>) => {
+  const title = stripTokenSpacing(task.taskTitle ?? '').trim()
+  if (title) return title
   const sections = normalizeTaskTemplateSections(task)
   const preview = sections
     .map((section) => stripTokenSpacing(section).trim())
@@ -309,7 +315,11 @@ export const buildTaskTemplateContent = (task: Partial<TaskTemplate>) =>
   normalizeTaskTemplateSections(task).filter((section) => section.trim()).join('\n\n')
 
 export const buildTaskDraftFromTemplate = (task: TaskTemplate, sectionNames: string[]) =>
-  buildStructuredTaskDraft(normalizeTaskTemplateSections(task), sectionNames)
+  buildStructuredTaskDraftWithTitle(
+    stripTokenSpacing(task.taskTitle ?? '').trim(),
+    normalizeTaskTemplateSections(task),
+    sectionNames,
+  )
 
 export const TASK_MAIL_NUMBER_PATTERN = /\((\d+)\)/g
 
@@ -342,8 +352,8 @@ export const applyTaskTitleNumber = (title: string, taskNumber: number) => {
   return rest ? `(${taskNumber}) ${rest}` : `(${taskNumber}) `
 }
 
-// Compact preview for a stored task: skeleton tasks keep only their title and
-// the sections that actually hold text; free tasks are shown as-is.
+// Compact preview for a stored task: S-Tasks keep only their title and
+// the sections that actually hold text; F-Tasks are shown as-is.
 export const buildCompactTaskPreviewText = (
   task: string,
   boxIndex: number,

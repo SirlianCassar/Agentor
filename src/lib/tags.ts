@@ -9,6 +9,7 @@ export type TagSuggestionFieldId =
   | 'template-content'
   | 'template-task'
   | 'task-name'
+  | 'task-title'
   | 'task-content'
   | 'call-template'
   | 'procedure-name'

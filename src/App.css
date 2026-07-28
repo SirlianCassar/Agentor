@@ -683,6 +683,47 @@ select optgroup {
   line-height: 1;
 }
 
+.draft-box-btn__swap {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(236, 234, 242, 0.34);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: #fff;
+  pointer-events: none;
+  animation: draftBoxSwapFlash 650ms ease-out both;
+}
+
+.draft-box-btn__swap .ui-icon {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.6;
+}
+
+@keyframes draftBoxSwapFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.55) rotate(-20deg);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1.08) rotate(0);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
 .draft-box-tooltip {
   position: fixed;
   width: 340px;
@@ -846,10 +887,6 @@ select optgroup {
   color: #f2b84b;
   margin-right: 2px;
   flex-shrink: 0;
-}
-
-.category-star--spacer {
-  visibility: hidden;
 }
 
 .category-count {
@@ -4364,16 +4401,12 @@ button.dashboard-copy-icon.is-success {
 
 .dashboard-page-btn__notification {
   position: absolute;
-  top: -7px;
-  right: -7px;
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
   background: var(--danger);
-  color: #fff;
-  font-size: 9px;
-  line-height: 1;
   border: 1px solid #2b0d0d;
 }
 
@@ -9334,15 +9367,24 @@ button.ghost.confirm {
 .dashboard-reminders { min-height: 0; }
 .dashboard-reminders__head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 700; }
 .dashboard-reminders__head-actions { display: flex; align-items: center; gap: 6px; }
-.dashboard-reminders__test { color: var(--accent-light); border-color: var(--border-active); }
-.dashboard-reminders__list { display: grid; gap: 5px; padding: 8px; overflow: auto; }
-.dashboard-reminder { display: grid; grid-template-columns: 20px minmax(90px, 1fr) auto 28px; align-items: center; gap: 7px; background: #1b1b1b; border-left: 3px solid var(--accent); padding: 7px; }
-.dashboard-reminder.is-expired { border-left-color: var(--danger); background: #351717; color: #ffb0ae; }
+.dashboard-reminders__list { display: grid; gap: 7px; padding: 8px; overflow: auto; }
+.dashboard-reminder { display: grid; grid-template-columns: minmax(110px, 1fr) auto auto; align-items: center; gap: 12px; background: #1b1b1b; border: 1px solid rgba(139, 123, 216, 0.34); padding: 10px 12px; cursor: pointer; transition: border-color var(--transition-fast), background var(--transition-fast); }
+.dashboard-reminder:hover,
+.dashboard-reminder:focus-visible { background: rgba(139, 123, 216, 0.11); border-color: rgba(139, 123, 216, 0.7); outline: none; }
+.dashboard-reminder.is-expired { border-color: rgba(255, 107, 107, 0.5); background: #351717; color: #ffb0ae; }
+.dashboard-reminder.is-expired:hover,
+.dashboard-reminder.is-expired:focus-visible { background: #431d1d; border-color: rgba(255, 107, 107, 0.82); }
 .dashboard-reminder.is-expired .dashboard-reminder__countdown { color: #ff8f8b; }
+.dashboard-reminder__identity { display: grid; gap: 2px; min-width: 0; }
+.dashboard-reminder__identity small { color: var(--muted); font-size: calc(11px * var(--text-scale)); font-weight: 500; }
+.dashboard-reminder.is-expired .dashboard-reminder__identity small { color: #e89996; }
 .dashboard-reminder__countdown { color: var(--accent-light); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.dashboard-reminder__delete { border: 0; background: transparent; color: var(--muted); padding: 4px 0 4px 6px; font-size: calc(11px * var(--text-scale)); cursor: pointer; }
+.dashboard-reminder__delete:hover,
+.dashboard-reminder__delete:focus-visible { color: var(--danger); outline: none; text-decoration: underline; }
 .reminder-modal { width: min(440px, calc(100vw - 32px)); }
 .reminder-modal__body { display: grid; gap: 12px; padding: 18px; }
-.reminder-duration-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.reminder-duration-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .reminder-warning-backdrop { display: grid; place-items: center; }
 .reminder-warning { width: min(330px, calc(100vw - 32px)); max-height: min(240px, calc(100vh - 32px)); padding: 12px 14px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; border: 1px solid var(--warning); }
 .reminder-warning__icon { color: var(--warning); font-size: 24px; }
@@ -13771,6 +13813,10 @@ button.ghost,
   counter-reset: sequence-item;
 }
 
+.task-template-sections {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .task-template-section,
 .mailto-sequence-card {
   position: relative;
@@ -14086,6 +14132,16 @@ button.ghost,
   background: var(--module-hover);
 }
 
+.bullet-item .bullet-color-indicator {
+  width: 5px;
+  filter: saturate(1.55) brightness(1.12);
+}
+
+.bullet-item:hover .bullet-color-indicator {
+  box-shadow: none;
+  filter: saturate(1.7) brightness(1.18);
+}
+
 .section-label,
 .workspace-title,
 .workspace-dashboard__panel-title,
@@ -14120,13 +14176,15 @@ button.ghost,
   border-radius: 5px;
 }
 
-/* Blueprint grid: main mail editor only, deliberately subtle and line-only. */
-.editor.editor--email {
+/* Blueprint grid shared by the mail editor and both S/F task editors. */
+.editor.editor--email,
+.editor.task-editor {
   background-color: var(--field-bg);
   isolation: isolate;
 }
 
-.editor.editor--email::before {
+.editor.editor--email::before,
+.editor.task-editor::before {
   content: '';
   position: absolute;
   z-index: 0;
@@ -14149,11 +14207,14 @@ button.ghost,
 }
 
 .editor--email .editor__highlight,
-.editor--email .editor__input {
+.editor--email .editor__input,
+.task-editor .editor__highlight,
+.task-editor .editor__input {
   background: transparent;
 }
 
-.editor.editor--email:focus-within::before {
+.editor.editor--email:focus-within::before,
+.editor.task-editor:focus-within::before {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.029) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px),
@@ -14228,4 +14289,30 @@ button .ui-icon,
 .danger .ui-icon,
 .clear-btn.confirm .ui-icon {
   color: #fff;
+}
+
+/* Task vocabulary and search-menu interaction fixes. */
+.task-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--surface-soft);
+  color: var(--muted-light);
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.category-star {
+  margin-right: 0;
+}
+
+.search-results .search-result-item--back:hover {
+  background: var(--panel) !important;
+  transform: none !important;
 }

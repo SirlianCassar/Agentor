@@ -40,6 +40,7 @@ export type AppIconName =
   | 'settings'
   | 'shield'
   | 'systemReport'
+  | 'swap'
   | 'tag'
   | 'target'
   | 'template'
