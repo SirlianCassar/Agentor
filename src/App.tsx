@@ -70,6 +70,8 @@ import type {
   Snippet,
   TaskSectionId,
   TaskTemplate,
+  TaskTemplateCategory,
+  TaskTemplateKind,
   TroubleshootgunFolder,
 } from './lib/types'
 import {
@@ -146,9 +148,12 @@ import {
   annotateTaskFragment,
   buildCompactTaskPreviewText,
   buildStructuredTaskDraft,
+  buildStructuredTaskDraftWithTitle,
+  buildTaskDraftFromTemplate,
   buildTaskTemplateContent,
   createEmptyDraftBoxSlot,
   createEmptyTaskBoxSlot,
+  DRAFT_BOX_COUNT,
   ensureStructuredTaskDraft,
   formatPortalTimelineTitle,
   formatTaskCopyText,
@@ -167,9 +172,12 @@ import {
   normalizeTaskDraftNumbering,
   normalizeTaskSectionId,
   normalizeTaskSectionNames,
+  normalizeTaskTemplateKind,
+  normalizeTaskTemplateSections,
   parseStructuredTaskDraft,
   parseStructuredTaskDraftWithLeadingContent,
   TASK_FREE_BOX_INDEX,
+  TASK_BOX_COUNT,
   TASK_SECTION_IDS,
   TASK_SKELETON_BOX_INDEX,
   taskBoxUsesSkeleton,
@@ -330,8 +338,9 @@ function App() {
   const [selectedTroubleshootgunFolderId, setSelectedTroubleshootgunFolderId] = useState<string | null>(null)
   const [troubleshootgunFolderNameDraft, setTroubleshootgunFolderNameDraft] = useState('')
   const [reminderModalOpen, setReminderModalOpen] = useState(false)
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null)
   const [reminderRqtDraft, setReminderRqtDraft] = useState('')
-  const [reminderDurationDraft, setReminderDurationDraft] = useState<24 | 48 | 72>(24)
+  const [reminderDurationDraft, setReminderDurationDraft] = useState<1 | 24 | 48 | 72>(24)
   const [expiredReminders, setExpiredReminders] = useState<RqtReminder[] | null>(null)
   const [reminderNow, setReminderNow] = useState(() => Date.now())
   const [taskFocused, setTaskFocused] = useState(false)
@@ -349,10 +358,11 @@ function App() {
   const [dashboardDecorationDraft, setDashboardDecorationDraft] = useState('')
   const dashboardDecorationDraftRef = useRef<HTMLTextAreaElement | null>(null)
   const [draftBoxes, setDraftBoxes] = useState<DraftBoxSlot[]>(() =>
-    Array.from({ length: 3 }, createEmptyDraftBoxSlot),
+    Array.from({ length: DRAFT_BOX_COUNT }, createEmptyDraftBoxSlot),
   )
+  const [draftBoxSwapPulses, setDraftBoxSwapPulses] = useState<Record<number, number>>({})
   const [taskDraftBoxes, setTaskDraftBoxes] = useState<TaskBoxSlot[]>(() =>
-    Array.from({ length: 2 }, createEmptyTaskBoxSlot),
+    Array.from({ length: TASK_BOX_COUNT }, createEmptyTaskBoxSlot),
   )
   const [activeTaskBoxIndex, setActiveTaskBoxIndex] = useState(0)
   const [taskMailNumber, setTaskMailNumber] = useState(1)
@@ -427,9 +437,9 @@ function App() {
   const [templateActiveField, setTemplateActiveField] = useState<'name' | 'content' | 'task'>(
     'content',
   )
-  const [taskTemplateActiveField, setTaskTemplateActiveField] = useState<'name' | 'content'>(
-    'content',
-  )
+  const [taskTemplateActiveField, setTaskTemplateActiveField] = useState<
+    'name' | 'title' | 'content' | TaskSectionId
+  >('content')
   const [taskDraftSkeletonEnabled, setTaskDraftSkeletonEnabled] = useState(true)
   const [procedureActiveField, setProcedureActiveField] = useState<'info' | 'notes' | 'steps'>(
     'info',
@@ -461,7 +471,16 @@ function App() {
   const isDashboardProductSelectionEmpty = selectedDashboardProductId === null
   const isProductCatalogSelectionEmpty = selectedProductCatalogId === null
   const isDashboardNewsSelectionEmpty = selectedDashboardNewsId === null
-  const rqtReminders = data.settings.rqtReminders ?? []
+  const rqtReminders = useMemo(
+    () => data.settings.rqtReminders ?? [],
+    [data.settings.rqtReminders],
+  )
+  const editingReminder = editingReminderId
+    ? rqtReminders.find((reminder) => reminder.id === editingReminderId)
+    : undefined
+  const editingReminderExpired = Boolean(
+    editingReminder && new Date(editingReminder.dueAt).getTime() <= reminderNow,
+  )
   const troubleshootgunFolders = data.settings.troubleshootgunFolders ?? []
 
   useEffect(() => {
@@ -502,6 +521,7 @@ function App() {
   const dashboardDecorationCopyTimeoutRef = useRef<number | null>(null)
   const callCopyTimeoutRef = useRef<number | null>(null)
   const callHistoryCopyTimeoutRef = useRef<number | null>(null)
+  const draftBoxSwapTimeoutRefs = useRef<Record<number, number>>({})
   const snippetTitleRef = useRef<HTMLInputElement>(null)
   const snippetContentRef = useRef<HTMLTextAreaElement>(null)
   const snippetTaskRef = useRef<HTMLTextAreaElement>(null)
@@ -510,7 +530,9 @@ function App() {
   const templateTaskRef = useRef<HTMLTextAreaElement>(null)
   const callTemplateRef = useRef<HTMLTextAreaElement>(null)
   const taskTemplateNameRef = useRef<HTMLInputElement>(null)
+  const taskTemplateTitleRef = useRef<HTMLInputElement>(null)
   const taskTemplateContentRef = useRef<HTMLTextAreaElement>(null)
+  const taskTemplateSectionRefs = useRef<Array<HTMLTextAreaElement | null>>([])
   const procedureNameRef = useRef<HTMLInputElement>(null)
   const procedureProductNameRef = useRef<HTMLInputElement>(null)
   const procedureInfoRef = useRef<HTMLTextAreaElement>(null)
@@ -658,18 +680,25 @@ function App() {
     id: '',
     name: '',
     content: '',
+    kind: 'f-task',
+    taskTitle: '',
     taskSections: ['', '', '', ''],
-    categoryId: defaultData.settings.taskTemplateCategories[0]?.id ?? '',
+    categoryId:
+      defaultData.settings.taskTemplateCategories.find(
+        (category) => category.kind === 'f-task',
+      )?.id ?? '',
     favorite: false,
   })
   const [templateCategoryDraft, setTemplateCategoryDraft] = useState<MailTemplateCategory>({
     id: '',
     name: '',
   })
-  const [taskTemplateCategoryDraft, setTaskTemplateCategoryDraft] = useState<MailTemplateCategory>({
-    id: '',
-    name: '',
-  })
+  const [taskTemplateCategoryDraft, setTaskTemplateCategoryDraft] =
+    useState<TaskTemplateCategory>({
+      id: '',
+      name: '',
+      kind: 'f-task',
+    })
   const [procedureDraft, setProcedureDraft] = useState<Procedure>({
     id: '',
     name: '',
@@ -736,6 +765,33 @@ function App() {
     () => normalizeTaskTemplateCategories(data.settings.taskTemplateCategories),
     [data.settings.taskTemplateCategories],
   )
+  const sTaskTemplateCategories = useMemo(
+    () => taskTemplateCategories.filter((category) => category.kind === 's-task'),
+    [taskTemplateCategories],
+  )
+  const fTaskTemplateCategories = useMemo(
+    () => taskTemplateCategories.filter((category) => category.kind === 'f-task'),
+    [taskTemplateCategories],
+  )
+  const activeTaskTemplateKind: TaskTemplateKind =
+    taskBoxUsesSkeleton(activeTaskBoxIndex) ? 's-task' : 'f-task'
+  const activeTaskTemplateCategories =
+    activeTaskTemplateKind === 's-task'
+      ? sTaskTemplateCategories
+      : fTaskTemplateCategories
+  const settingsTaskTemplateKind: TaskTemplateKind =
+    editTab === 'sTasks' || editTab === 'sTaskCategories' ? 's-task' : 'f-task'
+  const settingsTaskTemplateCategories =
+    settingsTaskTemplateKind === 's-task'
+      ? sTaskTemplateCategories
+      : fTaskTemplateCategories
+  const settingsTaskTemplates = useMemo(
+    () =>
+      data.taskTemplates.filter(
+        (task) => normalizeTaskTemplateKind(task) === settingsTaskTemplateKind,
+      ),
+    [data.taskTemplates, settingsTaskTemplateKind],
+  )
   const customerPortalCodes = useMemo(() => {
     return normalizePortalProcedures(data.settings.customerPortalCodes)
   }, [data.settings.customerPortalCodes])
@@ -781,17 +837,22 @@ function App() {
     [mailTemplateCategories],
   )
   const getEmptyTaskDraft = useCallback(
-    () =>
-      ({
+    (kind: TaskTemplateKind = 'f-task') => {
+      const categories =
+        kind === 's-task' ? sTaskTemplateCategories : fTaskTemplateCategories
+      return {
         id: '',
         name: '',
         content: '',
+        kind,
+        taskTitle: '',
         taskSections: ['', '', '', ''],
-        taskSectionId: 'section-3',
-        categoryId: taskTemplateCategories[0]?.id ?? '',
+        taskSectionId: kind === 'f-task' ? 'section-3' : undefined,
+        categoryId: categories[0]?.id ?? '',
         favorite: false,
-      }) as TaskTemplate,
-    [taskTemplateCategories],
+      } as TaskTemplate
+    },
+    [fTaskTemplateCategories, sTaskTemplateCategories],
   )
   const beginNewSnippetDraft = useCallback(
     (focusField = true) => {
@@ -818,16 +879,19 @@ function App() {
     [clearSettingsValidationTouched, getEmptyTemplateDraft],
   )
   const beginNewTaskDraft = useCallback(
-    (focusField = true) => {
+    (
+      focusField = true,
+      kind: TaskTemplateKind = editTab === 'sTasks' ? 's-task' : 'f-task',
+    ) => {
       setTagSuggestionState(null)
       clearSettingsValidationTouched('task')
-      setTaskDraft(getEmptyTaskDraft())
+      setTaskDraft(getEmptyTaskDraft(kind))
       setSelectedTaskId('new')
       if (focusField) {
         requestAnimationFrame(() => taskTemplateNameRef.current?.focus())
       }
     },
-    [clearSettingsValidationTouched, getEmptyTaskDraft],
+    [clearSettingsValidationTouched, editTab, getEmptyTaskDraft],
   )
   const getEmptyProcedureDraft = useCallback(
     () =>
@@ -968,6 +1032,7 @@ function App() {
   }, [toast])
 
   useEffect(() => {
+    const draftBoxSwapTimeouts = draftBoxSwapTimeoutRefs.current
     return () => {
       if (dashboardOpenFrameRef.current !== null) {
         window.cancelAnimationFrame(dashboardOpenFrameRef.current)
@@ -996,6 +1061,9 @@ function App() {
       if (callHistoryCopyTimeoutRef.current !== null) {
         window.clearTimeout(callHistoryCopyTimeoutRef.current)
       }
+      Object.values(draftBoxSwapTimeouts).forEach((timeout) =>
+        window.clearTimeout(timeout),
+      )
     }
   }, [])
 
@@ -1191,6 +1259,25 @@ function App() {
     updateStatus?.phase === 'downloaded'
   const activeSettingsTab =
     settingsTabIndex.find((tab) => tab.id === editTab) ?? settingsTabIndex[0]
+  const openSettingsTab = useCallback(
+    (tab: SettingsTab) => {
+      setEditTab(tab)
+      if (tab === 'sTasks' || tab === 'fTasks') {
+        const kind: TaskTemplateKind = tab === 'sTasks' ? 's-task' : 'f-task'
+        clearSettingsValidationTouched('task')
+        setSelectedTaskId(null)
+        setTaskDraft(getEmptyTaskDraft(kind))
+      }
+      if (tab === 'sTaskCategories' || tab === 'fTaskCategories') {
+        setTaskTemplateCategoryDraft({
+          id: '',
+          name: '',
+          kind: tab === 'sTaskCategories' ? 's-task' : 'f-task',
+        })
+      }
+    },
+    [clearSettingsValidationTouched, getEmptyTaskDraft],
+  )
   const filteredSettingsNavigation = useMemo(() => {
     const query = settingsSearch.trim().toLocaleLowerCase('fr')
     if (!query) return settingsNavigation
@@ -1281,7 +1368,16 @@ function App() {
       templates: data.templates.filter(
         (template) => getMailTemplateIssues(template, taskTemplateIdSet).length,
       ).length,
-      tasks: data.taskTemplates.filter((task) => getTaskTemplateIssues(task).length).length,
+      sTasks: data.taskTemplates.filter(
+        (task) =>
+          normalizeTaskTemplateKind(task) === 's-task' &&
+          getTaskTemplateIssues(task).length,
+      ).length,
+      fTasks: data.taskTemplates.filter(
+        (task) =>
+          normalizeTaskTemplateKind(task) === 'f-task' &&
+          getTaskTemplateIssues(task).length,
+      ).length,
       products: productCatalog.filter((product) => getProductCatalogItemIssues(product).length)
         .length,
       dashboardVersions: countDashboardProducts('firmware'),
@@ -1473,11 +1569,14 @@ function App() {
       setToast('Nom de catégorie obligatoire.')
       return
     }
+    const kind: TaskTemplateKind =
+      editTab === 'sTaskCategories' ? 's-task' : 'f-task'
     const exists = taskTemplateCategories.some(
-      (category) => category.id === taskTemplateCategoryDraft.id,
+      (category) =>
+        category.id === taskTemplateCategoryDraft.id && category.kind === kind,
     )
     const id = exists ? taskTemplateCategoryDraft.id : createId('task-template-cat')
-    const savedCategory = { id, name }
+    const savedCategory: TaskTemplateCategory = { id, name, kind }
     updateSettings({
       taskTemplateCategories: exists
         ? taskTemplateCategories.map((category) =>
@@ -1485,13 +1584,19 @@ function App() {
           )
         : [...taskTemplateCategories, savedCategory],
     })
-    setTaskTemplateCategoryDraft({ id: '', name: '' })
-    setToast('Catégorie task enregistrée.')
-  }, [taskTemplateCategories, taskTemplateCategoryDraft, updateSettings])
+    setTaskTemplateCategoryDraft({ id: '', name: '', kind })
+    setToast(`Catégorie ${kind === 's-task' ? 'S-Task' : 'F-Task'} enregistrée.`)
+  }, [editTab, taskTemplateCategories, taskTemplateCategoryDraft, updateSettings])
   const deleteTaskTemplateCategory = useCallback(
     (categoryId: string) => {
+      const deletedCategory = taskTemplateCategories.find(
+        (category) => category.id === categoryId,
+      )
+      const kind = deletedCategory?.kind === 's-task' ? 's-task' : 'f-task'
       const fallbackId =
-        taskTemplateCategories.find((category) => category.id !== categoryId)?.id ?? ''
+        taskTemplateCategories.find(
+          (category) => category.id !== categoryId && category.kind === kind,
+        )?.id ?? ''
       updateSettings({
         taskTemplateCategories: taskTemplateCategories.filter(
           (category) => category.id !== categoryId,
@@ -1625,7 +1730,7 @@ function App() {
             </>
           ) : (
             <div className="tag-autocomplete__empty">
-              Aucun tag prédéfini correspondant. Ajoutez-le dans Paramètres &gt; Tags.
+              Aucun tag prédéfini correspondant.
             </div>
           )}
         </div>
@@ -1955,9 +2060,17 @@ function App() {
 
   useEffect(() => {
     if (activeTaskCategoryId === 'favorites' || activeTaskCategoryId === 'all') return
-    if (taskTemplateCategories.some((category) => category.id === activeTaskCategoryId)) return
-    setActiveTaskCategoryId(taskTemplateCategories[0]?.id ?? 'favorites')
-  }, [activeTaskCategoryId, taskTemplateCategories])
+    if (activeTaskTemplateCategories.some((category) => category.id === activeTaskCategoryId)) {
+      return
+    }
+    setActiveTaskCategoryId('favorites')
+  }, [activeTaskCategoryId, activeTaskTemplateCategories])
+
+  useEffect(() => {
+    setTaskQuery('')
+    setTaskBrowserView('categories')
+    setActiveTaskCategoryId('favorites')
+  }, [activeTaskTemplateKind])
 
   useEffect(() => {
     if (!selectedProductCatalogId || selectedProductCatalogId === 'new') return
@@ -2413,6 +2526,8 @@ function App() {
           ? 'template'
           : 'none'
   )
+  const taskTemplateKind = normalizeTaskTemplateKind(taskDraft)
+  const taskTemplateSections = normalizeTaskTemplateSections(taskDraft)
   const procedureUsesCustomTask =
     procedureDraft.taskCustom ?? (!!procedureDraft.taskText && !procedureDraft.taskTemplateId)
 
@@ -2457,6 +2572,27 @@ function App() {
       insertTokenAtCursor(taskTemplateNameRef, taskDraft.name, (next) =>
         setTaskDraft((prev) => ({ ...prev, name: next })),
       token)
+      return
+    }
+    if (taskTemplateActiveField === 'title') {
+      insertTokenAtCursor(taskTemplateTitleRef, taskDraft.taskTitle ?? '', (next) =>
+        setTaskDraft((prev) => ({ ...prev, taskTitle: next })),
+      token)
+      return
+    }
+    if (taskTemplateActiveField !== 'content') {
+      const sectionIndex = getTaskSectionIndex(taskTemplateActiveField)
+      insertTokenAtCursor(
+        { current: taskTemplateSectionRefs.current[sectionIndex] },
+        taskTemplateSections[sectionIndex] ?? '',
+        (next) =>
+          setTaskDraft((prev) => {
+            const nextSections = normalizeTaskTemplateSections(prev)
+            nextSections[sectionIndex] = next
+            return { ...prev, taskSections: nextSections }
+          }),
+        token,
+      )
       return
     }
     insertTokenAtCursor(
@@ -2546,42 +2682,49 @@ function App() {
     })
   }
 
-  const taskBrowserCategories = useMemo(
+  const activeTaskTemplates = useMemo(
     () =>
-      [
+      data.taskTemplates.filter(
+        (task) => normalizeTaskTemplateKind(task) === activeTaskTemplateKind,
+      ),
+    [activeTaskTemplateKind, data.taskTemplates],
+  )
+  const taskBrowserCategories = useMemo(
+    () => [
         {
           id: 'favorites',
           name: 'Favoris',
-          count: data.taskTemplates.filter((task) => task.favorite).length,
+          count: activeTaskTemplates.filter((task) => task.favorite).length,
         },
-        ...taskTemplateCategories.map((category) => ({
+        ...activeTaskTemplateCategories.map((category) => ({
           ...category,
-          count: data.taskTemplates.filter((task) => task.categoryId === category.id).length,
+          count: activeTaskTemplates.filter((task) => task.categoryId === category.id).length,
         })),
         {
           id: 'all',
           name: 'Tous',
-          count: data.taskTemplates.length,
+          count: activeTaskTemplates.length,
         },
       ],
-    [data.taskTemplates, taskTemplateCategories],
+    [activeTaskTemplateCategories, activeTaskTemplates],
   )
   const taskTemplateResults = useMemo(() => {
     const query = taskQuery.trim().toLowerCase()
     if (!taskFocused && !query) return []
     const base =
       activeTaskCategoryId === 'favorites'
-        ? data.taskTemplates.filter((task) => task.favorite)
+        ? activeTaskTemplates.filter((task) => task.favorite)
         : activeTaskCategoryId === 'all'
-        ? data.taskTemplates
-        : data.taskTemplates.filter((task) => task.categoryId === activeTaskCategoryId)
+        ? activeTaskTemplates
+        : activeTaskTemplates.filter((task) => task.categoryId === activeTaskCategoryId)
     if (!query) return base
-    return data.taskTemplates.filter(
+    return activeTaskTemplates.filter(
       (task) =>
         task.name.toLowerCase().includes(query) ||
-        task.content.toLowerCase().includes(query),
+        task.content.toLowerCase().includes(query) ||
+        (task.taskTitle ?? '').toLowerCase().includes(query),
     )
-  }, [activeTaskCategoryId, taskFocused, taskQuery, data.taskTemplates])
+  }, [activeTaskCategoryId, activeTaskTemplates, taskFocused, taskQuery])
 
   const taskHeadingProtectedRanges = useMemo(
     () =>
@@ -2702,7 +2845,7 @@ function App() {
 
   const getTaskBoxesSnapshot = useCallback(
     (currentTask: string = data.taskDraft) =>
-      Array.from({ length: 2 }, (_, index) => {
+      Array.from({ length: TASK_BOX_COUNT }, (_, index) => {
         const source = index === activeTaskBoxIndex ? currentTask : taskDraftBoxes[index]?.task ?? ''
         return {
           task: getTaskBoxStorageValue(source, index),
@@ -2818,13 +2961,13 @@ function App() {
     if (notes) pushSection('Note', notes)
     filledTaskBoxes.forEach(({ task: boxTask, index }) => {
       pushSection(
-        taskBoxUsesSkeleton(index) ? 'Task formatée' : 'Task libre',
+        taskBoxUsesSkeleton(index) ? 'S-Task' : 'F-Task',
         buildCompactTaskPreviewText(boxTask, index, taskSectionNames),
       )
     })
     if (hasFallbackTask) {
       pushSection(
-        taskBoxUsesSkeleton(fallbackIndex) ? 'Task formatée' : 'Task libre',
+        taskBoxUsesSkeleton(fallbackIndex) ? 'S-Task' : 'F-Task',
         buildCompactTaskPreviewText(fallbackTask, fallbackIndex, taskSectionNames),
       )
     }
@@ -2839,8 +2982,8 @@ function App() {
       }
       return `
         <div class="draft-box-tooltip__section">
-          <div class="draft-box-tooltip__label">Task ${
-            taskBoxUsesSkeleton(index) ? 'formatée' : 'libre'
+          <div class="draft-box-tooltip__label">${
+            taskBoxUsesSkeleton(index) ? 'S-Task' : 'F-Task'
           }</div>
           <div class="draft-box-tooltip__content">${highlightTextPreview(
             buildCompactTaskPreviewText(task, index, taskSectionNames),
@@ -2861,16 +3004,36 @@ function App() {
       const nextBoxes = getTaskBoxesSnapshot()
       const useSkeleton = taskBoxUsesSkeleton(index)
       const nextTask = nextBoxes[index]?.task ?? ''
+      const normalizedTask = useSkeleton
+        ? normalizeTokenSpacing(
+            normalizeTaskDraftNumbering(
+              ensureStructuredTaskDraft(nextTask, taskSectionNames),
+              taskMailNumber,
+              taskSectionNames,
+            ),
+          )
+        : normalizeTokenSpacing(nextTask)
       setTaskDraftBoxes(nextBoxes)
       setActiveTaskBoxIndex(index)
       setTaskDraftSkeletonEnabled(useSkeleton)
-      updateTaskDraft(nextTask, nextTask.length, useSkeleton)
+      setData((prev) =>
+        prev.taskDraft === normalizedTask ? prev : { ...prev, taskDraft: normalizedTask },
+      )
       // Switching task boxes must not change the mail counter (it would look
       // like a freshly pasted skeleton and bump the number).
       closeDraftBoxTooltip()
-      requestAnimationFrame(() => taskEditorRef.current?.focus())
+      requestAnimationFrame(() => {
+        taskEditorRef.current?.setSelection(normalizedTask.length, normalizedTask.length)
+        taskEditorRef.current?.focus()
+      })
     },
-    [activeTaskBoxIndex, closeDraftBoxTooltip, getTaskBoxesSnapshot, updateTaskDraft],
+    [
+      activeTaskBoxIndex,
+      closeDraftBoxTooltip,
+      getTaskBoxesSnapshot,
+      taskMailNumber,
+      taskSectionNames,
+    ],
   )
 
   const handleDraftBoxHover = useCallback(
@@ -2925,6 +3088,20 @@ function App() {
       const slot = draftBoxes[index]
       if (!slot) return
 
+      const currentEmail = data.emailDraft
+      const currentNotes = data.notes
+      const currentTaskBoxes = getTaskBoxesSnapshot()
+      const currentTask = currentTaskBoxes[activeTaskBoxIndex]?.task ?? ''
+      const hasCurrentTask = hasTaskBoxContent(currentTask, activeTaskBoxIndex)
+      const hasCurrentTaskBoxContent = currentTaskBoxes.some((box, boxIndex) =>
+        hasTaskBoxContent(box.task, boxIndex),
+      )
+      const hasCurrentContent = Boolean(
+        currentEmail.trim() ||
+        currentNotes.trim() ||
+        hasCurrentTask ||
+        hasCurrentTaskBoxContent,
+      )
       const savedActiveTaskIndex = Math.max(0, Math.min(1, slot.activeTaskBoxIndex ?? 0))
       const hasSavedTask = hasTaskBoxContent(slot.task, savedActiveTaskIndex)
       const hasSavedTaskBoxes = (slot.taskBoxes ?? []).some((box, boxIndex) =>
@@ -2932,7 +3109,7 @@ function App() {
       )
       const hasSavedContent = Boolean(slot.email.trim() || (slot.notes ?? '').trim() || hasSavedTask || hasSavedTaskBoxes)
       if (hasSavedContent) {
-        const restoredTaskBoxes = Array.from({ length: 2 }, (_, taskBoxIndex) => ({
+        const restoredTaskBoxes = Array.from({ length: TASK_BOX_COUNT }, (_, taskBoxIndex) => ({
           ...createEmptyTaskBoxSlot(),
           ...(slot.taskBoxes?.[taskBoxIndex] ?? {}),
         }))
@@ -2948,25 +3125,46 @@ function App() {
         // task coming back out of the box, not a freshly pasted one (which
         // would advance to the next number).
         setTaskMailNumber(Math.max(1, getHighestTaskMailNumber(activeTask)))
-        requestAnimationFrame(() => {
-          setDraftBoxes((prev) =>
-            prev.map((item, slotIndex) =>
-              slotIndex === index ? createEmptyDraftBoxSlot() : item,
-            ),
-          )
-        })
+        setDraftBoxes((prev) =>
+          prev.map((item, slotIndex) =>
+            slotIndex === index
+              ? hasCurrentContent
+                ? {
+                    email: currentEmail,
+                    notes: currentNotes,
+                    task: hasCurrentTask ? currentTask : '',
+                    taskSkeletonEnabled: taskBoxUsesSkeleton(activeTaskBoxIndex),
+                    taskBoxes: currentTaskBoxes,
+                    activeTaskBoxIndex,
+                    savedAt: new Date().toISOString(),
+                  }
+                : createEmptyDraftBoxSlot()
+              : item,
+          ),
+        )
+        if (hasCurrentContent) {
+          setDraftBoxSwapPulses((prev) => ({
+            ...prev,
+            [index]: (prev[index] ?? 0) + 1,
+          }))
+          const existingTimeout = draftBoxSwapTimeoutRefs.current[index]
+          if (existingTimeout !== undefined) {
+            window.clearTimeout(existingTimeout)
+          }
+          draftBoxSwapTimeoutRefs.current[index] = window.setTimeout(() => {
+            setDraftBoxSwapPulses((prev) => {
+              const next = { ...prev }
+              delete next[index]
+              return next
+            })
+            delete draftBoxSwapTimeoutRefs.current[index]
+          }, 650)
+        }
         closeDraftBoxTooltip()
         return
       }
 
-      const nextEmail = data.emailDraft
-      const nextTaskBoxes = getTaskBoxesSnapshot()
-      const activeTask = nextTaskBoxes[activeTaskBoxIndex]?.task ?? ''
-      const hasNextTaskContent = hasTaskBoxContent(activeTask, activeTaskBoxIndex)
-      const hasNextTaskBoxContent = nextTaskBoxes.some((slot, boxIndex) =>
-        hasTaskBoxContent(slot.task, boxIndex),
-      )
-      if (!nextEmail.trim() && !data.notes.trim() && !hasNextTaskContent && !hasNextTaskBoxContent) {
+      if (!hasCurrentContent) {
         setToast('Ajoutez du texte avant de le stocker.')
         return
       }
@@ -2976,11 +3174,11 @@ function App() {
         prev.map((item, slotIndex) =>
           slotIndex === index
             ? {
-                email: nextEmail,
-                notes: data.notes,
-                task: hasNextTaskContent ? activeTask : '',
+                email: currentEmail,
+                notes: currentNotes,
+                task: hasCurrentTask ? currentTask : '',
                 taskSkeletonEnabled: taskBoxUsesSkeleton(activeTaskBoxIndex),
-                taskBoxes: nextTaskBoxes,
+                taskBoxes: currentTaskBoxes,
                 activeTaskBoxIndex,
                 savedAt,
               }
@@ -2993,7 +3191,7 @@ function App() {
       setTaskDraftSkeletonEnabled(useActiveSkeleton)
       updateTaskDraft('', undefined, useActiveSkeleton)
       setTaskMailNumber(1)
-      setTaskDraftBoxes(Array.from({ length: 2 }, createEmptyTaskBoxSlot))
+      setTaskDraftBoxes(Array.from({ length: TASK_BOX_COUNT }, createEmptyTaskBoxSlot))
       closeDraftBoxTooltip()
     },
     [
@@ -3164,16 +3362,24 @@ function App() {
   }
 
   const applyTaskTemplate = (template: TaskTemplate) => {
-    const nextTaskDraft = buildTaskTemplateContent(template)
+    const useSkeleton = normalizeTaskTemplateKind(template) === 's-task'
+    const targetIndex = useSkeleton ? TASK_SKELETON_BOX_INDEX : TASK_FREE_BOX_INDEX
+    const nextTaskDraft = useSkeleton
+      ? normalizeTaskDraftNumbering(
+          buildTaskDraftFromTemplate(template, taskSectionNames),
+          taskMailNumber,
+          taskSectionNames,
+        )
+      : buildTaskTemplateContent(template)
     const snapshot = getTaskBoxesSnapshot()
     setTaskDraftBoxes(
       snapshot.map((slot, index) =>
-        index === TASK_FREE_BOX_INDEX ? { ...slot, task: nextTaskDraft } : slot,
+        index === targetIndex ? { ...slot, task: nextTaskDraft } : slot,
       ),
     )
-    setActiveTaskBoxIndex(TASK_FREE_BOX_INDEX)
-    setTaskDraftSkeletonEnabled(false)
-    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, false)
+    setActiveTaskBoxIndex(targetIndex)
+    setTaskDraftSkeletonEnabled(useSkeleton)
+    updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
     requestAnimationFrame(() => taskEditorRef.current?.focus())
   }
 
@@ -3232,6 +3438,9 @@ function App() {
       const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
         templatePreview.selectedTaskSections[index] ? section : '',
       )
+      const linkedTaskTemplate = template.taskTemplateId
+        ? data.taskTemplates.find((task) => task.id === template.taskTemplateId)
+        : undefined
       if (templateMode === 'custom' || templateMode === 'sections') {
         let nextTaskDraft = data.taskDraft
         taskSections.forEach((section, index) => {
@@ -3245,16 +3454,26 @@ function App() {
         })
         updateTaskDraft(nextTaskDraft, nextTaskDraft.length, true)
       } else {
-        const nextTaskDraft = buildTaskTemplateContent({ taskSections })
+        const useSkeleton =
+          linkedTaskTemplate !== undefined &&
+          normalizeTaskTemplateKind(linkedTaskTemplate) === 's-task'
+        const targetIndex = useSkeleton ? TASK_SKELETON_BOX_INDEX : TASK_FREE_BOX_INDEX
+        const nextTaskDraft = useSkeleton
+          ? normalizeTaskDraftNumbering(
+              buildStructuredTaskDraft(taskSections, taskSectionNames),
+              taskMailNumber,
+              taskSectionNames,
+            )
+          : buildTaskTemplateContent({ taskSections })
         const snapshot = getTaskBoxesSnapshot()
         setTaskDraftBoxes(
           snapshot.map((slot, index) =>
-            index === TASK_FREE_BOX_INDEX ? { ...slot, task: nextTaskDraft } : slot,
+            index === targetIndex ? { ...slot, task: nextTaskDraft } : slot,
           ),
         )
-        setActiveTaskBoxIndex(TASK_FREE_BOX_INDEX)
-        setTaskDraftSkeletonEnabled(false)
-        updateTaskDraft(nextTaskDraft, nextTaskDraft.length, false)
+        setActiveTaskBoxIndex(targetIndex)
+        setTaskDraftSkeletonEnabled(useSkeleton)
+        updateTaskDraft(nextTaskDraft, nextTaskDraft.length, useSkeleton)
       }
     }
 
@@ -3692,7 +3911,7 @@ function App() {
     setProductDraft(savedProduct)
     setProductTagsDraftText((savedProduct.tags ?? []).join(', '))
     clearSettingsValidationTouched('product')
-    setToast('Produit enregistré.')
+    setToast('Groupe SKU enregistré.')
   }
 
   const handleDeleteProductCatalogItem = (product: ProductCatalogItem) => {
@@ -4885,9 +5104,13 @@ function App() {
       id: '',
       name: '',
       content: '',
+      kind: 'f-task',
       taskSections: ['', '', '', ''],
       taskSectionId: 'section-3',
-      categoryId: defaultData.settings.taskTemplateCategories[0]?.id ?? '',
+      categoryId:
+        defaultData.settings.taskTemplateCategories.find(
+          (category) => category.kind === 'f-task',
+        )?.id ?? '',
       favorite: false,
     })
     setProcedureDraft({
@@ -4906,8 +5129,8 @@ function App() {
       taskSectionId: 'section-3',
     })
     setProcedureInfoDraft('')
-    setDraftBoxes(Array.from({ length: 3 }, createEmptyDraftBoxSlot))
-    setTaskDraftBoxes(Array.from({ length: 2 }, createEmptyTaskBoxSlot))
+    setDraftBoxes(Array.from({ length: DRAFT_BOX_COUNT }, createEmptyDraftBoxSlot))
+    setTaskDraftBoxes(Array.from({ length: TASK_BOX_COUNT }, createEmptyTaskBoxSlot))
     setActiveTaskBoxIndex(0)
     setTaskDraftSkeletonEnabled(true)
     closeDraftBoxTooltip()
@@ -5112,14 +5335,22 @@ function App() {
     }
     const exists = data.taskTemplates.some((task) => task.id === taskDraft.id)
     const id = exists ? taskDraft.id : createId('task')
+    const kind = normalizeTaskTemplateKind(taskDraft)
+    const sections = normalizeTaskTemplateSections(taskDraft).map((section) => section.trim())
+    const categories = kind === 's-task' ? sTaskTemplateCategories : fTaskTemplateCategories
     const savedTask = {
       ...taskDraft,
       id,
+      kind,
       name: taskDraft.name.trim(),
-      categoryId: taskDraft.categoryId?.trim() || taskTemplateCategories[0]?.id || '',
-      content: taskDraft.content.trim(),
-      taskSections: undefined,
-      taskSectionId: undefined,
+      taskTitle: kind === 's-task' ? taskDraft.taskTitle?.trim() ?? '' : undefined,
+      categoryId: taskDraft.categoryId?.trim() || categories[0]?.id || '',
+      content:
+        kind === 's-task'
+          ? buildTaskTemplateContent({ taskSections: sections })
+          : taskDraft.content.trim(),
+      taskSections: kind === 's-task' ? sections : undefined,
+      taskSectionId: kind === 's-task' ? undefined : taskDraft.taskSectionId,
       favorite: Boolean(taskDraft.favorite),
     }
     setData((prev) => {
@@ -5131,7 +5362,7 @@ function App() {
     setTaskDraft(savedTask)
     setSelectedTaskId(id)
     clearSettingsValidationTouched('task')
-    setToast('Template task enregistré.')
+    setToast(`Template ${kind === 's-task' ? 'S-Task' : 'F-Task'} enregistré.`)
   }
 
   const handleProcedureSave = () => {
@@ -5287,15 +5518,48 @@ function App() {
       setToast('Renseignez un numéro de RQT.')
       return
     }
-    const reminder: RqtReminder = {
-      id: createId('rqt-reminder'),
-      rqt,
-      durationHours: reminderDurationDraft,
-      dueAt: new Date(Date.now() + reminderDurationDraft * 3_600_000).toISOString(),
+    const dueAt = new Date(Date.now() + reminderDurationDraft * 3_600_000).toISOString()
+    if (editingReminderId) {
+      updateSettings({
+        rqtReminders: rqtReminders.map((reminder) =>
+          reminder.id === editingReminderId
+            ? {
+                ...reminder,
+                rqt,
+                durationHours: reminderDurationDraft,
+                dueAt,
+                notifiedAt: undefined,
+              }
+            : reminder,
+        ),
+      })
+      setToast(editingReminderExpired ? 'Rappel RQT relancé.' : 'Délai du rappel RQT modifié.')
+    } else {
+      const reminder: RqtReminder = {
+        id: createId('rqt-reminder'),
+        rqt,
+        durationHours: reminderDurationDraft,
+        dueAt,
+      }
+      updateSettings({ rqtReminders: [...rqtReminders, reminder] })
     }
-    updateSettings({ rqtReminders: [...rqtReminders, reminder] })
     setReminderRqtDraft('')
+    setEditingReminderId(null)
     setReminderModalOpen(false)
+  }
+
+  const openNewRqtReminder = () => {
+    setEditingReminderId(null)
+    setReminderRqtDraft('')
+    setReminderDurationDraft(24)
+    setReminderModalOpen(true)
+  }
+
+  const openRqtReminderEditor = (reminder: RqtReminder) => {
+    setEditingReminderId(reminder.id)
+    setReminderRqtDraft(reminder.rqt)
+    setReminderDurationDraft(reminder.durationHours)
+    setReminderModalOpen(true)
   }
 
   const renderDashboardPageButton = (
@@ -5313,7 +5577,7 @@ function App() {
     >
       <UiIcon name={page.icon} className="dashboard-page-btn__icon" />
       {page.id === 'tools' && dashboardNotesHasContent ? (
-        <span className="dashboard-page-btn__notification" aria-hidden="true">🔔</span>
+        <span className="dashboard-page-btn__notification" aria-hidden="true" />
       ) : null}
     </button>
   )
@@ -5371,32 +5635,42 @@ function App() {
           <div className="dashboard-reminders__head">
             <span>Rappels RQT</span>
             <div className="dashboard-reminders__head-actions">
-              <button
-                className="btn btn--ghost btn--small dashboard-reminders__test"
-                type="button"
-                onClick={() =>
-                  setExpiredReminders([{
-                    id: 'temporary-notification-test',
-                    rqt: 'TEST',
-                    durationHours: 24,
-                    dueAt: new Date().toISOString(),
-                  }])
-                }
-                title="Tester la notification de rappel"
-              >
-                Test notification
-              </button>
-              <button className="icon-btn-sm" type="button" onClick={() => setReminderModalOpen(true)} title="Ajouter un rappel" aria-label="Ajouter un rappel"><AddIcon /></button>
+              <button className="btn btn--ghost btn--small" type="button" onClick={openNewRqtReminder}>Ajouter</button>
             </div>
           </div>
           <div className="dashboard-reminders__list">
             {rqtReminders.length ? [...rqtReminders].sort((a, b) => a.dueAt.localeCompare(b.dueAt)).map((reminder) => {
               const expired = new Date(reminder.dueAt).getTime() <= reminderNow
-              return <div className={`dashboard-reminder${expired ? ' is-expired' : ''}`} key={reminder.id}>
-                <span className="dashboard-reminder__status" aria-hidden="true">{expired ? '🔔' : '◷'}</span>
-                <strong>{reminder.rqt}</strong>
+              return <div
+                className={`dashboard-reminder${expired ? ' is-expired' : ''}`}
+                key={reminder.id}
+                role="button"
+                tabIndex={0}
+                title={expired ? 'Cliquer pour relancer le chrono' : 'Cliquer pour modifier le temps restant'}
+                onClick={() => openRqtReminderEditor(reminder)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return
+                  event.preventDefault()
+                  openRqtReminderEditor(reminder)
+                }}
+              >
+                <span className="dashboard-reminder__identity">
+                  <strong>RQT {reminder.rqt}</strong>
+                  <small>{expired ? 'Cliquer pour relancer' : 'Cliquer pour modifier'}</small>
+                </span>
                 <span className="dashboard-reminder__countdown">{formatReminderCountdown(reminder)}</span>
-                <button className="icon-btn-sm danger" type="button" onClick={() => updateSettings({ rqtReminders: rqtReminders.filter((item) => item.id !== reminder.id) })} title="Supprimer"><DeleteIcon /></button>
+                <button
+                  className="dashboard-reminder__delete"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    updateSettings({
+                      rqtReminders: rqtReminders.filter((item) => item.id !== reminder.id),
+                    })
+                  }}
+                >
+                  Supprimer
+                </button>
               </div>
             }) : <div className="dashboard-empty">Aucun rappel en attente.</div>}
           </div>
@@ -5983,7 +6257,7 @@ function App() {
               className="input"
               value={dashboardSparePartQuery}
               onChange={(event) => setDashboardSparePartQuery(event.target.value)}
-              placeholder="Rechercher un produit, une spare part ou un SKU..."
+              placeholder="Rechercher un groupe ou un SKU..."
             />
           </div>
           {filteredProductsWithSpareParts.length ? (
@@ -5998,12 +6272,12 @@ function App() {
               >
                 <span className="dashboard-version-item__name">{product.name}</span>
                 <span className="dashboard-version-item__meta">
-                  {product.spareParts.length} spare part{product.spareParts.length > 1 ? 's' : ''}
+                  {product.spareParts.length} SKU{product.spareParts.length > 1 ? 's' : ''}
                 </span>
               </button>
             ))
           ) : (
-            <div className="dashboard-empty">Aucune spare part configurée.</div>
+            <div className="dashboard-empty">Aucun SKU configuré.</div>
           )}
         </div>
 
@@ -6017,7 +6291,7 @@ function App() {
                   </div>
                   <div className="dashboard-version-detail__badges">
                     <span className="dashboard-version-detail__badge">
-                      {activeDashboardSpareProduct.spareParts.length} spare part
+                      {activeDashboardSpareProduct.spareParts.length} SKU
                       {activeDashboardSpareProduct.spareParts.length > 1 ? 's' : ''}
                     </span>
                   </div>
@@ -6076,14 +6350,14 @@ function App() {
                     </article>
                   ))
                 ) : (
-                  <div className="dashboard-empty">Aucune spare part pour ce produit.</div>
+                  <div className="dashboard-empty">Aucun SKU dans ce groupe.</div>
                 )}
               </div>
             </>
           ) : (
             <div className="dashboard-wip">
-              <strong>Spare parts</strong>
-              <span>Sélectionnez un produit pour afficher ses pièces.</span>
+              <strong>SKU’s</strong>
+              <span>Sélectionnez un groupe pour afficher ses références.</span>
             </div>
           )}
         </div>
@@ -6375,7 +6649,7 @@ function App() {
     if (workspaceDashboardPage === 'parts') {
       return (
         <div className="workspace-dashboard__single">
-          {renderWorkspaceDashboardSparePartsPanel('SKU & spare parts')}
+          {renderWorkspaceDashboardSparePartsPanel('SKU’s')}
         </div>
       )
     }
@@ -6743,6 +7017,7 @@ function App() {
                   className="bullet-color-indicator"
                   style={{
                     background: categoryColorById.get(snippet.categoryId) ?? '#a392d5',
+                    color: categoryColorById.get(snippet.categoryId) ?? '#a392d5',
                   }}
                 />
                 <div className="bullet-meta">
@@ -6850,17 +7125,10 @@ function App() {
                           }}
                         >
                           <div className="result-name">
+                            <span className="result-name__text">{category.name}</span>
                             {category.id === 'favorites' ? (
                               <span className="category-star">★</span>
-                            ) : (
-                              <span
-                                className="category-star category-star--spacer"
-                                aria-hidden="true"
-                              >
-                                ★
-                              </span>
-                            )}
-                            <span className="result-name__text">{category.name}</span>
+                            ) : null}
                             <span className="category-count">({category.count})</span>
                             <span className="category-arrow">›</span>
                           </div>
@@ -6932,12 +7200,12 @@ function App() {
                       title={
                         hasContent
                           ? `Vider la boîte ${index + 1}`
-                          : `Sauvegarder le mail et les deux tasks dans la boîte ${index + 1}`
+                          : `Sauvegarder le mail, la S-Task et la F-Task dans la boîte ${index + 1}`
                       }
                       aria-label={
                         hasContent
                           ? `Vider la boîte ${index + 1}`
-                          : `Sauvegarder le mail et les deux tasks dans la boîte ${index + 1}`
+                          : `Sauvegarder le mail, la S-Task et la F-Task dans la boîte ${index + 1}`
                       }
                       aria-pressed={hasContent}
                       disabled={isDisabled}
@@ -6952,6 +7220,15 @@ function App() {
                         />
                         <span className="draft-box-btn__badge">{index + 1}</span>
                       </span>
+                      {draftBoxSwapPulses[index] ? (
+                        <span
+                          className="draft-box-btn__swap"
+                          aria-hidden="true"
+                          key={`draft-box-swap-${index}-${draftBoxSwapPulses[index]}`}
+                        >
+                          <UiIcon name="swap" />
+                        </span>
+                      ) : null}
                     </button>
                   )
                 })}
@@ -7124,7 +7401,9 @@ function App() {
               <input
                 value={taskQuery}
                 onChange={(event) => setTaskQuery(event.target.value)}
-                placeholder="Rechercher un template de tâche..."
+                placeholder={`Rechercher un template ${
+                  activeTaskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'
+                }...`}
                 onFocus={() => {
                   setTaskFocused(true)
                   setTaskBrowserView('categories')
@@ -7163,17 +7442,26 @@ function App() {
                               closeTaskSearch()
                             }}
                           >
-                            <div className="result-name">{task.name}</div>
-                            <div
-                              className="result-preview"
-                              dangerouslySetInnerHTML={{
-                                __html: highlightTextPreview(task.content.split('\n')[0] ?? ''),
-                              }}
-                            />
+                            <div className="result-name">
+                              <span className="result-name__text">{task.name}</span>
+                              <span className="task-kind-badge">
+                                {normalizeTaskTemplateKind(task) === 's-task'
+                                  ? 'S-Task'
+                                  : 'F-Task'}
+                              </span>
+                            </div>
+                              <div
+                                className="result-preview"
+                                dangerouslySetInnerHTML={{
+                                  __html: highlightTextPreview(getTaskTemplatePreviewText(task)),
+                                }}
+                              />
                           </div>
                         ))
                       ) : (
-                        <div className="search-result-empty">Aucun template.</div>
+                        <div className="search-result-empty">
+                          Aucun template {activeTaskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'}.
+                        </div>
                       )}
                     </>
                   ) : (
@@ -7186,16 +7474,12 @@ function App() {
                           setActiveTaskCategoryId(category.id)
                           setTaskBrowserView('templates')
                         }}
-                        >
-                          <div className="result-name">
+                      >
+                        <div className="result-name">
+                          <span className="result-name__text">{category.name}</span>
                           {category.id === 'favorites' ? (
                             <span className="category-star">★</span>
-                          ) : (
-                            <span className="category-star category-star--spacer" aria-hidden="true">
-                              ★
-                            </span>
-                          )}
-                          <span className="result-name__text">{category.name}</span>
+                          ) : null}
                           <span className="category-count">({category.count})</span>
                           <span className="category-arrow">›</span>
                         </div>
@@ -7215,7 +7499,11 @@ function App() {
                 updateTaskDraft(value, cursor)
               }}
               onPaste={handleTaskPaste}
-              placeholder="Écrivez vos tâches..."
+              placeholder={
+                taskDraftSkeletonEnabled
+                  ? 'Écrivez votre S-Task...'
+                  : 'Écrivez votre F-Task...'
+              }
               className="task-editor"
               protectedRanges={taskHeadingProtectedRanges}
               decorateTaskSkeleton={taskDraftSkeletonEnabled}
@@ -7223,7 +7511,10 @@ function App() {
           </div>
           <div className="task-actions">
             <div className="task-actions__left">
-              <div className="draft-boxes-inline task-draft-boxes-inline" aria-label="Tasks">
+              <div
+                className="draft-boxes-inline task-draft-boxes-inline"
+                aria-label="S-Task et F-Task"
+              >
                 {taskDraftBoxes.map((slot, index) => {
                   const taskValue = index === activeTaskBoxIndex ? data.taskDraft : slot.task
                   const hasContent = hasTaskBoxContent(taskValue, index)
@@ -7235,13 +7526,14 @@ function App() {
                       className={`draft-box-btn task-draft-box-btn${hasContent ? ' is-filled' : ''}${
                         isActive ? ' is-active' : ''
                       }`}
-                      title={index === 0 ? 'Task 1 avec squelette' : 'Task 2 libre sans squelette'}
+                      title={index === 0 ? 'S-Task' : 'F-Task'}
                       aria-label={
                         index === 0
-                          ? 'Afficher la task 1 avec squelette'
-                          : 'Afficher la task 2 libre sans squelette'
+                          ? 'Afficher la S-Task'
+                          : 'Afficher la F-Task'
                       }
                       aria-pressed={isActive}
+                      onMouseDown={(event) => event.preventDefault()}
                       onClick={() => openTaskBox(index)}
                       onMouseEnter={(event) => handleTaskBoxHover(index, event)}
                       onMouseLeave={closeDraftBoxTooltip}
@@ -7407,15 +7699,18 @@ function App() {
 
 
     {reminderModalOpen ? (
-      <div className="modal-backdrop" onMouseDown={() => setReminderModalOpen(false)}>
+      <div className="modal-backdrop" onMouseDown={() => {
+        setReminderModalOpen(false)
+        setEditingReminderId(null)
+      }}>
         <div className="modal reminder-modal" onMouseDown={(event) => event.stopPropagation()}>
-          <div className="modal__header"><div className="brand__title">Nouveau rappel RQT</div><button className="close-modal" type="button" onClick={() => setReminderModalOpen(false)}><CloseIcon /></button></div>
+          <div className="modal__header"><div className="brand__title">{editingReminderId ? 'Modifier le rappel RQT' : 'Nouveau rappel RQT'}</div><button className="close-modal" type="button" onClick={() => { setReminderModalOpen(false); setEditingReminderId(null) }}><CloseIcon /></button></div>
           <div className="reminder-modal__body">
             <label className="workflow-step-label" htmlFor="reminder-rqt">Numéro de RQT</label>
             <input id="reminder-rqt" className="input" autoFocus value={reminderRqtDraft} onChange={(event) => setReminderRqtDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addRqtReminder() }} placeholder="Ex. 123456" />
-            <div className="workflow-step-label">Durée</div>
-            <div className="reminder-duration-options">{([24, 48, 72] as const).map((hours) => <button type="button" className={`btn ${reminderDurationDraft === hours ? 'btn--primary' : 'btn--ghost'}`} key={hours} onClick={() => setReminderDurationDraft(hours)}>{hours} h</button>)}</div>
-            <button className="btn btn--primary" type="button" onClick={addRqtReminder}>Créer le rappel</button>
+            <div className="workflow-step-label">{editingReminderId ? 'Nouveau temps restant' : 'Durée'}</div>
+            <div className="reminder-duration-options">{([1, 24, 48, 72] as const).map((hours) => <button type="button" className={`btn ${reminderDurationDraft === hours ? 'btn--primary' : 'btn--ghost'}`} key={hours} onClick={() => setReminderDurationDraft(hours)}>{hours} h</button>)}</div>
+            <button className="btn btn--primary" type="button" onClick={addRqtReminder}>{editingReminderId ? (editingReminderExpired ? 'Relancer le chrono' : 'Modifier le délai') : 'Créer le rappel'}</button>
           </div>
         </div>
       </div>
@@ -7628,7 +7923,7 @@ function App() {
                             className={`settings-layout__nav-btn${
                               editTab === item.id ? ' is-active' : ''
                             }${issueCount ? ' has-issues' : ''}`}
-                            onClick={() => setEditTab(item.id)}
+                            onClick={() => openSettingsTab(item.id)}
                           >
                             <span className="settings-layout__nav-btn-main">
                               <UiIcon name={item.icon} className="settings-layout__nav-btn-icon" />
@@ -7681,7 +7976,7 @@ function App() {
                     <div className="settings-layout__related" aria-label="Réglages associés">
                       <span>Associés</span>
                       {relatedSettingsTabs.map((tab) => (
-                        <button key={tab.id} type="button" onClick={() => setEditTab(tab.id)}>
+                        <button key={tab.id} type="button" onClick={() => openSettingsTab(tab.id)}>
                           <UiIcon name={tab.icon} />
                           {tab.label}
                         </button>
@@ -8559,6 +8854,7 @@ function App() {
                             <option value="">Choisir une task complète</option>
                             {data.taskTemplates.map((task) => (
                               <option key={task.id} value={task.id}>
+                                [{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}]{' '}
                                 {task.name}
                               </option>
                             ))}
@@ -8620,7 +8916,7 @@ function App() {
                         {folder.templates.map((template) => <div className="troubleshootgun-template-editor" key={template.id}>
                           <div className="form__row two"><input className="input" value={template.name} onChange={(event) => patchTemplate(template.id, { name: event.target.value })} placeholder="Nom du template" /><select className="select" value={template.language} onChange={(event) => patchTemplate(template.id, { language: event.target.value as Language })}><option value="fr">Français</option><option value="en">Anglais</option></select></div>
                           <textarea className="textarea textarea--tall" value={template.content} onChange={(event) => patchTemplate(template.id, { content: event.target.value })} placeholder="Contenu du mail" />
-                          <div className="form__row two"><select className="select" value={template.taskTemplateId ?? ''} onChange={(event) => patchTemplate(template.id, { taskTemplateId: event.target.value, taskCustom: false })}><option value="">Aucune task liée</option>{data.taskTemplates.map((task) => <option key={task.id} value={task.id}>{task.name}</option>)}</select><button className="btn btn--danger" type="button" onClick={() => patchFolder({ templates: folder.templates.filter((item) => item.id !== template.id) })}><DeleteIcon /> Supprimer</button></div>
+                          <div className="form__row two"><select className="select" value={template.taskTemplateId ?? ''} onChange={(event) => patchTemplate(template.id, { taskTemplateId: event.target.value, taskCustom: false })}><option value="">Aucune task liée</option>{data.taskTemplates.map((task) => <option key={task.id} value={task.id}>[{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}] {task.name}</option>)}</select><button className="btn btn--danger" type="button" onClick={() => patchFolder({ templates: folder.templates.filter((item) => item.id !== template.id) })}><DeleteIcon /> Supprimer</button></div>
                         </div>)}
                       </div>
                     })()}
@@ -8746,7 +9042,7 @@ function App() {
               </div>
             ) : null}
 
-            {editTab === 'taskCategories' ? (
+            {editTab === 'sTaskCategories' || editTab === 'fTaskCategories' ? (
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
@@ -8754,9 +9050,18 @@ function App() {
                   </div>
                   <div className="list-card__body">
                     <SortableList
-                      items={taskTemplateCategories}
+                      items={settingsTaskTemplateCategories}
                       getId={(item) => item.id}
-                      onReorder={(next) => updateSettings({ taskTemplateCategories: next })}
+                      onReorder={(next) => {
+                        let index = 0
+                        updateSettings({
+                          taskTemplateCategories: taskTemplateCategories.map((category) =>
+                            category.kind === settingsTaskTemplateKind
+                              ? next[index++]
+                              : category,
+                          ),
+                        })
+                      }}
                       renderItem={(category, handleProps) => (
                         <div
                           className={`list-item list-item--compact${
@@ -8807,7 +9112,13 @@ function App() {
                       <button
                         className="btn btn--ghost btn--small btn--with-icon"
                         type="button"
-                        onClick={() => setTaskTemplateCategoryDraft({ id: '', name: '' })}
+                        onClick={() =>
+                          setTaskTemplateCategoryDraft({
+                            id: '',
+                            name: '',
+                            kind: settingsTaskTemplateKind,
+                          })
+                        }
                       >
                         <ButtonIcon name="add" />
                         Nouveau
@@ -8838,7 +9149,10 @@ function App() {
                       />
                       {taskTemplateCategoryDraft.id ? (
                         <div className="category-snippet-preview">
-                          <div className="category-snippet-preview__title">Aperçu des tasks</div>
+                          <div className="category-snippet-preview__title">
+                            Aperçu des templates{' '}
+                            {settingsTaskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'}
+                          </div>
                           {data.taskTemplates.filter(
                             (task) => task.categoryId === taskTemplateCategoryDraft.id,
                           ).length ? (
@@ -8863,17 +9177,31 @@ function App() {
               </div>
             ) : null}
 
-            {editTab === 'tasks' ? (
+            {editTab === 'sTasks' || editTab === 'fTasks' ? (
               <div className="modal__grid">
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Liste</div>
+                    <div className="list-card__title">
+                      Templates {settingsTaskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'}
+                    </div>
                   </div>
                   <div className="list-card__body">
                     <SortableList
-                      items={data.taskTemplates}
+                      items={settingsTaskTemplates}
                       getId={(item) => item.id}
-                      onReorder={(next) => setData((prev) => ({ ...prev, taskTemplates: next }))}
+                      onReorder={(next) =>
+                        setData((prev) => {
+                          let index = 0
+                          return {
+                            ...prev,
+                            taskTemplates: prev.taskTemplates.map((task) =>
+                              normalizeTaskTemplateKind(task) === settingsTaskTemplateKind
+                                ? next[index++]
+                                : task,
+                            ),
+                          }
+                        })
+                      }
                       renderItem={(task, handleProps) => {
                         const issues = getTaskTemplateIssues(task)
                         return (
@@ -8885,8 +9213,13 @@ function App() {
                               clearSettingsValidationTouched('task')
                               setTaskDraft({
                                 ...task,
+                                kind: normalizeTaskTemplateKind(task),
                                 content: buildTaskTemplateContent(task),
-                                categoryId: task.categoryId ?? taskTemplateCategories[0]?.id ?? '',
+                                taskSections: normalizeTaskTemplateSections(task),
+                                categoryId:
+                                  task.categoryId ??
+                                  settingsTaskTemplateCategories[0]?.id ??
+                                  '',
                               })
                               setSelectedTaskId(task.id)
                             }}
@@ -8902,10 +9235,13 @@ function App() {
                             </button>
                             <div className="list-item__content">
                               <div className="list-item__title">
-                                {task.name || 'Task sans titre'}
+                                {task.name || 'Template sans titre'}
+                                {normalizeTaskTemplateKind(task) === 's-task' ? (
+                                  <span className="task-kind-badge">S-Task</span>
+                                ) : null}
                               </div>
                               <div className="list-item__meta">
-                                {task.content.split('\n')[0] || 'Contenu manquant'}
+                                {getTaskTemplatePreviewText(task)}
                               </div>
                               {renderIssueBadge(issues)}
                             </div>
@@ -9005,7 +9341,7 @@ function App() {
                   <div className="list-card__body">
                     {isTaskSelectionEmpty ? (
                       <div className="empty-state">
-                        Sélectionnez un template de task ou créez-en un avec Nouveau.
+                        Sélectionnez un template S-Task / F-Task ou créez-en un avec Nouveau.
                       </div>
                     ) : (
                       <div className="form">
@@ -9013,7 +9349,7 @@ function App() {
                         <div className="workflow-step-label">Nom</div>
                         <input
                           className="input"
-                          placeholder="Nom du template de task libre"
+                          placeholder={`Nom du template ${taskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'}`}
                           value={taskDraft.name}
                           ref={taskTemplateNameRef}
                           data-tag-autocomplete-field="true"
@@ -9058,11 +9394,21 @@ function App() {
                             tag,
                           ),
                         )}
+                        <div className="workflow-step-label">Type de template</div>
+                        <div className="settings-note">
+                          {taskTemplateKind === 's-task'
+                            ? 'S-Task — squelette en 4 sections'
+                            : 'F-Task — contenu libre'}
+                        </div>
                         <div className="workflow-step-label">Catégorie</div>
                         <div className="form__row two">
                           <select
                             className="select select--roomy"
-                            value={taskDraft.categoryId ?? taskTemplateCategories[0]?.id ?? ''}
+                            value={
+                              taskDraft.categoryId ??
+                              settingsTaskTemplateCategories[0]?.id ??
+                              ''
+                            }
                             onChange={(event) =>
                               setTaskDraft((prev) => ({
                                 ...prev,
@@ -9070,10 +9416,10 @@ function App() {
                               }))
                             }
                           >
-                            {!taskTemplateCategories.length ? (
+                            {!settingsTaskTemplateCategories.length ? (
                               <option value="">Aucune catégorie</option>
                             ) : null}
-                            {taskTemplateCategories.map((category) => (
+                            {settingsTaskTemplateCategories.map((category) => (
                               <option key={category.id} value={category.id}>
                                 {category.name}
                               </option>
@@ -9101,27 +9447,99 @@ function App() {
                             ★
                           </button>
                         </div>
-                        <label className="workflow-step-label" htmlFor="task-template-content">
-                          Contenu
-                        </label>
-                        <textarea
-                          id="task-template-content"
-                          className="textarea"
-                          placeholder="Contenu du template"
-                          value={taskDraft.content}
-                          ref={taskTemplateContentRef}
-                          onFocus={() => setTaskTemplateActiveField('content')}
-                          onChange={(event) =>
-                            setTaskDraft((prev) => ({ ...prev, content: event.target.value }))
-                          }
-                        />
+                        {taskTemplateKind === 's-task' ? (
+                          <>
+                            <label
+                              className="workflow-step-label"
+                              htmlFor="task-template-title"
+                            >
+                              Titre de la S-Task
+                            </label>
+                            <input
+                              id="task-template-title"
+                              className="input"
+                              ref={taskTemplateTitleRef}
+                              value={taskDraft.taskTitle ?? ''}
+                              placeholder="Titre affiché au-dessus des sections"
+                              onFocus={() => setTaskTemplateActiveField('title')}
+                              onChange={(event) =>
+                                setTaskDraft((prev) => ({
+                                  ...prev,
+                                  taskTitle: event.target.value,
+                                }))
+                              }
+                            />
+                            <div className="task-template-sections">
+                              {TASK_SECTION_IDS.map((sectionId, index) => (
+                                <div className="task-template-section" key={sectionId}>
+                                  <div className="task-template-section__marker">{index + 1}</div>
+                                  <div className="task-template-section__body">
+                                    <label
+                                      className="workflow-step-label"
+                                      htmlFor={`task-template-${sectionId}`}
+                                    >
+                                      {taskSectionNames[index]}
+                                    </label>
+                                    <textarea
+                                      id={`task-template-${sectionId}`}
+                                      className="textarea textarea--task-template-section"
+                                      placeholder={`Contenu de ${taskSectionNames[index]}`}
+                                      value={taskTemplateSections[index] ?? ''}
+                                      ref={(element) => {
+                                        taskTemplateSectionRefs.current[index] = element
+                                      }}
+                                      onFocus={() => setTaskTemplateActiveField(sectionId)}
+                                      onChange={(event) => {
+                                        const value = event.target.value
+                                        setTaskDraft((prev) => {
+                                          const sections = normalizeTaskTemplateSections(prev)
+                                          sections[index] = value
+                                          return { ...prev, taskSections: sections }
+                                        })
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <label
+                              className="workflow-step-label"
+                              htmlFor="task-template-content"
+                            >
+                              Contenu F-Task
+                            </label>
+                            <textarea
+                              id="task-template-content"
+                              className="textarea"
+                              placeholder="Contenu libre du template"
+                              value={taskDraft.content}
+                              ref={taskTemplateContentRef}
+                              onFocus={() => setTaskTemplateActiveField('content')}
+                              onChange={(event) =>
+                                setTaskDraft((prev) => ({
+                                  ...prev,
+                                  content: event.target.value,
+                                }))
+                              }
+                            />
+                          </>
+                        )}
                         <div className="task-template-preview-settings">
                           <div className="task-template-preview-settings__title">Aperçu</div>
                           <div
                             className="task-template-preview-settings__content settings-token-preview"
                             dangerouslySetInnerHTML={{
                               __html: highlightText(
-                                taskDraft.content.trim() ||
+                                (taskTemplateKind === 's-task'
+                                  ? buildStructuredTaskDraftWithTitle(
+                                      taskDraft.taskTitle?.trim() ?? '',
+                                      taskTemplateSections,
+                                      taskSectionNames,
+                                    ).trim()
+                                  : taskDraft.content.trim()) ||
                                   'Le contenu du template apparaîtra ici.',
                               ),
                             }}
@@ -9270,7 +9688,7 @@ function App() {
                                   {product.productType?.trim() || 'Type non renseigné'} •{' '}
                                   {(product.editions ?? []).length} édition
                                   {(product.editions ?? []).length > 1 ? 's' : ''} •{' '}
-                                  {product.spareParts.length} spare part
+                                  {product.spareParts.length} SKU
                                   {product.spareParts.length > 1 ? 's' : ''}
                                 </div>
                                 {renderIssueBadge(issues)}
@@ -10312,6 +10730,7 @@ function App() {
                             <option value="">Choisir une tâche...</option>
                             {data.taskTemplates.map((task) => (
                               <option key={task.id} value={task.id}>
+                                [{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}]{' '}
                                 {task.name}
                               </option>
                             ))}
@@ -11075,8 +11494,20 @@ function App() {
                 <div className="list-card">
                   <div className="list-card__header list-card__header--wrap">
                     <div className="list-card__title-group">
-                      <div className="list-card__title">Liste</div>
+                      <div className="list-card__title">Groupes SKU</div>
                     </div>
+                    <button
+                      className="btn btn--ghost btn--small btn--with-icon"
+                      type="button"
+                      onClick={() => {
+                        setProductDraft(getEmptyProductDraft())
+                        setProductTagsDraftText('')
+                        setSelectedProductCatalogId('new')
+                      }}
+                    >
+                      <ButtonIcon name="add" />
+                      Nouveau groupe
+                    </button>
                   </div>
                   <div className="list-card__body">
                     {productsSorted.length ? (
@@ -11108,8 +11539,8 @@ function App() {
                             <div className="list-item__content">
                               <div className="list-item__title">{product.name}</div>
                               <div className="list-item__meta">
-                                {product.spareParts.length} spare part
-                                {product.spareParts.length > 1 ? 's' : ''} • Packing guide{' '}
+                                {product.spareParts.length} SKU
+                                {product.spareParts.length > 1 ? 's' : ''} • Guide{' '}
                                 {product.packingGuideAvailable ? 'disponible' : 'indisponible'}
                               </div>
                             </div>
@@ -11117,9 +11548,7 @@ function App() {
                         )}
                       />
                     ) : (
-                      <div className="empty-state">
-                        Aucun produit. Créez-en un dans l’onglet Produits.
-                      </div>
+                      <div className="empty-state">Aucun groupe SKU configuré.</div>
                     )}
                   </div>
                 </div>
@@ -11137,7 +11566,7 @@ function App() {
                         disabled={isProductCatalogSelectionEmpty}
                       >
                         <ButtonIcon name="add" />
-                        Ajouter une spare part
+                        Ajouter un SKU
                       </button>
                       <button
                         className="btn btn--primary btn--small btn--with-icon"
@@ -11153,10 +11582,21 @@ function App() {
                   <div className="list-card__body">
                     {isProductCatalogSelectionEmpty ? (
                       <div className="empty-state">
-                        Sélectionnez un produit pour éditer ses spare parts.
+                        Sélectionnez ou créez un groupe SKU.
                       </div>
                     ) : (
                       <div className="spare-parts-editor">
+                        <input
+                          className="input"
+                          placeholder="Nom du groupe SKU"
+                          value={productDraft.name}
+                          onChange={(event) =>
+                            setProductDraft((prev) => ({
+                              ...prev,
+                              name: event.target.value,
+                            }))
+                          }
+                        />
                         <label className="portal-code-editor__check spare-parts-editor__product-guide">
                           <input
                             type="checkbox"
@@ -11168,7 +11608,7 @@ function App() {
                               }))
                             }
                           />
-                          <span>Packing guide disponible pour ce produit</span>
+                          <span>Guide disponible pour ce groupe</span>
                         </label>
                         {productDraft.spareParts.length ? (
                           <SortableList
@@ -11236,7 +11676,7 @@ function App() {
                           />
                         ) : (
                           <div className="empty-state">
-                            Aucune spare part pour ce produit.
+                            Aucun SKU dans ce groupe.
                           </div>
                         )}
                       </div>
@@ -11430,7 +11870,7 @@ function App() {
                           ['Catégories', data.categories.length],
                           ['Snippets', data.snippets.length],
                           ['Templates mail', data.templates.length],
-                          ['Templates task', data.taskTemplates.length],
+                          ['Templates S-Task / F-Task', data.taskTemplates.length],
                           ['Procédures', data.procedures.length],
                           ['News', dashboardNews.length],
                           ['Historique mail', data.history.length],

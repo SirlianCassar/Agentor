@@ -10,6 +10,7 @@ import type {
   Snippet,
   TaskTemplate,
 } from './types'
+import { normalizeTaskTemplateKind, normalizeTaskTemplateSections } from './taskDraft'
 
 export type SettingsValidationScope =
   | 'category'
@@ -53,7 +54,7 @@ export function getMailTemplateIssues(template: MailTemplate, taskTemplateIds: S
     !template.taskOptional &&
     !taskTemplateIds.has(template.taskTemplateId)
   ) {
-    issues.push('Template de task introuvable.')
+    issues.push('Template S-Task / F-Task introuvable.')
   }
   return issues
 }
@@ -61,7 +62,11 @@ export function getMailTemplateIssues(template: MailTemplate, taskTemplateIds: S
 export function getTaskTemplateIssues(task: TaskTemplate) {
   const issues: string[] = []
   if (isBlank(task.name)) issues.push('Titre obligatoire.')
-  if (isBlank(task.content)) issues.push('Contenu obligatoire.')
+  const hasContent =
+    normalizeTaskTemplateKind(task) === 's-task'
+      ? normalizeTaskTemplateSections(task).some((section) => section.trim())
+      : !isBlank(task.content)
+  if (!hasContent) issues.push('Contenu obligatoire.')
   return issues
 }
 
@@ -83,7 +88,7 @@ export function getProductCatalogItemIssues(product: ProductCatalogItem) {
   const incompleteSpareParts = product.spareParts.filter(
     (sparePart) => isBlank(sparePart.name) || isBlank(sparePart.sku),
   )
-  if (incompleteSpareParts.length) issues.push('Spare part incomplete.')
+  if (incompleteSpareParts.length) issues.push('SKU incomplet.')
   return issues
 }
 

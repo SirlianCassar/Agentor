@@ -1,7 +1,7 @@
 {
   "name": "agentor",
   "private": true,
-  "version": "2.0.40",
+  "version": "2.0.41",
   "author": "Sirlian",
   "description": "Agentor local email and task template composer",
   "type": "module",

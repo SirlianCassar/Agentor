@@ -3,6 +3,7 @@ export type InsertMode = 'line' | 'cursor'
 export type SnippetCategoryDisplay = 'buttons' | 'dropdown'
 export type PortalQuickLinkId = 'crm' | 'share' | 'global' | 'portal' | 'assist'
 export type TaskSectionId = 'section-1' | 'section-2' | 'section-3' | 'section-4'
+export type TaskTemplateKind = 's-task' | 'f-task'
 
 export type CategoryColor =
   | 'rouge'
@@ -65,7 +66,7 @@ export interface RqtReminder {
   id: string
   rqt: string
   dueAt: string
-  durationHours: 24 | 48 | 72
+  durationHours: 1 | 24 | 48 | 72
   notifiedAt?: string
 }
 
@@ -73,6 +74,8 @@ export interface TaskTemplate {
   id: string
   name: string
   content: string
+  kind?: TaskTemplateKind
+  taskTitle?: string
   taskSectionId?: TaskSectionId
   taskSections?: string[]
   categoryId?: string
@@ -206,6 +209,10 @@ export interface MailTemplateCategory {
   name: string
 }
 
+export interface TaskTemplateCategory extends MailTemplateCategory {
+  kind?: TaskTemplateKind
+}
+
 export interface AppSettings {
   language: Language
   zoom: number
@@ -232,7 +239,7 @@ export interface AppSettings {
   troubleshootgunFolders: TroubleshootgunFolder[]
   taskSectionNames: string[]
   mailTemplateCategories: MailTemplateCategory[]
-  taskTemplateCategories: MailTemplateCategory[]
+  taskTemplateCategories: TaskTemplateCategory[]
 }
 
 export interface AppData {

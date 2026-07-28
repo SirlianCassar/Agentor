@@ -5,9 +5,13 @@ export type SettingsTab =
   | 'snippets'
   | 'templates'
   | 'tasks'
+  | 'sTasks'
+  | 'fTasks'
   | 'templateCategories'
   | 'troubleshootgun'
   | 'taskCategories'
+  | 'sTaskCategories'
+  | 'fTaskCategories'
   | 'tags'
   | 'products'
   | 'calls'
@@ -35,7 +39,7 @@ export type SettingsTab =
 export type SettingsIconName = AppIconName
 
 export type SettingsNavSection = {
-  id: 'home' | 'content' | 'procedures' | 'catalogs' | 'support' | 'application'
+  id: 'home' | 'content' | 'troubleshotgun' | 'procedures' | 'catalogs' | 'support'
   label: string
   icon: SettingsIconName
   items: Array<{
@@ -55,8 +59,20 @@ export const settingsNavigation: SettingsNavSection[] = [
       {
         id: 'dashboard',
         label: 'Accueil',
-        description: 'Version, mise à jour, récapitulatif global et export/import.',
+        description: 'Version, récapitulatif global et export/import.',
         icon: 'dashboard',
+      },
+      {
+        id: 'preferences',
+        label: 'Affichage et préférence',
+        description: 'Options visuelles et réglages généraux de l’application.',
+        icon: 'preferences',
+      },
+      {
+        id: 'updates',
+        label: 'Mise à jour',
+        description: 'Statut de l’application et recherche de nouvelles versions.',
+        icon: 'download',
       },
     ],
   },
@@ -67,7 +83,7 @@ export const settingsNavigation: SettingsNavSection[] = [
     items: [
       {
         id: 'categories',
-        label: 'Catégories des snippets',
+        label: 'Catégories Snippets',
         description: 'Familles, couleurs et aperçu des snippets liés.',
         icon: 'channels',
       },
@@ -78,40 +94,59 @@ export const settingsNavigation: SettingsNavSection[] = [
         icon: 'list',
       },
       {
+        id: 'templateCategories',
+        label: 'Catégories Mail',
+        description: 'Catégories utilisées par les templates mail.',
+        icon: 'channels',
+      },
+      {
         id: 'templates',
         label: 'Mails',
-        description: 'Templates email et task associée optionnelle.',
+        description: 'Templates email et Task associée optionnelle.',
         icon: 'template',
       },
       {
-        id: 'templateCategories',
-        label: 'Catégories mail',
-        description: 'Catégories utilisées par la recherche et le Troubleshootgun.',
+        id: 'sTaskCategories',
+        label: 'Catégories de S-Task',
+        description: 'Catégories réservées aux templates S-Task.',
         icon: 'channels',
       },
       {
-        id: 'troubleshootgun',
-        label: 'Troubleshotgun',
-        description: 'Dossiers produits et templates indépendants des mails classiques.',
-        icon: 'folder',
-      },
-      {
-        id: 'tasks',
-        label: 'Tasks',
-        description: 'Modèles de tâches réutilisés dans l’application.',
-        icon: 'tool',
-      },
-      {
-        id: 'taskCategories',
-        label: 'Catégories task',
-        description: 'Catégories utilisées par la recherche de templates task.',
-        icon: 'channels',
+        id: 'sTasks',
+        label: 'S-Task',
+        description: 'Templates S-Task structurés selon le squelette configuré.',
+        icon: 'template',
       },
       {
         id: 'taskFormat',
-        label: 'Task Format',
-        description: 'Noms des 4 sections utilisées dans chaque task.',
+        label: 'Mise en forme S-Task',
+        description: 'Noms et aperçu des quatre sections du squelette S-Task.',
+        icon: 'preferences',
+      },
+      {
+        id: 'fTaskCategories',
+        label: 'Catégories de F-Task',
+        description: 'Catégories réservées aux templates F-Task.',
+        icon: 'channels',
+      },
+      {
+        id: 'fTasks',
+        label: 'F-Task',
+        description: 'Templates libres sans squelette imposé.',
         icon: 'template',
+      },
+    ],
+  },
+  {
+    id: 'troubleshotgun',
+    label: 'Troubleshotgun',
+    icon: 'folder',
+    items: [
+      {
+        id: 'troubleshootgun',
+        label: 'Produits',
+        description: 'Produits Troubleshotgun et leurs templates mail dédiés.',
+        icon: 'folder',
       },
     ],
   },
@@ -128,7 +163,7 @@ export const settingsNavigation: SettingsNavSection[] = [
       },
       {
         id: 'procedureMailtos',
-        label: 'Templates mailto',
+        label: 'Mailto',
         description: 'Destinataires, titre et texte proposés pour les boutons mailto.',
         icon: 'mail',
       },
@@ -136,37 +171,13 @@ export const settingsNavigation: SettingsNavSection[] = [
   },
   {
     id: 'catalogs',
-    label: 'Catalogues',
+    label: 'Catalogue',
     icon: 'book',
     items: [
       {
-        id: 'products',
-        label: 'Produits',
-        description: 'Produits, éditions, compatibilités, tags et spare parts.',
-        icon: 'book',
-      },
-      {
-        id: 'dashboardVersions',
-        label: 'Firmwares',
-        description: 'Versions firmware disponibles pour les editions produit.',
-        icon: 'version',
-      },
-      {
-        id: 'dashboardSoftwares',
-        label: 'Logiciels',
-        description: 'Logiciels et versions compatibles.',
-        icon: 'template',
-      },
-      {
-        id: 'dashboardDriverPacks',
-        label: 'Drivers',
-        description: 'Packs drivers et produits qu’ils contiennent.',
-        icon: 'version',
-      },
-      {
         id: 'dashboardSpareParts',
-        label: 'Spare Parts',
-        description: 'Pièces et SKU organisés par produit.',
+        label: 'SKU’s',
+        description: 'Références SKU et guides associés.',
         icon: 'archive',
       },
       {
@@ -184,46 +195,21 @@ export const settingsNavigation: SettingsNavSection[] = [
     items: [
       {
         id: 'callTemplate',
-        label: 'Template appel',
+        label: 'Call template',
         description: 'Base injectée à l’ouverture d’un nouvel appel.',
         icon: 'call',
       },
       {
         id: 'callHistory',
-        label: 'Historique appels',
+        label: 'Historique d’appel',
         description: 'Consultation et copie des derniers appels sauvegardés.',
         icon: 'history',
-      },
-      {
-        id: 'tags',
-        label: 'Tags',
-        description: 'Tags prédéfinis disponibles dans les champs texte.',
-        icon: 'tag',
-      },
-    ],
-  },
-  {
-    id: 'application',
-    label: 'Application',
-    icon: 'settings',
-    items: [
-      {
-        id: 'preferences',
-        label: 'Affichage & Préférences',
-        description: 'Options visuelles, réglages globaux, snippets et export.',
-        icon: 'preferences',
       },
       {
         id: 'quickLinks',
         label: 'Liens rapides',
         description: 'URLs ouvertes par les boutons d’accès rapide.',
         icon: 'grid',
-      },
-      {
-        id: 'updates',
-        label: 'Mise à jour',
-        description: 'Statut de l’application et recherche de nouvelles versions.',
-        icon: 'download',
       },
     ],
   },
@@ -239,23 +225,23 @@ export const settingsTabIndex = settingsNavigation.flatMap((section) =>
 
 export const settingsRelatedTabs: Partial<Record<SettingsTab, SettingsTab[]>> = {
   categories: ['snippets'],
-  snippets: ['categories', 'tags', 'snippetSettings'],
-  templates: ['templateCategories', 'tasks', 'tags'],
-  templateCategories: ['templates', 'troubleshootgun'],
-  troubleshootgun: ['templateCategories', 'templates'],
-  tasks: ['taskCategories', 'taskFormat', 'templates'],
-  taskCategories: ['tasks'],
-  taskFormat: ['tasks'],
-  dashboardPortal: ['procedureMailtos', 'products'],
+  snippets: ['categories'],
+  templates: ['templateCategories', 'sTasks', 'fTasks'],
+  templateCategories: ['templates'],
+  sTasks: ['sTaskCategories', 'taskFormat', 'fTasks', 'templates'],
+  sTaskCategories: ['sTasks'],
+  taskFormat: ['sTasks', 'sTaskCategories'],
+  fTasks: ['fTaskCategories', 'sTasks', 'templates'],
+  fTaskCategories: ['fTasks'],
+  dashboardPortal: ['procedureMailtos'],
   procedureMailtos: ['dashboardPortal'],
-  products: ['dashboardVersions', 'dashboardSoftwares', 'dashboardDriverPacks', 'dashboardSpareParts'],
-  dashboardVersions: ['products'],
-  dashboardSoftwares: ['products'],
-  dashboardDriverPacks: ['products'],
-  dashboardSpareParts: ['products'],
+  dashboardSpareParts: ['dashboardNews'],
+  dashboardNews: ['dashboardSpareParts'],
   callTemplate: ['callHistory'],
-  callHistory: ['callTemplate'],
-  preferences: ['quickLinks', 'updates'],
+  callHistory: ['callTemplate', 'quickLinks'],
+  quickLinks: ['callTemplate', 'callHistory'],
+  preferences: ['updates'],
+  updates: ['preferences'],
 }
 
 export const tokenReferenceItems = [

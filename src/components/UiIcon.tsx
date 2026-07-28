@@ -2,6 +2,7 @@ import type { AppIconName } from '../lib/iconTypes'
 import type { Icon } from '@phosphor-icons/react/lib'
 import { AppWindow } from '@phosphor-icons/react/AppWindow'
 import { Archive } from '@phosphor-icons/react/Archive'
+import { ArrowsLeftRight } from '@phosphor-icons/react/ArrowsLeftRight'
 import { BookOpen } from '@phosphor-icons/react/BookOpen'
 import { ClipboardText } from '@phosphor-icons/react/ClipboardText'
 import { CopySimple } from '@phosphor-icons/react/CopySimple'
@@ -85,6 +86,7 @@ const icons: Record<AppIconName, Icon> = {
   settings: GearSix,
   shield: ShieldCheck,
   systemReport: ClipboardText,
+  swap: ArrowsLeftRight,
   tag: Tag,
   target: Crosshair,
   template: Files,
