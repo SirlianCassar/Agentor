@@ -86,6 +86,7 @@ export const normalizeTaskSectionsInData = (payload: AppData): AppData => {
           kind === 's-task' ? undefined : normalizeTaskSectionId(task.taskSectionId),
         taskSections: normalizeTaskTemplateSections(task),
         content: buildTaskTemplateContent(task),
+        hiddenFromLists: Boolean(task.hiddenFromLists),
         categoryId:
           task.categoryId && taskCategoryIdsByKind[kind].has(task.categoryId)
             ? task.categoryId
@@ -129,6 +130,7 @@ export const convertLegacyTokensInData = (payload: AppData): AppData =>
     templates: payload.templates.map((template) => ({
       ...template,
       name: convertLegacyTokens(template.name),
+      description: convertLegacyTokensMaybe(template.description),
       content: convertLegacyTokens(template.content),
       taskText: convertLegacyTokensMaybe(template.taskText),
       categoryId: template.categoryId,
