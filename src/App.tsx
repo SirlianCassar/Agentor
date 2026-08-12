@@ -278,7 +278,6 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'tools', title: 'Rappels et actus', icon: 'news' },
   { id: 'calculator', title: 'Calculateur prix', icon: 'money' },
   { id: 'portal', title: 'Procédures', icon: 'list' },
-  { id: 'catalog', title: 'Catalogue produits', icon: 'book' },
   { id: 'parts', title: 'SKU et pièces', icon: 'maintenance' },
   { id: 'decorations', title: 'Ascii Wall', icon: 'asciiWall' },
 ]
@@ -296,6 +295,13 @@ const exportFontOptions = [
 ]
 const EXPORT_FONT_SIZE_MIN = 10
 const EXPORT_FONT_SIZE_MAX = 22
+const reminderDurationOptions = [0.25, 1, 24, 48] as const
+type ReminderDuration = (typeof reminderDurationOptions)[number]
+
+const normalizeReminderDuration = (duration: number): ReminderDuration =>
+  reminderDurationOptions.includes(duration as ReminderDuration)
+    ? (duration as ReminderDuration)
+    : 48
 
 
 
@@ -336,11 +342,12 @@ function App() {
   const [templateFocused, setTemplateFocused] = useState(false)
   const [troubleshootgunOpen, setTroubleshootgunOpen] = useState(false)
   const [selectedTroubleshootgunFolderId, setSelectedTroubleshootgunFolderId] = useState<string | null>(null)
+  const [selectedTroubleshootgunTemplateId, setSelectedTroubleshootgunTemplateId] = useState<string | null>(null)
   const [troubleshootgunFolderNameDraft, setTroubleshootgunFolderNameDraft] = useState('')
   const [reminderModalOpen, setReminderModalOpen] = useState(false)
   const [editingReminderId, setEditingReminderId] = useState<string | null>(null)
   const [reminderRqtDraft, setReminderRqtDraft] = useState('')
-  const [reminderDurationDraft, setReminderDurationDraft] = useState<1 | 24 | 48 | 72>(24)
+  const [reminderDurationDraft, setReminderDurationDraft] = useState<ReminderDuration>(24)
   const [expiredReminders, setExpiredReminders] = useState<RqtReminder[] | null>(null)
   const [reminderNow, setReminderNow] = useState(() => Date.now())
   const [taskFocused, setTaskFocused] = useState(false)
@@ -679,6 +686,7 @@ function App() {
   const [taskDraft, setTaskDraft] = useState<TaskTemplate>({
     id: '',
     name: '',
+    hiddenFromLists: false,
     content: '',
     kind: 'f-task',
     taskTitle: '',
@@ -850,6 +858,7 @@ function App() {
         taskSectionId: kind === 'f-task' ? 'section-3' : undefined,
         categoryId: categories[0]?.id ?? '',
         favorite: false,
+        hiddenFromLists: false,
       } as TaskTemplate
     },
     [fTaskTemplateCategories, sTaskTemplateCategories],
@@ -2685,7 +2694,8 @@ function App() {
   const activeTaskTemplates = useMemo(
     () =>
       data.taskTemplates.filter(
-        (task) => normalizeTaskTemplateKind(task) === activeTaskTemplateKind,
+        (task) =>
+          normalizeTaskTemplateKind(task) === activeTaskTemplateKind && !task.hiddenFromLists,
       ),
     [activeTaskTemplateKind, data.taskTemplates],
   )
@@ -3393,6 +3403,15 @@ function App() {
       selectedTaskSections: taskSections.map((section) => Boolean(section.trim())),
       importTask: hasTaskContent,
     })
+  }
+
+  const openTroubleshootgun = () => {
+    const folder =
+      troubleshootgunFolders.find((item) => item.id === selectedTroubleshootgunFolderId) ??
+      troubleshootgunFolders[0]
+    setSelectedTroubleshootgunFolderId(folder?.id ?? null)
+    setSelectedTroubleshootgunTemplateId(folder?.templates[0]?.id ?? null)
+    setTroubleshootgunOpen(true)
   }
 
   const toggleTemplateFavorite = (templateId: string) => {
@@ -5352,6 +5371,7 @@ function App() {
       taskSections: kind === 's-task' ? sections : undefined,
       taskSectionId: kind === 's-task' ? undefined : taskDraft.taskSectionId,
       favorite: Boolean(taskDraft.favorite),
+      hiddenFromLists: Boolean(taskDraft.hiddenFromLists),
     }
     setData((prev) => {
       const next = exists
@@ -5558,7 +5578,7 @@ function App() {
   const openRqtReminderEditor = (reminder: RqtReminder) => {
     setEditingReminderId(reminder.id)
     setReminderRqtDraft(reminder.rqt)
-    setReminderDurationDraft(reminder.durationHours)
+    setReminderDurationDraft(normalizeReminderDuration(reminder.durationHours))
     setReminderModalOpen(true)
   }
 
@@ -6247,6 +6267,9 @@ function App() {
     )
   }
 
+  // The catalogue remains configurable in Settings, but is no longer exposed in Dashboard.
+  void renderDashboardCatalogPanel
+
   const renderWorkspaceDashboardSparePartsPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--catalog">
       <div className="workspace-dashboard__panel-title">{title}</div>
@@ -6630,18 +6653,6 @@ function App() {
       return (
         <div className="workspace-dashboard__single">
           {renderWorkspaceDashboardPortalPanel('Portal procédures')}
-        </div>
-      )
-    }
-
-    if (workspaceDashboardPage === 'catalog') {
-      return (
-        <div className="workspace-dashboard__single">
-          {renderDashboardCatalogPanel(
-            'Catalogue de produits',
-            'Rechercher un produit, une édition, un firmware, un logiciel ou un driver...',
-            'Catalogue produits',
-          )}
         </div>
       )
     }
@@ -7140,29 +7151,15 @@ function App() {
               </div>
               <div className="troubleshootgun-menu-wrap">
                 <button
-                  className={`btn btn--ghost troubleshootgun-menu-btn${troubleshootgunOpen ? ' is-active' : ''}`}
+                  className="btn btn--ghost troubleshootgun-menu-btn"
                   type="button"
-                  onClick={() => setTroubleshootgunOpen((open) => !open)}
+                  onClick={openTroubleshootgun}
                   title="Troubleshotgun — templates par produit"
                   aria-label="Ouvrir Troubleshotgun"
                 >
                   <UiIcon name="target" />
                   <span>Troubleshotgun</span>
                 </button>
-                {troubleshootgunOpen ? (
-                  <div className="troubleshootgun-menu">
-                    {troubleshootgunFolders.length ? troubleshootgunFolders.map((folder) => (
-                      <div className="troubleshootgun-menu__folder" key={folder.id}>
-                        <div className="troubleshootgun-menu__folder-name">{folder.name}</div>
-                        {folder.templates.length ? folder.templates.map((template) => (
-                          <button type="button" className="troubleshootgun-menu__template" key={template.id} onClick={() => { openTemplatePreview(template, folder.id); setTroubleshootgunOpen(false) }}>
-                            <span>{template.name}</span><small>{template.language.toUpperCase()}</small>
-                          </button>
-                        )) : <div className="search-result-empty">Aucun template</div>}
-                      </div>
-                    )) : <div className="search-result-empty">Configurez vos produits dans Paramètres › Troubleshotgun.</div>}
-                  </div>
-                ) : null}
               </div>
             </div>
     <div className="workspace-head__action-group">
@@ -7709,7 +7706,7 @@ function App() {
             <label className="workflow-step-label" htmlFor="reminder-rqt">Numéro de RQT</label>
             <input id="reminder-rqt" className="input" autoFocus value={reminderRqtDraft} onChange={(event) => setReminderRqtDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addRqtReminder() }} placeholder="Ex. 123456" />
             <div className="workflow-step-label">{editingReminderId ? 'Nouveau temps restant' : 'Durée'}</div>
-            <div className="reminder-duration-options">{([1, 24, 48, 72] as const).map((hours) => <button type="button" className={`btn ${reminderDurationDraft === hours ? 'btn--primary' : 'btn--ghost'}`} key={hours} onClick={() => setReminderDurationDraft(hours)}>{hours} h</button>)}</div>
+            <div className="reminder-duration-options">{reminderDurationOptions.map((hours) => <button type="button" className={`btn ${reminderDurationDraft === hours ? 'btn--primary' : 'btn--ghost'}`} key={hours} onClick={() => setReminderDurationDraft(hours)}>{hours === 0.25 ? '15 min' : `${hours} h`}</button>)}</div>
             <button className="btn btn--primary" type="button" onClick={addRqtReminder}>{editingReminderId ? (editingReminderExpired ? 'Relancer le chrono' : 'Modifier le délai') : 'Créer le rappel'}</button>
           </div>
         </div>
@@ -7727,6 +7724,176 @@ function App() {
         </div>
       </div>
     ) : null}
+    {troubleshootgunOpen ? (() => {
+      const activeFolder =
+        troubleshootgunFolders.find((folder) => folder.id === selectedTroubleshootgunFolderId) ??
+        troubleshootgunFolders[0]
+      const activeTemplate = activeFolder?.templates.find(
+        (template) => template.id === selectedTroubleshootgunTemplateId,
+      ) ?? activeFolder?.templates[0]
+      const templateDescription =
+        activeTemplate?.description?.trim() ||
+        activeTemplate?.content
+          .split(/\r?\n/)
+          .find((line) => line.trim())
+          ?.trim()
+      const taskLineCount = activeTemplate
+        ? getTemplateTaskSections(activeTemplate, data.taskTemplates).filter((section) => section.trim())
+            .length
+        : 0
+
+      return (
+        <div
+          className="modal-backdrop"
+          onMouseDown={() => setTroubleshootgunOpen(false)}
+        >
+          <div
+            className="modal troubleshootgun-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Troubleshotgun"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="modal__header">
+              <div className="modal__title-group">
+                <div className="brand__title brand__title--with-icon">
+                  <UiIcon name="target" className="brand__title-icon" />
+                  <span>Troubleshotgun</span>
+                </div>
+                <div className="modal__subtitle">
+                  Choisissez un produit et un template avant de définir les éléments à importer.
+                </div>
+              </div>
+              <button
+                className="close-modal close-modal--subtle"
+                type="button"
+                onClick={() => setTroubleshootgunOpen(false)}
+                aria-label="Fermer Troubleshotgun"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            <div className="troubleshootgun-modal__body">
+              <aside className="troubleshootgun-browser__column">
+                <div className="troubleshootgun-browser__label">Produits</div>
+                <div className="troubleshootgun-browser__list">
+                  {troubleshootgunFolders.length ? (
+                    troubleshootgunFolders.map((folder) => (
+                      <button
+                        className={`troubleshootgun-browser__product${
+                          activeFolder?.id === folder.id ? ' is-active' : ''
+                        }`}
+                        type="button"
+                        key={folder.id}
+                        onClick={() => {
+                          setSelectedTroubleshootgunFolderId(folder.id)
+                          setSelectedTroubleshootgunTemplateId(folder.templates[0]?.id ?? null)
+                        }}
+                      >
+                        <span>{folder.name}</span>
+                        <small>{folder.templates.length}</small>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="troubleshootgun-browser__empty">
+                      Configurez vos produits dans Paramètres › Troubleshotgun.
+                    </div>
+                  )}
+                </div>
+              </aside>
+
+              <section className="troubleshootgun-browser__column">
+                <div className="troubleshootgun-browser__label">Templates</div>
+                <div className="troubleshootgun-browser__list">
+                  {activeFolder?.templates.length ? (
+                    activeFolder.templates.map((template) => (
+                      <button
+                        className={`troubleshootgun-browser__template${
+                          activeTemplate?.id === template.id ? ' is-active' : ''
+                        }`}
+                        type="button"
+                        key={template.id}
+                        onClick={() => setSelectedTroubleshootgunTemplateId(template.id)}
+                      >
+                        <strong>{template.name}</strong>
+                        <span>
+                          {template.description?.trim() ||
+                            template.content
+                              .split(/\r?\n/)
+                              .find((line) => line.trim())
+                              ?.trim() ||
+                            'Aucune description renseignée.'}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="troubleshootgun-browser__empty">
+                      {activeFolder
+                        ? 'Aucun template pour ce produit.'
+                        : 'Sélectionnez un produit.'}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="troubleshootgun-browser__preview">
+                <div className="troubleshootgun-browser__label">Aperçu</div>
+                {activeTemplate ? (
+                  <div className="troubleshootgun-browser__preview-content">
+                    <div className="troubleshootgun-browser__preview-head">
+                      <div>
+                        <h2>{activeTemplate.name}</h2>
+                        <span>{activeFolder?.name}</span>
+                      </div>
+                      <span className="troubleshootgun-browser__language">
+                        {activeTemplate.language.toUpperCase()}
+                      </span>
+                    </div>
+                    {templateDescription ? (
+                      <p className="troubleshootgun-browser__description">{templateDescription}</p>
+                    ) : null}
+                    <div
+                      className="troubleshootgun-browser__content"
+                      dangerouslySetInnerHTML={{
+                        __html: highlightText(activeTemplate.content || 'Aucun contenu renseigné.'),
+                      }}
+                    />
+                    {taskLineCount ? (
+                      <div className="troubleshootgun-browser__task-summary">
+                        Task liée : {taskLineCount} section{taskLineCount > 1 ? 's' : ''}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="troubleshootgun-browser__empty">
+                    Sélectionnez un template pour afficher son aperçu.
+                  </div>
+                )}
+              </section>
+            </div>
+
+            <div className="troubleshootgun-modal__footer">
+              <button className="ghost" type="button" onClick={() => setTroubleshootgunOpen(false)}>
+                Annuler
+              </button>
+              <button
+                className="primary"
+                type="button"
+                disabled={!activeFolder || !activeTemplate}
+                onClick={() => {
+                  if (!activeFolder || !activeTemplate) return
+                  openTemplatePreview(activeTemplate, activeFolder.id)
+                  setTroubleshootgunOpen(false)
+                }}
+              >
+                Importer
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    })() : null}
     {templatePreview ? (() => {
       const template = templatePreview.folderId
         ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((item) => item.id === templatePreview.templateId)
@@ -8852,7 +9019,7 @@ function App() {
                             }
                           >
                             <option value="">Choisir une task complète</option>
-                            {data.taskTemplates.map((task) => (
+                            {data.taskTemplates.filter((task) => !task.hiddenFromLists).map((task) => (
                               <option key={task.id} value={task.id}>
                                 [{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}]{' '}
                                 {task.name}
@@ -8883,46 +9050,283 @@ function App() {
             ) : null}
 
             {editTab === 'troubleshootgun' ? (
-              <div className="modal__grid troubleshootgun-settings">
-                <div className="list-card">
-                  <div className="list-card__header"><div className="list-card__title">Dossiers produits</div></div>
-                  <div className="list-card__body">
-                    <div className="form__row two">
-                      <input className="input" value={troubleshootgunFolderNameDraft} onChange={(event) => setTroubleshootgunFolderNameDraft(event.target.value)} placeholder="Nom du produit" />
-                      <button className="btn btn--primary" type="button" onClick={() => {
-                        const name = troubleshootgunFolderNameDraft.trim()
-                        if (!name) return
-                        const folder: TroubleshootgunFolder = { id: createId('troubleshootgun-folder'), name, templates: [] }
-                        updateSettings({ troubleshootgunFolders: [...troubleshootgunFolders, folder] })
-                        setSelectedTroubleshootgunFolderId(folder.id)
-                        setTroubleshootgunFolderNameDraft('')
-                      }}><AddIcon /> Créer</button>
-                    </div>
-                    {troubleshootgunFolders.map((folder) => <div className={`list-item${selectedTroubleshootgunFolderId === folder.id ? ' is-selected' : ''}`} key={folder.id} onClick={() => setSelectedTroubleshootgunFolderId(folder.id)}>
-                      <div className="list-item__content"><div className="list-item__title">{folder.name}</div><div className="list-item__meta">{folder.templates.length} template(s)</div></div>
-                      <button className="icon-btn-sm danger" type="button" onClick={(event) => { event.stopPropagation(); updateSettings({ troubleshootgunFolders: troubleshootgunFolders.filter((item) => item.id !== folder.id) }); if (selectedTroubleshootgunFolderId === folder.id) setSelectedTroubleshootgunFolderId(null) }}><DeleteIcon /></button>
-                    </div>)}
-                  </div>
-                </div>
-                <div className="list-card list-card--form">
-                  <div className="list-card__header"><div className="list-card__title">Templates du produit</div>{selectedTroubleshootgunFolderId ? <button className="btn btn--ghost btn--small" type="button" onClick={() => updateSettings({ troubleshootgunFolders: troubleshootgunFolders.map((folder) => folder.id === selectedTroubleshootgunFolderId ? { ...folder, templates: [...folder.templates, { id: createId('troubleshootgun-template'), name: 'Nouveau template', content: '', language: 'fr' }] } : folder) })}><AddIcon /> Nouveau template</button> : null}</div>
-                  <div className="list-card__body">
-                    {(() => {
-                      const folder = troubleshootgunFolders.find((item) => item.id === selectedTroubleshootgunFolderId)
-                      if (!folder) return <div className="empty-state">Sélectionnez ou créez un dossier produit.</div>
-                      const patchFolder = (patch: Partial<TroubleshootgunFolder>) => updateSettings({ troubleshootgunFolders: troubleshootgunFolders.map((item) => item.id === folder.id ? { ...item, ...patch } : item) })
-                      const patchTemplate = (templateId: string, patch: Partial<MailTemplate>) => patchFolder({ templates: folder.templates.map((template) => template.id === templateId ? { ...template, ...patch } : template) })
-                      return <div className="form"><div className="workflow-step-label">Nom du dossier</div><input className="input" value={folder.name} onChange={(event) => patchFolder({ name: event.target.value })} />
-                        {folder.templates.map((template) => <div className="troubleshootgun-template-editor" key={template.id}>
-                          <div className="form__row two"><input className="input" value={template.name} onChange={(event) => patchTemplate(template.id, { name: event.target.value })} placeholder="Nom du template" /><select className="select" value={template.language} onChange={(event) => patchTemplate(template.id, { language: event.target.value as Language })}><option value="fr">Français</option><option value="en">Anglais</option></select></div>
-                          <textarea className="textarea textarea--tall" value={template.content} onChange={(event) => patchTemplate(template.id, { content: event.target.value })} placeholder="Contenu du mail" />
-                          <div className="form__row two"><select className="select" value={template.taskTemplateId ?? ''} onChange={(event) => patchTemplate(template.id, { taskTemplateId: event.target.value, taskCustom: false })}><option value="">Aucune task liée</option>{data.taskTemplates.map((task) => <option key={task.id} value={task.id}>[{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}] {task.name}</option>)}</select><button className="btn btn--danger" type="button" onClick={() => patchFolder({ templates: folder.templates.filter((item) => item.id !== template.id) })}><DeleteIcon /> Supprimer</button></div>
-                        </div>)}
+              (() => {
+                const folder =
+                  troubleshootgunFolders.find(
+                    (item) => item.id === selectedTroubleshootgunFolderId,
+                  ) ?? troubleshootgunFolders[0]
+                const template =
+                  folder?.templates.find(
+                    (item) => item.id === selectedTroubleshootgunTemplateId,
+                  ) ?? folder?.templates[0]
+                const patchFolder = (patch: Partial<TroubleshootgunFolder>) => {
+                  if (!folder) return
+                  updateSettings({
+                    troubleshootgunFolders: troubleshootgunFolders.map((item) =>
+                      item.id === folder.id ? { ...item, ...patch } : item,
+                    ),
+                  })
+                }
+                const patchTemplate = (patch: Partial<MailTemplate>) => {
+                  if (!folder || !template) return
+                  patchFolder({
+                    templates: folder.templates.map((item) =>
+                      item.id === template.id ? { ...item, ...patch } : item,
+                    ),
+                  })
+                }
+                const createTemplate = () => {
+                  if (!folder) return
+                  const nextTemplate: MailTemplate = {
+                    id: createId('troubleshootgun-template'),
+                    name: 'Nouveau template',
+                    description: '',
+                    content: '',
+                    language: 'fr',
+                    taskImportMode: 'none',
+                  }
+                  patchFolder({ templates: [...folder.templates, nextTemplate] })
+                  setSelectedTroubleshootgunTemplateId(nextTemplate.id)
+                }
+
+                return (
+                  <div className="modal__grid troubleshootgun-settings">
+                    <div className="list-card troubleshootgun-settings__products">
+                      <div className="list-card__header">
+                        <div className="list-card__title">Produits</div>
                       </div>
-                    })()}
+                      <div className="list-card__body">
+                        <div className="troubleshootgun-settings__create-product">
+                          <input
+                            className="input"
+                            value={troubleshootgunFolderNameDraft}
+                            onChange={(event) => setTroubleshootgunFolderNameDraft(event.target.value)}
+                            placeholder="Nom du produit"
+                          />
+                          <button
+                            className="btn btn--primary btn--small"
+                            type="button"
+                            onClick={() => {
+                              const name = troubleshootgunFolderNameDraft.trim()
+                              if (!name) return
+                              const nextFolder: TroubleshootgunFolder = {
+                                id: createId('troubleshootgun-folder'),
+                                name,
+                                templates: [],
+                              }
+                              updateSettings({
+                                troubleshootgunFolders: [...troubleshootgunFolders, nextFolder],
+                              })
+                              setSelectedTroubleshootgunFolderId(nextFolder.id)
+                              setSelectedTroubleshootgunTemplateId(null)
+                              setTroubleshootgunFolderNameDraft('')
+                            }}
+                          >
+                            <AddIcon /> Ajouter
+                          </button>
+                        </div>
+                        <div className="troubleshootgun-settings__list">
+                          {troubleshootgunFolders.length ? (
+                            troubleshootgunFolders.map((item) => (
+                              <div
+                                className={`list-item list-item--compact${
+                                  folder?.id === item.id ? ' is-selected' : ''
+                                }`}
+                                key={item.id}
+                                onClick={() => {
+                                  setSelectedTroubleshootgunFolderId(item.id)
+                                  setSelectedTroubleshootgunTemplateId(item.templates[0]?.id ?? null)
+                                }}
+                              >
+                                <div className="list-item__content">
+                                  <div className="list-item__title">{item.name}</div>
+                                  <div className="list-item__meta">
+                                    {item.templates.length} template{item.templates.length > 1 ? 's' : ''}
+                                  </div>
+                                </div>
+                                <button
+                                  className="icon-btn-sm danger"
+                                  type="button"
+                                  title="Supprimer le produit"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    const nextFolders = troubleshootgunFolders.filter(
+                                      (entry) => entry.id !== item.id,
+                                    )
+                                    updateSettings({ troubleshootgunFolders: nextFolders })
+                                    if (folder?.id === item.id) {
+                                      setSelectedTroubleshootgunFolderId(nextFolders[0]?.id ?? null)
+                                      setSelectedTroubleshootgunTemplateId(
+                                        nextFolders[0]?.templates[0]?.id ?? null,
+                                      )
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon />
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">Créez un premier produit.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="list-card troubleshootgun-settings__templates">
+                      <div className="list-card__header">
+                        <div className="list-card__title">Templates</div>
+                        <div className="list-card__tools">
+                          <button
+                            className="btn btn--ghost btn--small btn--with-icon"
+                            type="button"
+                            onClick={createTemplate}
+                            disabled={!folder}
+                          >
+                            <ButtonIcon name="add" /> Nouveau
+                          </button>
+                        </div>
+                      </div>
+                      <div className="list-card__body">
+                        <div className="troubleshootgun-settings__list">
+                          {folder?.templates.length ? (
+                            folder.templates.map((item) => (
+                              <button
+                                className={`troubleshootgun-settings__template${
+                                  template?.id === item.id ? ' is-selected' : ''
+                                }`}
+                                type="button"
+                                key={item.id}
+                                onClick={() => setSelectedTroubleshootgunTemplateId(item.id)}
+                              >
+                                <strong>{item.name}</strong>
+                                <span>
+                                  {item.description?.trim() ||
+                                    item.content
+                                      .split(/\r?\n/)
+                                      .find((line) => line.trim())
+                                      ?.trim() ||
+                                    'Aucune description renseignée.'}
+                                </span>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="empty-state">
+                              {folder ? 'Créez le premier template de ce produit.' : 'Sélectionnez un produit.'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="list-card list-card--form troubleshootgun-settings__editor">
+                      <div className="list-card__header">
+                        <div className="list-card__title">Détails du template</div>
+                        {template ? (
+                          <button
+                            className="btn btn--danger btn--small btn--with-icon"
+                            type="button"
+                            onClick={() => {
+                              if (!folder) return
+                              const nextTemplates = folder.templates.filter(
+                                (item) => item.id !== template.id,
+                              )
+                              patchFolder({ templates: nextTemplates })
+                              setSelectedTroubleshootgunTemplateId(nextTemplates[0]?.id ?? null)
+                            }}
+                          >
+                            <ButtonIcon name="delete" /> Supprimer
+                          </button>
+                        ) : null}
+                      </div>
+                      <div className="list-card__body">
+                        {folder && template ? (
+                          <div className="form troubleshootgun-settings__form">
+                            <label className="workflow-step-label" htmlFor="troubleshootgun-product-name">
+                              Produit
+                            </label>
+                            <input
+                              id="troubleshootgun-product-name"
+                              className="input"
+                              value={folder.name}
+                              onChange={(event) => patchFolder({ name: event.target.value })}
+                              placeholder="Nom du produit"
+                            />
+                            <div className="form__row two">
+                              <label>
+                                <span className="workflow-step-label">Titre</span>
+                                <input
+                                  className="input"
+                                  value={template.name}
+                                  onChange={(event) => patchTemplate({ name: event.target.value })}
+                                  placeholder="Nom du template"
+                                />
+                              </label>
+                              <label>
+                                <span className="workflow-step-label">Langue</span>
+                                <select
+                                  className="select"
+                                  value={template.language}
+                                  onChange={(event) =>
+                                    patchTemplate({ language: event.target.value as Language })
+                                  }
+                                >
+                                  <option value="fr">Français</option>
+                                  <option value="en">English</option>
+                                </select>
+                              </label>
+                            </div>
+                            <label>
+                              <span className="workflow-step-label">Description</span>
+                              <input
+                                className="input"
+                                value={template.description ?? ''}
+                                onChange={(event) => patchTemplate({ description: event.target.value })}
+                                placeholder="Résumé affiché dans la liste des templates"
+                              />
+                            </label>
+                            <label>
+                              <span className="workflow-step-label">Contenu du mail</span>
+                              <textarea
+                                className="textarea textarea--tall"
+                                value={template.content}
+                                onChange={(event) => patchTemplate({ content: event.target.value })}
+                                placeholder="Contenu complet du mail"
+                              />
+                            </label>
+                            <label>
+                              <span className="workflow-step-label">Task associée</span>
+                              <select
+                                className="select"
+                                value={template.taskTemplateId ?? ''}
+                                onChange={(event) =>
+                                  patchTemplate({
+                                    taskTemplateId: event.target.value,
+                                    taskCustom: false,
+                                    taskImportMode: event.target.value ? 'template' : 'none',
+                                  })
+                                }
+                              >
+                                <option value="">Aucune task liée</option>
+                                {data.taskTemplates.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    [{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}]{' '}
+                                    {task.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                        ) : (
+                          <div className="empty-state">
+                            Sélectionnez un produit puis créez ou choisissez un template.
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )
+              })()
             ) : null}
 
             {editTab === 'templateCategories' ? (
@@ -9243,6 +9647,9 @@ function App() {
                               <div className="list-item__meta">
                                 {getTaskTemplatePreviewText(task)}
                               </div>
+                              {task.hiddenFromLists ? (
+                                <div className="list-item__meta">Masqué des listes</div>
+                              ) : null}
                               {renderIssueBadge(issues)}
                             </div>
                             <div className="list-item__actions">
@@ -9447,6 +9854,22 @@ function App() {
                             ★
                           </button>
                         </div>
+                        <label className="task-template-visibility-toggle">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(taskDraft.hiddenFromLists)}
+                            onChange={(event) =>
+                              setTaskDraft((prev) => ({
+                                ...prev,
+                                hiddenFromLists: event.target.checked,
+                              }))
+                            }
+                          />
+                          <span>
+                            Masquer des listes de tâches
+                            <small>La tâche reste disponible pour le Troubleshotgun.</small>
+                          </span>
+                        </label>
                         {taskTemplateKind === 's-task' ? (
                           <>
                             <label
@@ -10728,7 +11151,7 @@ function App() {
                             }
                           >
                             <option value="">Choisir une tâche...</option>
-                            {data.taskTemplates.map((task) => (
+                            {data.taskTemplates.filter((task) => !task.hiddenFromLists).map((task) => (
                               <option key={task.id} value={task.id}>
                                 [{normalizeTaskTemplateKind(task) === 's-task' ? 'S-Task' : 'F-Task'}]{' '}
                                 {task.name}

@@ -43,6 +43,7 @@ export interface Snippet {
 export interface MailTemplate {
   id: string
   name: string
+  description?: string
   content: string
   language: Language
   categoryId?: string
@@ -66,13 +67,14 @@ export interface RqtReminder {
   id: string
   rqt: string
   dueAt: string
-  durationHours: 1 | 24 | 48 | 72
+  durationHours: 0.25 | 1 | 24 | 48
   notifiedAt?: string
 }
 
 export interface TaskTemplate {
   id: string
   name: string
+  hiddenFromLists?: boolean
   content: string
   kind?: TaskTemplateKind
   taskTitle?: string
