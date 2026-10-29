@@ -242,6 +242,10 @@ export interface AppSettings {
   taskSectionNames: string[]
   mailTemplateCategories: MailTemplateCategory[]
   taskTemplateCategories: TaskTemplateCategory[]
+  // Tag used for each piece of information of the active case (see caseTags.ts).
+  caseTags?: Partial<Record<string, string>>
+  // Fill the case tags when a template, task or snippet is loaded. On by default.
+  caseAutoFill?: boolean
 }
 
 export interface AppData {

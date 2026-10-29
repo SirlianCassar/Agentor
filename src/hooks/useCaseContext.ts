@@ -49,6 +49,10 @@ export function useCaseContext() {
     [api],
   )
   const getToken = useCallback(() => api?.getBridgeToken?.() ?? Promise.resolve(''), [api])
+  const regenerateToken = useCallback(
+    () => api?.regenerateBridgeToken?.() ?? Promise.resolve(''),
+    [api],
+  )
 
   return {
     available: Boolean(api?.getCaseContext),
@@ -59,5 +63,6 @@ export function useCaseContext() {
     clear,
     setBridgeEnabled,
     getToken,
+    regenerateToken,
   }
 }

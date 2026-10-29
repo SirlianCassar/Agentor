@@ -1,21 +1,10 @@
 /* Fills template tags from the active case context. A tag without a known value
    is left exactly as written so it stays visible and is never invented. */
-import type { CaseContext, ContextFieldKey } from './caseContext'
-
-export const contextTagFields: Record<string, ContextFieldKey | 'lastTask'> = {
-  DOSSIER: 'caseNumber',
-  CLIENT: 'customerName',
-  PRODUIT: 'productName',
-  TYPE_PRODUIT: 'productType',
-  SERIAL: 'serialNumber',
-  DATE_ACHAT: 'purchaseDate',
-  DATE_PRODUCTION: 'productionDate',
-  PAYS: 'country',
-  DERNIERE_TACHE: 'lastTask',
-}
+import type { CaseContext } from './caseContext'
+import { CASE_TAG_KEYS, DEFAULT_CASE_TAGS, type CaseTagKey } from './caseTags'
 
 // Same tolerance as Cairm Task Helper: case-insensitive, optional spaces.
-const TAG_PATTERN = /<\s*([A-Za-z_]+)\s*>/g
+const TAG_PATTERN = /<\s*([A-Za-z0-9_]+)\s*>/g
 
 export interface TemplateFillResult {
   text: string
@@ -23,7 +12,7 @@ export interface TemplateFillResult {
   missing: string[]
 }
 
-const readTagValue = (context: CaseContext, target: ContextFieldKey | 'lastTask') => {
+const readTagValue = (context: CaseContext, target: CaseTagKey) => {
   if (target === 'lastTask') return context.lastTask?.subject?.trim() || null
   const field = context.fields[target]
   // A conflicting value is not used until the user picks one.
@@ -31,12 +20,21 @@ const readTagValue = (context: CaseContext, target: ContextFieldKey | 'lastTask'
   return field.value
 }
 
-export function fillTemplateFromContext(text: string, context: CaseContext | null): TemplateFillResult {
+export function fillTemplateFromContext(
+  text: string,
+  context: CaseContext | null,
+  tags: Record<CaseTagKey, string> = DEFAULT_CASE_TAGS,
+): TemplateFillResult {
+  const byName = new Map<string, CaseTagKey>()
+  for (const key of CASE_TAG_KEYS) {
+    const name = tags[key].replace(/^<|>$/g, '').toUpperCase()
+    if (!byName.has(name)) byName.set(name, key)
+  }
   const filled = new Set<string>()
   const missing = new Set<string>()
   const result = text.replace(TAG_PATTERN, (raw, name: string) => {
     const tag = name.toUpperCase()
-    const target = contextTagFields[tag]
+    const target = byName.get(tag)
     if (!target) return raw
     const value = context ? readTagValue(context, target) : null
     if (!value) {

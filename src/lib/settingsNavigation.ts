@@ -35,119 +35,57 @@ export type SettingsTab =
   | 'procedureMailtos'
   | 'taskFormat'
   | 'preferences'
+  | 'connections'
+  | 'caseTags'
 
 export type SettingsIconName = AppIconName
 
+export type SettingsNavItem = {
+  id: SettingsTab
+  label: string
+  description: string
+  icon: SettingsIconName
+  // Sub-page shown under its parent in the menu (categories, formatting).
+  parent?: SettingsTab
+  // Name of the data counted next to the label in the menu.
+  countKey?: SettingsCountKey
+}
+
+export type SettingsCountKey = 'templates' | 'snippets' | 'sTasks' | 'fTasks' | 'troubleshootgun' | 'procedures' | 'products' | 'news'
+
 export type SettingsNavSection = {
-  id: 'home' | 'content' | 'troubleshotgun' | 'procedures' | 'catalogs' | 'support'
+  id: 'home' | 'library' | 'procedures' | 'catalogs' | 'support' | 'connections'
   label: string
   icon: SettingsIconName
-  items: Array<{
-    id: SettingsTab
-    label: string
-    description: string
-    icon: SettingsIconName
-  }>
+  items: SettingsNavItem[]
 }
 
 export const settingsNavigation: SettingsNavSection[] = [
   {
     id: 'home',
-    label: 'Accueil',
+    label: 'Général',
     icon: 'settings',
     items: [
-      {
-        id: 'dashboard',
-        label: 'Accueil',
-        description: 'Version, récapitulatif global et export/import.',
-        icon: 'dashboard',
-      },
-      {
-        id: 'preferences',
-        label: 'Affichage et préférence',
-        description: 'Options visuelles et réglages généraux de l’application.',
-        icon: 'preferences',
-      },
-      {
-        id: 'updates',
-        label: 'Mise à jour',
-        description: 'Statut de l’application et recherche de nouvelles versions.',
-        icon: 'download',
-      },
+      { id: 'dashboard', label: 'Vue d’ensemble', description: 'Contenu enregistré, export, import et mémoire des emails.', icon: 'dashboard' },
+      { id: 'preferences', label: 'Affichage', description: 'Options visuelles et réglages généraux de l’application.', icon: 'preferences' },
+      { id: 'updates', label: 'Mise à jour', description: 'Statut de l’application et recherche de nouvelles versions.', icon: 'download' },
     ],
   },
   {
-    id: 'content',
-    label: 'Contenu',
-    icon: 'mail',
+    id: 'library',
+    label: 'Bibliothèque',
+    icon: 'library',
     items: [
-      {
-        id: 'categories',
-        label: 'Catégories Snippets',
-        description: 'Familles, couleurs et aperçu des snippets liés.',
-        icon: 'channels',
-      },
-      {
-        id: 'snippets',
-        label: 'Snippets',
-        description: 'Fragments réutilisables avec texte de task optionnel.',
-        icon: 'list',
-      },
-      {
-        id: 'templateCategories',
-        label: 'Catégories Mail',
-        description: 'Catégories utilisées par les templates mail.',
-        icon: 'channels',
-      },
-      {
-        id: 'templates',
-        label: 'Mails',
-        description: 'Templates email et Task associée optionnelle.',
-        icon: 'template',
-      },
-      {
-        id: 'sTaskCategories',
-        label: 'Catégories de S-Task',
-        description: 'Catégories réservées aux templates S-Task.',
-        icon: 'channels',
-      },
-      {
-        id: 'sTasks',
-        label: 'S-Task',
-        description: 'Templates S-Task structurés selon le squelette configuré.',
-        icon: 'template',
-      },
-      {
-        id: 'taskFormat',
-        label: 'Mise en forme S-Task',
-        description: 'Noms et aperçu des quatre sections du squelette S-Task.',
-        icon: 'preferences',
-      },
-      {
-        id: 'fTaskCategories',
-        label: 'Catégories de F-Task',
-        description: 'Catégories réservées aux templates F-Task.',
-        icon: 'channels',
-      },
-      {
-        id: 'fTasks',
-        label: 'F-Task',
-        description: 'Templates libres sans squelette imposé.',
-        icon: 'template',
-      },
-    ],
-  },
-  {
-    id: 'troubleshotgun',
-    label: 'Troubleshotgun',
-    icon: 'folder',
-    items: [
-      {
-        id: 'troubleshootgun',
-        label: 'Produits',
-        description: 'Produits Troubleshotgun et leurs templates mail dédiés.',
-        icon: 'folder',
-      },
+      { id: 'templates', label: 'Mails', description: 'Templates email et Task associée optionnelle.', icon: 'template', countKey: 'templates' },
+      { id: 'templateCategories', label: 'Catégories', description: 'Catégories utilisées par les templates mail.', icon: 'channels', parent: 'templates' },
+      { id: 'snippets', label: 'Snippets', description: 'Fragments réutilisables avec texte de task optionnel.', icon: 'list', countKey: 'snippets' },
+      { id: 'categories', label: 'Catégories', description: 'Familles, couleurs et aperçu des snippets liés.', icon: 'channels', parent: 'snippets' },
+      { id: 'sTasks', label: 'S-Task', description: 'Templates S-Task structurés selon le squelette configuré.', icon: 'template', countKey: 'sTasks' },
+      { id: 'sTaskCategories', label: 'Catégories', description: 'Catégories réservées aux templates S-Task.', icon: 'channels', parent: 'sTasks' },
+      { id: 'taskFormat', label: 'Mise en forme', description: 'Noms et aperçu des quatre sections du squelette S-Task.', icon: 'preferences', parent: 'sTasks' },
+      { id: 'fTasks', label: 'F-Task', description: 'Templates libres sans squelette imposé.', icon: 'template', countKey: 'fTasks' },
+      { id: 'fTaskCategories', label: 'Catégories', description: 'Catégories réservées aux templates F-Task.', icon: 'channels', parent: 'fTasks' },
+      { id: 'troubleshootgun', label: 'Troubleshotgun', description: 'Produits Troubleshotgun et leurs templates mail dédiés.', icon: 'folder', countKey: 'troubleshootgun' },
     ],
   },
   {
@@ -155,18 +93,8 @@ export const settingsNavigation: SettingsNavSection[] = [
     label: 'Procédures',
     icon: 'list',
     items: [
-      {
-        id: 'dashboardPortal',
-        label: 'Procédures',
-        description: 'Étapes, variantes, forward, modules de copie et mailto.',
-        icon: 'list',
-      },
-      {
-        id: 'procedureMailtos',
-        label: 'Mailto',
-        description: 'Destinataires, titre et texte proposés pour les boutons mailto.',
-        icon: 'mail',
-      },
+      { id: 'dashboardPortal', label: 'Procédures', description: 'Étapes, variantes, forward, modules de copie et mailto.', icon: 'list', countKey: 'procedures' },
+      { id: 'procedureMailtos', label: 'Mailto', description: 'Destinataires, titre et texte proposés pour les boutons mailto.', icon: 'mail' },
     ],
   },
   {
@@ -174,18 +102,8 @@ export const settingsNavigation: SettingsNavSection[] = [
     label: 'Catalogue',
     icon: 'book',
     items: [
-      {
-        id: 'dashboardSpareParts',
-        label: 'SKU’s',
-        description: 'Références SKU et guides associés.',
-        icon: 'archive',
-      },
-      {
-        id: 'dashboardNews',
-        label: 'News',
-        description: 'News affichées dans le dashboard.',
-        icon: 'news',
-      },
+      { id: 'dashboardSpareParts', label: 'SKU’s', description: 'Références SKU et guides associés.', icon: 'archive', countKey: 'products' },
+      { id: 'dashboardNews', label: 'News', description: 'News affichées dans le dashboard.', icon: 'news', countKey: 'news' },
     ],
   },
   {
@@ -193,24 +111,19 @@ export const settingsNavigation: SettingsNavSection[] = [
     label: 'Support',
     icon: 'phone',
     items: [
-      {
-        id: 'callTemplate',
-        label: 'Call template',
-        description: 'Base injectée à l’ouverture d’un nouvel appel.',
-        icon: 'call',
-      },
-      {
-        id: 'callHistory',
-        label: 'Historique d’appel',
-        description: 'Consultation et copie des derniers appels sauvegardés.',
-        icon: 'history',
-      },
-      {
-        id: 'quickLinks',
-        label: 'Liens rapides',
-        description: 'URLs ouvertes par les boutons d’accès rapide.',
-        icon: 'grid',
-      },
+      { id: 'callTemplate', label: 'Call template', description: 'Base injectée à l’ouverture d’un nouvel appel.', icon: 'call' },
+      { id: 'callHistory', label: 'Historique d’appel', description: 'Consultation et copie des derniers appels sauvegardés.', icon: 'history' },
+      { id: 'quickLinks', label: 'Liens rapides', description: 'URLs ouvertes par les boutons d’accès rapide.', icon: 'grid' },
+    ],
+  },
+  {
+    id: 'connections',
+    label: 'Dossier et tags',
+    icon: 'plug',
+    items: [
+      { id: 'connections', label: 'Connexion Cairm+', description: 'Réception du dossier ouvert dans le CRM et jeton d’appairage.', icon: 'plug' },
+      { id: 'caseTags', label: 'Tags du dossier', description: 'Tag rempli par chaque information du dossier actif, et remplissage au chargement.', icon: 'tag' },
+      { id: 'tags', label: 'Tags proposés', description: 'Tags proposés pendant la saisie d’un mail ou d’une task.', icon: 'tag' },
     ],
   },
 ]
@@ -242,6 +155,9 @@ export const settingsRelatedTabs: Partial<Record<SettingsTab, SettingsTab[]>> = 
   quickLinks: ['callTemplate', 'callHistory'],
   preferences: ['updates'],
   updates: ['preferences'],
+  connections: ['caseTags'],
+  caseTags: ['connections', 'tags'],
+  tags: ['caseTags'],
 }
 
 export const tokenReferenceItems = [

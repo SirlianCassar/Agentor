@@ -173,26 +173,110 @@
 .case-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  min-height: 100%;
   font-size: calc(12px * var(--text-scale));
+}
+
+.case-panel--empty {
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.case-panel__empty-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--muted);
+}
+
+.case-panel__empty-text {
+  max-width: 280px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .case-panel__head {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.case-panel__identity {
+  min-width: 0;
 }
 
 .case-panel__number {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
   font-family: var(--font-mono);
-  font-size: calc(14px * var(--text-scale));
+  font-size: calc(17px * var(--text-scale));
   font-weight: 700;
+  cursor: copy;
+}
+
+.case-panel__number:hover {
+  color: var(--accent-light);
+}
+
+.case-panel__title {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-panel__head-side {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.case-panel__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: calc(11px * var(--text-scale));
+  cursor: pointer;
+}
+
+.case-panel__link:hover {
+  border-color: var(--border-hover);
   color: var(--text);
 }
 
+.case-panel__dot {
+  width: 7px;
+  height: 7px;
+  background: var(--muted);
+}
+
+.case-panel__link--listening .case-panel__dot {
+  background: var(--success);
+}
+
+.case-panel__link--error .case-panel__dot {
+  background: var(--danger);
+}
+
 .case-panel__meta {
-  flex: 1 1 auto;
+  padding: 0 4px;
   color: var(--muted);
+  font-size: calc(11px * var(--text-scale));
 }
 
 .case-panel__icon-btn {
@@ -212,65 +296,36 @@
   color: var(--text);
 }
 
-.case-panel__fields {
+.case-panel__conflicts {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--warning);
+  background: rgba(240, 194, 95, 0.06);
+}
+
+.case-panel__conflicts-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--warning);
+}
+
+.case-panel__conflicts-body {
   display: flex;
   flex-direction: column;
-  margin: 0;
-  border-top: 1px solid var(--border);
+  gap: 4px;
 }
 
-.case-field {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) auto auto;
+.case-panel__conflict {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 2px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.case-field__label {
-  color: var(--muted);
-}
-
-.case-field__value {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
-  min-width: 0;
-  margin: 0;
+  color: var(--text-secondary);
 }
 
-.case-field__text {
-  overflow: hidden;
-  color: var(--text);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.case-field--missing .case-field__text {
-  color: var(--muted-light);
-}
-
-.case-field__input {
-  width: 100%;
-  min-width: 0;
-  height: 24px;
-  padding: 0 6px;
-  border: 1px solid var(--border-active);
-  background: var(--field-bg-focus);
-  color: var(--text);
-  font: inherit;
-}
-
-.case-field__candidates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  width: 100%;
-}
-
-.case-field__candidate {
+.case-panel__candidate {
   padding: 2px 6px;
   border: 1px solid var(--warning);
   background: transparent;
@@ -279,53 +334,182 @@
   cursor: pointer;
 }
 
-.case-field__candidate:hover {
-  background: var(--surface-strong);
-}
-
-.case-field__status {
-  padding: 1px 6px;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: calc(10px * var(--text-scale));
-  white-space: nowrap;
-}
-
-.case-field__status--missing {
+.case-panel__candidate small {
   color: var(--muted);
 }
 
-.case-field__status--conflict {
-  border-color: var(--warning);
-  color: var(--warning);
+.case-panel__candidate:hover {
+  background: var(--surface-strong);
 }
 
-.case-field__status--confirmed {
-  border-color: var(--success);
-  color: var(--success);
+.case-panel__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px;
 }
 
-.case-field__status--manual {
-  border-color: var(--accent-light);
-  color: var(--accent-light);
-}
-
-.case-field__actions {
+.case-tile {
+  position: relative;
   display: flex;
-  justify-content: flex-end;
-  min-width: 66px;
-}
-
-.case-panel__task {
-  padding: 6px 8px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px 5px 10px;
   border: 1px solid var(--border);
   background: var(--surface-soft);
 }
 
-.case-panel__task-label {
+/* State shown by the left edge: grey read, green confirmed, violet edited, amber conflict. */
+.case-tile::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -1px;
+  width: 3px;
+  background: var(--border-hover);
+}
+
+.case-tile--confirmed::before {
+  background: var(--success);
+}
+
+.case-tile--manual::before {
+  background: var(--accent-light);
+}
+
+.case-tile--conflict::before {
+  background: var(--warning);
+}
+
+.case-tile--missing {
+  border-style: dashed;
+  background: transparent;
+}
+
+.case-tile--missing::before {
+  display: none;
+}
+
+.case-tile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.case-tile__label {
+  color: var(--muted);
+  font-size: calc(10.5px * var(--text-scale));
+  white-space: nowrap;
+}
+
+.case-tile__tag {
+  overflow: hidden;
+  color: var(--tag);
+  font-family: var(--font-mono);
+  font-size: calc(10px * var(--text-scale));
+  opacity: 0.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-tile:hover .case-tile__tag {
+  opacity: 1;
+}
+
+.case-tile__value {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: copy;
+}
+
+button.case-tile__value:hover {
+  color: var(--accent-light);
+}
+
+.case-tile__value--empty {
+  color: var(--muted-light);
+  font-weight: 400;
+  cursor: default;
+}
+
+.case-tile__input {
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid var(--border-active);
+  background: var(--field-bg-focus);
+  color: var(--text);
+  font: inherit;
+}
+
+.case-tile__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+}
+
+.case-tile__state {
   color: var(--muted);
   font-size: calc(10px * var(--text-scale));
-  text-transform: uppercase;
+}
+
+.case-tile--conflict .case-tile__state {
+  color: var(--warning);
+}
+
+.case-tile--confirmed .case-tile__state {
+  color: var(--success);
+}
+
+.case-tile__actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.case-tile:hover .case-tile__actions,
+.case-tile:focus-within .case-tile__actions,
+.case-tile--missing .case-tile__actions {
+  opacity: 1;
+}
+
+.case-tile__actions button {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.case-tile__actions button:hover {
+  color: var(--text);
+}
+
+.case-panel__task {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
 }
 
 .case-panel__task-subject {
@@ -339,7 +523,14 @@
   color: var(--text-secondary);
   white-space: pre-line;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
+}
+
+.case-panel__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
 }
 
 .case-panel__fill {
@@ -349,87 +540,23 @@
   gap: 6px;
 }
 
-.case-panel__empty {
-  margin: 0;
+.case-panel__hint {
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--muted);
-}
-
-.case-panel__bridge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: auto;
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-
-.case-panel__dot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  background: var(--muted);
-}
-
-.case-panel__dot--listening {
-  background: var(--success);
-}
-
-.case-panel__dot--error {
-  background: var(--danger);
-}
-
-.case-panel__bridge-text {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.case-panel__switch {
-  position: relative;
-  display: inline-block;
-  width: 30px;
-  height: 16px;
-  flex: 0 0 auto;
+  font: inherit;
+  font-size: calc(11px * var(--text-scale));
   cursor: pointer;
 }
 
-.case-panel__switch input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
+.case-panel__hint:hover {
+  color: var(--text);
 }
 
-.case-panel__switch span {
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--border-hover);
-  background: var(--field-bg);
-  pointer-events: none;
-  transition: background var(--transition-fast);
-}
-
-.case-panel__switch span::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  background: var(--muted);
-  transition: transform var(--transition-fast), background var(--transition-fast);
-}
-
-.case-panel__switch input:checked + span {
-  background: var(--accent-glow);
-}
-
-.case-panel__switch input:checked + span::after {
-  background: var(--accent-light);
-  transform: translateX(14px);
-}
-
-.case-panel__switch input:focus-visible + span {
-  box-shadow: var(--focus-ring);
+/* Reminders and news now live in their own windows. */
+.floating-window__body > .dashboard-news-notes__panel {
+  height: 100%;
+  min-height: 0;
+  border: 0;
 }

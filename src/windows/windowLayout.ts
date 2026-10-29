@@ -2,11 +2,19 @@
    Windows are independent of any page; their geometry is restored at the next
    launch and always kept reachable inside the visible area. */
 
-export type DashboardWindowKind = 'case' | 'tools' | 'calculator' | 'portal' | 'parts' | 'decorations'
+export type DashboardWindowKind =
+  | 'case'
+  | 'reminders'
+  | 'news'
+  | 'calculator'
+  | 'portal'
+  | 'parts'
+  | 'decorations'
 
 export const DASHBOARD_WINDOW_KINDS: DashboardWindowKind[] = [
   'case',
-  'tools',
+  'reminders',
+  'news',
   'calculator',
   'portal',
   'parts',
@@ -29,6 +37,8 @@ export interface DashboardWindow extends WindowRect {
 export interface WindowLayout {
   version: 1
   windows: DashboardWindow[]
+  // Last geometry of closed windows, so a window reopens where it was left.
+  closed?: Partial<Record<DashboardWindowKind, WindowRect>>
 }
 
 export interface Viewport {
@@ -43,8 +53,9 @@ const GRAB_MARGIN = 80
 const TITLE_HEIGHT = 32
 
 const defaultSizes: Record<DashboardWindowKind, { width: number; height: number }> = {
-  case: { width: 400, height: 580 },
-  tools: { width: 560, height: 420 },
+  case: { width: 420, height: 560 },
+  reminders: { width: 360, height: 360 },
+  news: { width: 420, height: 420 },
   calculator: { width: 420, height: 460 },
   portal: { width: 640, height: 520 },
   parts: { width: 620, height: 500 },
@@ -84,13 +95,25 @@ export function focusWindow(layout: WindowLayout, kind: DashboardWindowKind): Wi
 // New windows cascade from the top-right so the editor stays visible.
 export function openWindow(layout: WindowLayout, kind: DashboardWindowKind, viewport: Viewport): WindowLayout {
   if (layout.windows.some((item) => item.kind === kind)) return focusWindow(layout, kind)
+  const remembered = layout.closed?.[kind]
   const size = defaultSizes[kind]
   const offset = (layout.windows.length % 6) * 28
   const rect = clampRect(
-    { x: viewport.width - size.width - 24 - offset, y: 56 + offset, width: size.width, height: size.height },
+    remembered ?? {
+      x: viewport.width - size.width - 24 - offset,
+      y: 56 + offset,
+      width: size.width,
+      height: size.height,
+    },
     viewport,
   )
-  return { ...layout, windows: [...layout.windows, { kind, ...rect, z: topZ(layout) + 1, minimized: false }] }
+  const closed = { ...layout.closed }
+  delete closed[kind]
+  return {
+    ...layout,
+    windows: [...layout.windows, { kind, ...rect, z: topZ(layout) + 1, minimized: false }],
+    closed,
+  }
 }
 
 export function toggleWindow(layout: WindowLayout, kind: DashboardWindowKind, viewport: Viewport): WindowLayout {
@@ -101,7 +124,14 @@ export function toggleWindow(layout: WindowLayout, kind: DashboardWindowKind, vi
 }
 
 export function closeWindow(layout: WindowLayout, kind: DashboardWindowKind): WindowLayout {
-  return { ...layout, windows: layout.windows.filter((item) => item.kind !== kind) }
+  const target = layout.windows.find((item) => item.kind === kind)
+  if (!target) return layout
+  const { x, y, width, height } = target
+  return {
+    ...layout,
+    windows: layout.windows.filter((item) => item.kind !== kind),
+    closed: { ...layout.closed, [kind]: { x, y, width, height } },
+  }
 }
 
 export function minimizeWindow(layout: WindowLayout, kind: DashboardWindowKind): WindowLayout {
@@ -166,5 +196,22 @@ export function parseLayout(raw: unknown): WindowLayout {
       minimized: candidate.minimized === true,
     })
   }
-  return { version: 1, windows }
+  const closed: Partial<Record<DashboardWindowKind, WindowRect>> = {}
+  const rawClosed = (raw as { closed?: unknown }).closed
+  if (rawClosed && typeof rawClosed === 'object') {
+    for (const [kind, rect] of Object.entries(rawClosed as Record<string, unknown>)) {
+      if (!DASHBOARD_WINDOW_KINDS.includes(kind as DashboardWindowKind) || seen.has(kind as DashboardWindowKind)) continue
+      if (!rect || typeof rect !== 'object') continue
+      const value = rect as Partial<WindowRect>
+      const numbers = [value.x, value.y, value.width, value.height]
+      if (!numbers.every((item) => typeof item === 'number' && Number.isFinite(item))) continue
+      closed[kind as DashboardWindowKind] = {
+        x: value.x as number,
+        y: value.y as number,
+        width: value.width as number,
+        height: value.height as number,
+      }
+    }
+  }
+  return { version: 1, windows, closed }
 }
