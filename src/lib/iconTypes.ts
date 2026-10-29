@@ -52,3 +52,7 @@ export type AppIconName =
   | 'plug'
   | 'fill'
   | 'warning'
+  | 'timer'
+  | 'star'
+  | 'library'
+  | 'caretRight'

@@ -49,6 +49,10 @@ import { IdentificationCard } from '@phosphor-icons/react/IdentificationCard'
 import { PlugsConnected } from '@phosphor-icons/react/PlugsConnected'
 import { MagicWand } from '@phosphor-icons/react/MagicWand'
 import { Warning } from '@phosphor-icons/react/Warning'
+import { Timer } from '@phosphor-icons/react/Timer'
+import { Star } from '@phosphor-icons/react/Star'
+import { Books } from '@phosphor-icons/react/Books'
+import { CaretRight } from '@phosphor-icons/react/CaretRight'
 
 const icons: Record<AppIconName, Icon> = {
   add: Plus,
@@ -104,6 +108,10 @@ const icons: Record<AppIconName, Icon> = {
   plug: PlugsConnected,
   fill: MagicWand,
   warning: Warning,
+  timer: Timer,
+  star: Star,
+  library: Books,
+  caretRight: CaretRight,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {

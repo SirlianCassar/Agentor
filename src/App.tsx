@@ -14,9 +14,26 @@ import { TextEditor, type TextEditorHandle } from './components/TextEditor'
 import { SortableList } from './components/SortableList'
 import { UiIcon } from './components/UiIcon'
 import { FloatingWindow } from './components/FloatingWindow'
+import { LibraryCategoryRail, LibrarySearch } from './components/SettingsLibrary'
+import {
+  countByCategory,
+  emptyLibraryFilter,
+  filterLibraryItems,
+  mergeSubsetOrder,
+  type LibraryFilter,
+} from './lib/library'
 import { CaseContextPanel } from './components/CaseContextPanel'
 import { useCaseContext } from './hooks/useCaseContext'
 import { fillTemplateFromContext } from './context/templateFill'
+import {
+  CASE_TAG_KEYS,
+  caseTagLabels,
+  DEFAULT_CASE_TAGS,
+  findDuplicateCaseTags,
+  normalizeCaseTag,
+  resolveCaseTags,
+  type CaseTagKey,
+} from './context/caseTags'
 import {
   closeWindow,
   emptyLayout,
@@ -46,6 +63,7 @@ import {
   settingsNavigation,
   settingsRelatedTabs,
   settingsTabIndex,
+  type SettingsCountKey,
   tokenReferenceItems,
   type SettingsTab,
 } from './lib/settingsNavigation'
@@ -240,6 +258,7 @@ import {
 import { useAppUpdates } from './hooks/useAppUpdates'
 import './App.css'
 import './shell.css'
+import './settings.css'
 
 const TAG_TOKEN = '<TAG>'
 const SELECTOR_TOKEN = '[Option1/Option2]'
@@ -299,11 +318,12 @@ const workspaceDashboardPageOptions: Array<{
 // Main window launcher: each button opens its dashboard in a floating window.
 const dashboardWindowOptions: Array<{ id: DashboardWindowKind; title: string; icon: AppIconName }> = [
   { id: 'case', title: 'Dossier actif', icon: 'caseFile' },
-  ...workspaceDashboardPageOptions.map((page) => ({
-    id: page.id as DashboardWindowKind,
-    title: page.title,
-    icon: page.icon,
-  })),
+  { id: 'reminders', title: 'Rappels RQT', icon: 'timer' },
+  { id: 'news', title: 'News', icon: 'news' },
+  { id: 'calculator', title: 'Calculateur prix', icon: 'money' },
+  { id: 'portal', title: 'Procédures', icon: 'list' },
+  { id: 'parts', title: 'SKU et pièces', icon: 'maintenance' },
+  { id: 'decorations', title: 'Ascii Wall', icon: 'asciiWall' },
 ]
 
 const WINDOW_LAYOUT_STORAGE_KEY = 'agentor:window-layout:v1'
@@ -442,6 +462,7 @@ function App() {
     Partial<Record<SettingsValidationScope, boolean>>
   >({})
   const [editSnippetCategoryId, setEditSnippetCategoryId] = useState('all')
+  const [libraryFilters, setLibraryFilters] = useState<Record<string, LibraryFilter>>({})
   const [snippetTooltip, setSnippetTooltip] = useState<{
     text: string
     x: number
@@ -1228,6 +1249,17 @@ function App() {
     [appZoom],
   )
   const caseContextState = useCaseContext()
+  const caseTags = useMemo(() => resolveCaseTags(data.settings.caseTags), [data.settings.caseTags])
+  const caseAutoFill = data.settings.caseAutoFill !== false
+  // Applied to anything loaded into the drafts (template, task, snippet): the
+  // case tags with a known value are replaced, the others stay visible.
+  const fillLoadedText = useCallback(
+    (text: string) => {
+      if (!caseAutoFill || !caseContextState.context || !text) return text
+      return fillTemplateFromContext(text, caseContextState.context, caseTags).text
+    },
+    [caseAutoFill, caseContextState.context, caseTags],
+  )
   const isDashboardShown = (kind: WorkspaceDashboardPage) =>
     isProcedureWindow
       ? workspaceDashboardPage === kind
@@ -1337,6 +1369,16 @@ function App() {
       }))
       .filter((section) => section.items.length > 0)
   }, [settingsSearch])
+  const settingsCounts: Record<SettingsCountKey, number> = {
+    templates: data.templates.length,
+    snippets: data.snippets.length,
+    sTasks: data.taskTemplates.filter((task) => normalizeTaskTemplateKind(task) === 's-task').length,
+    fTasks: data.taskTemplates.filter((task) => normalizeTaskTemplateKind(task) === 'f-task').length,
+    troubleshootgun: troubleshootgunFolders.length,
+    procedures: customerPortalCodes.length,
+    products: productCatalog.length,
+    news: dashboardNews.length,
+  }
   const relatedSettingsTabs = (settingsRelatedTabs[editTab] ?? [])
     .map((tabId) => settingsTabIndex.find((tab) => tab.id === tabId))
     .filter((tab): tab is (typeof settingsTabIndex)[number] => Boolean(tab))
@@ -1454,7 +1496,9 @@ function App() {
     if (!tagSuggestionState) return []
 
     const query = tagSuggestionState.query.trim().toUpperCase()
-    const matches = predefinedTags.filter((tag) => {
+    // Case tags are always offered, next to the user's own tags.
+    const pool = Array.from(new Set([...predefinedTags, ...Object.values(caseTags)]))
+    const matches = pool.filter((tag) => {
       const inner = tag.slice(1, -1).toUpperCase()
       if (!query) return true
       return inner.startsWith(query) || inner.includes(query)
@@ -1468,7 +1512,7 @@ function App() {
       if (leftStarts !== rightStarts) return leftStarts ? -1 : 1
       return leftInner.localeCompare(rightInner, 'fr')
     })
-  }, [predefinedTags, tagSuggestionState])
+  }, [caseTags, predefinedTags, tagSuggestionState])
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }, [])
@@ -2553,10 +2597,41 @@ function App() {
     setActiveDashboardSpareProductId(filteredProductsWithSpareParts[0].id)
   }, [activeDashboardSpareProductId, filteredProductsWithSpareParts, partsDashboardShown])
 
-  const editSnippets = useMemo(() => {
-    if (editSnippetCategoryId === 'all') return data.snippets
-    return data.snippets.filter((snippet) => snippet.categoryId === editSnippetCategoryId)
-  }, [data.snippets, editSnippetCategoryId])
+  const setLibraryFilter = (tab: string, patch: Partial<LibraryFilter>) =>
+    setLibraryFilters((prev) => ({ ...prev, [tab]: { ...(prev[tab] ?? emptyLibraryFilter), ...patch } }))
+  const snippetQuery = libraryFilters.snippets?.query ?? ''
+  const templateFilter = libraryFilters.templates ?? emptyLibraryFilter
+  const taskFilter = libraryFilters[settingsTaskTemplateKind] ?? emptyLibraryFilter
+  const editSnippets = useMemo(
+    () =>
+      filterLibraryItems(
+        data.snippets,
+        { query: snippetQuery, category: editSnippetCategoryId },
+        {
+          text: (snippet) => `${snippet.title} ${snippet.content} ${snippet.taskText ?? ''}`,
+          categoryId: (snippet) => snippet.categoryId,
+        },
+      ),
+    [data.snippets, editSnippetCategoryId, snippetQuery],
+  )
+  const libraryTemplates = useMemo(
+    () =>
+      filterLibraryItems(data.templates, templateFilter, {
+        text: (template) => `${template.name} ${template.description ?? ''} ${template.content}`,
+        categoryId: (template) => template.categoryId,
+        favorite: (template) => Boolean(template.favorite),
+      }),
+    [data.templates, templateFilter],
+  )
+  const libraryTaskTemplates = useMemo(
+    () =>
+      filterLibraryItems(settingsTaskTemplates, taskFilter, {
+        text: (task) => `${task.name} ${task.content} ${(task.taskSections ?? []).join(' ')}`,
+        categoryId: (task) => task.categoryId,
+        favorite: (task) => Boolean(task.favorite),
+      }),
+    [settingsTaskTemplates, taskFilter],
+  )
   const categoryPreviewSnippets = useMemo(
     () => data.snippets.filter((snippet) => snippet.categoryId === categoryDraft.id),
     [categoryDraft.id, data.snippets],
@@ -3364,7 +3439,7 @@ function App() {
       end: data.emailDraft.length,
     }
     const base = data.emailDraft
-    const insertContent = padEmptySelectors(snippet.content.trimEnd())
+    const insertContent = padEmptySelectors(fillLoadedText(snippet.content.trimEnd()))
     if (mailInsertMode === 'line') {
       const cursor = selection.start
       const lineBreakIndex = base.indexOf('\n', cursor)
@@ -3385,16 +3460,18 @@ function App() {
       updateEmailDraft(next, before.length + content.length)
     }
     if (snippet.taskText) {
-      insertTaskText(snippet.taskText, snippet.taskSectionId)
+      insertTaskText(fillLoadedText(snippet.taskText), snippet.taskSectionId)
     }
   }
 
   const applyTaskTemplate = (template: TaskTemplate) => {
     const useSkeleton = normalizeTaskTemplateKind(template) === 's-task'
     const targetIndex = useSkeleton ? TASK_SKELETON_BOX_INDEX : TASK_FREE_BOX_INDEX
-    const nextTaskDraft = useSkeleton
-      ? stripLegacyTaskNumbering(buildTaskDraftFromTemplate(template, taskSectionNames), taskSectionNames)
-      : buildTaskTemplateContent(template)
+    const nextTaskDraft = fillLoadedText(
+      useSkeleton
+        ? stripLegacyTaskNumbering(buildTaskDraftFromTemplate(template, taskSectionNames), taskSectionNames)
+        : buildTaskTemplateContent(template),
+    )
     const snapshot = getTaskBoxesSnapshot()
     setTaskDraftBoxes(
       snapshot.map((slot, index) =>
@@ -3453,10 +3530,12 @@ function App() {
       : data.templates.find((item) => item.id === templatePreview.templateId)
     if (!template) return
 
-    const emailLines = getTemplateEmailLines(template)
-      .filter((_, index) => templatePreview.selectedEmailLines[index])
-      .join('\n')
-      .trim()
+    const emailLines = fillLoadedText(
+      getTemplateEmailLines(template)
+        .filter((_, index) => templatePreview.selectedEmailLines[index])
+        .join('\n')
+        .trim(),
+    )
 
     if (emailLines) updateEmailDraft(padEmptySelectors(emailLines), emailLines.length)
 
@@ -3469,7 +3548,7 @@ function App() {
             : 'template'
       )
       const taskSections = getTemplateTaskSections(template, data.taskTemplates).map((section, index) =>
-        templatePreview.selectedTaskSections[index] ? section : '',
+        templatePreview.selectedTaskSections[index] ? fillLoadedText(section) : '',
       )
       const linkedTaskTemplate = template.taskTemplateId
         ? data.taskTemplates.find((task) => task.id === template.taskTemplateId)
@@ -5312,17 +5391,7 @@ function App() {
   }
 
   const handleSnippetReorder = (next: Snippet[]) => {
-    if (editSnippetCategoryId === 'all') {
-      setData((prev) => ({ ...prev, snippets: next }))
-      return
-    }
-    setData((prev) => {
-      let index = 0
-      const merged = prev.snippets.map((snippet) =>
-        snippet.categoryId === editSnippetCategoryId ? next[index++] : snippet,
-      )
-      return { ...prev, snippets: merged }
-    })
+    setData((prev) => ({ ...prev, snippets: mergeSubsetOrder(prev.snippets, next) }))
   }
 
   const handleTemplateSave = () => {
@@ -5620,8 +5689,8 @@ function App() {
   // without a value (missing or in conflict) stay visible in the text.
   const handleFillDraftsFromContext = () => {
     const context = caseContextState.context
-    const email = fillTemplateFromContext(data.emailDraft, context)
-    const task = fillTemplateFromContext(data.taskDraft, context)
+    const email = fillTemplateFromContext(data.emailDraft, context, caseTags)
+    const task = fillTemplateFromContext(data.taskDraft, context, caseTags)
     if (email.text !== data.emailDraft) updateEmailDraft(email.text)
     if (task.text !== data.taskDraft) updateTaskDraft(task.text)
     const filled = new Set([...email.filled, ...task.filled])
@@ -5672,7 +5741,7 @@ function App() {
         onClick={() => handleToggleDashboardWindow(option.id)}
       >
         <UiIcon name={option.icon} className="window-launcher__icon" />
-        {(option.id === 'tools' && dashboardNotesHasContent) || needsCheck ? (
+        {(option.id === 'reminders' && dashboardNotesHasContent) || needsCheck ? (
           <span className="window-launcher__badge" aria-hidden="true" />
         ) : null}
       </button>
@@ -5686,17 +5755,22 @@ function App() {
           available={caseContextState.available}
           context={caseContextState.context}
           bridge={caseContextState.bridge}
+          tags={caseTags}
+          autoFill={caseAutoFill}
           onSetManual={(key, value) => void caseContextState.setManual(key, value)}
           onConfirm={(key) => void caseContextState.confirm(key)}
           onClear={() => void caseContextState.clear()}
           onCopy={(value) => void handleCopyContextValue(value)}
           onFill={handleFillDraftsFromContext}
-          onSetBridgeEnabled={(enabled) => void caseContextState.setBridgeEnabled(enabled)}
-          onCopyToken={() => void handleCopyBridgeToken()}
+          onOpenSettings={() => {
+            openSettingsTab('connections')
+            setEditOpen(true)
+          }}
         />
       )
     }
-    if (kind === 'tools') return renderWorkspaceDashboardNewsNotesPanel('News et Rappels')
+    if (kind === 'reminders') return renderDashboardRemindersBlock()
+    if (kind === 'news') return renderDashboardNewsBlock()
     if (kind === 'calculator') return renderWorkspaceDashboardVatPanel('Price calculator')
     if (kind === 'portal') return renderWorkspaceDashboardPortalPanel('Portal procédures')
     if (kind === 'parts') return renderWorkspaceDashboardSparePartsPanel('SKU’s')
@@ -5748,75 +5822,83 @@ function App() {
     )
   }
 
+  const renderDashboardRemindersBlock = () => (
+    <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes dashboard-reminders">
+      <div className="dashboard-reminders__head">
+        <span>Rappels RQT</span>
+        <div className="dashboard-reminders__head-actions">
+          <button className="btn btn--ghost btn--small" type="button" onClick={openNewRqtReminder}>Ajouter</button>
+        </div>
+      </div>
+      <div className="dashboard-reminders__list">
+        {rqtReminders.length ? [...rqtReminders].sort((a, b) => a.dueAt.localeCompare(b.dueAt)).map((reminder) => {
+          const expired = new Date(reminder.dueAt).getTime() <= reminderNow
+          return <div
+            className={`dashboard-reminder${expired ? ' is-expired' : ''}`}
+            key={reminder.id}
+            role="button"
+            tabIndex={0}
+            title={expired ? 'Cliquer pour relancer le chrono' : 'Cliquer pour modifier le temps restant'}
+            onClick={() => openRqtReminderEditor(reminder)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return
+              event.preventDefault()
+              openRqtReminderEditor(reminder)
+            }}
+          >
+            <span className="dashboard-reminder__identity">
+              <strong>RQT {reminder.rqt}</strong>
+              <small>{expired ? 'Cliquer pour relancer' : 'Cliquer pour modifier'}</small>
+            </span>
+            <span className="dashboard-reminder__countdown">{formatReminderCountdown(reminder)}</span>
+            <button
+              className="dashboard-reminder__delete"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                updateSettings({
+                  rqtReminders: rqtReminders.filter((item) => item.id !== reminder.id),
+                })
+              }}
+            >
+              Supprimer
+            </button>
+          </div>
+        }) : <div className="dashboard-empty">Aucun rappel en attente.</div>}
+      </div>
+    </div>
+  )
+
+  const renderDashboardNewsBlock = () => (
+    <div className="dashboard-news-notes__panel dashboard-news-notes__panel--news">
+      <div className="dashboard-news-list dashboard-news-list--stacked">
+        {dashboardNewsSorted.length ? (
+          dashboardNewsSorted.map((item) => (
+            <article className="dashboard-news-item" key={item.id}>
+              <div className="dashboard-news-item__date">{formatDashboardNewsDate(item.date)}</div>
+              <div className="dashboard-news-item__title">{item.title || 'Sans titre'}</div>
+              <div
+                className="dashboard-news-item__content"
+                onClick={handleProcedureLinkClick}
+                dangerouslySetInnerHTML={{
+                  __html: formatDashboardNewsText(item.content.trim() || 'Aucun contenu.'),
+                }}
+              />
+            </article>
+          ))
+        ) : (
+          <div className="dashboard-empty">Aucune news configurée.</div>
+        )}
+      </div>
+    </div>
+  )
+
   const renderWorkspaceDashboardNewsNotesPanel = (title: string) => (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--news-notes">
       <div className="workspace-dashboard__panel-title">{title}</div>
       <div className="workspace-dashboard__news-notes-grid">
-        <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes dashboard-reminders">
-          <div className="dashboard-reminders__head">
-            <span>Rappels RQT</span>
-            <div className="dashboard-reminders__head-actions">
-              <button className="btn btn--ghost btn--small" type="button" onClick={openNewRqtReminder}>Ajouter</button>
-            </div>
-          </div>
-          <div className="dashboard-reminders__list">
-            {rqtReminders.length ? [...rqtReminders].sort((a, b) => a.dueAt.localeCompare(b.dueAt)).map((reminder) => {
-              const expired = new Date(reminder.dueAt).getTime() <= reminderNow
-              return <div
-                className={`dashboard-reminder${expired ? ' is-expired' : ''}`}
-                key={reminder.id}
-                role="button"
-                tabIndex={0}
-                title={expired ? 'Cliquer pour relancer le chrono' : 'Cliquer pour modifier le temps restant'}
-                onClick={() => openRqtReminderEditor(reminder)}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return
-                  event.preventDefault()
-                  openRqtReminderEditor(reminder)
-                }}
-              >
-                <span className="dashboard-reminder__identity">
-                  <strong>RQT {reminder.rqt}</strong>
-                  <small>{expired ? 'Cliquer pour relancer' : 'Cliquer pour modifier'}</small>
-                </span>
-                <span className="dashboard-reminder__countdown">{formatReminderCountdown(reminder)}</span>
-                <button
-                  className="dashboard-reminder__delete"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    updateSettings({
-                      rqtReminders: rqtReminders.filter((item) => item.id !== reminder.id),
-                    })
-                  }}
-                >
-                  Supprimer
-                </button>
-              </div>
-            }) : <div className="dashboard-empty">Aucun rappel en attente.</div>}
-          </div>
-        </div>
-        <div className="dashboard-news-notes__panel dashboard-news-notes__panel--news">
-          <div className="dashboard-news-list dashboard-news-list--stacked">
-            {dashboardNewsSorted.length ? (
-              dashboardNewsSorted.map((item) => (
-                <article className="dashboard-news-item" key={item.id}>
-                  <div className="dashboard-news-item__date">{formatDashboardNewsDate(item.date)}</div>
-                  <div className="dashboard-news-item__title">{item.title || 'Sans titre'}</div>
-                  <div
-                    className="dashboard-news-item__content"
-                    onClick={handleProcedureLinkClick}
-                    dangerouslySetInnerHTML={{
-                      __html: formatDashboardNewsText(item.content.trim() || 'Aucun contenu.'),
-                    }}
-                  />
-                </article>
-              ))
-            ) : (
-              <div className="dashboard-empty">Aucune news configurée.</div>
-            )}
-          </div>
-        </div>
+        {renderDashboardRemindersBlock()}
+        {renderDashboardNewsBlock()}
       </div>
     </article>
   )
@@ -8156,14 +8238,23 @@ function App() {
                     <div className="settings-layout__nav-items">
                       {section.items.map((item) => {
                         const issueCount = settingsIssueCounts[item.id] ?? 0
+                        // Sub-pages (categories, formatting) appear under their
+                        // parent only while that family is open, or when searching.
+                        const family = item.parent ?? item.id
+                        const familyOpen =
+                          editTab === family ||
+                          section.items.some((other) => other.parent === family && other.id === editTab)
+                        if (item.parent && !familyOpen && !settingsSearch.trim()) return null
+                        const count = item.countKey ? settingsCounts[item.countKey] : undefined
                         return (
                           <button
                             key={item.id}
                             type="button"
                             className={`settings-layout__nav-btn${
                               editTab === item.id ? ' is-active' : ''
-                            }${issueCount ? ' has-issues' : ''}`}
+                            }${issueCount ? ' has-issues' : ''}${item.parent ? ' settings-layout__nav-btn--child' : ''}`}
                             onClick={() => openSettingsTab(item.id)}
+                            title={item.description}
                           >
                             <span className="settings-layout__nav-btn-main">
                               <UiIcon name={item.icon} className="settings-layout__nav-btn-icon" />
@@ -8171,6 +8262,8 @@ function App() {
                             </span>
                             {issueCount ? (
                               <span className="settings-layout__nav-badge">{issueCount}</span>
+                            ) : count !== undefined ? (
+                              <span className="settings-layout__nav-count">{count}</span>
                             ) : null}
                           </button>
                         )
@@ -8365,25 +8458,33 @@ function App() {
             ) : null}
 
             {editTab === 'snippets' ? (
-              <div className="modal__grid">
-                <div className="list-card">
-                  <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">Liste</div>
-                    <div className="list-card__tools">
-                      <select
-                        className="select select--roomy"
-                        value={editSnippetCategoryId}
-                        onChange={(event) => setEditSnippetCategoryId(event.target.value)}
-                      >
-                        <option value="all">Toutes les catégories</option>
-                        {data.categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+              <div className="modal__grid modal__grid--library">
+                {(() => {
+                  const counts = countByCategory(data.snippets, (snippet) => snippet.categoryId)
+                  return (
+                    <LibraryCategoryRail
+                      title="Catégories"
+                      total={data.snippets.length}
+                      entries={data.categories.map((category) => ({
+                        id: category.id,
+                        label: category.name,
+                        count: counts.get(category.id) ?? 0,
+                        color: categoryColorMap.get(category.color),
+                      }))}
+                      active={editSnippetCategoryId}
+                      onSelect={setEditSnippetCategoryId}
+                      onManage={() => openSettingsTab('categories')}
+                    />
+                  )
+                })()}
+                <div className="list-card library-list">
+                  <LibrarySearch
+                    value={snippetQuery}
+                    onChange={(query) => setLibraryFilter('snippets', { query })}
+                    shown={editSnippets.length}
+                    total={data.snippets.length}
+                    placeholder="Chercher un snippet"
+                  />
                   <div className="list-card__body">
                     <SortableList
                       items={editSnippets}
@@ -8692,13 +8793,40 @@ function App() {
             ) : null}
 
             {editTab === 'templates' ? (
-              <div className="modal__grid">
-                <div className="list-card">
+              <div className="modal__grid modal__grid--library">
+                {(() => {
+                  const counts = countByCategory(data.templates, (template) => template.categoryId)
+                  return (
+                    <LibraryCategoryRail
+                      title="Catégories"
+                      total={data.templates.length}
+                      favorites={data.templates.filter((template) => template.favorite).length}
+                      entries={mailTemplateCategories.map((category) => ({
+                        id: category.id,
+                        label: category.name,
+                        count: counts.get(category.id) ?? 0,
+                      }))}
+                      active={templateFilter.category}
+                      onSelect={(category) => setLibraryFilter('templates', { category })}
+                      onManage={() => openSettingsTab('templateCategories')}
+                    />
+                  )
+                })()}
+                <div className="list-card library-list">
+                  <LibrarySearch
+                    value={templateFilter.query}
+                    onChange={(query) => setLibraryFilter('templates', { query })}
+                    shown={libraryTemplates.length}
+                    total={data.templates.length}
+                    placeholder="Chercher un mail (nom, texte)"
+                  />
                   <div className="list-card__body">
                     <SortableList
-                      items={data.templates}
+                      items={libraryTemplates}
                       getId={(item) => item.id}
-                      onReorder={(next) => setData((prev) => ({ ...prev, templates: next }))}
+                      onReorder={(next) =>
+                        setData((prev) => ({ ...prev, templates: mergeSubsetOrder(prev.templates, next) }))
+                      }
                       renderItem={(template, handleProps) => {
                         const issues = getMailTemplateIssues(template, taskTemplateIdSet)
                         return (
@@ -9655,29 +9783,41 @@ function App() {
             ) : null}
 
             {editTab === 'sTasks' || editTab === 'fTasks' ? (
-              <div className="modal__grid">
-                <div className="list-card">
-                  <div className="list-card__header list-card__header--wrap">
-                    <div className="list-card__title">
-                      Templates {settingsTaskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'}
-                    </div>
-                  </div>
+              <div className="modal__grid modal__grid--library">
+                {(() => {
+                  const counts = countByCategory(settingsTaskTemplates, (task) => task.categoryId)
+                  return (
+                    <LibraryCategoryRail
+                      title="Catégories"
+                      total={settingsTaskTemplates.length}
+                      favorites={settingsTaskTemplates.filter((task) => task.favorite).length}
+                      entries={settingsTaskTemplateCategories.map((category) => ({
+                        id: category.id,
+                        label: category.name,
+                        count: counts.get(category.id) ?? 0,
+                      }))}
+                      active={taskFilter.category}
+                      onSelect={(category) => setLibraryFilter(settingsTaskTemplateKind, { category })}
+                      onManage={() =>
+                        openSettingsTab(settingsTaskTemplateKind === 's-task' ? 'sTaskCategories' : 'fTaskCategories')
+                      }
+                    />
+                  )
+                })()}
+                <div className="list-card library-list">
+                  <LibrarySearch
+                    value={taskFilter.query}
+                    onChange={(query) => setLibraryFilter(settingsTaskTemplateKind, { query })}
+                    shown={libraryTaskTemplates.length}
+                    total={settingsTaskTemplates.length}
+                    placeholder={`Chercher une ${settingsTaskTemplateKind === 's-task' ? 'S-Task' : 'F-Task'}`}
+                  />
                   <div className="list-card__body">
                     <SortableList
-                      items={settingsTaskTemplates}
+                      items={libraryTaskTemplates}
                       getId={(item) => item.id}
                       onReorder={(next) =>
-                        setData((prev) => {
-                          let index = 0
-                          return {
-                            ...prev,
-                            taskTemplates: prev.taskTemplates.map((task) =>
-                              normalizeTaskTemplateKind(task) === settingsTaskTemplateKind
-                                ? next[index++]
-                                : task,
-                            ),
-                          }
-                        })
+                        setData((prev) => ({ ...prev, taskTemplates: mergeSubsetOrder(prev.taskTemplates, next) }))
                       }
                       renderItem={(task, handleProps) => {
                         const issues = getTaskTemplateIssues(task)
@@ -10080,6 +10220,176 @@ function App() {
                     </div>
                   </div>
                 </div>
+              </div>
+            ) : null}
+
+            {editTab === 'connections' ? (
+              <div className="settings-page settings-page--narrow">
+                <section className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title">Connexion Cairm+</div>
+                    <span className={`connection-state connection-state--${caseContextState.bridge?.state ?? 'off'}`}>
+                      {caseContextState.bridge?.state === 'listening'
+                        ? `Active sur le port ${caseContextState.bridge.port}`
+                        : caseContextState.bridge?.state === 'error'
+                          ? `Erreur : ${caseContextState.bridge.error ?? 'inconnue'}`
+                          : 'Désactivée'}
+                    </span>
+                  </div>
+                  <div className="list-card__body">
+                    {caseContextState.available ? (
+                      <div className="settings-block">
+                        <div className="settings-option">
+                          <div className="settings-option__info">
+                            <div className="settings-option__title">Recevoir le dossier ouvert dans le CRM</div>
+                            <div className="settings-option__desc">
+                              Agentor écoute uniquement sur cet ordinateur (127.0.0.1). Rien n’est écrit dans le CRM.
+                            </div>
+                          </div>
+                          <label className="settings-toggle" aria-label="Connexion Cairm+">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(caseContextState.bridge?.enabled)}
+                          onChange={(event) => void caseContextState.setBridgeEnabled(event.target.checked)}
+                        />
+                        <span className="settings-toggle__track">
+                          <span className="settings-toggle__thumb" />
+                        </span>
+                      </label>
+                        </div>
+                        <div className="settings-option">
+                          <div className="settings-option__info">
+                            <div className="settings-option__title">Jeton d’appairage</div>
+                            <div className="settings-option__desc">
+                              À coller dans Cairm+ › Paramètres › Agentor 9000. Il n’est jamais affiché ni enregistré en clair.
+                            </div>
+                          </div>
+                          <div className="settings-option__actions">
+                            <button
+                              type="button"
+                              className="btn btn--small btn--with-icon"
+                              disabled={caseContextState.bridge?.state !== 'listening'}
+                              onClick={() => void handleCopyBridgeToken()}
+                            >
+                              <ButtonIcon name="copy" />
+                              Copier
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--small"
+                              title="L’ancien jeton ne fonctionnera plus : il faudra le recoller dans Cairm+."
+                              onClick={() => {
+                                void caseContextState.regenerateToken().then((token) =>
+                                  setToast(token ? 'Nouveau jeton créé. Recolle-le dans Cairm+.' : 'Impossible de créer un jeton.'),
+                                )
+                              }}
+                            >
+                              Régénérer
+                            </button>
+                          </div>
+                        </div>
+                        <ol className="connection-steps">
+                          <li>Active la connexion ci-dessus.</li>
+                          <li>Copie le jeton.</li>
+                          <li>Dans Edge, ouvre Cairm+ › Paramètres › Agentor 9000, colle le jeton, active l’envoi et clique sur « Tester la connexion ».</li>
+                        </ol>
+                      </div>
+                    ) : (
+                      <div className="empty-state">La connexion n’est disponible que dans l’application installée.</div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            ) : null}
+
+            {editTab === 'caseTags' ? (
+              <div className="settings-page settings-page--narrow">
+                <section className="list-card list-card--form">
+                  <div className="list-card__body">
+                    <div className="settings-block">
+                      <div className="settings-option">
+                        <div className="settings-option__info">
+                          <div className="settings-option__title">Remplir au chargement</div>
+                          <div className="settings-option__desc">
+                            Quand un mail, une task ou un snippet est chargé, ses tags sont remplis avec le dossier actif. Un tag sans valeur reste visible.
+                          </div>
+                        </div>
+                        <label className="settings-toggle" aria-label="Remplir au chargement">
+                        <input
+                          type="checkbox"
+                          checked={caseAutoFill}
+                          onChange={(event) => updateSettings({ caseAutoFill: event.target.checked })}
+                        />
+                        <span className="settings-toggle__track">
+                          <span className="settings-toggle__thumb" />
+                        </span>
+                      </label>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <section className="list-card list-card--form">
+                  <div className="list-card__header">
+                    <div className="list-card__title">Tag de chaque information</div>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--small"
+                      onClick={() => updateSettings({ caseTags: {} })}
+                    >
+                      Tags par défaut
+                    </button>
+                  </div>
+                  <div className="list-card__body">
+                    {findDuplicateCaseTags(caseTags).length ? (
+                      <div className="case-tags__warning">
+                        Tag utilisé deux fois : {findDuplicateCaseTags(caseTags).join(', ')}. Seule la première information sera utilisée.
+                      </div>
+                    ) : null}
+                    <table className="case-tags">
+                      <thead>
+                        <tr>
+                          <th>Information</th>
+                          <th>Tag</th>
+                          <th>Dossier actif</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {CASE_TAG_KEYS.map((key: CaseTagKey) => {
+                          const current =
+                            key === 'lastTask'
+                              ? caseContextState.context?.lastTask?.subject
+                              : caseContextState.context?.fields[key]?.value
+                          return (
+                            <tr key={key}>
+                              <td>{caseTagLabels[key]}</td>
+                              <td>
+                                <input
+                                  key={caseTags[key]}
+                                  className="input case-tags__input"
+                                  defaultValue={caseTags[key]}
+                                  aria-label={`Tag pour ${caseTagLabels[key]}`}
+                                  placeholder={DEFAULT_CASE_TAGS[key]}
+                                  onBlur={(event) => {
+                                    const tag = normalizeCaseTag(event.target.value) ?? DEFAULT_CASE_TAGS[key]
+                                    event.target.value = tag
+                                    if (tag === caseTags[key]) return
+                                    updateSettings({ caseTags: { ...data.settings.caseTags, [key]: tag } })
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter') event.currentTarget.blur()
+                                  }}
+                                />
+                              </td>
+                              <td className={current ? 'case-tags__value' : 'case-tags__value is-empty'}>
+                                {current || '—'}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
               </div>
             ) : null}
 
@@ -12341,41 +12651,41 @@ function App() {
 
             {editTab === 'dashboard' ? (
               <div className="modal__grid modal__grid--single settings-home">
-                <div className="settings-home__hero">
-                  <div className="settings-home__hero-main">
-                    <div className="settings-home__title-row">
-                      <div className="settings-home__title">Agentor</div>
-                      <div className="version-pill version-pill--settings">v{APP_VERSION_LABEL}</div>
-                    </div>
-                  </div>
-                </div>
 
                 <div className="settings-home__grid">
                   <section className="list-card list-card--form">
                     <div className="list-card__header">
                       <div className="list-card__title-group">
-                        <div className="list-card__title">Récapitulatif global</div>
+                        <div className="list-card__title">Contenu enregistré</div>
                         <div className="list-card__subtitle">
-                          Données présentes dans l’application.
+                          Clique sur un chiffre pour ouvrir la page correspondante.
                         </div>
                       </div>
                     </div>
                     <div className="list-card__body">
                       <div className="settings-home__metrics">
-                        {[
-                          ['Catégories', data.categories.length],
-                          ['Snippets', data.snippets.length],
-                          ['Templates mail', data.templates.length],
-                          ['Templates S-Task / F-Task', data.taskTemplates.length],
-                          ['Procédures', data.procedures.length],
-                          ['News', dashboardNews.length],
-                          ['Historique mail', data.history.length],
-                          ['Appels', data.callHistory.length],
-                        ].map(([label, value]) => (
-                          <div className="settings-home__metric" key={label as string}>
+                        {(
+                          [
+                            ['Mails', settingsCounts.templates, 'templates'],
+                            ['Snippets', settingsCounts.snippets, 'snippets'],
+                            ['S-Task', settingsCounts.sTasks, 'sTasks'],
+                            ['F-Task', settingsCounts.fTasks, 'fTasks'],
+                            ['Troubleshotgun', settingsCounts.troubleshootgun, 'troubleshootgun'],
+                            ['Procédures', settingsCounts.procedures, 'dashboardPortal'],
+                            ['Produits et SKU', settingsCounts.products, 'dashboardSpareParts'],
+                            ['News', settingsCounts.news, 'dashboardNews'],
+                            ['Appels', data.callHistory.length, 'callHistory'],
+                          ] as Array<[string, number, SettingsTab]>
+                        ).map(([label, value, tab]) => (
+                          <button
+                            type="button"
+                            className="settings-home__metric"
+                            key={label}
+                            onClick={() => openSettingsTab(tab)}
+                          >
                             <span>{label}</span>
-                            <strong>{value as number}</strong>
-                          </div>
+                            <strong>{value}</strong>
+                          </button>
                         ))}
                       </div>
                     </div>

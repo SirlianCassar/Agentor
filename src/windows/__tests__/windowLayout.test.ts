@@ -34,14 +34,14 @@ describe('dashboard windows', () => {
   })
 
   it('minimizes, restores and closes independently', () => {
-    let layout = openWindow(openWindow(emptyLayout(), 'tools', viewport), 'parts', viewport)
-    layout = minimizeWindow(layout, 'tools')
-    expect(layout.windows.find((item) => item.kind === 'tools')?.minimized).toBe(true)
+    let layout = openWindow(openWindow(emptyLayout(), 'reminders', viewport), 'parts', viewport)
+    layout = minimizeWindow(layout, 'reminders')
+    expect(layout.windows.find((item) => item.kind === 'reminders')?.minimized).toBe(true)
     expect(layout.windows.find((item) => item.kind === 'parts')?.minimized).toBe(false)
-    layout = focusWindow(layout, 'tools')
-    expect(layout.windows.find((item) => item.kind === 'tools')?.minimized).toBe(false)
+    layout = focusWindow(layout, 'reminders')
+    expect(layout.windows.find((item) => item.kind === 'reminders')?.minimized).toBe(false)
     layout = closeWindow(layout, 'parts')
-    expect(layout.windows.map((item) => item.kind)).toEqual(['tools'])
+    expect(layout.windows.map((item) => item.kind)).toEqual(['reminders'])
   })
 
   it('toggles: open, then minimize when already in front', () => {
@@ -82,10 +82,21 @@ describe('dashboard windows', () => {
         windows: [
           { kind: 'unknown', x: 0, y: 0, width: 300, height: 200, z: 1 },
           { kind: 'case', x: 'a', y: 0, width: 300, height: 200, z: 1 },
-          { kind: 'tools', x: 0, y: 0, width: 300, height: 200, z: 1 },
-          { kind: 'tools', x: 5, y: 5, width: 300, height: 200, z: 2 },
+          { kind: 'news', x: 0, y: 0, width: 300, height: 200, z: 1 },
+          { kind: 'news', x: 5, y: 5, width: 300, height: 200, z: 2 },
         ],
       }).windows.map((item) => item.kind),
-    ).toEqual(['tools'])
+    ).toEqual(['news'])
+  })
+
+  it('reopens a closed window with the size and place it had', () => {
+    let layout = openWindow(emptyLayout(), 'news', viewport)
+    layout = resizeWindow(moveWindow(layout, 'news', 120, 90, viewport), 'news', 610, 470, viewport)
+    layout = closeWindow(layout, 'news')
+    expect(layout.windows).toHaveLength(0)
+    const saved = parseLayout(JSON.parse(JSON.stringify(layout)))
+    const reopened = openWindow(saved, 'news', viewport).windows[0]
+    expect([reopened.x, reopened.y, reopened.width, reopened.height]).toEqual([120, 90, 610, 470])
+    expect(openWindow(saved, 'news', viewport).closed?.news).toBeUndefined()
   })
 })

@@ -11,6 +11,7 @@ import {
   type CaseKey,
 } from '../caseContext'
 import { fillTemplateFromContext } from '../templateFill'
+import { findDuplicateCaseTags, normalizeCaseTag, resolveCaseTags } from '../caseTags'
 
 // Fictitious case used throughout the workspace fixtures.
 const caseA: CaseKey = {
@@ -131,5 +132,24 @@ describe('template filling', () => {
       filled: [],
       missing: ['<SERIAL>'],
     })
+  })
+
+  it('uses the tags chosen in the settings', () => {
+    const tags = resolveCaseTags({ serialNumber: 'numéro série', customerName: '' })
+    expect(tags.serialNumber).toBe('<NUMERO_SERIE>')
+    expect(tags.customerName).toBe('<CLIENT>')
+    const result = fillTemplateFromContext('SN <NUMERO_SERIE>, ancien <SERIAL>', loaded(), tags)
+    expect(result.text).toBe('SN 3030303030, ancien <SERIAL>')
+  })
+})
+
+describe('case tags', () => {
+  it('normalizes what the user types into a tag', () => {
+    expect(normalizeCaseTag('<Date de production>')).toBe('<DATE_DE_PRODUCTION>')
+    expect(normalizeCaseTag('  ')).toBeNull()
+  })
+
+  it('finds a tag used twice', () => {
+    expect(findDuplicateCaseTags(resolveCaseTags({ caseTitle: 'DOSSIER' }))).toEqual(['<DOSSIER>'])
   })
 })
