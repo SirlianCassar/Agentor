@@ -3865,10 +3865,6 @@ button.dashboard-copy-icon.is-success {
   border-radius: var(--radius-xs);
 }
 
-.editor__task-number {
-  color: #7fd1b9;
-}
-
 .editor__highlight,
 .editor__input {
   position: absolute;
@@ -5076,57 +5072,6 @@ button.ghost.confirm {
 
 .task-copy-btn.copy-btn {
   min-width: 90px;
-}
-
-.task-mail-counter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 3px 4px;
-  border-radius: var(--radius-sm);
-  border: 0;
-  background: transparent;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.task-mail-counter__btn {
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  border: 1px solid rgba(236, 234, 242,0.14);
-  border-radius: var(--radius-xs);
-  background: rgba(236, 234, 242,0.06);
-  color: var(--text);
-  display: inline-grid;
-  place-items: center;
-  cursor: pointer;
-  font-size: calc(9px * var(--text-scale));
-  line-height: 1;
-  padding: 0;
-}
-
-.task-mail-counter__btn:hover {
-  border-color: rgba(139, 123, 216, 0.34);
-  background: rgba(139, 123, 216, 0.12);
-}
-
-.task-mail-counter__value {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: var(--radius-sm);
-  background: rgba(127, 209, 185, 0.16);
-  border: 1px solid rgba(127, 209, 185, 0.32);
-  text-align: center;
-  font-weight: 700;
-  font-size: calc(12px * var(--text-scale));
-  color: #7fd1b9;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .clear-btn,
@@ -14253,8 +14198,7 @@ button:hover:not(:disabled) .ui-icon,
 .sidebar-icon-btn,
 .icon-btn-sm,
 .close-modal,
-.note-clear-btn,
-.task-mail-counter__btn {
+.note-clear-btn {
   color: #fff;
 }
 

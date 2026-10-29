@@ -1,0 +1,435 @@
+/* Agentor 9000 shell: dashboard launcher, floating windows, active case panel. */
+
+.window-launcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.window-launcher__btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft-hover);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition-base), background var(--transition-base),
+    color var(--transition-base);
+}
+
+.window-launcher__btn:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.window-launcher__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.window-launcher__btn.is-open {
+  border-color: var(--border-active);
+  background: var(--accent-glow);
+  color: var(--text);
+}
+
+/* Minimized: a small mark under the icon shows the window is still there. */
+.window-launcher__btn.is-minimized::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: 3px;
+  height: 2px;
+  background: var(--accent-light);
+}
+
+.window-launcher__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.window-launcher__badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--danger);
+  border: 1px solid var(--bg);
+}
+
+/* Windows live in a layer over the whole app; only the windows catch the pointer. */
+.window-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.floating-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  box-shadow: var(--shadow-pop);
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.floating-window.is-active {
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-xl);
+}
+
+.floating-window__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 4px 0 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-strong);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.floating-window__bar:active {
+  cursor: grabbing;
+}
+
+.floating-window__icon {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-light);
+}
+
+.floating-window__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.floating-window__btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.floating-window__btn:hover {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.floating-window__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+/* Dashboard panels were sized for the bottom strip; inside a window they fill it. */
+.floating-window__body > .workspace-dashboard__panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.floating-window__resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, var(--border-hover) 50%);
+}
+
+/* Active case panel */
+
+.case-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: calc(12px * var(--text-scale));
+}
+
+.case-panel__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.case-panel__number {
+  font-family: var(--font-mono);
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 700;
+  color: var(--text);
+}
+
+.case-panel__meta {
+  flex: 1 1 auto;
+  color: var(--muted);
+}
+
+.case-panel__icon-btn {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.case-panel__icon-btn:hover {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.case-panel__fields {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+
+.case-field {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.case-field__label {
+  color: var(--muted);
+}
+
+.case-field__value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+}
+
+.case-field__text {
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-field--missing .case-field__text {
+  color: var(--muted-light);
+}
+
+.case-field__input {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--border-active);
+  background: var(--field-bg-focus);
+  color: var(--text);
+  font: inherit;
+}
+
+.case-field__candidates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+
+.case-field__candidate {
+  padding: 2px 6px;
+  border: 1px solid var(--warning);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.case-field__candidate:hover {
+  background: var(--surface-strong);
+}
+
+.case-field__status {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: calc(10px * var(--text-scale));
+  white-space: nowrap;
+}
+
+.case-field__status--missing {
+  color: var(--muted);
+}
+
+.case-field__status--conflict {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.case-field__status--confirmed {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.case-field__status--manual {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+}
+
+.case-field__actions {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 66px;
+}
+
+.case-panel__task {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.case-panel__task-label {
+  color: var(--muted);
+  font-size: calc(10px * var(--text-scale));
+  text-transform: uppercase;
+}
+
+.case-panel__task-subject {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.case-panel__task-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-secondary);
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.case-panel__fill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.case-panel__empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.case-panel__bridge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.case-panel__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  background: var(--muted);
+}
+
+.case-panel__dot--listening {
+  background: var(--success);
+}
+
+.case-panel__dot--error {
+  background: var(--danger);
+}
+
+.case-panel__bridge-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.case-panel__switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 16px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.case-panel__switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.case-panel__switch span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--border-hover);
+  background: var(--field-bg);
+  pointer-events: none;
+  transition: background var(--transition-fast);
+}
+
+.case-panel__switch span::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: var(--muted);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.case-panel__switch input:checked + span {
+  background: var(--accent-glow);
+}
+
+.case-panel__switch input:checked + span::after {
+  background: var(--accent-light);
+  transform: translateX(14px);
+}
+
+.case-panel__switch input:focus-visible + span {
+  box-shadow: var(--focus-ring);
+}

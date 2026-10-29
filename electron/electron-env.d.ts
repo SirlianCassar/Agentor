@@ -36,5 +36,15 @@ interface Window {
     copyText: (text: string, html?: string) => boolean
     openExternal: (url: string) => Promise<boolean>
     openProcedure: () => Promise<boolean>
+    getCaseContext?: () => Promise<unknown>
+    setCaseFieldManual?: (caseId: string, key: string, value: string) => Promise<boolean>
+    confirmCaseField?: (caseId: string, key: string) => Promise<boolean>
+    clearCaseContext?: () => Promise<boolean>
+    onCaseContext?: (callback: (context: unknown) => void) => () => void
+    getBridgeStatus?: () => Promise<unknown>
+    getBridgeToken?: () => Promise<string>
+    setBridgeEnabled?: (enabled: boolean) => Promise<unknown>
+    regenerateBridgeToken?: () => Promise<string>
+    onBridgeStatus?: (callback: (status: unknown) => void) => () => void
   }
 }

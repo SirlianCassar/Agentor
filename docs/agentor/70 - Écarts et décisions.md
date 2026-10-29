@@ -29,3 +29,12 @@ Le catalogue Spare Parts est présenté comme des groupes SKU dans l’interface
 Décision : les catégories de templates S-Task et F-Task sont séparées par `TaskTemplateCategory.kind`.
 
 Les catégories historiques sans type sont rattachées aux F-Task, conformément à la migration des templates historiques. Une catégorie S-Task par défaut est ajoutée si nécessaire et les associations incompatibles sont réparées vers la première catégorie du bon type.
+
+## 2026-10-29 — Suppression de la numérotation des S-Task
+
+Décision (demande de Sirlian) : le système de numérotation des S-Task et de la timeline est retiré complètement.
+
+- Le compteur « Mail précédent / Mail suivant » et l’état `taskMailNumber` sont supprimés.
+- Le titre ne reçoit plus de préfixe `(N)` et les lignes de timeline ne reçoivent plus de suffixe ` (N)`, ni dans l’éditeur ni dans le texte copié vers le CRM.
+- Les brouillons existants : seul le préfixe `(N) ` du titre est retiré automatiquement (`stripLegacyTaskNumbering`). Les lignes de timeline déjà écrites ne sont jamais réécrites, car un nombre entre parenthèses peut être du contenu saisi.
+- Insertion d’un fragment dans la timeline : seule une répétition immédiate est ignorée (`taskSectionEndsWithFragment`). Les autres sections gardent un fragment une seule fois (`taskSectionHasFragment`, qui ignore encore un ancien suffixe numéroté).

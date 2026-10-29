@@ -30,7 +30,7 @@ Le champ reste optionnel dans le type stocké pour accepter les anciennes donné
 
 `TaskTemplateCategory.kind` applique la même distinction aux catégories. Une catégorie historique sans type est normalisée en catégorie F-Task. La normalisation garantit qu’au moins une catégorie existe pour chaque type, et un template dont la catégorie ne correspond pas à son type est rattaché à la première catégorie compatible.
 
-Un template S-Task stocke son titre dans `taskTitle` et ses quatre contenus dans `taskSections`. Son champ `content` contient également une version aplatie des sections pour préserver les consommateurs historiques et les exports. Lorsqu’il est appliqué, il ouvre la boîte S-Task, place le titre au-dessus des sections, reconstruit le squelette avec les noms de sections actifs et applique le numéro de mail courant.
+Un template S-Task stocke son titre dans `taskTitle` et ses quatre contenus dans `taskSections`. Son champ `content` contient également une version aplatie des sections pour préserver les consommateurs historiques et les exports. Lorsqu’il est appliqué, il ouvre la boîte S-Task, place le titre au-dessus des sections et reconstruit le squelette avec les noms de sections actifs. Aucune numérotation n’est appliquée (voir [[70 - Écarts et décisions]]).
 
 Un template F-Task conserve son texte dans `content`. Lorsqu’il est appliqué, il ouvre la boîte F-Task sans ajouter de squelette.
 

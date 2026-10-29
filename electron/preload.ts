@@ -1,5 +1,13 @@
 import { clipboard, contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 
+function subscribe(channel: string, callback: (payload: unknown) => void) {
+  const listener = (_event: IpcRendererEvent, payload: unknown) => callback(payload)
+  ipcRenderer.on(channel, listener)
+  return () => {
+    ipcRenderer.removeListener(channel, listener)
+  }
+}
+
 const api = {
   loadData: () => ipcRenderer.invoke('storage:load'),
   saveData: (data: unknown) => ipcRenderer.invoke('storage:save', data),
@@ -19,11 +27,20 @@ const api = {
   getUpdateStatus: () => ipcRenderer.invoke('updates:get-status'),
   checkForUpdatesNow: () => ipcRenderer.invoke('updates:check-now'),
   installDownloadedUpdate: () => ipcRenderer.invoke('updates:install-downloaded'),
-  onUpdateStatus: (callback: (status: unknown) => void) => {
-    const listener = (_event: IpcRendererEvent, payload: unknown) => callback(payload)
-    ipcRenderer.on('updates:status', listener)
-    return () => ipcRenderer.removeListener('updates:status', listener)
-  },
+  onUpdateStatus: (callback: (status: unknown) => void) => subscribe('updates:status', callback),
+  getCaseContext: () => ipcRenderer.invoke('case-context:get'),
+  setCaseFieldManual: (caseId: string, key: string, value: string) =>
+    ipcRenderer.invoke('case-context:set-manual', caseId, key, value),
+  confirmCaseField: (caseId: string, key: string) =>
+    ipcRenderer.invoke('case-context:confirm', caseId, key),
+  clearCaseContext: () => ipcRenderer.invoke('case-context:clear'),
+  onCaseContext: (callback: (context: unknown) => void) =>
+    subscribe('case-context:changed', callback),
+  getBridgeStatus: () => ipcRenderer.invoke('bridge:get-status'),
+  getBridgeToken: () => ipcRenderer.invoke('bridge:get-token'),
+  setBridgeEnabled: (enabled: boolean) => ipcRenderer.invoke('bridge:set-enabled', enabled),
+  regenerateBridgeToken: () => ipcRenderer.invoke('bridge:regenerate-token'),
+  onBridgeStatus: (callback: (status: unknown) => void) => subscribe('bridge:status', callback),
 }
 
 contextBridge.exposeInMainWorld('agentor', api)
