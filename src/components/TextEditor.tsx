@@ -19,14 +19,12 @@ export type ProtectedTextRange = {
   end: number
 }
 
-// Wraps task-skeleton headings (► …) and mail numbers (N) in styled spans for
-// readability. Only color/background may be applied via these classes — never
+// Wraps task-skeleton headings (► …) in styled spans for readability. Only color/background may be applied via these classes — never
 // font-weight/size/padding — so the highlight layer keeps aligning with the
 // transparent textarea underneath.
 const decorateTaskSkeletonHtml = (html: string) =>
   html
     .replace(/►([^\n<]*)/g, '<span class="editor__task-heading">►$1</span>')
-    .replace(/\((\d+)\)/g, '<span class="editor__task-number">($1)</span>')
 
 export interface TextEditorHandle {
   focus: () => void

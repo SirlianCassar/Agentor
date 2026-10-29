@@ -1,7 +1,7 @@
 {
   "name": "agentor",
   "private": true,
-  "version": "2.0.42",
+  "version": "2.0.43",
   "author": "Sirlian",
   "description": "Agentor local email and task template composer",
   "type": "module",
@@ -10,7 +10,8 @@
     "build": "tsc && vite build && electron-builder --win --publish never",
     "build:win": "tsc && vite build && electron-builder --win",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -39,7 +40,8 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "typescript": "^5.2.2",
     "vite": "^7.3.2",
-    "vite-plugin-electron": "^0.29.1"
+    "vite-plugin-electron": "^0.29.1",
+    "vitest": "^3.2.4"
   },
   "main": "dist-electron/main.mjs"
 }

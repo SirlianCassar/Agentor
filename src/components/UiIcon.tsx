@@ -43,6 +43,12 @@ import { Tray } from '@phosphor-icons/react/Tray'
 import { Warehouse } from '@phosphor-icons/react/Warehouse'
 import { Wrench } from '@phosphor-icons/react/Wrench'
 import { X } from '@phosphor-icons/react/X'
+import { Minus } from '@phosphor-icons/react/Minus'
+import { Check } from '@phosphor-icons/react/Check'
+import { IdentificationCard } from '@phosphor-icons/react/IdentificationCard'
+import { PlugsConnected } from '@phosphor-icons/react/PlugsConnected'
+import { MagicWand } from '@phosphor-icons/react/MagicWand'
+import { Warning } from '@phosphor-icons/react/Warning'
 
 const icons: Record<AppIconName, Icon> = {
   add: Plus,
@@ -92,6 +98,12 @@ const icons: Record<AppIconName, Icon> = {
   template: Files,
   tool: ListChecks,
   version: GitCommit,
+  minimize: Minus,
+  check: Check,
+  caseFile: IdentificationCard,
+  plug: PlugsConnected,
+  fill: MagicWand,
+  warning: Warning,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {

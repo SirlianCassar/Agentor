@@ -5,6 +5,7 @@ import {
   ipcMain,
   shell,
   Menu,
+  safeStorage,
   type OpenDialogOptions,
   type Rectangle,
   type SaveDialogOptions,
@@ -13,6 +14,17 @@ import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
 import { autoUpdater } from 'electron-updater'
+import { readJsonObject, writeFileAtomic } from './dataFile'
+import { CaseContextStore } from './caseContextStore'
+import { startLocalBridge, type LocalBridge } from './localBridge'
+import {
+  createPairingToken,
+  loadPairingToken,
+  readBridgeConfig,
+  writeBridgeConfig,
+  type BridgeConfig,
+} from './bridgeConfig'
+import { isContextFieldKey } from '../src/context/caseContext'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.APP_ROOT = path.join(__dirname, '..')
 
@@ -29,37 +41,6 @@ const DATA_FILE = () => path.join(app.getPath('userData'), 'agentor-data.json')
 const WINDOW_STATE_FILE = () => path.join(app.getPath('userData'), 'window-state.json')
 const LEGACY_APP_DATA_DIR_NAMES = ['SpeedMail', 'TypeFast', 'MailOTron', 'Mailotron']
 const LEGACY_DATA_FILE_NAMES = ['speedmail-data.json', 'typefast-data.json', 'mailotron-data.json']
-const defaultData = {
-  version: 2,
-  categories: [],
-  snippets: [],
-  templates: [],
-  taskTemplates: [],
-  procedures: [],
-  notes: '',
-  emailDraft: '',
-  taskDraft: '',
-  history: [],
-  settings: {
-    language: 'fr',
-    zoom: 1,
-    textScale: 1,
-    editorLineHeight: 1.6,
-    historyOnCopy: true,
-    historyLimit: 200,
-    autoFocusEditor: true,
-    defaultSnippetInsertMode: 'line',
-    snippetCategoryDisplay: 'dropdown',
-    customerPortalCodes: [],
-    dashboardProducts: [],
-    dashboardDecorations: [],
-    dashboardReminders: '',
-    taskSectionNames: ['Current Contact', 'Previous Actions / History', 'Next Steps', 'Internal Notes'],
-    mailTemplateCategories: [],
-    taskTemplateCategories: [],
-  },
-}
-
 type SavedWindowState = {
   bounds: Rectangle
   isMaximized: boolean
@@ -111,21 +92,12 @@ function migrateLegacyStorageIfNeeded() {
 }
 
 function readWindowState(): WindowState {
-  try {
-    const raw = fs.readFileSync(WINDOW_STATE_FILE(), 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object') {
-      return parsed as WindowState
-    }
-  } catch {
-    return {}
-  }
-  return {}
+  return (readJsonObject(WINDOW_STATE_FILE()) as WindowState | null) ?? {}
 }
 
 function writeWindowState(state: WindowState) {
   try {
-    fs.writeFileSync(WINDOW_STATE_FILE(), JSON.stringify(state, null, 2))
+    writeFileAtomic(WINDOW_STATE_FILE(), JSON.stringify(state, null, 2))
   } catch {
     return
   }
@@ -145,26 +117,27 @@ function persistWindowState(key: 'main' | 'procedure', window: BrowserWindow | n
   writeWindowState(windowState)
 }
 
-function shouldUseSeed(data: unknown) {
-  void data
-  return false
-}
-
+// The renderer owns the defaults: an empty object is normalized there. A file
+// that exists but cannot be parsed is kept aside before the next save
+// replaces it, so a damaged profile is never silently lost.
 function readData() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE(), 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object') {
-      return shouldUseSeed(parsed) ? defaultData : parsed
+  const filePath = DATA_FILE()
+  const parsed = readJsonObject(filePath)
+  if (parsed) return parsed
+  if (fs.existsSync(filePath)) {
+    const backupPath = filePath.replace(/\.json$/, `.unreadable-${Date.now()}.json`)
+    try {
+      fs.copyFileSync(filePath, backupPath)
+      console.warn('[storage] unreadable data file kept as', backupPath)
+    } catch (error) {
+      console.warn('[storage] could not keep unreadable data file', error)
     }
-  } catch {
-    return defaultData
   }
-  return defaultData
+  return {}
 }
 
 function writeData(data: unknown) {
-  fs.writeFileSync(DATA_FILE(), JSON.stringify(data ?? defaultData, null, 2))
+  writeFileAtomic(DATA_FILE(), JSON.stringify(data ?? {}, null, 2))
 }
 
 const AUTO_UPDATE_LOG_PREFIX = '[auto-update]'
@@ -504,14 +477,117 @@ app.on('activate', () => {
   }
 })
 
+// ── Active case context and Cairm+ bridge ─────────────────────────────────
+const CASE_CONTEXT_FILE = () => path.join(app.getPath('userData'), 'case-context.json')
+const BRIDGE_CONFIG_FILE = () => path.join(app.getPath('userData'), 'bridge.json')
+const BRIDGE_TOKEN_FILE = () => path.join(app.getPath('userData'), 'bridge-token.bin')
+const CASE_CONTEXT_CHANNEL = 'case-context:changed'
+const BRIDGE_STATUS_CHANNEL = 'bridge:status'
+
+type BridgeStatus = BridgeConfig & {
+  state: 'off' | 'listening' | 'error'
+  error?: string
+  tokenPersisted: boolean
+}
+
+let caseContextStore: CaseContextStore | null = null
+let localBridge: LocalBridge | null = null
+let bridgeToken = ''
+let bridgeTokenPersisted = false
+let bridgeStatus: BridgeStatus | null = null
+
+function broadcast(channel: string, payload: unknown) {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) window.webContents.send(channel, payload)
+  }
+}
+
+function setBridgeStatus(status: BridgeStatus) {
+  bridgeStatus = status
+  broadcast(BRIDGE_STATUS_CHANNEL, status)
+}
+
+async function applyBridgeConfig(config: BridgeConfig) {
+  if (localBridge) {
+    await localBridge.close()
+    localBridge = null
+  }
+  if (!config.enabled || !caseContextStore) {
+    setBridgeStatus({ ...config, state: 'off', tokenPersisted: bridgeTokenPersisted })
+    return
+  }
+  const store = caseContextStore
+  try {
+    localBridge = await startLocalBridge({
+      port: config.port,
+      token: bridgeToken,
+      allowedOrigins: config.allowedOrigins,
+      appVersion: app.getVersion(),
+      onMessage: (message) => store.handleBridgeMessage(message),
+    })
+    setBridgeStatus({ ...config, state: 'listening', tokenPersisted: bridgeTokenPersisted })
+  } catch (error) {
+    setBridgeStatus({
+      ...config,
+      state: 'error',
+      error: getUpdateErrorMessage(error),
+      tokenPersisted: bridgeTokenPersisted,
+    })
+  }
+}
+
+function initCaseContext() {
+  caseContextStore = new CaseContextStore(CASE_CONTEXT_FILE())
+  caseContextStore.subscribe((context) => broadcast(CASE_CONTEXT_CHANNEL, context))
+  const pairing = loadPairingToken(BRIDGE_TOKEN_FILE(), safeStorage)
+  bridgeToken = pairing.token
+  bridgeTokenPersisted = pairing.persisted
+  void applyBridgeConfig(readBridgeConfig(BRIDGE_CONFIG_FILE()))
+}
+
 app.whenReady().then(async () => {
   app.setAppUserModelId('com.agentor.app')
   migrateLegacyStorageIfNeeded()
   windowState = readWindowState()
   Menu.setApplicationMenu(null)
+  initCaseContext()
   createWindow()
   configureAutoUpdater()
   await checkForUpdates('startup')
+})
+
+app.on('before-quit', () => {
+  void localBridge?.close()
+})
+
+ipcMain.handle('case-context:get', () => caseContextStore?.get() ?? null)
+ipcMain.handle('case-context:set-manual', (_event, caseId: unknown, key: unknown, value: unknown) => {
+  if (typeof caseId !== 'string' || !isContextFieldKey(key) || typeof value !== 'string') return false
+  return caseContextStore?.setManual(caseId, key, value.slice(0, 2000)) ?? false
+})
+ipcMain.handle('case-context:confirm', (_event, caseId: unknown, key: unknown) => {
+  if (typeof caseId !== 'string' || !isContextFieldKey(key)) return false
+  return caseContextStore?.confirm(caseId, key) ?? false
+})
+ipcMain.handle('case-context:clear', () => {
+  caseContextStore?.clear()
+  return true
+})
+ipcMain.handle('bridge:get-status', () => bridgeStatus)
+// The token is only handed to the renderer on an explicit pairing request.
+ipcMain.handle('bridge:get-token', () => bridgeToken)
+ipcMain.handle('bridge:set-enabled', async (_event, enabled: unknown) => {
+  const config = { ...readBridgeConfig(BRIDGE_CONFIG_FILE()), enabled: enabled === true }
+  writeBridgeConfig(BRIDGE_CONFIG_FILE(), config)
+  await applyBridgeConfig(config)
+  return bridgeStatus
+})
+ipcMain.handle('bridge:regenerate-token', async () => {
+  const pairing = createPairingToken(BRIDGE_TOKEN_FILE(), safeStorage)
+  bridgeToken = pairing.token
+  bridgeTokenPersisted = pairing.persisted
+  await applyBridgeConfig(readBridgeConfig(BRIDGE_CONFIG_FILE()))
+  return bridgeToken
 })
 
 ipcMain.handle('storage:load', () => readData())
@@ -530,7 +606,7 @@ ipcMain.handle('storage:export-json', async (_event, data) => {
     ? await dialog.showSaveDialog(parent, dialogOptions)
     : await dialog.showSaveDialog(dialogOptions)
   if (canceled || !filePath) return { canceled: true }
-  fs.writeFileSync(filePath, JSON.stringify(data ?? defaultData, null, 2))
+  writeFileAtomic(filePath, JSON.stringify(data ?? {}, null, 2))
   return { canceled: false }
 })
 ipcMain.handle('storage:export-history', async (_event, text) => {
@@ -544,7 +620,7 @@ ipcMain.handle('storage:export-history', async (_event, text) => {
     ? await dialog.showSaveDialog(parent, dialogOptions)
     : await dialog.showSaveDialog(dialogOptions)
   if (canceled || !filePath) return { canceled: true }
-  fs.writeFileSync(filePath, String(text ?? ''), 'utf-8')
+  writeFileAtomic(filePath, String(text ?? ''))
   return { canceled: false }
 })
 ipcMain.handle('storage:import-json', async () => {

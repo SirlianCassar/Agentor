@@ -8,12 +8,28 @@ import {
   type ClipboardEvent,
   type MouseEvent,
   type RefObject,
-  type TransitionEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { TextEditor, type TextEditorHandle } from './components/TextEditor'
 import { SortableList } from './components/SortableList'
 import { UiIcon } from './components/UiIcon'
+import { FloatingWindow } from './components/FloatingWindow'
+import { CaseContextPanel } from './components/CaseContextPanel'
+import { useCaseContext } from './hooks/useCaseContext'
+import { fillTemplateFromContext } from './context/templateFill'
+import {
+  closeWindow,
+  emptyLayout,
+  fitLayout,
+  focusWindow,
+  minimizeWindow,
+  moveWindow,
+  parseLayout,
+  resizeWindow,
+  toggleWindow,
+  type DashboardWindowKind,
+  type WindowLayout,
+} from './windows/windowLayout'
 import { defaultData } from './lib/defaults'
 import {
   exportJson,
@@ -145,7 +161,6 @@ import {
   MoveIcon,
 } from './components/AppIcons'
 import {
-  annotateTaskFragment,
   buildCompactTaskPreviewText,
   buildStructuredTaskDraft,
   buildStructuredTaskDraftWithTitle,
@@ -157,8 +172,6 @@ import {
   ensureStructuredTaskDraft,
   formatPortalTimelineTitle,
   formatTaskCopyText,
-  getHighestTaskMailNumber,
-  getNextTaskMailNumber,
   getTaskHeadingProtectedRanges,
   getTaskSectionIndex,
   getTaskSectionLabel,
@@ -169,7 +182,6 @@ import {
   hasRecognizedTaskHeadings,
   insertTaskTextInSection,
   normalizeStoredTaskSectionNames,
-  normalizeTaskDraftNumbering,
   normalizeTaskSectionId,
   normalizeTaskSectionNames,
   normalizeTaskTemplateKind,
@@ -181,8 +193,9 @@ import {
   TASK_SECTION_IDS,
   TASK_SKELETON_BOX_INDEX,
   taskBoxUsesSkeleton,
+  stripLegacyTaskNumbering,
+  taskSectionEndsWithFragment,
   taskSectionHasFragment,
-  taskSectionHasNumberedFragment,
   type DraftBoxSlot,
   type TaskBoxSlot,
 } from './lib/taskDraft'
@@ -226,6 +239,7 @@ import {
 } from './lib/appData'
 import { useAppUpdates } from './hooks/useAppUpdates'
 import './App.css'
+import './shell.css'
 
 const TAG_TOKEN = '<TAG>'
 const SELECTOR_TOKEN = '[Option1/Option2]'
@@ -281,6 +295,27 @@ const workspaceDashboardPageOptions: Array<{
   { id: 'parts', title: 'SKU et pièces', icon: 'maintenance' },
   { id: 'decorations', title: 'Ascii Wall', icon: 'asciiWall' },
 ]
+
+// Main window launcher: each button opens its dashboard in a floating window.
+const dashboardWindowOptions: Array<{ id: DashboardWindowKind; title: string; icon: AppIconName }> = [
+  { id: 'case', title: 'Dossier actif', icon: 'caseFile' },
+  ...workspaceDashboardPageOptions.map((page) => ({
+    id: page.id as DashboardWindowKind,
+    title: page.title,
+    icon: page.icon,
+  })),
+]
+
+const WINDOW_LAYOUT_STORAGE_KEY = 'agentor:window-layout:v1'
+
+const readStoredWindowLayout = (): WindowLayout => {
+  try {
+    const raw = window.localStorage.getItem(WINDOW_LAYOUT_STORAGE_KEY)
+    return raw ? parseLayout(JSON.parse(raw)) : emptyLayout()
+  } catch {
+    return emptyLayout()
+  }
+}
 
 
 
@@ -372,7 +407,6 @@ function App() {
     Array.from({ length: TASK_BOX_COUNT }, createEmptyTaskBoxSlot),
   )
   const [activeTaskBoxIndex, setActiveTaskBoxIndex] = useState(0)
-  const [taskMailNumber, setTaskMailNumber] = useState(1)
   const [draftBoxTooltip, setDraftBoxTooltip] = useState<DraftBoxTooltipState | null>(null)
   const [callModalOpen, setCallModalOpen] = useState(false)
   const [callDraft, setCallDraft] = useState(PHONE_CALL_TEMPLATE)
@@ -455,8 +489,9 @@ function App() {
   const [dashboardCalculatorItems, setDashboardCalculatorItems] = useState<DashboardCalculatorItem[]>(
     () => [createDashboardCalculatorItem()],
   )
-  const [dashboardSectionOpen, setDashboardSectionOpen] = useState(true)
-  const [dashboardSectionMounted, setDashboardSectionMounted] = useState(true)
+  const [windowLayout, setWindowLayout] = useState<WindowLayout>(() =>
+    isProcedureWindow ? emptyLayout() : readStoredWindowLayout(),
+  )
   const [predefinedTagDraft, setPredefinedTagDraft] = useState('')
   const [tagSuggestionState, setTagSuggestionState] = useState<TagSuggestionState | null>(null)
   const [mailInsertMode, setMailInsertMode] = useState<InsertMode>('line')
@@ -553,7 +588,6 @@ function App() {
   const callModalBackdropPointerDownRef = useRef(false)
 
   callDraftLengthRef.current = callDraft.length
-  const dashboardOpenFrameRef = useRef<number | null>(null)
   const undoStackRef = useRef<AppData[]>([])
   const redoStackRef = useRef<AppData[]>([])
   const lastCommittedDataRef = useRef<AppData>(cloneAppData(defaultData))
@@ -605,43 +639,12 @@ function App() {
     closeTaskSearch()
   }, [closeTemplateSearch, closeTaskSearch])
 
-  const toggleDashboardSection = useCallback(() => {
-    if (dashboardSectionOpen) {
-      if (dashboardOpenFrameRef.current !== null) {
-        window.cancelAnimationFrame(dashboardOpenFrameRef.current)
-        dashboardOpenFrameRef.current = null
-      }
-      setDashboardSectionOpen(false)
-      return
-    }
-
-    setDashboardSectionMounted(true)
-    if (dashboardOpenFrameRef.current !== null) {
-      window.cancelAnimationFrame(dashboardOpenFrameRef.current)
-    }
-    dashboardOpenFrameRef.current = window.requestAnimationFrame(() => {
-      dashboardOpenFrameRef.current = null
-      setDashboardSectionOpen(true)
-    })
-  }, [dashboardSectionOpen])
-
   const handleSelectWorkspaceDashboardPage = useCallback(
     (page: WorkspaceDashboardPage) => {
       setWorkspaceDashboardPage(page)
       closeSearchMenus()
     },
     [closeSearchMenus],
-  )
-
-  const handleDashboardTransitionEnd = useCallback(
-    (event: TransitionEvent<HTMLElement>) => {
-      if (event.target !== event.currentTarget) return
-      if (event.propertyName !== 'max-height') return
-      if (!dashboardSectionOpen) {
-        setDashboardSectionMounted(false)
-      }
-    },
-    [dashboardSectionOpen],
   )
 
   const triggerPulse = useCallback((setPulse: (value: boolean) => void) => {
@@ -1043,9 +1046,6 @@ function App() {
   useEffect(() => {
     const draftBoxSwapTimeouts = draftBoxSwapTimeoutRefs.current
     return () => {
-      if (dashboardOpenFrameRef.current !== null) {
-        window.cancelAnimationFrame(dashboardOpenFrameRef.current)
-      }
       if (emailCopyTimeoutRef.current !== null) {
         window.clearTimeout(emailCopyTimeoutRef.current)
       }
@@ -1222,6 +1222,44 @@ function App() {
   const taskTags = useMemo(() => countTokens(data.taskDraft), [data.taskDraft])
   const mailInsertModeLabel = mailInsertMode === 'line' ? 'À la ligne' : 'Au curseur'
   const zoomValue = Number.isFinite(data.settings.zoom) ? data.settings.zoom : 1
+  const appZoom = zoomValue > 0 ? zoomValue : 1
+  const getWindowViewport = useCallback(
+    () => ({ width: window.innerWidth / appZoom, height: window.innerHeight / appZoom }),
+    [appZoom],
+  )
+  const caseContextState = useCaseContext()
+  const isDashboardShown = (kind: WorkspaceDashboardPage) =>
+    isProcedureWindow
+      ? workspaceDashboardPage === kind
+      : windowLayout.windows.some((item) => item.kind === kind && !item.minimized)
+  const portalDashboardShown = isDashboardShown('portal')
+  const partsDashboardShown = isDashboardShown('parts')
+  const catalogDashboardShown = isDashboardShown('catalog')
+
+  useEffect(() => {
+    if (isProcedureWindow) return
+    try {
+      window.localStorage.setItem(WINDOW_LAYOUT_STORAGE_KEY, JSON.stringify(windowLayout))
+    } catch {
+      // Layout is a convenience: losing it only reopens windows at their defaults.
+    }
+  }, [isProcedureWindow, windowLayout])
+
+  useEffect(() => {
+    if (isProcedureWindow) return
+    const fit = () => setWindowLayout((prev) => fitLayout(prev, getWindowViewport()))
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [getWindowViewport, isProcedureWindow])
+
+  const handleToggleDashboardWindow = useCallback(
+    (kind: DashboardWindowKind) => {
+      setWindowLayout((prev) => toggleWindow(prev, kind, getWindowViewport()))
+      closeSearchMenus()
+    },
+    [closeSearchMenus, getWindowViewport],
+  )
   const textScale = Number.isFinite(data.settings.textScale) ? data.settings.textScale : 1
   const editorLineHeight = Number.isFinite(data.settings.editorLineHeight)
     ? Math.min(2, Math.max(1.3, data.settings.editorLineHeight))
@@ -2434,7 +2472,7 @@ function App() {
   )
 
   useEffect(() => {
-    if (workspaceDashboardPage !== 'catalog') return
+    if (!catalogDashboardShown) return
     const visibleDashboardProducts = dashboardCatalogProductResults
     if (!visibleDashboardProducts.length) {
       if (activeDashboardCatalogProductId !== null) {
@@ -2451,11 +2489,11 @@ function App() {
   }, [
     activeDashboardCatalogProductId,
     dashboardCatalogProductResults,
-    workspaceDashboardPage,
+    catalogDashboardShown,
   ])
 
   useEffect(() => {
-    if (workspaceDashboardPage !== 'catalog') return
+    if (!catalogDashboardShown) return
     if (!activeDashboardCatalogProduct) {
       if (activeDashboardCatalogEditionId !== null) {
         setActiveDashboardCatalogEditionId(null)
@@ -2478,11 +2516,11 @@ function App() {
   }, [
     activeDashboardCatalogEditionId,
     activeDashboardCatalogProduct,
-    workspaceDashboardPage,
+    catalogDashboardShown,
   ])
 
   useEffect(() => {
-    if (workspaceDashboardPage !== 'portal') return
+    if (!portalDashboardShown) return
 
     if (!dashboardPortalProcedures.length) {
       if (activeDashboardPortalProcedureId !== null) {
@@ -2496,10 +2534,10 @@ function App() {
     )
     if (hasVisibleActive) return
     setActiveDashboardPortalProcedureId(dashboardPortalProcedures[0].id)
-  }, [activeDashboardPortalProcedureId, dashboardPortalProcedures, workspaceDashboardPage])
+  }, [activeDashboardPortalProcedureId, dashboardPortalProcedures, portalDashboardShown])
 
   useEffect(() => {
-    if (workspaceDashboardPage !== 'parts') return
+    if (!partsDashboardShown) return
 
     if (!filteredProductsWithSpareParts.length) {
       if (activeDashboardSpareProductId !== null) {
@@ -2513,7 +2551,7 @@ function App() {
     )
     if (hasVisibleActive) return
     setActiveDashboardSpareProductId(filteredProductsWithSpareParts[0].id)
-  }, [activeDashboardSpareProductId, filteredProductsWithSpareParts, workspaceDashboardPage])
+  }, [activeDashboardSpareProductId, filteredProductsWithSpareParts, partsDashboardShown])
 
   const editSnippets = useMemo(() => {
     if (editSnippetCategoryId === 'all') return data.snippets
@@ -2776,7 +2814,7 @@ function App() {
       const markedValue = `${value.slice(0, safeCursor)}${marker}${value.slice(safeCursor)}`
       const structuredNext = useSkeleton ? ensureStructuredTaskDraft(markedValue, taskSectionNames) : markedValue
       const timelineNext = useSkeleton
-        ? normalizeTaskDraftNumbering(structuredNext, taskMailNumber, taskSectionNames)
+        ? stripLegacyTaskNumbering(structuredNext, taskSectionNames)
         : structuredNext
       const normalizedMarkedValue = normalizeTokenSpacing(timelineNext)
       const nextCursor = normalizedMarkedValue.indexOf(marker)
@@ -2785,14 +2823,14 @@ function App() {
         cursor: nextCursor === -1 ? safeCursor : nextCursor,
       }
     },
-    [taskMailNumber, taskSectionNames],
+    [taskSectionNames],
   )
 
   const updateTaskDraft = useCallback(
     (next: string, cursor?: number, useSkeleton = taskDraftSkeletonEnabled) => {
       const structuredNext = useSkeleton ? ensureStructuredTaskDraft(next, taskSectionNames) : next
       const timelineNext = useSkeleton
-        ? normalizeTaskDraftNumbering(structuredNext, taskMailNumber, taskSectionNames)
+        ? stripLegacyTaskNumbering(structuredNext, taskSectionNames)
         : structuredNext
       if (cursor !== undefined) {
         const normalized = normalizeTaskDraftWithCursor(next, cursor, useSkeleton)
@@ -2808,7 +2846,6 @@ function App() {
     [
       normalizeTaskDraftWithCursor,
       taskDraftSkeletonEnabled,
-      taskMailNumber,
       taskSectionNames,
     ],
   )
@@ -2816,15 +2853,11 @@ function App() {
   useEffect(() => {
     if (!taskDraftSkeletonEnabled) return
     setData((prev) => {
-      const nextTaskDraft = normalizeTaskDraftNumbering(
-        ensureStructuredTaskDraft(prev.taskDraft, taskSectionNames),
-        taskMailNumber,
-        taskSectionNames,
-      )
+      const nextTaskDraft = stripLegacyTaskNumbering(ensureStructuredTaskDraft(prev.taskDraft, taskSectionNames), taskSectionNames)
       if (nextTaskDraft === prev.taskDraft) return prev
       return { ...prev, taskDraft: nextTaskDraft }
     })
-  }, [taskDraftSkeletonEnabled, taskMailNumber, taskSectionNames])
+  }, [taskDraftSkeletonEnabled, taskSectionNames])
 
   const hasTaskBoxContent = useCallback(
     (task: string, index: number) => {
@@ -2879,16 +2912,15 @@ function App() {
       const sectionIndex = getTaskSectionIndex(sectionId)
       const currentSection =
         parseStructuredTaskDraft(skeletonSource, taskSectionNames)[sectionIndex] ?? ''
-      // Timeline steps carry the mail number (dedup per number); other sections
-      // hold the plain fragment (dedup ignoring any number).
+      // The timeline is chronological: a step may come back later, so only an
+      // immediate repeat is skipped. Other sections hold each fragment once.
       const isTimeline = sectionIndex === 1
       const alreadyPresent = isTimeline
-        ? taskSectionHasNumberedFragment(currentSection, text, taskMailNumber)
+        ? taskSectionEndsWithFragment(currentSection, text)
         : taskSectionHasFragment(currentSection, text)
-      const fragment = isTimeline ? annotateTaskFragment(text, taskMailNumber) : text
       const next = alreadyPresent
         ? skeletonSource
-        : insertTaskTextInSection(skeletonSource, fragment, sectionId, taskSectionNames)
+        : insertTaskTextInSection(skeletonSource, text, sectionId, taskSectionNames)
 
       if (activeTaskBoxIndex !== skeletonIndex) {
         setTaskDraftBoxes(
@@ -2907,7 +2939,6 @@ function App() {
       activeTaskBoxIndex,
       getTaskBoxesSnapshot,
       getTaskBoxStorageValue,
-      taskMailNumber,
       taskSectionNames,
       updateTaskDraft,
     ],
@@ -2923,7 +2954,6 @@ function App() {
       if (!useSkeleton) return
 
       event.preventDefault()
-      setTaskMailNumber(getNextTaskMailNumber(text))
       const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
         text,
         taskSectionNames,
@@ -3016,11 +3046,7 @@ function App() {
       const nextTask = nextBoxes[index]?.task ?? ''
       const normalizedTask = useSkeleton
         ? normalizeTokenSpacing(
-            normalizeTaskDraftNumbering(
-              ensureStructuredTaskDraft(nextTask, taskSectionNames),
-              taskMailNumber,
-              taskSectionNames,
-            ),
+            stripLegacyTaskNumbering(ensureStructuredTaskDraft(nextTask, taskSectionNames), taskSectionNames),
           )
         : normalizeTokenSpacing(nextTask)
       setTaskDraftBoxes(nextBoxes)
@@ -3029,8 +3055,6 @@ function App() {
       setData((prev) =>
         prev.taskDraft === normalizedTask ? prev : { ...prev, taskDraft: normalizedTask },
       )
-      // Switching task boxes must not change the mail counter (it would look
-      // like a freshly pasted skeleton and bump the number).
       closeDraftBoxTooltip()
       requestAnimationFrame(() => {
         taskEditorRef.current?.setSelection(normalizedTask.length, normalizedTask.length)
@@ -3041,7 +3065,6 @@ function App() {
       activeTaskBoxIndex,
       closeDraftBoxTooltip,
       getTaskBoxesSnapshot,
-      taskMailNumber,
       taskSectionNames,
     ],
   )
@@ -3131,10 +3154,6 @@ function App() {
         setActiveTaskBoxIndex(savedActiveTaskIndex)
         setTaskDraftSkeletonEnabled(useSkeleton)
         updateTaskDraft(activeTask, activeTask.length, useSkeleton)
-        // Restoring a stored task keeps its existing number — it is the same
-        // task coming back out of the box, not a freshly pasted one (which
-        // would advance to the next number).
-        setTaskMailNumber(Math.max(1, getHighestTaskMailNumber(activeTask)))
         setDraftBoxes((prev) =>
           prev.map((item, slotIndex) =>
             slotIndex === index
@@ -3200,7 +3219,6 @@ function App() {
       const useActiveSkeleton = taskBoxUsesSkeleton(activeTaskBoxIndex)
       setTaskDraftSkeletonEnabled(useActiveSkeleton)
       updateTaskDraft('', undefined, useActiveSkeleton)
-      setTaskMailNumber(1)
       setTaskDraftBoxes(Array.from({ length: TASK_BOX_COUNT }, createEmptyTaskBoxSlot))
       closeDraftBoxTooltip()
     },
@@ -3375,11 +3393,7 @@ function App() {
     const useSkeleton = normalizeTaskTemplateKind(template) === 's-task'
     const targetIndex = useSkeleton ? TASK_SKELETON_BOX_INDEX : TASK_FREE_BOX_INDEX
     const nextTaskDraft = useSkeleton
-      ? normalizeTaskDraftNumbering(
-          buildTaskDraftFromTemplate(template, taskSectionNames),
-          taskMailNumber,
-          taskSectionNames,
-        )
+      ? stripLegacyTaskNumbering(buildTaskDraftFromTemplate(template, taskSectionNames), taskSectionNames)
       : buildTaskTemplateContent(template)
     const snapshot = getTaskBoxesSnapshot()
     setTaskDraftBoxes(
@@ -3478,11 +3492,7 @@ function App() {
           normalizeTaskTemplateKind(linkedTaskTemplate) === 's-task'
         const targetIndex = useSkeleton ? TASK_SKELETON_BOX_INDEX : TASK_FREE_BOX_INDEX
         const nextTaskDraft = useSkeleton
-          ? normalizeTaskDraftNumbering(
-              buildStructuredTaskDraft(taskSections, taskSectionNames),
-              taskMailNumber,
-              taskSectionNames,
-            )
+          ? stripLegacyTaskNumbering(buildStructuredTaskDraft(taskSections, taskSectionNames), taskSectionNames)
           : buildTaskTemplateContent({ taskSections })
         const snapshot = getTaskBoxesSnapshot()
         setTaskDraftBoxes(
@@ -3567,7 +3577,7 @@ function App() {
       : Boolean(stripTokenSpacing(data.taskDraft).trim())
     if (!hasContent) return
     const cleaned = useSkeleton
-      ? formatTaskCopyText(data.taskDraft, taskSectionNames, taskMailNumber)
+      ? formatTaskCopyText(data.taskDraft, taskSectionNames)
       : stripTokenSpacing(data.taskDraft).trim()
     const didCopy = await copyText(cleaned, buildExportHtml(cleaned))
     if (!didCopy) {
@@ -5072,7 +5082,6 @@ function App() {
     setTaskDraftBoxes((prev) =>
       prev.map((slot, index) => (index === activeTaskBoxIndex ? createEmptyTaskBoxSlot() : slot)),
     )
-    setTaskMailNumber(1)
     setTaskClearArmed(false)
   }
 
@@ -5601,6 +5610,98 @@ function App() {
       ) : null}
     </button>
   )
+
+  const topWindowZ = windowLayout.windows.reduce(
+    (max, item) => (item.minimized ? max : Math.max(max, item.z)),
+    0,
+  )
+
+  // Replaces the known tags of both drafts with the active case values. Tags
+  // without a value (missing or in conflict) stay visible in the text.
+  const handleFillDraftsFromContext = () => {
+    const context = caseContextState.context
+    const email = fillTemplateFromContext(data.emailDraft, context)
+    const task = fillTemplateFromContext(data.taskDraft, context)
+    if (email.text !== data.emailDraft) updateEmailDraft(email.text)
+    if (task.text !== data.taskDraft) updateTaskDraft(task.text)
+    const filled = new Set([...email.filled, ...task.filled])
+    const missing = new Set([...email.missing, ...task.missing])
+    if (!filled.size && !missing.size) {
+      setToast('Aucun tag de dossier dans le mail ou la tâche.')
+      return
+    }
+    setToast(
+      missing.size
+        ? `${filled.size} tag(s) rempli(s). À compléter : ${[...missing].join(' ')}`
+        : `${filled.size} tag(s) rempli(s).`,
+    )
+  }
+
+  const handleCopyBridgeToken = async () => {
+    const token = await caseContextState.getToken()
+    if (!token) {
+      setToast('Jeton indisponible.')
+      return
+    }
+    const didCopy = await copyText(token)
+    setToast(didCopy ? 'Jeton copié. Colle-le dans la page Agentor de Cairm+.' : 'Copie impossible.')
+  }
+
+  const handleCopyContextValue = async (value: string) => {
+    const didCopy = await copyText(value)
+    setToast(didCopy ? 'Copié.' : 'Copie impossible.')
+  }
+
+  const renderDashboardWindowButton = (option: (typeof dashboardWindowOptions)[number]) => {
+    const frame = windowLayout.windows.find((item) => item.kind === option.id)
+    const state = !frame ? '' : frame.minimized ? ' is-minimized' : ' is-open'
+    const needsCheck =
+      option.id === 'case' &&
+      Boolean(
+        caseContextState.context &&
+          Object.values(caseContextState.context.fields).some((field) => field?.status === 'conflict'),
+      )
+    return (
+      <button
+        key={option.id}
+        type="button"
+        className={`window-launcher__btn${state}`}
+        title={option.title}
+        aria-label={option.title}
+        aria-pressed={Boolean(frame && !frame.minimized)}
+        onClick={() => handleToggleDashboardWindow(option.id)}
+      >
+        <UiIcon name={option.icon} className="window-launcher__icon" />
+        {(option.id === 'tools' && dashboardNotesHasContent) || needsCheck ? (
+          <span className="window-launcher__badge" aria-hidden="true" />
+        ) : null}
+      </button>
+    )
+  }
+
+  const renderDashboardWindowContent = (kind: DashboardWindowKind) => {
+    if (kind === 'case') {
+      return (
+        <CaseContextPanel
+          available={caseContextState.available}
+          context={caseContextState.context}
+          bridge={caseContextState.bridge}
+          onSetManual={(key, value) => void caseContextState.setManual(key, value)}
+          onConfirm={(key) => void caseContextState.confirm(key)}
+          onClear={() => void caseContextState.clear()}
+          onCopy={(value) => void handleCopyContextValue(value)}
+          onFill={handleFillDraftsFromContext}
+          onSetBridgeEnabled={(enabled) => void caseContextState.setBridgeEnabled(enabled)}
+          onCopyToken={() => void handleCopyBridgeToken()}
+        />
+      )
+    }
+    if (kind === 'tools') return renderWorkspaceDashboardNewsNotesPanel('News et Rappels')
+    if (kind === 'calculator') return renderWorkspaceDashboardVatPanel('Price calculator')
+    if (kind === 'portal') return renderWorkspaceDashboardPortalPanel('Portal procédures')
+    if (kind === 'parts') return renderWorkspaceDashboardSparePartsPanel('SKU’s')
+    return renderWorkspaceDashboardDecorationsPanel('Ascii Wall')
+  }
 
   const renderSettingsSlider = (
     label: string,
@@ -7259,29 +7360,9 @@ function App() {
             />
             <div className="composer-actions">
               <div className="composer-actions__left">
-                <div className={`dashboard-toggle-cluster${dashboardSectionOpen ? ' is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className={`ghost dashboard-toggle-btn${dashboardSectionOpen ? ' is-open' : ''}`}
-                    onClick={toggleDashboardSection}
-                    title={dashboardSectionOpen ? 'Masquer le dashboard' : 'Afficher le dashboard'}
-                    aria-label={dashboardSectionOpen ? 'Masquer le dashboard' : 'Afficher le dashboard'}
-                    aria-expanded={dashboardSectionOpen}
-                    aria-controls="workspace-dashboard"
-                  >
-                    <span className="dashboard-toggle-btn__arrow">
-                      {dashboardSectionOpen ? '▾' : '▴'}
-                    </span>
-                  </button>
-                <div
-                  className={`dashboard-page-strip${dashboardSectionOpen ? ' is-open' : ''}`}
-                  aria-hidden={!dashboardSectionOpen}
-                >
-                    {workspaceDashboardPageOptions.map((page) =>
-                      renderDashboardPageButton(page, dashboardSectionOpen ? 0 : -1),
-                    )}
-                  </div>
-                </div>
+                <nav className="window-launcher" aria-label="Dashboards">
+                  {dashboardWindowOptions.map((option) => renderDashboardWindowButton(option))}
+                </nav>
               </div>
               <div className="actions">
                 <span
@@ -7321,16 +7402,6 @@ function App() {
               </div>
             </div>
           </section>
-          {dashboardSectionMounted ? (
-            <section
-              className={`workspace-dashboard${dashboardSectionOpen ? ' is-open' : ''}`}
-              id="workspace-dashboard"
-              aria-hidden={!dashboardSectionOpen}
-              onTransitionEnd={handleDashboardTransitionEnd}
-            >
-              {renderWorkspaceDashboardContent()}
-            </section>
-          ) : null}
         </div>
       </main>
 
@@ -7367,29 +7438,6 @@ function App() {
                 <UiIcon name="inbox" className="section-label__icon" />
                 <span>Task</span>
               </p>
-            </div>
-            <div className="task-builder__header-right">
-              <div className="task-mail-counter" aria-label="Compteur de mail">
-                <button
-                  className="task-mail-counter__btn"
-                  type="button"
-                  title="Mail précédent"
-                  aria-label="Mail précédent"
-                  onClick={() => setTaskMailNumber((current) => Math.max(1, current - 1))}
-                >
-                  −
-                </button>
-                <span className="task-mail-counter__value">{taskMailNumber}</span>
-                <button
-                  className="task-mail-counter__btn"
-                  type="button"
-                  title="Mail suivant"
-                  aria-label="Mail suivant"
-                  onClick={() => setTaskMailNumber((current) => current + 1)}
-                >
-                  +
-                </button>
-              </div>
             </div>
           </div>
           <div className="task-template-search">
@@ -7582,6 +7630,31 @@ function App() {
       </aside>
     </div>
 
+    <div className="window-layer">
+      {windowLayout.windows.map((frame) => {
+        const option = dashboardWindowOptions.find((item) => item.id === frame.kind)
+        if (!option) return null
+        return (
+          <FloatingWindow
+            key={frame.kind}
+            window={frame}
+            title={option.title}
+            icon={option.icon}
+            active={frame.z === topWindowZ}
+            scale={appZoom}
+            onFocus={() => setWindowLayout((prev) => focusWindow(prev, frame.kind))}
+            onMove={(x, y) => setWindowLayout((prev) => moveWindow(prev, frame.kind, x, y, getWindowViewport()))}
+            onResize={(width, height) =>
+              setWindowLayout((prev) => resizeWindow(prev, frame.kind, width, height, getWindowViewport()))
+            }
+            onMinimize={() => setWindowLayout((prev) => minimizeWindow(prev, frame.kind))}
+            onClose={() => setWindowLayout((prev) => closeWindow(prev, frame.kind))}
+          >
+            {renderDashboardWindowContent(frame.kind)}
+          </FloatingWindow>
+        )
+      })}
+    </div>
     {toast ? <div className="toast">{toast}</div> : null}
     {typeof document !== 'undefined' && draftBoxTooltip
       ? createPortal(

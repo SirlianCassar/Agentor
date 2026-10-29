@@ -1,5 +1,5 @@
-/* Task-draft model: section parsing, structured-draft building, mail
-   numbering, and template-section helpers. Pure string logic. */
+/* Task-draft model: section parsing, structured-draft building and
+   template-section helpers. Pure string logic. */
 import type { ProtectedTextRange } from '../components/TextEditor'
 import { defaultData } from './defaults'
 import type { MailTemplate, TaskSectionId, TaskTemplate, TaskTemplateKind } from './types'
@@ -90,8 +90,8 @@ export const hasMeaningfulTaskContent = (taskContent: string, sectionNames: stri
     stripTokenSpacing(taskContent),
     sectionNames,
   )
-  // A lone title number (e.g. just "(1)") does not count as real content.
-  if (stripTaskTitleNumber(leadingContent).trim()) return true
+  // A legacy title number alone (e.g. just "(1)") does not count as content.
+  if (stripLegacyTaskTitleNumber(leadingContent).trim()) return true
   return contents.some((section) => stripTokenSpacing(section).trim())
 }
 
@@ -147,7 +147,7 @@ export const buildStructuredTaskDraftWithTitle = (
     const heading = getTaskSectionHeading(index, sectionNames)
     return content ? `${heading}\n${content}` : heading
   }).join('\n\n')
-  // Title written -> "(N) Titre" on the first line, one blank line, then the
+  // Title written -> title on the first line, one blank line, then the
   // first section. Title empty -> two blank lines above the first section.
   const lead = title ? `${title}\n\n` : '\n\n'
   return `${lead}${body}\n`
@@ -250,24 +250,10 @@ export const getTaskHeadingProtectedRanges = (
 ): ProtectedTextRange[] => {
   const ranges: ProtectedTextRange[] = []
   let offset = 0
-  let seenHeading = false
-  let titleResolved = false
 
   value.replace(/\r\n/g, '\n').split('\n').forEach((line) => {
     if (findTaskSectionHeadingIndex(line, sectionNames) !== -1) {
       ranges.push({ start: offset, end: offset + line.length })
-      seenHeading = true
-    } else if (!seenHeading && !titleResolved) {
-      // The auto-managed task number lives at the very start of the title and
-      // is protected so it always stays first and can't be corrupted by typing.
-      const match = line.match(/^(\s*)(\(\d+\)|\d{1,3}(?=\s|$))/)
-      if (match) {
-        const start = offset + match[1].length
-        ranges.push({ start, end: start + match[2].length })
-        titleResolved = true
-      } else if (line.trim()) {
-        titleResolved = true
-      }
     }
     offset += line.length + 1
   })
@@ -321,36 +307,9 @@ export const buildTaskDraftFromTemplate = (task: TaskTemplate, sectionNames: str
     sectionNames,
   )
 
-export const TASK_MAIL_NUMBER_PATTERN = /\((\d+)\)/g
-
-export const getHighestTaskMailNumber = (value: string) => {
-  let max = 0
-  // The title number is bare (no parentheses) — count it too.
-  const titleMatch = value.match(/^\s*(\d{1,3})(?=\s|$)/)
-  if (titleMatch) max = Number(titleMatch[1])
-  TASK_MAIL_NUMBER_PATTERN.lastIndex = 0
-  for (const match of value.matchAll(TASK_MAIL_NUMBER_PATTERN)) {
-    const next = Number(match[1])
-    if (Number.isFinite(next)) {
-      max = Math.max(max, next)
-    }
-  }
-  return max
-}
-
-export const getNextTaskMailNumber = (value: string) => Math.max(1, getHighestTaskMailNumber(value) + 1)
-
-// Strips a leading mail number — "(3) " or a bare "3 " left by transitional
-// drafts — from a task title so it can be re-applied.
-export const stripTaskTitleNumber = (title: string) =>
-  title.replace(/^\s*(?:\(\d+\)|\d{1,3}(?=\s|$))\s*/, '')
-
-// Ensures the task number is always present and first in the title, as "(N)".
-// Only the +/- counter chip shows it bare.
-export const applyTaskTitleNumber = (title: string, taskNumber: number) => {
-  const rest = stripTaskTitleNumber(title).trimStart()
-  return rest ? `(${taskNumber}) ${rest}` : `(${taskNumber}) `
-}
+// Drafts saved before the numbering removal start their title with "(N) ".
+// Only that exact prefix is removed: a title such as "2 manettes HS" stays.
+export const stripLegacyTaskTitleNumber = (title: string) => title.replace(/^\s*\(\d+\)\s*/, '')
 
 // Compact preview for a stored task: S-Tasks keep only their title and
 // the sections that actually hold text; F-Tasks are shown as-is.
@@ -367,7 +326,7 @@ export const buildCompactTaskPreviewText = (
   )
   const parts: string[] = []
   const title = leadingContent.trim()
-  if (stripTaskTitleNumber(title).trim()) parts.push(title)
+  if (stripLegacyTaskTitleNumber(title).trim()) parts.push(stripLegacyTaskTitleNumber(title))
   contents.forEach((section, index) => {
     const text = section.trim()
     if (text) parts.push(`${getTaskSectionHeading(index, sectionNames)}\n${text}`)
@@ -380,14 +339,13 @@ export const formatPortalTimelineTitle = (value: string) => {
   return trimmed
 }
 
-export const formatTaskCopyText = (value: string, sectionNames: string[], taskNumber: number) => {
+export const formatTaskCopyText = (value: string, sectionNames: string[]) => {
   const normalized = stripTokenSpacing(value).replace(/\r\n/g, '\n')
   const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
     normalized,
     sectionNames,
   )
-  const titleText = stripTaskTitleNumber(stripTokenSpacing(leadingContent).trim()).trim() || 'Task'
-  const titleLine = `${taskNumber ? `(${taskNumber}) ` : ''}${titleText}`.trim()
+  const titleLine = stripLegacyTaskTitleNumber(stripTokenSpacing(leadingContent).trim()).trim() || 'Task'
   const body = TASK_SECTION_IDS.map((_, index) => {
     const sectionLabel = stripTokenSpacing(sectionNames[index] ?? '').trim() || `Section ${index + 1}`
     const sectionText = stripTokenSpacing(contents[index] ?? '').trimEnd()
@@ -396,48 +354,17 @@ export const formatTaskCopyText = (value: string, sectionNames: string[], taskNu
   return `${titleLine}\n\n${body}\n`
 }
 
-// Appends the current mail number to a manually-typed timeline line once the
-// caret leaves it: the line holding the \uE000 cursor marker is left untouched
-// so Enter and further typing behave normally. Existing numbers are kept.
-export const numberTimelineLine = (line: string, taskNumber: number) => {
-  if (line.includes('\uE000')) return line
-  const trimmed = stripTokenSpacing(line).trimEnd()
-  if (!trimmed.trim()) return line
-  if (/\(\d+\)\s*$/.test(trimmed)) return line
-  return `${line.trimEnd()} (${taskNumber})`
-}
-
-export const normalizeTaskDraftNumbering = (
-  value: string,
-  taskNumber: number,
-  sectionNames: string[],
-) => {
+// Removes the "(N) " prefix that older versions forced at the start of the
+// title. Returns the value untouched when there is nothing to remove, so the
+// editor keeps the user's exact layout.
+export const stripLegacyTaskNumbering = (value: string, sectionNames: string[]) => {
   const { contents, leadingContent } = parseStructuredTaskDraftWithLeadingContent(
     value,
     sectionNames,
   )
-  // The mail number is always first in the title (even when the title is empty
-  // or the task was cleared) and appended to every timeline line.
-  const title = applyTaskTitleNumber(leadingContent, taskNumber)
-  const numbered = contents.map((section, index) =>
-    index === 1
-      ? section
-          .replace(/\r\n/g, '\n')
-          .split('\n')
-          .map((sectionLine) => numberTimelineLine(sectionLine, taskNumber))
-          .join('\n')
-      : section,
-  )
-  return buildStructuredTaskDraftWithTitle(title, numbered, sectionNames)
-}
-
-// Appends the current mail number to a timeline fragment, e.g.
-// "Data Gathering" -> "Data Gathering (3)". Keeps an already-numbered fragment.
-export const annotateTaskFragment = (text: string, mailNumber: number) => {
-  const trimmed = text.trimEnd()
-  if (!trimmed.trim()) return text
-  if (/\(\d+\)\s*$/.test(trimmed)) return trimmed
-  return `${trimmed} (${mailNumber})`
+  const title = stripLegacyTaskTitleNumber(leadingContent)
+  if (title === leadingContent) return value
+  return buildStructuredTaskDraftWithTitle(title, contents, sectionNames)
 }
 
 // True when the section already holds this fragment (any trailing number is
@@ -453,17 +380,14 @@ export const taskSectionHasFragment = (section: string, text: string) => {
 
 // True when the timeline already holds this exact fragment for this mail number,
 // so "Data Gathering (3)" is a duplicate but "Data Gathering (2)" is not.
-export const taskSectionHasNumberedFragment = (
-  section: string,
-  text: string,
-  mailNumber: number,
-) => {
-  const target = stripTokenSpacing(annotateTaskFragment(text, mailNumber)).trim()
+// True when the last written line of the section is this fragment. Used for
+// the timeline, where the same step may legitimately appear again later.
+export const taskSectionEndsWithFragment = (section: string, text: string) => {
+  const target = stripTokenSpacing(text).replace(/\s*\(\d+\)\s*$/, '').trim()
   if (!target) return false
-  return section
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .some((line) => stripTokenSpacing(line).trim() === target)
+  const lines = section.replace(/\r\n/g, '\n').split('\n').filter((line) => line.trim())
+  const last = lines[lines.length - 1] ?? ''
+  return stripTokenSpacing(last).replace(/\s*\(\d+\)\s*$/, '').trim() === target
 }
 
 export const getTemplateTaskSections = (
