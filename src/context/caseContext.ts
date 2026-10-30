@@ -91,6 +91,25 @@ export function normalizeCaseId(id: unknown) {
   return GUID_PATTERN.test(value) ? value : null
 }
 
+// CAS references are internal CRM identifiers, never the RQT shown or copied.
+export function normalizeRqtNumber(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined
+  const match = raw.match(/\bRQT\s*-\s*[A-Z0-9]+(?:\s*-\s*[A-Z0-9]+)*/i)
+  return match?.[0].replace(/\s*-\s*/g, '-').toUpperCase()
+}
+
+export function onlyRqtContext(context: CaseContext): CaseContext {
+  const number = normalizeRqtNumber(context.caseKey.number) ?? normalizeRqtNumber(context.fields.caseNumber?.value) ?? normalizeRqtNumber(context.fields.caseTitle?.value)
+  const field = context.fields.caseNumber
+  const value = normalizeRqtNumber(field?.value)
+  if (context.caseKey.number === number && (!field || (field.value === value && !field.candidates?.some((candidate) => normalizeRqtNumber(candidate.value) !== candidate.value)))) return context
+  const fields = { ...context.fields }
+  if (field && value) fields.caseNumber = { ...field, value, candidates: field.candidates?.filter((candidate) => normalizeRqtNumber(candidate.value)).map((candidate) => ({ ...candidate, value: normalizeRqtNumber(candidate.value)! })) }
+  else delete fields.caseNumber
+  const { number: _old, ...key } = context.caseKey
+  return { ...context, caseKey: { ...key, ...(number ? { number } : {}) }, fields }
+}
+
 export function isContextFieldKey(key: unknown): key is ContextFieldKey {
   return CONTEXT_FIELD_KEYS.includes(key as ContextFieldKey)
 }
@@ -100,7 +119,7 @@ export function sameCase(a: CaseKey | null | undefined, b: CaseKey | null | unde
 }
 
 export function createCaseContext(caseKey: CaseKey, now: string): CaseContext {
-  return { schema: CASE_CONTEXT_SCHEMA, caseKey, openedAt: now, updatedAt: now, fields: {}, lastTask: null }
+  return onlyRqtContext({ schema: CASE_CONTEXT_SCHEMA, caseKey, openedAt: now, updatedAt: now, fields: {}, lastTask: null })
 }
 
 // Starts a fresh context whenever the incoming case differs: values from the
@@ -110,6 +129,8 @@ export function resolveContextForCase(
   caseKey: CaseKey,
   now: string,
 ): CaseContext {
+  caseKey = { ...caseKey, number: normalizeRqtNumber(caseKey.number) }
+  if (current) current = onlyRqtContext(current)
   if (current && sameCase(current.caseKey, caseKey)) {
     return caseKey.number && caseKey.number !== current.caseKey.number
       ? { ...current, caseKey: { ...current.caseKey, number: caseKey.number } }
@@ -128,7 +149,8 @@ const cleanValue = (value: string | null) => {
 // different value from another observation is kept as a conflict instead of
 // silently replacing the first one.
 export function applyObservation(context: CaseContext, observation: ContextObservation): CaseContext {
-  const value = cleanValue(observation.value)
+  const value = observation.key === 'caseNumber' ? normalizeRqtNumber(observation.value) ?? null : cleanValue(observation.value)
+  if (observation.key === 'caseNumber' && !value) return onlyRqtContext(context)
   const existing = context.fields[observation.key]
   const at = observation.fetchedAt
   let next: ContextField

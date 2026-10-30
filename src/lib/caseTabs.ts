@@ -1,7 +1,7 @@
 /* Case tabs: one working set (mail, notes, tasks) per open case, replacing the
    five anonymous draft boxes. Pure state logic; App holds the live working set
    of the active tab and swaps it in and out. */
-import type { CaseContext } from '../context/caseContext'
+import { normalizeRqtNumber, onlyRqtContext, type CaseContext } from '../context/caseContext'
 import { createEmptyDraftBoxSlot, type DraftBoxSlot } from './taskDraft'
 
 export const CASE_TABS_LIMIT = 12
@@ -51,7 +51,7 @@ export const findCaseTab = (state: CaseTabsState, caseId: string) =>
   state.tabs.find((tab) => tab.caseKey?.id === caseId)
 
 export const caseTabLabel = (tab: CaseTab, index: number) =>
-  tab.caseKey?.number || (tab.caseKey ? 'RQT sans numéro' : `Brouillon ${index + 1}`)
+  normalizeRqtNumber(tab.caseKey?.number) || (tab.caseKey ? 'RQT sans numéro' : `Brouillon ${index + 1}`)
 
 // Stores the working set of a tab (the one being left).
 export const saveTabWorkspace = (state: CaseTabsState, tabId: string, workspace: DraftBoxSlot): CaseTabsState => ({
@@ -96,7 +96,7 @@ export const rememberCaseContext = (state: CaseTabsState, context: CaseContext):
   const tabs = state.tabs.map((tab) => {
     if (tab.caseKey?.id !== context.caseKey.id) return tab
     changed = true
-    const number = context.caseKey.number ?? tab.caseKey.number
+    const number = normalizeRqtNumber(context.caseKey.number) ?? normalizeRqtNumber(tab.caseKey.number)
     return { ...tab, context, caseKey: { id: tab.caseKey.id, number } }
   })
   return changed ? { ...state, tabs } : state
@@ -166,7 +166,7 @@ const parseContext = (raw: unknown, caseId: string | undefined): CaseContext | n
     context.caseKey?.id === caseId &&
     context.fields &&
     typeof context.fields === 'object'
-    ? context
+    ? onlyRqtContext(context)
     : null
 }
 
@@ -208,7 +208,7 @@ export const parseCaseTabs = (raw: unknown): CaseTabsState => {
     const key = item.caseKey as Record<string, unknown> | null | undefined
     const caseKey =
       key && typeof key === 'object' && asString(key.id)
-        ? { id: asString(key.id), ...(asString(key.number) ? { number: asString(key.number) } : {}) }
+        ? { id: asString(key.id), ...(normalizeRqtNumber(key.number) ? { number: normalizeRqtNumber(key.number) } : {}) }
         : null
     const locked = item.locked === true
     const context = locked ? parseContext(item.context, caseKey?.id) : null

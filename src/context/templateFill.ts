@@ -1,6 +1,6 @@
 /* Fills template tags from the active case context. A tag without a known value
    is left exactly as written so it stays visible and is never invented. */
-import type { CaseContext } from './caseContext'
+import { normalizeRqtNumber, type CaseContext } from './caseContext'
 import { CASE_TAG_KEYS, DEFAULT_CASE_TAGS, type CaseTagKey } from './caseTags'
 
 // Same tolerance as Cairm Task Helper: case-insensitive, optional spaces.
@@ -13,6 +13,7 @@ export interface TemplateFillResult {
 }
 
 const readTagValue = (context: CaseContext, target: CaseTagKey) => {
+  if (target === 'caseNumber') return normalizeRqtNumber(context.fields.caseNumber?.value) ?? normalizeRqtNumber(context.caseKey.number) ?? null
   if (target === 'lastTask') return context.lastTask?.subject?.trim() || null
   const field = context.fields[target]
   // A conflicting value is not used until the user picks one.

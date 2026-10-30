@@ -1,5 +1,6 @@
 import {
   applyObservations,
+  onlyRqtContext,
   confirmField,
   filterImported,
   resolveCaseImport,
@@ -29,9 +30,9 @@ export class CaseContextStore {
   ) {
     const saved = readJsonObject(filePath) as CaseContext | null
     if (saved?.schema === 'agentor.case-context/1' && saved.caseKey && saved.fields) {
-      this.context = isContextExpired(saved, this.now()) ? null : saved
+      this.context = isContextExpired(saved, this.now()) ? null : onlyRqtContext(saved)
     }
-    if (!this.context) this.persist()
+    if (!this.context || this.context !== saved) this.persist()
   }
 
   get(): CaseContext | null {
@@ -60,7 +61,7 @@ export class CaseContextStore {
     let next = resolveContextForCase(this.context, message.caseKey, now)
     next = applyObservations(next, filterImported(message.observations, this.imports))
     if (message.lastTask !== undefined && this.imports.lastTask) next = { ...next, lastTask: message.lastTask }
-    this.set(next)
+    this.set(onlyRqtContext(next))
   }
 
   setManual(caseId: string, key: ContextFieldKey, value: string) {
@@ -86,6 +87,7 @@ export class CaseContextStore {
   }
 
   private set(next: CaseContext | null) {
+    next = next ? onlyRqtContext(next) : null
     if (next === this.context) return
     this.context = next
     this.persist()
