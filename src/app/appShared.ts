@@ -58,7 +58,6 @@ export const workspaceDashboardPageOptions: Array<{
 
 // Main window launcher: each button opens its dashboard in a floating window.
 export const dashboardWindowOptions: Array<{ id: DashboardWindowKind; title: string; icon: AppIconName }> = [
-  { id: 'case', title: 'Dossier actif', icon: 'caseFile' },
   { id: 'reminders', title: 'Rappels RQT', icon: 'timer' },
   { id: 'news', title: 'News', icon: 'news' },
   { id: 'calculator', title: 'Calculateur prix', icon: 'money' },

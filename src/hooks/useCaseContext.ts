@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { subscribeCaseContext } from '../context/contextSubscription'
 import type { CaseContext, ContextFieldKey } from '../context/caseContext'
 
 export type BridgeStatus = {
@@ -21,12 +22,11 @@ export function useCaseContext() {
   useEffect(() => {
     if (!api?.getCaseContext) return
     let alive = true
-    void api.getCaseContext().then((value) => alive && setContext(value as CaseContext | null))
-    void api.getBridgeStatus?.().then((value) => alive && setBridge(value as BridgeStatus | null))
-    const offContext = api.onCaseContext?.((value) => {
-      setOrigin('live')
-      setContext(value as CaseContext | null)
+    const offContext = subscribeCaseContext({ getCaseContext: api.getCaseContext, onCaseContext: api.onCaseContext }, (value, source) => {
+      setOrigin(source)
+      setContext(value)
     })
+    void api.getBridgeStatus?.().then((value) => alive && setBridge(value as BridgeStatus | null))
     const offBridge = api.onBridgeStatus?.((value) => setBridge(value as BridgeStatus | null))
     return () => {
       alive = false

@@ -38,7 +38,6 @@ export interface CaseBarProps {
   onToggleLock: (id: string) => void
   // Resolves to true once the value is in the clipboard.
   onCopy: (value: string) => Promise<boolean>
-  onOpenCase: () => void
   onOpenSettings: () => void
 }
 
@@ -76,13 +75,9 @@ export function CaseBar({
   onClose,
   onToggleLock,
   onCopy,
-  onOpenCase,
   onOpenSettings,
 }: CaseBarProps) {
   const shownKeys = chipKeys.filter((key) => isFieldImported(imports, key))
-  const conflicts = caseContext
-    ? shownKeys.filter((key) => caseContext.fields[key]?.status === 'conflict').length
-    : 0
   // The value just copied shows « Copié » for a moment.
   const [copied, setCopied] = useState<string | null>(null)
   const copiedTimer = useRef<number | null>(null)
@@ -177,17 +172,6 @@ export function CaseBar({
               {copied === 'number' ? <UiIcon name="check" /> : null}
               {copied === 'number' ? 'Copié' : caseContext.caseKey.number || 'RQT sans numéro'}
             </button>
-            {isFieldImported(imports, 'caseTitle') ? (
-              <button
-                type="button"
-                className={`case-bar__title${copied === 'caseTitle' ? ' is-copied' : ''}`}
-                title={`${caseContext.fields.caseTitle?.value ?? ''} · Cliquer pour copier`}
-                disabled={!caseContext.fields.caseTitle?.value}
-                onClick={() => void copy('caseTitle', caseContext.fields.caseTitle?.value ?? '')}
-              >
-                {copied === 'caseTitle' ? 'Copié' : caseContext.fields.caseTitle?.value || 'Sans titre'}
-              </button>
-            ) : null}
             <div className="case-bar__chips">
               {shownKeys.map((key) => {
                 const field = caseContext.fields[key]
@@ -224,17 +208,6 @@ export function CaseBar({
                   </button>
                 )
               })}
-            </div>
-            <div className="case-bar__actions">
-              {conflicts ? (
-                <button type="button" className="case-bar__warning" onClick={onOpenCase}>
-                  <UiIcon name="warning" />
-                  <span>{conflicts} à vérifier</span>
-                </button>
-              ) : null}
-              <button type="button" className="ghost case-bar__details" onClick={onOpenCase} title="Tout le dossier et ses corrections">
-                Détails
-              </button>
             </div>
           </>
         ) : (
