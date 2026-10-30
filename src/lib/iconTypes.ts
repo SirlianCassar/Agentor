@@ -58,4 +58,6 @@ export type AppIconName =
   | 'caretRight'
   | 'detach'
   | 'attach'
+  | 'lock'
+  | 'unlock'
   | 'translate'

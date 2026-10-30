@@ -17,8 +17,11 @@ export interface CaseTab {
   // Saved working set; stale for the active tab, whose content lives in App.
   workspace: DraftBoxSlot
   createdAt: string
-  // Last case values seen for this tab, kept in memory only (never saved).
+  // Last case values seen for this tab. Saved only for a locked tab.
   context?: CaseContext | null
+  // Locked (padlock): the tab cannot be closed, no other case takes it, and it
+  // comes back with its case values when Agentor is reopened.
+  locked?: boolean
 }
 
 export interface CaseTabsState {
@@ -48,7 +51,7 @@ export const findCaseTab = (state: CaseTabsState, caseId: string) =>
   state.tabs.find((tab) => tab.caseKey?.id === caseId)
 
 export const caseTabLabel = (tab: CaseTab, index: number) =>
-  tab.caseKey?.number || (tab.caseKey ? 'Dossier sans numéro' : `Brouillon ${index + 1}`)
+  tab.caseKey?.number || (tab.caseKey ? 'RQT sans numéro' : `Brouillon ${index + 1}`)
 
 // Stores the working set of a tab (the one being left).
 export const saveTabWorkspace = (state: CaseTabsState, tabId: string, workspace: DraftBoxSlot): CaseTabsState => ({
@@ -66,11 +69,16 @@ export const addCaseTab = (state: CaseTabsState, tab: CaseTab): CaseTabsState =>
   return { tabs, activeId: tab.id }
 }
 
+export const toggleCaseTabLock = (state: CaseTabsState, tabId: string): CaseTabsState => ({
+  ...state,
+  tabs: state.tabs.map((tab) => (tab.id === tabId ? { ...tab, locked: !tab.locked } : tab)),
+})
+
 // Removing the last tab leaves one empty tab. The neighbour on the right (or
-// left) becomes active when the active tab goes.
+// left) becomes active when the active tab goes. A locked tab stays.
 export const removeCaseTab = (state: CaseTabsState, tabId: string): CaseTabsState => {
   const index = state.tabs.findIndex((tab) => tab.id === tabId)
-  if (index === -1) return state
+  if (index === -1 || state.tabs[index].locked) return state
   const tabs = state.tabs.filter((tab) => tab.id !== tabId)
   if (!tabs.length) return createCaseTabsState()
   const activeId = state.activeId === tabId ? tabs[Math.min(index, tabs.length - 1)].id : state.activeId
@@ -111,7 +119,7 @@ export const planCaseArrival = (
   const existing = findCaseTab(state, caseId)
   if (existing) return existing.id === state.activeId ? { kind: 'none' } : { kind: 'switch', tabId: existing.id }
   const active = activeCaseTab(state)
-  if (active && !active.caseKey && activeIsEmpty) return { kind: 'bind', tabId: active.id }
+  if (active && !active.caseKey && !active.locked && activeIsEmpty) return { kind: 'bind', tabId: active.id }
   if (state.tabs.length >= CASE_TABS_LIMIT) return { kind: 'full' }
   return { kind: 'create' }
 }
@@ -124,13 +132,30 @@ export const caseForTab = (tab: CaseTab | undefined, live: CaseContext | null): 
   return tab.context ?? null
 }
 
-// Saved form: the drafts and the case key, never the case values.
+// Saved form: the drafts and the case key. The case values only for a locked tab.
 export const serializeCaseTabs = (state: CaseTabsState) =>
   JSON.stringify({
     version: 1,
     activeId: state.activeId,
-    tabs: state.tabs.map(({ id, caseKey, workspace, createdAt }) => ({ id, caseKey, workspace, createdAt })),
+    tabs: state.tabs.map(({ id, caseKey, workspace, createdAt, locked, context }) => ({
+      id,
+      caseKey,
+      workspace,
+      createdAt,
+      ...(locked ? { locked: true, ...(context ? { context } : {}) } : {}),
+    })),
   })
+
+const parseContext = (raw: unknown, caseId: string | undefined): CaseContext | null => {
+  if (!raw || typeof raw !== 'object' || !caseId) return null
+  const context = raw as CaseContext
+  return context.schema === 'agentor.case-context/1' &&
+    context.caseKey?.id === caseId &&
+    context.fields &&
+    typeof context.fields === 'object'
+    ? context
+    : null
+}
 
 const asString = (value: unknown, fallback = '') => (typeof value === 'string' ? value : fallback)
 
@@ -172,7 +197,16 @@ export const parseCaseTabs = (raw: unknown): CaseTabsState => {
       key && typeof key === 'object' && asString(key.id)
         ? { id: asString(key.id), ...(asString(key.number) ? { number: asString(key.number) } : {}) }
         : null
-    tabs.push({ id, caseKey, workspace: parseWorkspace(item.workspace), createdAt: asString(item.createdAt) })
+    const locked = item.locked === true
+    const context = locked ? parseContext(item.context, caseKey?.id) : null
+    tabs.push({
+      id,
+      caseKey,
+      workspace: parseWorkspace(item.workspace),
+      createdAt: asString(item.createdAt),
+      ...(locked ? { locked } : {}),
+      ...(context ? { context } : {}),
+    })
   }
   if (!tabs.length) return createCaseTabsState()
   const activeId = tabs.some((tab) => tab.id === source.activeId) ? asString(source.activeId) : tabs[0].id

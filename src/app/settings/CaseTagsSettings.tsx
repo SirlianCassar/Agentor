@@ -1,5 +1,5 @@
 // Settings › Tags du dossier.
-import type { CaseContext } from '../../context/caseContext'
+import { isFieldImported, type CaseContext, type CaseImportKey } from '../../context/caseContext'
 import {
   CASE_TAG_KEYS,
   type CaseTagKey,
@@ -14,6 +14,7 @@ export interface CaseTagsSettingsProps {
   activeCase: CaseContext | null
   caseAutoFill: boolean
   caseTags: Record<CaseTagKey, string>
+  imports: Record<CaseImportKey, boolean>
   data: AppData
   updateSettings: (patch: Partial<AppSettings>) => void
 }
@@ -22,9 +23,12 @@ export function CaseTagsSettings({
   activeCase,
   caseAutoFill,
   caseTags,
+  imports,
   data,
   updateSettings,
 }: CaseTagsSettingsProps) {
+  // Only the information imported from Cairm+ can fill a tag.
+  const shownKeys = CASE_TAG_KEYS.filter((key) => (key === 'lastTask' ? imports.lastTask : isFieldImported(imports, key)))
   return (
     <div className="settings-page settings-page--narrow">
       <section className="list-card list-card--form">
@@ -32,12 +36,12 @@ export function CaseTagsSettings({
           <div className="settings-block">
             <div className="settings-option">
               <div className="settings-option__info">
-                <div className="settings-option__title">Remplir au chargement</div>
+                <div className="settings-option__title">Remplissage automatique</div>
                 <div className="settings-option__desc">
-                  Quand un mail, une task ou un snippet est chargé, ses tags sont remplis avec le dossier actif. Un tag sans valeur reste visible.
+                  Les tags du mail, de la task et des snippets sont remplis avec le dossier de l’onglet, au chargement et dès que ses informations arrivent. Un tag sans valeur reste visible.
                 </div>
               </div>
-              <label className="settings-toggle" aria-label="Remplir au chargement">
+              <label className="settings-toggle" aria-label="Remplissage automatique">
               <input
                 type="checkbox"
                 checked={caseAutoFill}
@@ -77,7 +81,7 @@ export function CaseTagsSettings({
               </tr>
             </thead>
             <tbody>
-              {CASE_TAG_KEYS.map((key: CaseTagKey) => {
+              {shownKeys.map((key: CaseTagKey) => {
                 const current =
                   key === 'lastTask'
                     ? activeCase?.lastTask?.subject

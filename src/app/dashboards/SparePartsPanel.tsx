@@ -1,5 +1,6 @@
 // SKU and spare parts lookup.
 import type { Dispatch, SetStateAction } from 'react'
+import { UiIcon } from '../../components/UiIcon'
 import type { LinkedProduct } from '../appShared'
 
 export interface SparePartsPanelProps {
@@ -74,29 +75,31 @@ export function SparePartsPanel({
                     </span>
                   </div>
                 </div>
-                <span
-                  className={`dashboard-spare-parts__badge dashboard-spare-parts__badge--packing${
-                    activeDashboardSpareProduct.packingGuideAvailable ? ' is-available' : ''
-                  }`}
-                >
-                  <span
-                    className={`dashboard-spare-parts__guide-dot${
-                      activeDashboardSpareProduct.packingGuideAvailable ? ' is-available' : ''
-                    }`}
-                    aria-hidden="true"
-                  />
-                  {activeDashboardSpareProduct.packingGuideAvailable
-                    ? 'Packing guide disponible'
-                    : 'Packing guide indisponible'}
-                </span>
+                <GuideLed
+                  available={activeDashboardSpareProduct.packingGuideAvailable}
+                  label="Packing guide"
+                />
               </div>
               <div className="dashboard-spare-parts__list">
                 {activeDashboardSpareProduct.spareParts.length ? (
                   activeDashboardSpareProduct.spareParts.map((sparePart) => (
                     <article className="dashboard-spare-parts__item" key={sparePart.id}>
                       <div className="dashboard-spare-parts__main">
-                        <div className="dashboard-spare-parts__name">
-                          {sparePart.name || 'Sans nom'}
+                        <div className="dashboard-spare-parts__name-row">
+                          <span className="dashboard-spare-parts__name">{sparePart.name || 'Sans nom'}</span>
+                          {sparePart.name.trim() ? (
+                            <button
+                              className={`dashboard-spare-parts__name-copy${
+                                sparePartCopiedId === `${sparePart.id}:name` ? ' is-success' : ''
+                              }`}
+                              type="button"
+                              onClick={() => void handleCopySparePartSku(`${sparePart.id}:name`, sparePart.name)}
+                              aria-label={`Copier le nom ${sparePart.name}`}
+                              title={sparePartCopiedId === `${sparePart.id}:name` ? 'Copié' : 'Copier le nom'}
+                            >
+                              <UiIcon name={sparePartCopiedId === `${sparePart.id}:name` ? 'check' : 'copy'} />
+                            </button>
+                          ) : null}
                         </div>
                         <div className="dashboard-spare-parts__sku-row">
                           <button
@@ -112,19 +115,7 @@ export function SparePartsPanel({
                           </button>
                         </div>
                       </div>
-                      <span
-                        className={`dashboard-spare-parts__badge${
-                          sparePart.guideAvailable ? ' is-available' : ''
-                        }`}
-                      >
-                        <span
-                          className={`dashboard-spare-parts__guide-dot${
-                            sparePart.guideAvailable ? ' is-available' : ''
-                          }`}
-                          aria-hidden="true"
-                        />
-                        {sparePart.guideAvailable ? 'Guide disponible' : 'Guide indisponible'}
-                      </span>
+                      <GuideLed available={sparePart.guideAvailable} label="Guide" />
                     </article>
                   ))
                 ) : (
@@ -141,5 +132,22 @@ export function SparePartsPanel({
         </div>
       </div>
     </article>
+  )
+}
+
+// Small LED: lit when the guide exists. The label stays short; the full
+// state is in the tooltip and for screen readers.
+function GuideLed({ available, label }: { available: boolean; label: string }) {
+  const state = `${label} ${available ? 'disponible' : 'indisponible'}`
+  return (
+    <span
+      className={`dashboard-spare-parts__led${available ? ' is-available' : ''}`}
+      title={state}
+      role="img"
+      aria-label={state}
+    >
+      <span className="dashboard-spare-parts__led-dot" aria-hidden="true" />
+      <span className="dashboard-spare-parts__led-label" aria-hidden="true">{label}</span>
+    </span>
   )
 }

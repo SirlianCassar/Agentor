@@ -259,10 +259,10 @@ export interface AppSettings {
   productAliases?: Array<{ id: string; crm: string; alias: string }>
   // The launcher's references open in the contextual panel.
   referencesInPanel?: boolean
-  // Mail, task and notes in tabs instead of side by side.
-  writingTabs?: boolean
-  // « Affichage compact » tightens the spacing of its zones.
-  compactDensity?: boolean
+  // Dashboards, Troubleshotgun and the call open in their own window. On by default.
+  separateWindows?: boolean
+  // Case values kept from what Cairm+ sends, by field (see caseContext.ts).
+  caseImport?: Partial<Record<string, boolean>>
 }
 
 export interface AppData {

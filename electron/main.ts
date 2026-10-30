@@ -493,6 +493,11 @@ function openProcedureWindow() {
 
 // ── Dashboards detached from the main window ──────────────────────────────
 const DETACHABLE_DASHBOARDS = new Set(['case', 'reminders', 'news', 'calculator', 'portal', 'parts', 'decorations'])
+// Tools that open in their own popup window, like the dashboards.
+const POPUP_TOOLS = new Set(['troubleshootgun', 'call'])
+const DETACHABLE_WINDOWS = new Set([...DETACHABLE_DASHBOARDS, ...POPUP_TOOLS])
+const MAIN_ACTIONS = new Set(['template-import', 'task-insert', 'call-save'])
+const MAIN_ACTION_MAX_LENGTH = 200_000
 const dashboardWindows = new Map<string, BrowserWindow>()
 let quitting = false
 
@@ -517,7 +522,9 @@ function openDashboardWindow(kind: string) {
   const dashboardWin = new BrowserWindow({
     ...(bounds
       ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
-      : { width: 460, height: 560 }),
+      : POPUP_TOOLS.has(kind)
+        ? { width: kind === 'call' ? 760 : 520, height: 620 }
+        : { width: 460, height: 560 }),
     minWidth: 280,
     minHeight: 200,
     title: 'Agentor',
@@ -628,8 +635,12 @@ async function applyBridgeConfig(config: BridgeConfig) {
   }
 }
 
+const readCaseImportSetting = (data: unknown) =>
+  (data as { settings?: { caseImport?: unknown } } | null)?.settings?.caseImport
+
 function initCaseContext() {
   caseContextStore = new CaseContextStore(CASE_CONTEXT_FILE())
+  caseContextStore.setImports(readCaseImportSetting(readJsonObject(DATA_FILE())))
   caseContextStore.subscribe((context) => broadcast(CASE_CONTEXT_CHANNEL, context))
   const pairing = loadPairingToken(BRIDGE_TOKEN_FILE(), safeStorage)
   bridgeToken = pairing.token
@@ -646,7 +657,8 @@ app.whenReady().then(async () => {
   createWindow()
   // Dashboards that were detached when the app was last closed come back.
   for (const kind of windowState.detached ?? []) {
-    if (DETACHABLE_DASHBOARDS.has(kind)) openDashboardWindow(kind)
+    // A call is never restarted on its own.
+    if (DETACHABLE_WINDOWS.has(kind) && kind !== 'call') openDashboardWindow(kind)
   }
   configureAutoUpdater()
   await checkForUpdates('startup')
@@ -692,6 +704,7 @@ ipcMain.handle('storage:load', () => readData())
 // so a detached dashboard and the main window never overwrite each other.
 ipcMain.handle('storage:save', (event, data) => {
   writeData(data)
+  caseContextStore?.setImports(readCaseImportSetting(data))
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed() && window.webContents.id !== event.sender.id) {
       window.webContents.send('storage:changed', data)
@@ -754,8 +767,16 @@ ipcMain.handle('shell:open-external', async (_event, url) => {
 })
 ipcMain.handle('procedure:open', () => openProcedureWindow())
 ipcMain.handle('dashboard:detach', (_event, kind: unknown) =>
-  typeof kind === 'string' && DETACHABLE_DASHBOARDS.has(kind) ? openDashboardWindow(kind) : false,
+  typeof kind === 'string' && DETACHABLE_WINDOWS.has(kind) ? openDashboardWindow(kind) : false,
 )
+// Only the main window holds the drafts: a popup's action is passed to it.
+ipcMain.handle('main:action', (event, action: unknown) => {
+  if (!win || win.isDestroyed() || event.sender.id === win.webContents.id) return false
+  if (!action || typeof action !== 'object' || !MAIN_ACTIONS.has(String((action as { type?: unknown }).type))) return false
+  if (JSON.stringify(action).length > MAIN_ACTION_MAX_LENGTH) return false
+  win.webContents.send('main:action', action)
+  return true
+})
 ipcMain.handle('dashboard:list-detached', () => [...dashboardWindows.keys()])
 ipcMain.handle('dashboard:attach', (_event, kind: unknown) => {
   if (typeof kind !== 'string') return false

@@ -52,7 +52,7 @@ export function ConnectionsSettings({
                 <div className="settings-option__info">
                   <div className="settings-option__title">Jeton d’appairage</div>
                   <div className="settings-option__desc">
-                    À coller dans Cairm+ › Paramètres › Agentor 9000. Il n’est jamais affiché ni enregistré en clair.
+                    À coller dans Cairm+ › Paramètres › Mode développeur (DEVMODE) › Connexion à Agentor 9000. Il n’est jamais affiché ni enregistré en clair.
                   </div>
                 </div>
                 <div className="settings-option__actions">
@@ -82,7 +82,7 @@ export function ConnectionsSettings({
               <ol className="connection-steps">
                 <li>Active la connexion ci-dessus.</li>
                 <li>Copie le jeton.</li>
-                <li>Dans Edge, ouvre Cairm+ › Paramètres › Agentor 9000, colle le jeton, active l’envoi et clique sur « Tester la connexion ».</li>
+                <li>Dans Edge, ouvre Cairm+ › Paramètres › Mode développeur (DEVMODE) › Connexion à Agentor 9000, colle le jeton, active l’envoi et clique sur « Tester la connexion ».</li>
               </ol>
             </div>
           ) : (

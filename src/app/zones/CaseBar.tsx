@@ -1,7 +1,14 @@
-// Top bar of the new interface: one tab per case, then the active case's key
-// values. A click on a value copies it; the case window keeps the full detail.
+// Top bar: one tab per case, then the active case's key values. A click on a
+// value copies it and says so; the case window keeps the full detail.
+import { useEffect, useRef, useState } from 'react'
 import { UiIcon } from '../../components/UiIcon'
-import { contextFieldLabels, type CaseContext, type ContextFieldKey } from '../../context/caseContext'
+import {
+  contextFieldLabels,
+  isFieldImported,
+  type CaseContext,
+  type CaseImportKey,
+  type ContextFieldKey,
+} from '../../context/caseContext'
 import type { CaseTagKey } from '../../context/caseTags'
 import type { BridgeStatus } from '../../hooks/useCaseContext'
 
@@ -11,6 +18,7 @@ export interface CaseBarTab {
   title: string
   filled: boolean
   bound: boolean
+  locked: boolean
 }
 
 export interface CaseBarProps {
@@ -23,16 +31,27 @@ export interface CaseBarProps {
   available: boolean
   bridge: BridgeStatus | null
   tags: Record<CaseTagKey, string>
+  imports: Record<CaseImportKey, boolean>
   onSelect: (id: string) => void
   onAdd: () => void
   onClose: (id: string) => void
-  onCopy: (value: string) => void
-  onFill: () => void
+  onToggleLock: (id: string) => void
+  // Resolves to true once the value is in the clipboard.
+  onCopy: (value: string) => Promise<boolean>
   onOpenCase: () => void
   onOpenSettings: () => void
 }
 
-const chipKeys: ContextFieldKey[] = ['productName', 'productType', 'serialNumber', 'customerName', 'country', 'purchaseDate']
+// The values kept in the bar, in this order. The client copies its name and
+// address the way Cairm copies the customer details.
+const chipKeys: ContextFieldKey[] = ['productName', 'serialNumber', 'purchaseDate', 'customerName']
+const chipLabels: Partial<Record<ContextFieldKey, string>> = {
+  productName: 'Produit',
+  serialNumber: 'SN',
+  purchaseDate: 'DOP',
+  customerName: 'Client',
+}
+const COPIED_MS = 1400
 
 const bridgeText = (available: boolean, bridge: BridgeStatus | null) => {
   if (!available) return 'Cairm+ indisponible'
@@ -51,17 +70,32 @@ export function CaseBar({
   available,
   bridge,
   tags,
+  imports,
   onSelect,
   onAdd,
   onClose,
+  onToggleLock,
   onCopy,
-  onFill,
   onOpenCase,
   onOpenSettings,
 }: CaseBarProps) {
+  const shownKeys = chipKeys.filter((key) => isFieldImported(imports, key))
   const conflicts = caseContext
-    ? chipKeys.filter((key) => caseContext.fields[key]?.status === 'conflict').length
+    ? shownKeys.filter((key) => caseContext.fields[key]?.status === 'conflict').length
     : 0
+  // The value just copied shows « Copié » for a moment.
+  const [copied, setCopied] = useState<string | null>(null)
+  const copiedTimer = useRef<number | null>(null)
+  useEffect(() => () => {
+    if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current)
+  }, [])
+  const copy = async (id: string, value: string) => {
+    if (!value || !(await onCopy(value))) return
+    setCopied(id)
+    if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current)
+    copiedTimer.current = window.setTimeout(() => setCopied(null), COPIED_MS)
+  }
+  const address = caseContext?.fields.customerFull?.value ?? ''
 
   return (
     <header className="case-bar">
@@ -69,7 +103,7 @@ export function CaseBar({
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`case-tab${tab.id === activeId ? ' is-active' : ''}${tab.bound ? '' : ' case-tab--draft'}`}
+            className={`case-tab${tab.id === activeId ? ' is-active' : ''}${tab.bound ? '' : ' case-tab--draft'}${tab.locked ? ' is-locked' : ''}`}
           >
             <button
               type="button"
@@ -85,13 +119,29 @@ export function CaseBar({
             </button>
             <button
               type="button"
-              className={`case-tab__close${closeArmedId === tab.id ? ' is-armed' : ''}`}
-              title={closeArmedId === tab.id ? 'Confirmer la fermeture' : 'Fermer cet onglet'}
-              aria-label={`Fermer ${tab.label}`}
-              onClick={() => onClose(tab.id)}
+              className={`case-tab__lock${tab.locked ? ' is-on' : ''}`}
+              title={
+                tab.locked
+                  ? 'Onglet verrouillé : il reste ouvert, même après la fermeture d’Agentor. Cliquer pour déverrouiller.'
+                  : 'Verrouiller : garder cet onglet et son dossier, même après la fermeture d’Agentor'
+              }
+              aria-label={tab.locked ? `Déverrouiller ${tab.label}` : `Verrouiller ${tab.label}`}
+              aria-pressed={tab.locked}
+              onClick={() => onToggleLock(tab.id)}
             >
-              <UiIcon name="close" />
+              <UiIcon name={tab.locked ? 'lock' : 'unlock'} />
             </button>
+            {tab.locked ? null : (
+              <button
+                type="button"
+                className={`case-tab__close${closeArmedId === tab.id ? ' is-armed' : ''}`}
+                title={closeArmedId === tab.id ? 'Confirmer la fermeture' : 'Fermer cet onglet'}
+                aria-label={`Fermer ${tab.label}`}
+                onClick={() => onClose(tab.id)}
+              >
+                <UiIcon name="close" />
+              </button>
+            )}
           </div>
         ))}
         <button
@@ -120,31 +170,57 @@ export function CaseBar({
           <>
             <button
               type="button"
-              className="case-bar__number"
-              title="Copier le numéro"
-              onClick={() => onCopy(caseContext.caseKey.number ?? '')}
+              className={`case-bar__number${copied === 'number' ? ' is-copied' : ''}`}
+              title="Copier le numéro RQT"
+              onClick={() => void copy('number', caseContext.caseKey.number ?? '')}
             >
-              {caseContext.caseKey.number || 'Sans numéro'}
+              {copied === 'number' ? <UiIcon name="check" /> : null}
+              {copied === 'number' ? 'Copié' : caseContext.caseKey.number || 'RQT sans numéro'}
             </button>
-            <span className="case-bar__title" title={caseContext.fields.caseTitle?.value ?? ''}>
-              {caseContext.fields.caseTitle?.value || 'Sans titre'}
-            </span>
+            {isFieldImported(imports, 'caseTitle') ? (
+              <button
+                type="button"
+                className={`case-bar__title${copied === 'caseTitle' ? ' is-copied' : ''}`}
+                title={`${caseContext.fields.caseTitle?.value ?? ''} · Cliquer pour copier`}
+                disabled={!caseContext.fields.caseTitle?.value}
+                onClick={() => void copy('caseTitle', caseContext.fields.caseTitle?.value ?? '')}
+              >
+                {copied === 'caseTitle' ? 'Copié' : caseContext.fields.caseTitle?.value || 'Sans titre'}
+              </button>
+            ) : null}
             <div className="case-bar__chips">
-              {chipKeys.map((key) => {
+              {shownKeys.map((key) => {
                 const field = caseContext.fields[key]
                 const value = field?.value ?? ''
                 const state = !value ? 'missing' : field?.status ?? 'auto'
+                // The client copies the name and address block made by Cairm when there is one.
+                const copyValue = key === 'customerName' && address ? address : value
+                const isCopied = copied === key
+                const hint =
+                  key === 'customerName' && address
+                    ? ' · Cliquer pour copier le nom et l’adresse (format Cairm)'
+                    : value
+                      ? ' · Cliquer pour copier'
+                      : ''
                 return (
                   <button
                     key={key}
                     type="button"
-                    className={`case-chip case-chip--${state}`}
-                    disabled={!value}
-                    title={`${contextFieldLabels[key]} · ${tags[key]}${field?.aliasOf ? ` · Nom CRM : ${field.aliasOf}` : ''}${value ? ' · Cliquer pour copier' : ''}`}
-                    onClick={() => onCopy(value)}
+                    className={`case-chip case-chip--${state}${isCopied ? ' is-copied' : ''}`}
+                    disabled={!copyValue}
+                    title={`${contextFieldLabels[key]} · ${tags[key]}${field?.aliasOf ? ` · Nom CRM : ${field.aliasOf}` : ''}${hint}`}
+                    onClick={() => void copy(key, copyValue)}
                   >
-                    <span className="case-chip__label">{contextFieldLabels[key]}</span>
-                    <span className="case-chip__value">{value || '—'}</span>
+                    <span className="case-chip__label">{chipLabels[key]}</span>
+                    <span className="case-chip__value">
+                      {isCopied ? (
+                        <>
+                          <UiIcon name="check" /> Copié
+                        </>
+                      ) : (
+                        value || '—'
+                      )}
+                    </span>
                   </button>
                 )
               })}
@@ -156,12 +232,8 @@ export function CaseBar({
                   <span>{conflicts} à vérifier</span>
                 </button>
               ) : null}
-              <button type="button" className="ghost case-bar__details" onClick={onOpenCase} title="Tout le dossier, corrections et dernière tâche">
+              <button type="button" className="ghost case-bar__details" onClick={onOpenCase} title="Tout le dossier et ses corrections">
                 Détails
-              </button>
-              <button type="button" className="primary case-bar__fill" onClick={onFill} title="Remplir les tags du mail et de la tâche">
-                <UiIcon name="fill" />
-                <span>Remplir</span>
               </button>
             </div>
           </>

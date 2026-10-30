@@ -1,9 +1,8 @@
-// Contents screen: every mail template, snippet, S-Task and F-Task template in
+// Settings › Contenus: every mail template, snippet, S-Task and F-Task template in
 // one place, like a file manager. Types and categories on the left, the list
 // with multiple selection and grouped actions in the middle, the item's editor
 // on the right. Deleted items go to the trash.
 import { useMemo, useState } from 'react'
-import { CloseIcon } from '../../components/AppIcons'
 import { UiIcon } from '../../components/UiIcon'
 import {
   contentIssues,
@@ -47,8 +46,8 @@ export interface ContentsScreenProps {
   categoriesByType: Record<ContentType, Array<{ id: string; name: string }>>
   knownTags: string[]
   makeId: (type: ContentType) => string
-  onClose: () => void
   onOpenSettings: (type: ContentType) => void
+
 }
 
 const sameView = (a: View, b: View) =>
@@ -61,7 +60,6 @@ export function ContentsScreen({
   categoriesByType,
   knownTags,
   makeId,
-  onClose,
   onOpenSettings,
 }: ContentsScreenProps) {
   const [view, setView] = useState<View>({ kind: 'type', type: 'template', categoryId: null })
@@ -133,19 +131,7 @@ export function ContentsScreen({
 
   const favoritesCount = rows.filter((row) => row.favorite).length
 
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="modal contents-screen" role="dialog" aria-label="Contenus" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="modal__header">
-          <div className="brand__title brand__title--with-icon">
-            <UiIcon name="library" className="brand__title-icon" />
-            <span>Contenus</span>
-          </div>
-          <button title="Fermer les contenus" className="close-modal close-modal--subtle" type="button" aria-label="Fermer les contenus" onClick={onClose}>
-            <CloseIcon />
-          </button>
-        </div>
-
+  const body = (
         <div className="contents-screen__body">
           <nav className="contents-tree" aria-label="Types et catégories">
             <button
@@ -443,7 +429,11 @@ export function ContentsScreen({
             )}
           </section>
         </div>
-      </div>
+  )
+
+  return (
+    <div className="contents-screen contents-screen--embedded" aria-label="Contenus">
+      {body}
     </div>
   )
 }

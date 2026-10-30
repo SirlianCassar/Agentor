@@ -1,5 +1,5 @@
 // Right column: persistent notes and the task builder.
-import type { ClipboardEvent, Dispatch, MouseEvent, RefObject, SetStateAction } from 'react'
+import type { ClipboardEvent, Dispatch, MouseEvent, ReactNode, RefObject, SetStateAction } from 'react'
 import { CloseIcon, DeleteIcon } from '../../components/AppIcons'
 import { type ProtectedTextRange, TextEditor, type TextEditorHandle } from '../../components/TextEditor'
 import { UiIcon } from '../../components/UiIcon'
@@ -7,6 +7,8 @@ import { type TaskBoxSlot, taskBoxUsesSkeleton } from '../../lib/taskDraft'
 import type { AppData } from '../../lib/types'
 
 export interface TaskSidebarProps {
+  // Search over the S-Task and F-Task templates.
+  search?: ReactNode
   activeTaskBoxIndex: number
   closeDraftBoxTooltip: () => void
   data: AppData
@@ -33,6 +35,7 @@ export interface TaskSidebarProps {
 }
 
 export function TaskSidebar({
+  search,
   activeTaskBoxIndex,
   closeDraftBoxTooltip,
   data,
@@ -92,6 +95,7 @@ export function TaskSidebar({
               <span>Task</span>
             </p>
           </div>
+          {search}
         </div>
         <div className="task-editor-wrapper">
           <TextEditor

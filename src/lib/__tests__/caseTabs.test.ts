@@ -15,6 +15,7 @@ import {
   saveTabWorkspace,
   serializeCaseTabs,
   setActiveCaseTab,
+  toggleCaseTabLock,
 } from '../caseTabs'
 import { createEmptyDraftBoxSlot } from '../taskDraft'
 
@@ -118,6 +119,34 @@ describe('case tabs', () => {
     expect(back.activeId).toBe(state.activeId)
     expect(back.tabs[0].caseKey).toEqual({ id: 'case-a', number: 'RQT-1' })
     expect(back.tabs[0].workspace.email).toBe('Texte')
+  })
+
+  it('keeps a locked tab: no closing, no other case, values saved', () => {
+    let state = createCaseTabsState()
+    state = bindCaseTab(state, state.activeId, { id: 'case-a', number: 'RQT-1' })
+    state = rememberCaseContext(state, context('case-a', 'RQT-1', 'Client Gardé'))
+    state = toggleCaseTabLock(state, state.activeId)
+    expect(state.tabs[0].locked).toBe(true)
+    expect(removeCaseTab(state, state.activeId)).toBe(state)
+    const back = parseCaseTabs(JSON.parse(serializeCaseTabs(state)))
+    expect(back.tabs[0].locked).toBe(true)
+    expect(back.tabs[0].context?.fields.customerName?.value).toBe('Client Gardé')
+    // A saved context that does not belong to the tab's case is ignored.
+    const wrong = JSON.parse(serializeCaseTabs(state))
+    wrong.tabs[0].context.caseKey.id = 'case-b'
+    expect(parseCaseTabs(wrong).tabs[0].context).toBeUndefined()
+    // An empty locked tab is not given to the next case.
+    let empty = toggleCaseTabLock(createCaseTabsState(), createCaseTabsState().activeId)
+    empty = toggleCaseTabLock(empty, empty.activeId)
+    expect(planCaseArrival(empty, 'case-c', true)).toEqual({ kind: 'create' })
+    const unlocked = toggleCaseTabLock(state, state.activeId)
+    expect(unlocked.tabs[0].locked).toBe(false)
+    expect(serializeCaseTabs(unlocked)).not.toContain('Client Gardé')
+  })
+
+  it('names a tab by its RQT number only', () => {
+    expect(caseTabLabel(createCaseTab({ id: 'case-a', number: 'RQT-9' }), 0)).toBe('RQT-9')
+    expect(caseTabLabel(createCaseTab({ id: 'case-a' }), 0)).toBe('RQT sans numéro')
   })
 
   it('reads damaged saved tabs without failing', () => {

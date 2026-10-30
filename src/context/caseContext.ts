@@ -11,25 +11,29 @@ export const CONTEXT_FIELD_KEYS = [
   'caseTitle',
   'caseCreatedOn',
   'productName',
+  'productFull',
   'productType',
   'serialNumber',
   'purchaseDate',
   'productionDate',
   'customerName',
+  'customerFull',
   'country',
 ] as const
 export type ContextFieldKey = (typeof CONTEXT_FIELD_KEYS)[number]
 
 export const contextFieldLabels: Record<ContextFieldKey, string> = {
-  caseNumber: 'Dossier',
+  caseNumber: 'RQT',
   caseTitle: 'Titre',
   caseCreatedOn: 'Créé le',
   productName: 'Produit',
+  productFull: 'Produit complet (copie Cairm)',
   productType: 'Type de produit',
   serialNumber: 'Numéro de série',
   purchaseDate: "Date d'achat",
   productionDate: 'Date de production',
   customerName: 'Client',
+  customerFull: 'Client complet (copie Cairm)',
   country: 'Pays',
 }
 
@@ -192,6 +196,58 @@ export function getUnconfirmedFields(context: CaseContext, keys: ContextFieldKey
     const field = context.fields[key]
     return !field || field.value === null || field.status === 'auto' || field.status === 'conflict'
   })
+}
+
+// What Agentor keeps from what Cairm+ sends (Paramètres › Données importées).
+// The RQT number identifies the case and is always kept. Off by default: the
+// values Sirlian asked to leave out of the case bar and the case window.
+export type CaseImportKey = Exclude<ContextFieldKey, 'caseNumber'> | 'lastTask'
+export const CASE_IMPORT_KEYS: CaseImportKey[] = [
+  'caseTitle',
+  'productName',
+  'serialNumber',
+  'purchaseDate',
+  'productFull',
+  'customerName',
+  'customerFull',
+  'country',
+  'caseCreatedOn',
+  'productType',
+  'productionDate',
+  'lastTask',
+]
+export const DEFAULT_CASE_IMPORT_OFF: CaseImportKey[] = ['caseCreatedOn', 'productType', 'productionDate', 'lastTask']
+
+export function resolveCaseImport(raw: unknown): Record<CaseImportKey, boolean> {
+  const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  return Object.fromEntries(
+    CASE_IMPORT_KEYS.map((key) => [
+      key,
+      typeof source[key] === 'boolean' ? source[key] : !DEFAULT_CASE_IMPORT_OFF.includes(key),
+    ]),
+  ) as Record<CaseImportKey, boolean>
+}
+
+export const isFieldImported = (imports: Record<CaseImportKey, boolean>, key: ContextFieldKey) =>
+  key === 'caseNumber' || imports[key] !== false
+
+// Drops what the user chose not to import, before anything is stored.
+export function filterImported<T extends { key: ContextFieldKey }>(
+  observations: T[],
+  imports: Record<CaseImportKey, boolean>,
+) {
+  return observations.filter((observation) => isFieldImported(imports, observation.key))
+}
+
+// Removes values kept from before the user turned their import off.
+export function withoutUnimported(context: CaseContext, imports: Record<CaseImportKey, boolean>): CaseContext {
+  const keys = Object.keys(context.fields) as ContextFieldKey[]
+  const dropped = keys.filter((key) => !isFieldImported(imports, key))
+  const dropTask = !imports.lastTask && context.lastTask
+  if (!dropped.length && !dropTask) return context
+  const fields = { ...context.fields }
+  dropped.forEach((key) => delete fields[key])
+  return { ...context, fields, ...(dropTask ? { lastTask: null } : {}) }
 }
 
 export const CASE_CONTEXT_TTL_MS = 12 * 60 * 60 * 1000

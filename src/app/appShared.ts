@@ -69,6 +69,9 @@ export const dashboardWindowOptions: Array<{ id: DashboardWindowKind; title: str
 
 export const WINDOW_LAYOUT_STORAGE_KEY = 'agentor:window-layout:v1'
 export const TEMPLATE_LANGUAGE_STORAGE_KEY = 'agentor:template-language'
+// Procedure picked in the main window, for the Procédures window when it is
+// a separate window: { id, at } in localStorage, shared by every window.
+export const PORTAL_PROCEDURE_STORAGE_KEY = 'agentor:portal-procedure'
 
 // Last language picked when loading a template, offered first next time.
 export const readStoredTemplateLanguage = () => {

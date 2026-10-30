@@ -42,6 +42,8 @@ interface Window {
     listDetachedDashboards?: () => Promise<string[]>
     onDetachedDashboards?: (callback: (kinds: unknown) => void) => () => void
     onAttachRequest?: (callback: (kind: unknown) => void) => () => void
+    sendToMain?: (action: unknown) => Promise<boolean>
+    onMainAction?: (callback: (action: unknown) => void) => () => void
     getCaseContext?: () => Promise<unknown>
     setCaseFieldManual?: (caseId: string, key: string, value: string) => Promise<boolean>
     confirmCaseField?: (caseId: string, key: string) => Promise<boolean>

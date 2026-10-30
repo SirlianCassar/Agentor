@@ -30,6 +30,9 @@ const api = {
   listDetachedDashboards: () => ipcRenderer.invoke('dashboard:list-detached'),
   onDetachedDashboards: (callback: (kinds: unknown) => void) => subscribe('dashboard:detached', callback),
   onAttachRequest: (callback: (kind: unknown) => void) => subscribe('dashboard:attach-request', callback),
+  // A popup (Troubleshotgun, call) asks the main window to act on the drafts.
+  sendToMain: (action: unknown) => ipcRenderer.invoke('main:action', action),
+  onMainAction: (callback: (action: unknown) => void) => subscribe('main:action', callback),
   getUpdateStatus: () => ipcRenderer.invoke('updates:get-status'),
   checkForUpdatesNow: () => ipcRenderer.invoke('updates:check-now'),
   installDownloadedUpdate: () => ipcRenderer.invoke('updates:install-downloaded'),

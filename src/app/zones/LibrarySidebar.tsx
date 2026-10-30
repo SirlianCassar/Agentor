@@ -1,6 +1,6 @@
-// Left column of the new interface: one search over the whole library (Ctrl+K),
-// then a list per type with its filters. It folds down to a column of icons.
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from 'react'
+// Left column: a list per type with its search (Ctrl+K), which can be widened
+// to the whole library, and its filters. It folds down to a column of icons.
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from 'react'
 import { UiIcon } from '../../components/UiIcon'
 import type { AppIconName } from '../../lib/iconTypes'
 import type {
@@ -100,8 +100,6 @@ export interface LibrarySidebarProps {
   onShowPanel?: () => void
   // Opens the quick editor of an item (not for procedures).
   onEdit?: (entry: SearchEntry) => void
-  // Opens the Contents screen (every item, actions on several at once).
-  onOpenContents?: () => void
 }
 
 interface Filter {
@@ -124,7 +122,6 @@ export function LibrarySidebar({
   productLabel,
   editButtonLabel,
   onOpenSettings,
-  onOpenContents,
   onSnippet,
   onTemplate,
   onTask,
@@ -147,6 +144,8 @@ export function LibrarySidebar({
     procedure: 'all',
   })
   const [productOnly, setProductOnly] = useState(false)
+  // The search looks in the open tab; « Partout » widens it to the whole library.
+  const [scope, setScope] = useState<'tab' | 'all'>('tab')
   const [activeIndex, setActiveIndex] = useState(0)
   // Groups shown in full after « Voir tout »; the others keep their first results.
   const [expandedKinds, setExpandedKinds] = useState<SearchKind[]>([])
@@ -160,11 +159,12 @@ export function LibrarySidebar({
       return value
     })
 
-  // Ctrl+K (Cmd+K on macOS) opens the column and puts the cursor in the search.
+  // Ctrl+K (Cmd+K on macOS) opens the column and searches the whole library.
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'k') return
       event.preventDefault()
+      setScope('all')
       // Focus at once when the field is there, so that the next key typed
       // goes into the search and not into the mail.
       if (inputRef.current) {
@@ -195,27 +195,32 @@ export function LibrarySidebar({
   const productFilterOn = productOnly && hasProduct
 
   const searching = query.trim().length > 0
-  const groups = useMemo(
+  const allGroups = useMemo(
     () =>
       (searching ? searchLibrary(entries, query, { productTerms, limit: 500 }) : []).map((group) => {
         const matching = productFilterOn ? group.items.filter((item) => item.productMatch) : group.items
-        const shown = expandedKinds.includes(group.kind) ? matching : matching.slice(0, GROUP_LIMIT)
-        return { ...group, items: shown, total: matching.length }
+        return { ...group, matching, total: matching.length }
       }).filter((group) => group.total > 0),
-    [entries, expandedKinds, productFilterOn, productTerms, query, searching],
+    [entries, productFilterOn, productTerms, query, searching],
   )
-
-  const tabFilters = useMemo((): Filter[] => {
-    if (tab === 'snippet') {
-      return [
-        { id: 'all', label: 'Toutes' },
-        ...snippetCategories.map((category) => ({
-          id: category.id,
-          label: category.name,
-          color: categoryColorById.get(category.id),
+  const searchEverywhere = scope === 'all'
+  const groups = useMemo(
+    () =>
+      allGroups
+        .filter((group) => searchEverywhere || tabOfKind(group.kind) === tab)
+        .map((group) => ({
+          ...group,
+          // In the open tab every result shows; everywhere, each type starts with its first ones.
+          items: !searchEverywhere || expandedKinds.includes(group.kind) ? group.matching : group.matching.slice(0, GROUP_LIMIT),
         })),
-      ]
-    }
+    [allGroups, expandedKinds, searchEverywhere, tab],
+  )
+  const elsewhereCount = searchEverywhere
+    ? 0
+    : allGroups.filter((group) => tabOfKind(group.kind) !== tab).reduce((sum, group) => sum + group.total, 0)
+
+  // Snippets have no category selector: they are sorted by category instead.
+  const tabFilters = useMemo((): Filter[] => {
     if (tab === 'template') {
       return [
         { id: 'all', label: 'Tous' },
@@ -238,7 +243,12 @@ export function LibrarySidebar({
       ]
     }
     return []
-  }, [categoryColorById, mailTemplateCategories, snippetCategories, tab, troubleshootgunFolders])
+  }, [mailTemplateCategories, tab, troubleshootgunFolders])
+  const categoryOrder = useMemo(
+    () => new Map(snippetCategories.map((category, index) => [category.id, index])),
+    [snippetCategories],
+  )
+  const categoryById = useMemo(() => new Map(snippetCategories.map((category) => [category.id, category])), [snippetCategories])
 
   const filter = tabFilters.some((item) => item.id === filters[tab]) ? filters[tab] : 'all'
 
@@ -254,9 +264,21 @@ export function LibrarySidebar({
     })
     const withProduct = narrowed.map((entry) => ({ ...entry, productMatch: matchesProduct(entry, productTerms) }))
     const kept = productFilterOn ? withProduct.filter((entry) => entry.productMatch) : withProduct
+    if (tab === 'snippet') {
+      // By category, in the settings' order; the case's product first inside a category.
+      const rank = (entry: SearchEntry) => categoryOrder.get(entry.categoryId ?? '') ?? categoryOrder.size
+      return kept
+        .map((entry, index) => ({ entry, index }))
+        .sort((a, b) =>
+          rank(a.entry) - rank(b.entry) ||
+          Number(b.entry.productMatch) - Number(a.entry.productMatch) ||
+          a.index - b.index,
+        )
+        .map(({ entry }) => entry)
+    }
     // The case's product first, the library order otherwise.
     return [...kept.filter((entry) => entry.productMatch), ...kept.filter((entry) => !entry.productMatch)]
-  }, [entries, filter, productFilterOn, productTerms, searching, tab])
+  }, [categoryOrder, entries, filter, productFilterOn, productTerms, searching, tab])
 
   const visible = useMemo(
     () =>
@@ -264,8 +286,11 @@ export function LibrarySidebar({
     [groups, listItems, searching],
   )
 
-  useEffect(() => setActiveIndex(0), [query, tab, filter, productFilterOn])
+  useEffect(() => setActiveIndex(0), [query, tab, filter, productFilterOn, scope])
   useEffect(() => setExpandedKinds([]), [query])
+  useEffect(() => {
+    if (!query.trim()) setScope('tab')
+  }, [query])
 
   useEffect(() => {
     listRef.current
@@ -315,10 +340,12 @@ export function LibrarySidebar({
     }
   }
 
+  // While searching, a tab keeps the words and shows its own results.
   const openTab = (next: LibraryTab) => {
-    setQuery('')
+    setScope('tab')
     update({ tab: next, collapsed: false })
   }
+  const tabLabel = libraryTabs.find((item) => item.id === tab)?.label ?? ''
 
   if (collapsed) {
     return (
@@ -380,7 +407,8 @@ export function LibrarySidebar({
         id={`library-option-${index}`}
         aria-selected={index === activeIndex}
         data-index={index}
-        className={`library-item library-item--${entry.kind}${index === activeIndex ? ' is-active' : ''}`}
+        className={`library-item library-item--${entry.kind}${color ? ' library-item--tinted' : ''}${index === activeIndex ? ' is-active' : ''}`}
+        style={color ? ({ '--item-color': color } as CSSProperties) : undefined}
         onMouseEnter={(event) => {
           setActiveIndex(index)
           if (snippet) showSnippetTooltip(snippet, event)
@@ -464,11 +492,6 @@ export function LibrarySidebar({
           <button className="sidebar-icon-btn" onClick={onOpenSettings} title={editButtonLabel} aria-label={editButtonLabel}>
             <UiIcon name="settings" className="sidebar-icon-btn__icon" />
           </button>
-          {onOpenContents ? (
-            <button className="sidebar-icon-btn library__contents" onClick={onOpenContents} title="Contenus" aria-label="Contenus">
-              <UiIcon name="folderOpen" className="sidebar-icon-btn__icon" />
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -479,7 +502,7 @@ export function LibrarySidebar({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={handleSearchKey}
-          placeholder="Tout rechercher (Ctrl+K)"
+          placeholder={searchEverywhere ? 'Rechercher partout' : `Rechercher dans ${tabLabel} · Ctrl+K : partout`}
           aria-label="Rechercher dans la bibliothèque"
           aria-controls="library-results"
           aria-activedescendant={visible.length ? `library-option-${activeIndex}` : undefined}
@@ -498,7 +521,7 @@ export function LibrarySidebar({
         </button>
       ) : null}
 
-      {searching ? null : (
+      {searchEverywhere && searching ? null : (
         <div className="library__tabs" role="tablist" aria-label="Types">
           {libraryTabs.map((item) => (
             <button
@@ -546,6 +569,31 @@ export function LibrarySidebar({
         ) : null}
       </div>
 
+      {searching ? (
+        <div className="library__scope">
+          {searchEverywhere ? (
+            <button type="button" className="library__scope-btn" onClick={() => setScope('tab')}>
+              <UiIcon name="caretRight" />
+              Seulement {tabLabel}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="library__scope-btn"
+              disabled={!elsewhereCount}
+              title="Chercher dans toute la bibliothèque"
+              onClick={() => {
+                setScope('all')
+                inputRef.current?.focus()
+              }}
+            >
+              <UiIcon name="search" />
+              {elsewhereCount ? `Partout : ${elsewhereCount} autre${elsewhereCount > 1 ? 's' : ''} résultat${elsewhereCount > 1 ? 's' : ''}` : 'Rien ailleurs'}
+            </button>
+          )}
+        </div>
+      ) : null}
+
       <div className="library__list" id="library-results" role="listbox" aria-label="Résultats" ref={listRef}>
         {searching ? (
           groups.length ? (
@@ -562,7 +610,7 @@ export function LibrarySidebar({
                     </span>
                   </p>
                   {items.map((item) => renderItem(item, nextIndex(), false))}
-                  {group.total > group.items.length ? (
+                  {searchEverywhere && group.total > group.items.length ? (
                     <button
                       type="button"
                       className="library__more"
@@ -578,10 +626,23 @@ export function LibrarySidebar({
               )
             })
           ) : (
-            <p className="library__empty">Aucun résultat pour « {query.trim()} ».</p>
+            <p className="library__empty">
+              Aucun résultat pour « {query.trim()} »{searchEverywhere ? '' : ` dans ${tabLabel}`}.
+            </p>
           )
         ) : listItems.length ? (
-          listItems.map((item) => renderItem(item, nextIndex(), tab === 'task'))
+          listItems.map((item, position) => {
+            const row = renderItem(item, nextIndex(), tab === 'task')
+            if (tab !== 'snippet' || listItems[position - 1]?.categoryId === item.categoryId) return row
+            const category = categoryById.get(item.categoryId ?? '')
+            return [
+              <p key={`category-${item.categoryId ?? 'none'}`} className="library__category">
+                <span className="library__chip-dot" style={{ background: categoryColorById.get(item.categoryId ?? '') }} />
+                {category?.name ?? 'Sans catégorie'}
+              </p>,
+              row,
+            ]
+          })
         ) : (
           <p className="library__empty">
             {productFilterOn ? `Rien pour ${productLabel} ici.` : 'Rien dans cette liste.'}
