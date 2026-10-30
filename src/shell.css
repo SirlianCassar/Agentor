@@ -2762,3 +2762,19 @@ button.case-tile__value:hover {
 .section-search__category-name { flex: 1; text-align: left; font-weight: 500; }
 .section-search__count { font-size: 11px; opacity: .65; padding: 2px 7px; border-radius: 10px; background: rgba(255,255,255,.06); }
 .section-search__back { color: var(--text-muted); font-size: 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+
+.library-item__preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: calc(11px * var(--text-scale));
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.task-builder__search { width: 100%; min-width: 0; flex: 0 0 auto; margin-bottom: 10px; }
+.task-builder__search .section-search--task { width: 100%; min-width: 0; max-width: none; flex: none; }
+.task-builder__search .section-search--task input { height: 36px; font-size: calc(12px * var(--text-scale)); }

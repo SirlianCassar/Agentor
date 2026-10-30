@@ -280,6 +280,7 @@ import { SparePartsPanel } from './app/dashboards/SparePartsPanel'
 import { PortalPanel } from './app/dashboards/PortalPanel'
 import './App.css'
 import './shell.css'
+import './dashboard-windows.css'
 import './settings.css'
 
 import {
@@ -322,6 +323,9 @@ function App() {
       ? (match[1] as DashboardWindowKind)
       : null
   }, [])
+  useEffect(() => {
+    if (detachedKind) document.title = `${dashboardWindowOptions.find((item) => item.id === detachedKind)?.title ?? 'Dashboard'} · Agentor`
+  }, [detachedKind])
   // Troubleshotgun or the call in its own popup window (#dashboard=<tool>).
   const popupTool = useMemo((): 'troubleshootgun' | 'call' | null => {
     if (typeof window === 'undefined') return null
@@ -4747,6 +4751,18 @@ function App() {
     </div>
   )
 
+  const renderReminderDialog = () => (
+    reminderModalOpen ? (
+      <ReminderModal
+        addRqtReminder={addRqtReminder} editingReminderExpired={editingReminderExpired}
+        editingReminderId={editingReminderId} reminderDurationDraft={reminderDurationDraft}
+        reminderRqtDraft={reminderRqtDraft} setEditingReminderId={setEditingReminderId}
+        setReminderDurationDraft={setReminderDurationDraft} setReminderModalOpen={setReminderModalOpen}
+        setReminderRqtDraft={setReminderRqtDraft}
+      />
+    ) : null
+  )
+
   if (!loaded) {
     return (
       <div className={`app-loading${isProcedureWindow ? ' app-loading--procedure' : ''}`}>
@@ -4790,24 +4806,28 @@ function App() {
     const option = dashboardWindowOptions.find((item) => item.id === detachedKind)
     return (
       <>
-        <div className="detached-dashboard" data-window={detachedKind}>
+        <div className="detached-dashboard dashboard-tool" data-window={detachedKind}>
           <header className="detached-dashboard__bar">
-            <UiIcon name={option?.icon ?? 'dashboard'} className="floating-window__icon" />
-            <span className="floating-window__title">{option?.title ?? 'Dashboard'}</span>
+            <span className="dashboard-tool__symbol"><UiIcon name={option?.icon ?? 'dashboard'} /></span>
+            <div className="dashboard-tool__heading">
+              <h1>{option?.title ?? 'Dashboard'}</h1>
+              <p>{{ reminders: 'Les échéances de vos dossiers', news: 'Informations et mises à jour', calculator: 'Prix, livraison et TVA', portal: 'Retrouver et copier une procédure', parts: 'Références et pièces détachées', decorations: 'Vos textes à copier', case: '' }[detachedKind]}</p>
+            </div>
             <button
               type="button"
-              className="floating-window__btn"
+              className="dashboard-tool__attach"
               title="Remettre dans la fenêtre principale"
               aria-label="Remettre dans la fenêtre principale"
               onClick={() => void window.agentor?.attachDashboard?.(detachedKind)}
             >
-              <UiIcon name="attach" />
+              <UiIcon name="attach" /><span>Regrouper</span>
             </button>
           </header>
           <div className="detached-dashboard__body floating-window__body">
             {renderDashboardWindowContent(detachedKind)}
           </div>
         </div>
+        {renderReminderDialog()}
         {toast ? <div className="toast">{toast}</div> : null}
       </>
     )
@@ -4960,15 +4980,7 @@ function App() {
           document.body,
         )
       : null}
-    {reminderModalOpen ? (
-      <ReminderModal
-        addRqtReminder={addRqtReminder} editingReminderExpired={editingReminderExpired}
-        editingReminderId={editingReminderId} reminderDurationDraft={reminderDurationDraft}
-        reminderRqtDraft={reminderRqtDraft} setEditingReminderId={setEditingReminderId}
-        setReminderDurationDraft={setReminderDurationDraft} setReminderModalOpen={setReminderModalOpen}
-        setReminderRqtDraft={setReminderRqtDraft}
-      />
-    ) : null}
+    {renderReminderDialog()}
     {expiredReminders?.length ? (
       <ReminderWarning
         expiredReminders={expiredReminders} setExpiredReminders={setExpiredReminders}

@@ -21,7 +21,7 @@ export function RemindersBlock({
   return (
     <div className="dashboard-news-notes__panel dashboard-news-notes__panel--notes dashboard-reminders">
       <div className="dashboard-reminders__head">
-        <span>Rappels RQT</span>
+        <span>{rqtReminders.length} rappel{rqtReminders.length > 1 ? 's' : ''}</span>
         <div className="dashboard-reminders__head-actions">
           <button className="btn btn--ghost btn--small" type="button" onClick={openNewRqtReminder}>Ajouter</button>
         </div>
