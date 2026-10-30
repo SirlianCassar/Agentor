@@ -4,6 +4,7 @@
 import {
   isContextFieldKey,
   normalizeCaseId,
+  normalizeRqtNumber,
   type CaseKey,
   type ContextObservation,
   type ContextSource,
@@ -39,7 +40,7 @@ function parseCaseKey(raw: unknown): CaseKey | null {
   if (!isRecord(raw)) return null
   const id = normalizeCaseId(raw.id)
   if (!id) return null
-  const number = typeof raw.number === 'string' ? raw.number.trim().slice(0, 64) : undefined
+  const number = normalizeRqtNumber(raw.number)
   return { system: 'dynamics', entity: 'incident', id, ...(number ? { number } : {}) }
 }
 
@@ -84,6 +85,13 @@ export function parseBridgeMessage(raw: unknown): BridgeParseResult {
   for (const item of raw.observations) {
     const observation = parseObservation(item)
     if (!observation) return { ok: false, error: 'invalid-observation' }
+    if (observation.key === 'caseNumber') {
+      const number = normalizeRqtNumber(observation.value)
+      if (!number) continue
+      observation.value = number
+      caseKey.number = caseKey.number ?? number
+    }
+    if (observation.key === 'caseTitle' && !caseKey.number) caseKey.number = normalizeRqtNumber(observation.value)
     observations.push(observation)
   }
   const lastTask = parseTask(raw.lastTask)
