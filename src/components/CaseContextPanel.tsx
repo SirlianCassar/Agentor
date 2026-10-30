@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { UiIcon } from './UiIcon'
 import {
   contextFieldLabels,
+  isFieldImported,
   type CaseContext,
+  type CaseImportKey,
   type ContextField,
   type ContextFieldKey,
   type ContextSource,
@@ -18,14 +20,17 @@ const sourceLabels: Record<ContextSource, string> = {
   user: 'Saisie',
 }
 
-// Fields shown as tiles, in reading order. The case number and title are the header.
-const tileKeys: ContextFieldKey[] = [
+// Fields shown as tiles, in reading order, when they are imported. The RQT
+// number and title are the header.
+const allTileKeys: ContextFieldKey[] = [
   'productName',
   'serialNumber',
-  'productType',
-  'customerName',
-  'country',
   'purchaseDate',
+  'productFull',
+  'customerName',
+  'customerFull',
+  'country',
+  'productType',
   'productionDate',
   'caseCreatedOn',
 ]
@@ -56,12 +61,12 @@ interface CaseContextPanelProps {
   context: CaseContext | null
   bridge: BridgeStatus | null
   tags: Record<CaseTagKey, string>
+  imports: Record<CaseImportKey, boolean>
   autoFill: boolean
   onSetManual: (key: ContextFieldKey, value: string) => void
   onConfirm: (key: ContextFieldKey) => void
   onClear: () => void
   onCopy: (text: string) => void
-  onFill: () => void
   onOpenSettings: () => void
 }
 
@@ -70,14 +75,15 @@ export function CaseContextPanel({
   context,
   bridge,
   tags,
+  imports,
   autoFill,
   onSetManual,
   onConfirm,
   onClear,
   onCopy,
-  onFill,
   onOpenSettings,
 }: CaseContextPanelProps) {
+  const tileKeys = allTileKeys.filter((key) => isFieldImported(imports, key))
   const [editing, setEditing] = useState<{ key: ContextFieldKey; value: string } | null>(null)
 
   const saveEdit = () => {
@@ -115,7 +121,7 @@ export function CaseContextPanel({
     const isEditing = editing?.key === key
     const value = field?.value ?? ''
     return (
-      <div className={`case-tile case-tile--${state.id}`} key={key} data-field={key}>
+      <div className={`case-tile case-tile--${state.id}${key === 'customerFull' || key === 'productFull' ? ' case-tile--wide' : ''}`} key={key} data-field={key}>
         <div className="case-tile__head">
           <span className="case-tile__label">{contextFieldLabels[key]}</span>
           <code className="case-tile__tag" title="Tag rempli avec cette valeur">
@@ -164,6 +170,7 @@ export function CaseContextPanel({
                 <UiIcon name="check" />
               </button>
             ) : null}
+            {key === 'customerFull' || key === 'productFull' ? null : (
             <button
               type="button"
               title={value ? 'Corriger' : 'Saisir'}
@@ -172,6 +179,7 @@ export function CaseContextPanel({
             >
               <UiIcon name="edit" />
             </button>
+            )}
           </span>
         </div>
       </div>
@@ -185,10 +193,10 @@ export function CaseContextPanel({
           <button
             type="button"
             className="case-panel__number"
-            title="Copier le numéro"
+            title="Copier le numéro RQT"
             onClick={() => onCopy(context.caseKey.number ?? '')}
           >
-            {context.caseKey.number || 'Dossier sans numéro'}
+            {context.caseKey.number || 'RQT sans numéro'}
           </button>
           <div className="case-panel__title">{titleField?.value || 'Sans titre'}</div>
         </div>
@@ -257,17 +265,13 @@ export function CaseContextPanel({
       ) : null}
 
       <footer className="case-panel__foot">
-        <button type="button" className="primary case-panel__fill" onClick={onFill}>
-          <UiIcon name="fill" />
-          <span>Remplir le mail et la tâche</span>
-        </button>
         <button
           type="button"
           className="case-panel__hint"
           onClick={onOpenSettings}
           title="Changer dans Paramètres › Connexions"
         >
-          Remplissage au chargement : {autoFill ? 'actif' : 'désactivé'}
+          Remplissage automatique des tags : {autoFill ? 'actif' : 'désactivé'}
         </button>
       </footer>
     </div>

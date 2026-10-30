@@ -6,6 +6,8 @@ import { ArrowsLeftRight } from '@phosphor-icons/react/ArrowsLeftRight'
 import { BookOpen } from '@phosphor-icons/react/BookOpen'
 import { ClipboardText } from '@phosphor-icons/react/ClipboardText'
 import { CopySimple } from '@phosphor-icons/react/CopySimple'
+import { LockSimple } from '@phosphor-icons/react/LockSimple'
+import { LockSimpleOpen } from '@phosphor-icons/react/LockSimpleOpen'
 import { Crosshair } from '@phosphor-icons/react/Crosshair'
 import { CurrencyDollar } from '@phosphor-icons/react/CurrencyDollar'
 import { Desktop } from '@phosphor-icons/react/Desktop'
@@ -118,6 +120,8 @@ const icons: Record<AppIconName, Icon> = {
   detach: ArrowSquareOut,
   attach: ArrowSquareIn,
   translate: Translate,
+  lock: LockSimple,
+  unlock: LockSimpleOpen,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {

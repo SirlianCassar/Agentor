@@ -2,23 +2,24 @@ import type { AppData } from './types'
 
 /* Palette harmonisée en oklch (luminosité/chroma alignés, teintes réparties) —
    les ids sont stockés dans les données utilisateur, ne pas les renommer */
+// Snippet category colours, saturated enough to tell the families apart at a glance.
 export const categoryColors = [
-  { id: 'rouge', label: 'Rouge', hex: '#D87972' },
-  { id: 'orange', label: 'Orange', hex: '#DE9969' },
-  { id: 'jaune', label: 'Jaune', hex: '#D9C472' },
-  { id: 'jaune-vert', label: 'Jaune-vert', hex: '#AFC273' },
-  { id: 'vert', label: 'Vert', hex: '#71B07E' },
-  { id: 'vert-clair', label: 'Vert clair', hex: '#89C996' },
-  { id: 'turquoise', label: 'Turquoise', hex: '#62B7A1' },
-  { id: 'cyan', label: 'Cyan', hex: '#66BAC4' },
-  { id: 'bleu-clair', label: 'Bleu clair', hex: '#7BB3D4' },
-  { id: 'bleu', label: 'Bleu', hex: '#6F9BD4' },
-  { id: 'bleu-nuit', label: 'Bleu nuit', hex: '#5F7EC3' },
-  { id: 'indigo', label: 'Indigo', hex: '#8993D4' },
-  { id: 'violet', label: 'Violet', hex: '#A392D5' },
-  { id: 'magenta', label: 'Magenta', hex: '#C86389' },
-  { id: 'rose', label: 'Rose', hex: '#E299AC' },
-  { id: 'fuchsia', label: 'Fuchsia', hex: '#B777BB' },
+  { id: 'rouge', label: 'Rouge', hex: '#EB6258' },
+  { id: 'orange', label: 'Orange', hex: '#F4914D' },
+  { id: 'jaune', label: 'Jaune', hex: '#ECCE58' },
+  { id: 'jaune-vert', label: 'Jaune-vert', hex: '#B6D25D' },
+  { id: 'vert', label: 'Vert', hex: '#5EBD72' },
+  { id: 'vert-clair', label: 'Vert clair', hex: '#76D589' },
+  { id: 'turquoise', label: 'Turquoise', hex: '#4BC8A8' },
+  { id: 'cyan', label: 'Cyan', hex: '#4EC8D6' },
+  { id: 'bleu-clair', label: 'Bleu clair', hex: '#64B5E5' },
+  { id: 'bleu', label: 'Bleu', hex: '#5695E7' },
+  { id: 'bleu-nuit', label: 'Bleu nuit', hex: '#4673D6' },
+  { id: 'indigo', label: 'Indigo', hex: '#7483E2' },
+  { id: 'violet', label: 'Violet', hex: '#977EE1' },
+  { id: 'magenta', label: 'Magenta', hex: '#DB4A80' },
+  { id: 'rose', label: 'Rose', hex: '#EF84A0' },
+  { id: 'fuchsia', label: 'Fuchsia', hex: '#C363C9' },
 ] as const
 
 export type TokenType = 'tag' | 'selector' | 'addition'

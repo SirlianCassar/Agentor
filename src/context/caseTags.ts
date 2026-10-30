@@ -17,11 +17,13 @@ export const DEFAULT_CASE_TAGS: Record<CaseTagKey, string> = {
   caseTitle: '<TITRE>',
   caseCreatedOn: '<DATE_DOSSIER>',
   productName: '<PRODUIT>',
+  productFull: '<PRODUCTFULL>',
   productType: '<TYPE_PRODUIT>',
   serialNumber: '<SERIAL>',
   purchaseDate: '<DATE_ACHAT>',
   productionDate: '<DATE_PRODUCTION>',
   customerName: '<CLIENT>',
+  customerFull: '<CUSTOMERFULL>',
   country: '<PAYS>',
   lastTask: '<DERNIERE_TACHE>',
 }

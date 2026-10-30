@@ -9,9 +9,7 @@ export interface PreferencesSettingsProps {
   exportFont: string
   exportFontSize: number
   handleClearData: () => void
-  referencesInPanel: boolean
-  writingTabs: boolean
-  compactDensity: boolean
+  separateWindows: boolean
   renderSettingsSlider: (label: string, valueLabel: string, minLabel: string, maxLabel: string, value: number, min: number, max: number, step: number | string, onChange: (next: number) => void, options?: { description?: string; disabled?: boolean; }) => JSX.Element
   textScale: number
   updateSettings: (patch: Partial<AppSettings>) => void
@@ -24,9 +22,7 @@ export function PreferencesSettings({
   exportFont,
   exportFontSize,
   handleClearData,
-  referencesInPanel,
-  writingTabs,
-  compactDensity,
+  separateWindows,
   renderSettingsSlider,
   textScale,
   updateSettings,
@@ -42,55 +38,17 @@ export function PreferencesSettings({
               <div className="settings-block">
                 <div className="settings-option">
                   <div className="settings-option__info">
-                    <div className="settings-option__title">Références dans le panneau</div>
+                    <div className="settings-option__title">Fenêtres séparées</div>
                     <div className="settings-option__desc">
-                      Les boutons du lanceur (rappels, calculateur, procédures…) s’ouvrent à côté du mail. Désactivé : en
-                      fenêtre flottante.
+                      Les dashboards, Troubleshotgun et l’appel s’ouvrent chacun dans sa fenêtre, qui garde sa
+                      position et sa taille. Désactivé : dans le panneau à côté du mail.
                     </div>
                   </div>
-                  <label className="settings-toggle" aria-label="Références dans le panneau">
+                  <label className="settings-toggle" aria-label="Fenêtres séparées">
                     <input
                       type="checkbox"
-                      checked={referencesInPanel}
-                      onChange={(event) => updateSettings({ referencesInPanel: event.target.checked })}
-                    />
-                    <span className="settings-toggle__track">
-                      <span className="settings-toggle__thumb" />
-                    </span>
-                  </label>
-                </div>
-                <div className="settings-option">
-                  <div className="settings-option__info">
-                    <div className="settings-option__title">Rédaction en onglets</div>
-                    <div className="settings-option__desc">
-                      Mail, Tâche et Notes l’un après l’autre, pour les petits écrans. Désactivé : mail et tâche côte à
-                      côte.
-                    </div>
-                  </div>
-                  <label className="settings-toggle" aria-label="Rédaction en onglets">
-                    <input
-                      type="checkbox"
-                      checked={writingTabs}
-                      onChange={(event) => updateSettings({ writingTabs: event.target.checked })}
-                    />
-                    <span className="settings-toggle__track">
-                      <span className="settings-toggle__thumb" />
-                    </span>
-                  </label>
-                </div>
-                <div className="settings-option">
-                  <div className="settings-option__info">
-                    <div className="settings-option__title">Affichage compact</div>
-                    <div className="settings-option__desc">
-                      Resserre les espacements du bandeau, de la bibliothèque, du panneau et de l’écran Contenus.
-                      Désactivé : affichage confortable.
-                    </div>
-                  </div>
-                  <label className="settings-toggle" aria-label="Affichage compact">
-                    <input
-                      type="checkbox"
-                      checked={compactDensity}
-                      onChange={(event) => updateSettings({ compactDensity: event.target.checked })}
+                      checked={separateWindows}
+                      onChange={(event) => updateSettings({ separateWindows: event.target.checked })}
                     />
                     <span className="settings-toggle__track">
                       <span className="settings-toggle__thumb" />

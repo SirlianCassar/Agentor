@@ -1,6 +1,6 @@
 // Centre column: Troubleshotgun and call buttons, quick links, mail editor,
 // dashboard launcher.
-import type { Dispatch, RefObject, SetStateAction } from 'react'
+import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react'
 import { DeleteIcon } from '../../components/AppIcons'
 import { TextEditor, type TextEditorHandle } from '../../components/TextEditor'
 import { UiIcon } from '../../components/UiIcon'
@@ -28,6 +28,8 @@ export interface MailWorkspaceProps {
   setEmailCopyPulse: Dispatch<SetStateAction<boolean>>
   triggerPulse: (setPulse: (value: boolean) => void) => void
   updateEmailDraft: (next: string, cursor?: number) => void
+  // Search over the mail and Troubleshotgun templates.
+  search?: ReactNode
 }
 
 export function MailWorkspace({
@@ -51,6 +53,7 @@ export function MailWorkspace({
   setEmailCopyPulse,
   triggerPulse,
   updateEmailDraft,
+  search,
 }: MailWorkspaceProps) {
   return (
     <main className="workspace">
@@ -61,6 +64,7 @@ export function MailWorkspace({
         </p>
         <div className="workspace-head__actions">
           <div className="template-controls">
+            {search}
             <div className="troubleshootgun-menu-wrap">
               <button
                 className="btn btn--ghost troubleshootgun-menu-btn"

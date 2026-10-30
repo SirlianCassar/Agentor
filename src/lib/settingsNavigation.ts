@@ -1,6 +1,7 @@
 import type { AppIconName } from './iconTypes'
 
 export type SettingsTab =
+  | 'contents'
   | 'categories'
   | 'snippets'
   | 'templates'
@@ -24,6 +25,7 @@ export type SettingsTab =
   | 'preferences'
   | 'connections'
   | 'caseTags'
+  | 'caseImport'
   | 'productAliases'
 
 export type SettingsIconName = AppIconName
@@ -64,6 +66,7 @@ export const settingsNavigation: SettingsNavSection[] = [
     label: 'Bibliothèque',
     icon: 'library',
     items: [
+      { id: 'contents', label: 'Contenus', description: 'Tous les mails, snippets et tâches : sélection multiple, catégories, tags, corbeille et éléments à vérifier.', icon: 'folderOpen' },
       { id: 'templates', label: 'Mails', description: 'Templates email et Task associée optionnelle.', icon: 'template', countKey: 'templates' },
       { id: 'templateCategories', label: 'Catégories', description: 'Catégories utilisées par les templates mail.', icon: 'channels', parent: 'templates' },
       { id: 'snippets', label: 'Snippets', description: 'Fragments réutilisables avec texte de task optionnel.', icon: 'list', countKey: 'snippets' },
@@ -110,7 +113,8 @@ export const settingsNavigation: SettingsNavSection[] = [
     icon: 'plug',
     items: [
       { id: 'connections', label: 'Connexion Cairm+', description: 'Réception du dossier ouvert dans le CRM et jeton d’appairage.', icon: 'plug' },
-      { id: 'caseTags', label: 'Tags du dossier', description: 'Tag rempli par chaque information du dossier actif, et remplissage au chargement.', icon: 'tag' },
+      { id: 'caseImport', label: 'Données importées', description: 'Informations du dossier gardées parmi celles envoyées par Cairm+.', icon: 'importData' },
+      { id: 'caseTags', label: 'Tags du dossier', description: 'Tag rempli par chaque information du dossier actif, et remplissage automatique.', icon: 'tag' },
       { id: 'productAliases', label: 'Noms de produits', description: 'Nom utilisé dans les mails pour chaque nom de produit du CRM.', icon: 'box' },
       { id: 'tags', label: 'Tags proposés', description: 'Tags proposés pendant la saisie d’un mail ou d’une task.', icon: 'tag' },
     ],
@@ -126,6 +130,7 @@ export const settingsTabIndex = settingsNavigation.flatMap((section) =>
 )
 
 export const settingsRelatedTabs: Partial<Record<SettingsTab, SettingsTab[]>> = {
+  contents: ['templates', 'snippets', 'sTasks', 'fTasks'],
   categories: ['snippets'],
   snippets: ['categories'],
   templates: ['templateCategories', 'sTasks', 'fTasks'],
@@ -144,8 +149,9 @@ export const settingsRelatedTabs: Partial<Record<SettingsTab, SettingsTab[]>> = 
   quickLinks: ['callTemplate', 'callHistory'],
   preferences: ['updates'],
   updates: ['preferences'],
-  connections: ['caseTags'],
-  caseTags: ['connections', 'productAliases', 'tags'],
+  connections: ['caseImport', 'caseTags'],
+  caseImport: ['connections', 'caseTags'],
+  caseTags: ['caseImport', 'connections', 'productAliases', 'tags'],
   productAliases: ['caseTags'],
   tags: ['caseTags'],
 }

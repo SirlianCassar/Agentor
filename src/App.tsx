@@ -26,6 +26,7 @@ import {
   pickTemplateLanguage,
 } from './lib/templateLanguages'
 import { applyProductAliases, normalizeProductAliases, type ProductAlias } from './context/productAliases'
+import { resolveCaseImport, withoutUnimported } from './context/caseContext'
 import {
   resolveCaseTags,
 } from './context/caseTags'
@@ -129,10 +130,12 @@ import {
   normalizeProcedureMailtoLink,
 } from './lib/mailto'
 import {
+  computeDashboardCalculatorTotals,
+  createDashboardCalculatorFee,
   createDashboardCalculatorItem,
   getDashboardCalculatorQuantity,
-  VAT_DIVISOR,
   type DashboardCalculatorCopyKey,
+  type DashboardCalculatorFee,
   type DashboardCalculatorItem,
   type DashboardCalculatorPriceField,
 } from './lib/calculator'
@@ -216,6 +219,7 @@ import {
   removeCaseTab,
   saveTabWorkspace,
   setActiveCaseTab,
+  toggleCaseTabLock,
   type CaseTabKey,
   type CaseTabsState,
 } from './lib/caseTabs'
@@ -224,7 +228,8 @@ import { LibrarySidebar } from './app/zones/LibrarySidebar'
 import { LibraryItemEditor, type LibraryEditTarget } from './app/zones/LibraryItemEditor'
 import { ContentsScreen } from './app/contents/ContentsScreen'
 import type { ContentType } from './lib/contents'
-import { matchesProduct, productSearchTerms } from './lib/unifiedSearch'
+import { buildSearchEntries, matchesProduct, productSearchTerms, type SearchEntry } from './lib/unifiedSearch'
+import { SectionSearch } from './components/SectionSearch'
 import { MailWorkspace } from './app/zones/MailWorkspace'
 import { TaskSidebar } from './app/zones/TaskSidebar'
 import { WindowLayer } from './app/zones/WindowLayer'
@@ -256,6 +261,7 @@ import { CallTemplateSettings } from './app/settings/CallTemplateSettings'
 import { CallHistorySettings } from './app/settings/CallHistorySettings'
 import { SuggestedTagsSettings } from './app/settings/SuggestedTagsSettings'
 import { CaseTagsSettings } from './app/settings/CaseTagsSettings'
+import { CaseImportSettings } from './app/settings/CaseImportSettings'
 import { ProductAliasesSettings } from './app/settings/ProductAliasesSettings'
 import { ConnectionsSettings } from './app/settings/ConnectionsSettings'
 import { TaskFormatSettings } from './app/settings/TaskFormatSettings'
@@ -286,6 +292,7 @@ import {
   workspaceDashboardPageOptions,
   dashboardWindowOptions,
   WINDOW_LAYOUT_STORAGE_KEY,
+  PORTAL_PROCEDURE_STORAGE_KEY,
   readStoredTemplateLanguage,
   readStoredWindowLayout,
   categoryColorMap,
@@ -316,18 +323,24 @@ function App() {
       ? (match[1] as DashboardWindowKind)
       : null
   }, [])
-  const isSecondaryWindow = isProcedureWindow || detachedKind !== null
+  // Troubleshotgun or the call in its own popup window (#dashboard=<tool>).
+  const popupTool = useMemo((): 'troubleshootgun' | 'call' | null => {
+    if (typeof window === 'undefined') return null
+    const match = /^#dashboard=(troubleshootgun|call)$/.exec(window.location.hash)
+    return match ? (match[1] as 'troubleshootgun' | 'call') : null
+  }, [])
+  const isSecondaryWindow = isProcedureWindow || detachedKind !== null || popupTool !== null
   const canDetach = typeof window !== 'undefined' && Boolean(window.agentor?.detachDashboard)
   const [detachedKinds, setDetachedKinds] = useState<DashboardWindowKind[]>([])
   // Last data received from another window: it is shown, not saved back.
   const externalDataRef = useRef<AppData | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [templatePreview, setTemplatePreview] = useState<TemplatePreviewState | null>(null)
+  const currentTemplatePreview = templatePreview
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   // Contents screen of the new interface.
-  const [contentsOpen, setContentsOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const {
     updateStatus,
@@ -435,6 +448,7 @@ function App() {
     'name' | 'title' | 'content' | TaskSectionId
   >('content')
   const [taskDraftSkeletonEnabled, setTaskDraftSkeletonEnabled] = useState(true)
+  const [dashboardCalculatorFees, setDashboardCalculatorFees] = useState<DashboardCalculatorFee[]>([])
   const [dashboardCalculatorItems, setDashboardCalculatorItems] = useState<DashboardCalculatorItem[]>(
     () => [createDashboardCalculatorItem()],
   )
@@ -470,7 +484,10 @@ function App() {
   const editingReminderExpired = Boolean(
     editingReminder && new Date(editingReminder.dueAt).getTime() <= reminderNow,
   )
-  const troubleshootgunFolders = data.settings.troubleshootgunFolders ?? []
+  const troubleshootgunFolders = useMemo(
+    () => data.settings.troubleshootgunFolders ?? [],
+    [data.settings.troubleshootgunFolders],
+  )
 
   useEffect(() => {
     const timer = window.setInterval(() => setReminderNow(Date.now()), 1000)
@@ -542,20 +559,26 @@ function App() {
     const createdAt = callOpenedAt ?? new Date().toISOString()
     const entry = { id, content, createdAt }
 
-    setData((prev) => ({
-      ...prev,
-      callHistory: [entry, ...prev.callHistory.filter((item) => item.id !== id)].slice(
-        0,
-        CALL_HISTORY_LIMIT,
-      ),
-    }))
+    if (popupTool === 'call') {
+      // The call window never saves the data itself: the main window does,
+      // so the drafts it holds are never replaced by an older copy.
+      void window.agentor?.sendToMain?.({ type: 'call-save', entry })
+    } else {
+      setData((prev) => ({
+        ...prev,
+        callHistory: [entry, ...prev.callHistory.filter((item) => item.id !== id)].slice(
+          0,
+          CALL_HISTORY_LIMIT,
+        ),
+      }))
+    }
 
     if (!callEntryId) {
       setCallEntryId(id)
     }
 
     return content
-  }, [callDraft, callEntryId, callOpenedAt, callTemplate])
+  }, [callDraft, callEntryId, callOpenedAt, callTemplate, popupTool])
 
   const handleSelectWorkspaceDashboardPage = useCallback(
     (page: WorkspaceDashboardPage) => {
@@ -823,7 +846,11 @@ function App() {
     loadData()
       .then((loadedData) => {
         if (!active) return
-        setData(mergeSeedIntoData(normalizeTaskSectionsInData(normalizeDashboardData(loadedData)), defaultData))
+        const next = mergeSeedIntoData(normalizeTaskSectionsInData(normalizeDashboardData(loadedData)), defaultData)
+        // A secondary window shows what it just read without saving it back:
+        // a late save of that copy would undo what the main window typed since.
+        if (isSecondaryWindow) externalDataRef.current = next
+        setData(next)
         setLoaded(true)
       })
       .catch(() => {
@@ -834,14 +861,15 @@ function App() {
     return () => {
       active = false
     }
-  }, [])
+  }, [isSecondaryWindow])
 
   useEffect(() => {
-    if (!loaded) return
+    // A popup (Troubleshotgun, call) only reads the data: the main window saves.
+    if (!loaded || popupTool) return
     if (data === externalDataRef.current) return
     const handle = window.setTimeout(() => saveData(data), 600)
     return () => window.clearTimeout(handle)
-  }, [data, loaded])
+  }, [data, loaded, popupTool])
 
   useEffect(
     () =>
@@ -951,7 +979,6 @@ function App() {
       setCallEntryId(null)
       setCallOpenedAt(null)
       setEditOpen(false)
-      setContentsOpen(false)
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
@@ -1059,9 +1086,13 @@ function App() {
     () => applyProductAliases(caseContextState.context, productAliases),
     [caseContextState.context, productAliases],
   )
+  // What the user keeps from Cairm+ (Paramètres › Données importées).
+  const caseImport = useMemo(() => resolveCaseImport(data.settings.caseImport), [data.settings.caseImport])
   // Main window: a case bar and one tab per case (see lib/caseTabs.ts). The
   // detached and procedure windows show a single dashboard page.
-  const mainWindow = !detachedKind && !isProcedureWindow
+  const mainWindow = !detachedKind && !isProcedureWindow && !popupTool
+  // Dashboards, Troubleshotgun and the call each open in their own window.
+  const separateWindows = mainWindow && canDetach && data.settings.separateWindows !== false
   const [caseTabs, setCaseTabs] = useState<CaseTabsState>(readStoredCaseTabs)
   // Contextual panel (new interface): what it shows, newest last.
   const [panelStack, setPanelStack] = useState<PanelItem[]>([])
@@ -1072,9 +1103,6 @@ function App() {
   const [editTarget, setEditTarget] = useState<LibraryEditTarget | null>(null)
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1920 : window.innerWidth))
   const referencesInPanel = mainWindow && data.settings.referencesInPanel !== false
-  const writingTabs = mainWindow && data.settings.writingTabs === true
-  const compactDensity = mainWindow && data.settings.compactDensity === true
-  const [writingTab, setWritingTab] = useState<'mail' | 'task' | 'notes'>('mail')
   const panelItem = mainWindow && !panelHidden ? currentPanelItem(panelStack) : null
   // Read at each render: the resize listener only makes sure there is one.
   const panelNarrow = (typeof window === 'undefined' ? viewportWidth : window.innerWidth) < PANEL_WIDE_MIN_WIDTH
@@ -1085,7 +1113,8 @@ function App() {
   const [caseTabCloseArmed, setCaseTabCloseArmed] = useState<string | null>(null)
   const activeTab = activeCaseTab(caseTabs)
   // The case the drafts are filled with: in the new interface, the active tab's case.
-  const workingCase = mainWindow ? caseForTab(activeTab, activeCase) : activeCase
+  const tabCase = mainWindow ? caseForTab(activeTab, activeCase) : activeCase
+  const workingCase = useMemo(() => (tabCase ? withoutUnimported(tabCase, caseImport) : null), [caseImport, tabCase])
   // Product of the tab's case for the library: its name in the mails and in the CRM.
   const workingProductName = workingCase?.fields.productName?.value ?? ''
   const workingProductCrmName = workingCase?.fields.productName?.aliasOf ?? ''
@@ -1191,7 +1220,7 @@ function App() {
 
   const handleToggleDashboardWindow = useCallback(
     (kind: DashboardWindowKind) => {
-      if (detachedKinds.includes(kind)) {
+      if (detachedKinds.includes(kind) || (separateWindows && !windowLayout.windows.some((item) => item.kind === kind))) {
         void window.agentor?.detachDashboard?.(kind)
         return
       }
@@ -1203,12 +1232,12 @@ function App() {
       }
       setWindowLayout((prev) => toggleWindow(prev, kind, getWindowViewport()))
     },
-    [detachedKinds, getWindowViewport, referencesInPanel, windowLayout.windows],
+    [detachedKinds, getWindowViewport, referencesInPanel, separateWindows, windowLayout.windows],
   )
   // Brings a dashboard into view without closing it when it is already open.
   const showDashboardWindow = useCallback(
     (kind: DashboardWindowKind) => {
-      if (detachedKinds.includes(kind)) {
+      if (detachedKinds.includes(kind) || (separateWindows && !windowLayout.windows.some((item) => item.kind === kind))) {
         void window.agentor?.detachDashboard?.(kind)
         return
       }
@@ -1218,7 +1247,7 @@ function App() {
       }
       setWindowLayout((prev) => openWindow(prev, kind, getWindowViewport()))
     },
-    [detachedKinds, getWindowViewport, referencesInPanel, showInPanel, windowLayout.windows],
+    [detachedKinds, getWindowViewport, referencesInPanel, separateWindows, showInPanel, windowLayout.windows],
   )
   const textScale = Number.isFinite(data.settings.textScale) ? data.settings.textScale : 1
   const editorLineHeight = Number.isFinite(data.settings.editorLineHeight)
@@ -1342,7 +1371,7 @@ function App() {
   const categoryColorById = useMemo(() => {
     const map = new Map<string, string>()
     data.categories.forEach((category) => {
-      map.set(category.id, categoryColorMap.get(category.color) ?? '#a392d5')
+      map.set(category.id, categoryColorMap.get(category.color) ?? '#977EE1')
     })
     return map
   }, [data.categories])
@@ -2040,10 +2069,6 @@ function App() {
   }, [textScale])
 
   useEffect(() => {
-    document.documentElement.dataset.density = compactDensity ? 'compact' : 'comfortable'
-  }, [compactDensity])
-
-  useEffect(() => {
     document.documentElement.style.setProperty('--editor-line-height', `${editorLineHeight}`)
   }, [editorLineHeight])
 
@@ -2284,6 +2309,28 @@ function App() {
     [activeDashboardCatalogProductId, dashboardCatalogProductResults],
   )
   const dashboardPortalProcedures = useMemo(() => customerPortalCodes, [customerPortalCodes])
+  // Search bars of the mail and task zones (the library has its own).
+  const sectionSearchEntries = useMemo(
+    () =>
+      buildSearchEntries({
+        snippets: [],
+        templates: data.templates,
+        troubleshootgunFolders,
+        taskTemplates: data.taskTemplates,
+        procedures: [],
+        taskKind: normalizeTaskTemplateKind,
+      }),
+    [data.taskTemplates, data.templates, troubleshootgunFolders],
+  )
+  const mailSearchEntries = useMemo(
+    (): SearchEntry[] => sectionSearchEntries.filter((entry) => entry.kind === 'template' || entry.kind === 'troubleshootgun'),
+    [sectionSearchEntries],
+  )
+  const taskSearchEntries = useMemo(
+    (): SearchEntry[] => sectionSearchEntries.filter((entry) => entry.kind === 's-task' || entry.kind === 'f-task'),
+    [sectionSearchEntries],
+  )
+  const workingProductTerms = useMemo(() => productSearchTerms(workingProductNames), [workingProductNames])
   const activeDashboardPortalProcedure = useMemo(
     () =>
       dashboardPortalProcedures.find(
@@ -2356,6 +2403,34 @@ function App() {
     if (hasVisibleActive) return
     setActiveDashboardPortalProcedureId(dashboardPortalProcedures[0].id)
   }, [activeDashboardPortalProcedureId, dashboardPortalProcedures, portalDashboardShown])
+
+  // The Procédures window, when separate, opens on the procedure picked in
+  // the main window, and follows the next picks while it stays open.
+  useEffect(() => {
+    // After loading, and declared after the effect above so that its
+    // « first procedure » fallback does not win over the pick.
+    if (detachedKind !== 'portal' || !loaded) return
+    const pick = (raw: string | null, maxAge: number) => {
+      try {
+        const value = raw ? (JSON.parse(raw) as { id?: unknown; at?: unknown }) : null
+        if (value && typeof value.id === 'string' && typeof value.at === 'number' && Date.now() - value.at < maxAge) {
+          setActiveDashboardPortalProcedureId(value.id)
+        }
+      } catch {
+        // Unreadable value: keep the current procedure.
+      }
+    }
+    try {
+      pick(window.localStorage.getItem(PORTAL_PROCEDURE_STORAGE_KEY), 15_000)
+    } catch {
+      // No storage: nothing was picked.
+    }
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === PORTAL_PROCEDURE_STORAGE_KEY) pick(event.newValue, 60_000)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [detachedKind, loaded])
 
   useEffect(() => {
     if (!partsDashboardShown) return
@@ -2853,6 +2928,10 @@ function App() {
     (tabId: string) => {
       const tab = caseTabs.tabs.find((item) => item.id === tabId)
       if (!tab) return
+      if (tab.locked) {
+        setToast('Onglet verrouillé : déverrouille-le avec le cadenas pour le fermer.')
+        return
+      }
       const isActive = tabId === caseTabs.activeId
       const filled = isWorkspaceFilled(isActive ? snapshotWorkspace() : tab.workspace)
       if (filled && caseTabCloseArmed !== tabId) {
@@ -2872,6 +2951,29 @@ function App() {
   useEffect(() => {
     if (mainWindow) writeStoredCaseTabs(caseTabs)
   }, [caseTabs, mainWindow])
+
+  // Case values that arrive after a template was loaded fill its tags too, so
+  // there is no « Remplir » button. Only a change of the values triggers it
+  // (not a new copy of the same case), and typing never refills.
+  const workingCaseValues = workingCase
+    ? JSON.stringify([workingCase.caseKey.id, workingCase.fields, workingCase.lastTask ?? null])
+    : ''
+  const workingCaseRef = useRef(workingCase)
+  workingCaseRef.current = workingCase
+  useEffect(() => {
+    const context = workingCaseRef.current
+    // Only the main window fills: it is the one that saves the drafts.
+    if (!mainWindow || !caseAutoFill || !context || !workingCaseValues) return
+    const fill = (text: string) => {
+      const filled = fillTemplateFromContext(text, context, caseTags).text
+      return filled === text ? text : normalizeTokenSpacing(filled)
+    }
+    setData((prev) => {
+      const emailDraft = fill(prev.emailDraft)
+      const taskDraft = fill(prev.taskDraft)
+      return emailDraft === prev.emailDraft && taskDraft === prev.taskDraft ? prev : { ...prev, emailDraft, taskDraft }
+    })
+  }, [caseAutoFill, caseTags, mainWindow, workingCaseValues])
 
   // Keeps the last values seen for each case in its tab.
   useEffect(() => {
@@ -3054,6 +3156,10 @@ function App() {
   }
 
   const openTroubleshootgun = () => {
+    if (separateWindows) {
+      void window.agentor?.detachDashboard?.('troubleshootgun')
+      return
+    }
     if (mainWindow) {
       // In the panel: start on the folder of the case's product when there is one.
       if (!troubleshootgunOpen) {
@@ -3086,7 +3192,10 @@ function App() {
   }
 
   // 'replace' empties the mail first; 'insert' puts the template at the cursor.
-  const importTemplatePreview = (mode: 'replace' | 'insert' = 'replace') => {
+  const importTemplatePreview = (
+    mode: 'replace' | 'insert' = 'replace',
+    templatePreview: TemplatePreviewState | null = currentTemplatePreview,
+  ) => {
     if (!templatePreview) return
     const template = templatePreview.folderId
       ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((item) => item.id === templatePreview.templateId)
@@ -3295,6 +3404,13 @@ function App() {
     setDashboardCalculatorItems((prev) => prev.filter((item) => item.id !== id))
   }
 
+  const addDashboardCalculatorFee = (label = '') =>
+    setDashboardCalculatorFees((prev) => [...prev, createDashboardCalculatorFee(label)])
+  const updateDashboardCalculatorFee = (id: string, field: 'label' | 'amount', value: string) =>
+    setDashboardCalculatorFees((prev) => prev.map((fee) => (fee.id === id ? { ...fee, [field]: value } : fee)))
+  const removeDashboardCalculatorFee = (id: string) =>
+    setDashboardCalculatorFees((prev) => prev.filter((fee) => fee.id !== id))
+
   const handleCopyDashboardAmount = async (key: DashboardCalculatorCopyKey, value: number) => {
     const didCopy = await copyText(formatAmountForCopy(value))
     if (!didCopy) {
@@ -3330,6 +3446,10 @@ function App() {
   }
 
   const openCallModal = () => {
+    if (separateWindows) {
+      void window.agentor?.detachDashboard?.('call')
+      return
+    }
     // A call already open in the panel is shown again, not restarted.
     if (mainWindow && callModalOpen) {
       showInPanel('call')
@@ -3723,6 +3843,7 @@ function App() {
       dashboardCalculatorCopyTimeoutRef.current = null
     }
     setDashboardCalculatorItems([createDashboardCalculatorItem()])
+    setDashboardCalculatorFees([])
     setDashboardCalculatorCopiedKey(null)
     setSparePartCopiedId(null)
     setActiveDashboardCatalogProductId(null)
@@ -3995,36 +4116,11 @@ function App() {
     openExternal(anchor.href)
   }
 
-  const dashboardCalculatorEntries = dashboardCalculatorItems.map((item) => ({
-    ...item,
-    quantity: getDashboardCalculatorQuantity(item.quantity),
-    productAmount:
-      (parseDashboardAmount(item.productPrice) ?? 0) *
-      getDashboardCalculatorQuantity(item.quantity),
-    shippingAmount: parseDashboardAmount(item.shippingPrice) ?? 0,
-    importFeeAmount: parseDashboardAmount(item.importFee) ?? 0,
-  }))
-  const dashboardProductsTotalTtc = dashboardCalculatorEntries.reduce(
-    (sum, item) => sum + item.productAmount,
-    0,
+  const dashboardCalculatorTotals = computeDashboardCalculatorTotals(
+    dashboardCalculatorItems,
+    dashboardCalculatorFees,
+    parseDashboardAmount,
   )
-  const dashboardShippingValues = dashboardCalculatorEntries
-    .flatMap((item) => {
-      const shippingValue = item.shippingAmount + item.importFeeAmount
-      if (shippingValue <= 0) return []
-      return Array(item.quantity).fill(shippingValue)
-    })
-    .sort((left, right) => right - left)
-  const dashboardBaseShippingTotalTtc =
-    dashboardShippingValues.length > 0
-      ? dashboardShippingValues[0] +
-        dashboardShippingValues.slice(1).reduce((sum, value) => sum + value / 2, 0)
-      : 0
-  const dashboardShippingTotalTtc = dashboardBaseShippingTotalTtc
-  const dashboardGrandTotalTtc = dashboardProductsTotalTtc + dashboardShippingTotalTtc
-  const dashboardProductsTotalHt = dashboardProductsTotalTtc / VAT_DIVISOR
-  const dashboardShippingTotalHt = dashboardShippingTotalTtc / VAT_DIVISOR
-  const dashboardGrandTotalHt = dashboardGrandTotalTtc / VAT_DIVISOR
   // The badge reflects the note on the news/notes dashboard page itself, and
   // only when it holds real text (invisible token chars don't count).
   const dashboardNotesHasContent = rqtReminders.some(
@@ -4119,25 +4215,6 @@ function App() {
 
   // Replaces the known tags of both drafts with the active case values. Tags
   // without a value (missing or in conflict) stay visible in the text.
-  const handleFillDraftsFromContext = () => {
-    const context = workingCase
-    const email = fillTemplateFromContext(data.emailDraft, context, caseTags)
-    const task = fillTemplateFromContext(data.taskDraft, context, caseTags)
-    if (email.text !== data.emailDraft) updateEmailDraft(email.text)
-    if (task.text !== data.taskDraft) updateTaskDraft(task.text)
-    const filled = new Set([...email.filled, ...task.filled])
-    const missing = new Set([...email.missing, ...task.missing])
-    if (!filled.size && !missing.size) {
-      setToast('Aucun tag de dossier dans le mail ou la tâche.')
-      return
-    }
-    setToast(
-      missing.size
-        ? `${filled.size} tag(s) rempli(s). À compléter : ${[...missing].join(' ')}`
-        : `${filled.size} tag(s) rempli(s).`,
-    )
-  }
-
   const handleCopyBridgeToken = async () => {
     const token = await caseContextState.getToken()
     if (!token) {
@@ -4152,7 +4229,8 @@ function App() {
 
   const handleCopyContextValue = async (value: string) => {
     const didCopy = await copyText(value)
-    setToast(didCopy ? 'Copié.' : 'Copie impossible.')
+    if (!didCopy) setToast('Copie impossible.')
+    return didCopy
   }
 
   const renderDashboardWindowButton = (option: (typeof dashboardWindowOptions)[number]) => {
@@ -4200,6 +4278,7 @@ function App() {
           context={workingCase}
           bridge={caseContextState.bridge}
           tags={caseTags}
+          imports={caseImport}
           autoFill={caseAutoFill}
           onSetManual={(key, value) => {
             if (workingCase && caseContextState.context?.caseKey.id !== workingCase.caseKey.id) {
@@ -4217,7 +4296,6 @@ function App() {
           }}
           onClear={() => void caseContextState.clear()}
           onCopy={(value) => void handleCopyContextValue(value)}
-          onFill={handleFillDraftsFromContext}
           onOpenSettings={() => {
             if (detachedKind) {
               setToast('Les réglages s’ouvrent depuis la fenêtre principale : Paramètres › Connexion Cairm+.')
@@ -4237,7 +4315,7 @@ function App() {
     return renderWorkspaceDashboardDecorationsPanel('Ascii Wall')
   }
 
-  // Mail and task columns, side by side or in the writing tabs.
+  // Mail and task columns, side by side.
   const renderMailWorkspace = () => (
     <MailWorkspace
       clearArmed={clearArmed} data={data} emailClearPulse={emailClearPulse}
@@ -4249,11 +4327,38 @@ function App() {
       resolvedQuickLinks={resolvedQuickLinks}
       setEmailClearPulse={setEmailClearPulse} setEmailCopyPulse={setEmailCopyPulse}
       triggerPulse={triggerPulse} updateEmailDraft={updateEmailDraft}
+      search={
+        <SectionSearch
+          className="section-search--mail" entries={mailSearchEntries} productTerms={workingProductTerms}
+          placeholder="Rechercher un mail ou un Troubleshotgun" label="Rechercher dans les mails"
+          onPick={(entry) => {
+            if (entry.kind === 'template') {
+              const template = data.templates.find((item) => item.id === entry.id)
+              if (template) openTemplatePreview(template)
+              return
+            }
+            const template = troubleshootgunFolders
+              .find((folder) => folder.id === entry.folderId)
+              ?.templates.find((item) => item.id === entry.id)
+            if (template) openTemplatePreview(template, entry.folderId)
+          }}
+        />
+      }
     />
   )
 
   const renderTaskSidebar = () => (
     <TaskSidebar
+      search={
+        <SectionSearch
+          className="section-search--task" entries={taskSearchEntries} productTerms={workingProductTerms}
+          placeholder="Rechercher une S-Task ou F-Task" label="Rechercher dans les tâches"
+          onPick={(entry) => {
+            const task = data.taskTemplates.find((item) => item.id === entry.id)
+            if (task) applyTaskTemplate(task)
+          }}
+        />
+      }
       activeTaskBoxIndex={activeTaskBoxIndex} closeDraftBoxTooltip={closeDraftBoxTooltip}
       data={data} handleClearTask={handleClearTask}
       handleCopyTask={handleCopyTask} handleTaskBoxHover={handleTaskBoxHover}
@@ -4341,6 +4446,87 @@ function App() {
     setToast('Modification enregistrée.')
   }
 
+  // The main window applies what a popup sends: a template import, call notes.
+  const mainActionRef = useRef<(action: unknown) => void>(() => {})
+  mainActionRef.current = (raw) => {
+    if (!raw || typeof raw !== 'object') return
+    const action = raw as { type?: unknown; mode?: unknown; preview?: unknown; text?: unknown }
+    const entry = (raw as { entry?: { id?: unknown; content?: unknown; createdAt?: unknown } }).entry
+    if (action.type === 'call-save') {
+      if (!entry || typeof entry.id !== 'string' || typeof entry.content !== 'string' || typeof entry.createdAt !== 'string') return
+      const saved = { id: entry.id, content: entry.content, createdAt: entry.createdAt }
+      setData((prev) => ({
+        ...prev,
+        callHistory: [saved, ...prev.callHistory.filter((item) => item.id !== saved.id)].slice(0, CALL_HISTORY_LIMIT),
+      }))
+      return
+    }
+    if (action.type === 'task-insert' && typeof action.text === 'string') {
+      insertTaskText(action.text, 'section-4')
+      setToast('Notes de l’appel ajoutées à la tâche.')
+      return
+    }
+    const preview = action.preview as TemplatePreviewState | undefined
+    if (
+      action.type === 'template-import' &&
+      preview &&
+      typeof preview.templateId === 'string' &&
+      typeof preview.language === 'string' &&
+      Array.isArray(preview.selectedEmailLines) &&
+      Array.isArray(preview.selectedTaskSections)
+    ) {
+      importTemplatePreview(action.mode === 'insert' ? 'insert' : 'replace', preview)
+    }
+  }
+  useEffect(() => {
+    if (!mainWindow) return
+    return window.agentor?.onMainAction?.((action) => mainActionRef.current(action))
+  }, [mainWindow])
+
+  // A popup starts on its own: the call with the call template, Troubleshotgun
+  // on the folder of the case's product.
+  const popupStartedRef = useRef(false)
+  const startPopupRef = useRef<() => void>(() => {})
+  startPopupRef.current = () => {
+    if (popupTool === 'call') {
+      openCallModal()
+      return
+    }
+    const terms = productSearchTerms(workingProductNames)
+    const productFolder = troubleshootgunFolders.find((item) =>
+      matchesProduct({ kind: 'troubleshootgun', id: item.id, title: item.name, body: '', preview: '' }, terms),
+    )
+    setSelectedTroubleshootgunFolderId(productFolder?.id ?? null)
+    setSelectedTroubleshootgunTemplateId(null)
+    setTroubleshootgunOpen(true)
+  }
+  useEffect(() => {
+    if (!popupTool || !loaded || popupStartedRef.current) return
+    popupStartedRef.current = true
+    startPopupRef.current()
+  }, [loaded, popupTool])
+  // Closing the call (Escape) closes its window.
+  const popupCallShownRef = useRef(false)
+  useEffect(() => {
+    if (popupTool !== 'call') return
+    if (callModalOpen) popupCallShownRef.current = true
+    else if (popupCallShownRef.current) window.close()
+  }, [callModalOpen, popupTool])
+  // The call is saved while it is written, so closing its window loses nothing.
+  useEffect(() => {
+    if (popupTool !== 'call' || !callModalOpen) return
+    const handle = window.setTimeout(() => persistCallDraft(currentCallMemoryLocked ? currentCallMemory : undefined), 400)
+    return () => window.clearTimeout(handle)
+  }, [callDraft, callModalOpen, currentCallMemory, currentCallMemoryLocked, persistCallDraft, popupTool])
+
+  // Popup Troubleshotgun: the import goes to the main window, which holds the drafts.
+  const sendTemplateToMain = (mode: 'replace' | 'insert' = 'replace') => {
+    if (!templatePreview) return
+    void window.agentor?.sendToMain?.({ type: 'template-import', mode, preview: templatePreview })
+    setTemplatePreview(null)
+    setToast('Envoyé dans le mail et la tâche.')
+  }
+
   const renderPanelContent = (item: PanelItem) => {
     const kind = referenceKind(item)
     if (kind) return renderDashboardWindowContent(kind)
@@ -4376,7 +4562,7 @@ function App() {
     if (item === 'preview') {
       return templatePreview ? (
         <TemplatePreviewModal
-          data={data} importTemplatePreview={importTemplatePreview}
+          data={data} importTemplatePreview={popupTool ? sendTemplateToMain : importTemplatePreview}
           setTemplatePreview={setTemplatePreview} taskSectionNames={taskSectionNames}
           templatePreview={templatePreview} troubleshootgunFolders={troubleshootgunFolders}
           mailHasContent={Boolean(data.emailDraft.replace(/\u200b/g, '').trim())}
@@ -4408,7 +4594,11 @@ function App() {
         onSendToTask={() => {
           const notes = normalizeCallDraftForCopy(callDraft).trim()
           if (!notes) return
-          insertTaskText(notes, 'section-4')
+          if (popupTool) {
+            void window.agentor?.sendToMain?.({ type: 'task-insert', text: notes })
+          } else {
+            insertTaskText(notes, 'section-4')
+          }
           setToast('Notes de l’appel ajoutées à la tâche.')
         }}
       />
@@ -4503,18 +4693,12 @@ function App() {
 
   const renderWorkspaceDashboardVatPanel = (title: string) => (
     <CalculatorPanel
-      addDashboardCalculatorItem={addDashboardCalculatorItem}
-      adjustDashboardCalculatorQuantity={adjustDashboardCalculatorQuantity}
-      dashboardCalculatorCopiedKey={dashboardCalculatorCopiedKey}
-      dashboardCalculatorItems={dashboardCalculatorItems}
-      dashboardGrandTotalHt={dashboardGrandTotalHt} dashboardGrandTotalTtc={dashboardGrandTotalTtc}
-      dashboardProductsTotalHt={dashboardProductsTotalHt}
-      dashboardProductsTotalTtc={dashboardProductsTotalTtc}
-      dashboardShippingTotalHt={dashboardShippingTotalHt}
-      dashboardShippingTotalTtc={dashboardShippingTotalTtc}
-      handleCopyDashboardAmount={handleCopyDashboardAmount}
-      removeDashboardCalculatorItem={removeDashboardCalculatorItem} title={title}
-      updateDashboardCalculatorItem={updateDashboardCalculatorItem}
+      title={title} items={dashboardCalculatorItems} fees={dashboardCalculatorFees}
+      totals={dashboardCalculatorTotals} copiedKey={dashboardCalculatorCopiedKey}
+      onAddItem={addDashboardCalculatorItem} onUpdateItem={updateDashboardCalculatorItem}
+      onAdjustQuantity={adjustDashboardCalculatorQuantity} onRemoveItem={removeDashboardCalculatorItem}
+      onAddFee={addDashboardCalculatorFee} onUpdateFee={updateDashboardCalculatorFee}
+      onRemoveFee={removeDashboardCalculatorFee} onCopy={handleCopyDashboardAmount}
     />
   )
 
@@ -4610,6 +4794,35 @@ function App() {
     )
   }
 
+  if (popupTool) {
+    const title = popupTool === 'call' ? 'Appel téléphonique' : 'Troubleshotgun'
+    return (
+      <>
+        <div className="detached-dashboard popup-tool" data-window={popupTool}>
+          <header className="detached-dashboard__bar">
+            <UiIcon name={popupTool === 'call' ? 'phone' : 'target'} className="floating-window__icon" />
+            <span className="floating-window__title">{templatePreview && popupTool === 'troubleshootgun' ? 'Aperçu' : title}</span>
+            {templatePreview && popupTool === 'troubleshootgun' ? (
+              <button type="button" className="ghost popup-tool__back" onClick={() => setTemplatePreview(null)}>
+                Retour à la liste
+              </button>
+            ) : null}
+          </header>
+          <div className="detached-dashboard__body floating-window__body popup-tool__body">
+            {popupTool === 'call'
+              ? callModalOpen
+                ? renderPanelContent('call')
+                : null
+              : templatePreview
+                ? renderPanelContent('preview')
+                : renderPanelContent('troubleshootgun')}
+          </div>
+        </div>
+        {toast ? <div className="toast">{toast}</div> : null}
+      </>
+    )
+  }
+
   if (detachedKind) {
     const option = dashboardWindowOptions.find((item) => item.id === detachedKind)
     return (
@@ -4677,21 +4890,23 @@ function App() {
               .join(' · '),
             filled: isActive ? isWorkspaceFilled(snapshotWorkspace()) : isWorkspaceFilled(tab.workspace),
             bound: Boolean(tab.caseKey),
+            locked: tab.locked === true,
           }
         })}
         activeId={caseTabs.activeId}
         closeArmedId={caseTabCloseArmed}
         canAdd={caseTabs.tabs.length < CASE_TABS_LIMIT}
         caseContext={workingCase}
-        boundNumber={activeTab?.caseKey ? activeTab.caseKey.number ?? 'Dossier sans numéro' : null}
+        boundNumber={activeTab?.caseKey ? activeTab.caseKey.number ?? 'RQT sans numéro' : null}
         available={caseContextState.available}
         bridge={caseContextState.bridge}
         tags={caseTags}
+        imports={caseImport}
         onSelect={switchCaseTab}
         onAdd={() => void openCaseTab(null)}
         onClose={closeCaseTab}
-        onCopy={(value) => void handleCopyContextValue(value)}
-        onFill={handleFillDraftsFromContext}
+        onCopy={handleCopyContextValue}
+        onToggleLock={(tabId) => setCaseTabs((prev) => toggleCaseTabLock(prev, tabId))}
         onOpenCase={() => showDashboardWindow('case')}
         onOpenSettings={() => openSettingsTab('connections')}
       />
@@ -4706,6 +4921,11 @@ function App() {
         onSnippet={insertSnippet} onTemplate={openTemplatePreview} onTask={applyTaskTemplate}
         onProcedure={(procedureId) => {
           setActiveDashboardPortalProcedureId(procedureId)
+          try {
+            window.localStorage.setItem(PORTAL_PROCEDURE_STORAGE_KEY, JSON.stringify({ id: procedureId, at: Date.now() }))
+          } catch {
+            // The separate window then opens on its last procedure.
+          }
           showDashboardWindow('portal')
         }}
         showSnippetTooltip={showSnippetTooltip} hideSnippetTooltip={hideSnippetTooltip}
@@ -4717,7 +4937,6 @@ function App() {
           setEditTarget({ kind: entry.kind, id: entry.id, folderId: entry.folderId })
           showInPanel('edit')
         }}
-        onOpenContents={() => setContentsOpen(true)}
       />
       {panelItem ? (
         <ContextPanel
@@ -4747,38 +4966,8 @@ function App() {
         </ContextPanel>
       ) : null}
 
-      {writingTabs ? (
-        <div className={`writing-area writing-area--${writingTab}`}>
-          <div className="writing-area__tabs" role="tablist" aria-label="Rédaction">
-            {([
-              ['mail', 'Mail', 'mail'],
-              ['task', 'Tâche', 'inbox'],
-              ['notes', 'Notes', 'notes'],
-            ] as const).map(([id, label, icon]) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={writingTab === id}
-                className={`writing-area__tab${writingTab === id ? ' is-active' : ''}`}
-                onClick={() => setWritingTab(id)}
-              >
-                <UiIcon name={icon} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="writing-area__body">
-            {renderMailWorkspace()}
-            {renderTaskSidebar()}
-          </div>
-        </div>
-      ) : (
-        <>
-          {renderMailWorkspace()}
-          {renderTaskSidebar()}
-        </>
-      )}
+      {renderMailWorkspace()}
+      {renderTaskSidebar()}
     </div>
 
     <WindowLayer
@@ -4821,22 +5010,6 @@ function App() {
     {expiredReminders?.length ? (
       <ReminderWarning
         expiredReminders={expiredReminders} setExpiredReminders={setExpiredReminders}
-      />
-    ) : null}
-    {contentsOpen ? (
-      <ContentsScreen
-        data={data}
-        updateData={setData}
-        taskKind={normalizeTaskTemplateKind}
-        categoriesByType={contentsCategories}
-        knownTags={contentsKnownTags}
-        makeId={(type) => createId(contentIdPrefix[type])}
-        onClose={() => setContentsOpen(false)}
-        onOpenSettings={(type) => {
-          setContentsOpen(false)
-          openSettingsTab(contentSettingsTab[type])
-          setEditOpen(true)
-        }}
       />
     ) : null}
 
@@ -5076,7 +5249,8 @@ function App() {
 
             {editTab === 'taskFormat' ? (
               <TaskFormatSettings
-                taskSectionNames={taskSectionNames} updateTaskSectionName={updateTaskSectionName}
+                taskSectionNames={taskSectionNames} taskTemplates={data.taskTemplates}
+                updateTaskSectionName={updateTaskSectionName}
               />
             ) : null}
 
@@ -5096,8 +5270,26 @@ function App() {
 
             {editTab === 'caseTags' ? (
               <CaseTagsSettings
-                activeCase={activeCase} caseAutoFill={caseAutoFill} caseTags={caseTags} data={data}
-                updateSettings={updateSettings}
+                activeCase={activeCase} caseAutoFill={caseAutoFill} caseTags={caseTags} imports={caseImport}
+                data={data} updateSettings={updateSettings}
+              />
+            ) : null}
+
+            {editTab === 'contents' ? (
+              <ContentsScreen
+                data={data}
+                updateData={setData}
+                taskKind={normalizeTaskTemplateKind}
+                categoriesByType={contentsCategories}
+                knownTags={contentsKnownTags}
+                makeId={(type) => createId(contentIdPrefix[type])}
+                onOpenSettings={(type) => openSettingsTab(contentSettingsTab[type])}
+              />
+            ) : null}
+
+            {editTab === 'caseImport' ? (
+              <CaseImportSettings
+                receivedCase={activeCase} imports={caseImport} caseTags={caseTags} updateSettings={updateSettings}
               />
             ) : null}
 
@@ -5145,9 +5337,7 @@ function App() {
               <PreferencesSettings
                 clearAllArmed={clearAllArmed} editorLineHeight={editorLineHeight} exportFont={exportFont}
                 exportFontSize={exportFontSize} handleClearData={handleClearData}
-                referencesInPanel={data.settings.referencesInPanel !== false}
-                writingTabs={data.settings.writingTabs === true}
-                compactDensity={data.settings.compactDensity === true}
+                separateWindows={data.settings.separateWindows !== false}
                 renderSettingsSlider={renderSettingsSlider} textScale={textScale}
                 updateSettings={updateSettings} zoomValue={zoomValue}
               />

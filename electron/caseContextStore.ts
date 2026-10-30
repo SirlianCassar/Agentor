@@ -1,6 +1,10 @@
 import {
   applyObservations,
   confirmField,
+  filterImported,
+  resolveCaseImport,
+  withoutUnimported,
+  type CaseImportKey,
   isContextExpired,
   resolveContextForCase,
   setFieldManually,
@@ -16,6 +20,7 @@ import fs from 'node:fs'
 // apart from the user's templates and settings, and expires after 12 hours.
 export class CaseContextStore {
   private context: CaseContext | null = null
+  private imports: Record<CaseImportKey, boolean> = resolveCaseImport(undefined)
   private readonly listeners = new Set<(context: CaseContext | null) => void>()
 
   constructor(
@@ -38,6 +43,13 @@ export class CaseContextStore {
     return () => this.listeners.delete(listener)
   }
 
+  // Fields the user chose to import (Paramètres › Données importées). Values
+  // already kept for a field just turned off are dropped at once.
+  setImports(raw: unknown) {
+    this.imports = resolveCaseImport(raw)
+    if (this.context) this.set(withoutUnimported(this.context, this.imports))
+  }
+
   handleBridgeMessage(message: BridgeMessage) {
     if (message.type === 'case.left') {
       // Leaving a case keeps its context: the user often switches to Knack or
@@ -46,8 +58,8 @@ export class CaseContextStore {
     }
     const now = this.now()
     let next = resolveContextForCase(this.context, message.caseKey, now)
-    next = applyObservations(next, message.observations)
-    if (message.lastTask !== undefined) next = { ...next, lastTask: message.lastTask }
+    next = applyObservations(next, filterImported(message.observations, this.imports))
+    if (message.lastTask !== undefined && this.imports.lastTask) next = { ...next, lastTask: message.lastTask }
     this.set(next)
   }
 
