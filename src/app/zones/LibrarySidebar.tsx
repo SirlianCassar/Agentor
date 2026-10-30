@@ -1,5 +1,5 @@
-// The left panel always contains snippets, including when collapsed.
-import { useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
+// The left panel always displays snippets and stays expanded.
+import { useMemo, type CSSProperties, type MouseEvent } from 'react'
 import { UiIcon } from '../../components/UiIcon'
 import type { Category, CustomerPortalCode, MailTemplate, MailTemplateCategory, Snippet, TaskTemplate, TaskTemplateKind, TroubleshootgunFolder } from '../../lib/types'
 
@@ -33,20 +33,9 @@ export interface LibrarySidebarProps {
   onEdit?: (entry: import('../../lib/unifiedSearch').SearchEntry) => void
 }
 
-const STORAGE_KEY = 'agentor:library:v1'
-
 export function LibrarySidebar({ snippets, snippetCategories, categoryColorById, editButtonLabel,
   onOpenSettings, onSnippet, showSnippetTooltip, hideSnippetTooltip, underPanel = false,
   hiddenPanelTitle, onShowPanel }: LibrarySidebarProps) {
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').collapsed === true }
-    catch { return false }
-  })
-  const toggle = () => setCollapsed((previous) => {
-    const next = !previous
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ collapsed: next, tab: 'snippet' })) } catch { /* Optional preference. */ }
-    return next
-  })
   const groups = useMemo(() => {
     const categories = snippetCategories.map((category) => ({
       ...category, items: snippets.filter((snippet) => snippet.categoryId === category.id),
@@ -55,15 +44,11 @@ export function LibrarySidebar({ snippets, snippetCategories, categoryColorById,
     return [...categories, { id: '', name: 'Sans catégorie', items: other }].filter((group) => group.items.length)
   }, [snippets, snippetCategories])
   return (
-    <aside className={`sidebar library${collapsed ? ' library--collapsed' : ''}${underPanel ? ' library--under-panel' : ''}`} aria-label="Snippets">
-      <div className={collapsed ? 'library__rail-bottom' : 'sidebar-top library__top'}>
-        <button type="button" className="library__fold" onClick={toggle} title={collapsed ? 'Déplier les snippets' : 'Replier les snippets'} aria-label={collapsed ? 'Déplier les snippets' : 'Replier les snippets'}>
-          <UiIcon name="caretRight" />
-        </button>
-        {!collapsed ? <span className="library__heading">Snippets</span> : null}
+    <aside className={`sidebar library${underPanel ? ' library--under-panel' : ''}`} aria-label="Snippets">
+      <div className="sidebar-top library__top">
+        <span className="library__heading">Snippets</span>
         <button type="button" className="sidebar-icon-btn" title={editButtonLabel} aria-label={editButtonLabel} onClick={onOpenSettings}><UiIcon name="settings" /></button>
       </div>
-      {!collapsed ? <>
         {hiddenPanelTitle && onShowPanel ? <button type="button" className="library__panel-back" onClick={onShowPanel}><UiIcon name="caretRight" /><span>{hiddenPanelTitle}</span></button> : null}
         <div className="library__list">
           {groups.map((group) => <section key={group.id}>
@@ -75,13 +60,15 @@ export function LibrarySidebar({ snippets, snippetCategories, categoryColorById,
                 onMouseEnter={(event) => showSnippetTooltip(snippet, event)} onMouseLeave={hideSnippetTooltip}
                 onClick={() => { hideSnippetTooltip(); onSnippet(snippet) }}>
                 {color ? <span className="library-item__dot" style={{ background: color }} /> : null}
-                <span className="library-item__text"><span className="library-item__name">{snippet.title}</span></span>
+                <span className="library-item__text">
+                  <span className="library-item__name">{snippet.title}</span>
+                  {snippet.content.trim() ? <span className="library-item__preview">{snippet.content.replace(/\s+/g, ' ').trim()}</span> : null}
+                </span>
               </button>
             })}
           </section>)}
           {!groups.length ? <p className="library__empty">Aucun snippet.</p> : null}
         </div>
-      </> : null}
     </aside>
   )
 }

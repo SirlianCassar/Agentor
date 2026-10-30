@@ -85,9 +85,10 @@ export function PortalPanel({
                 >
                   <span className="dashboard-version-item__name">{procedureName}</span>
                   <span className="dashboard-version-item__meta">
-                    Draft {procedureHasDraft ? 'oui' : 'non'} -{' '}
-                    {procedureHasVariant ? 'Toggle oui' : 'Toggle non'} -{' '}
-                    {procedureForwardLabel}
+                    {procedure.codes.length} étape{procedure.codes.length > 1 ? 's' : ''}
+                    {procedureHasDraft ? ' · Brouillon' : ''}
+                    {procedureHasVariant ? ' · 2 versions' : ''}
+                    {shouldShowPortalForwardIndicator(procedure) ? ` · ${procedureForwardLabel}` : ''}
                   </span>
                 </button>
               )

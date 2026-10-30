@@ -95,8 +95,8 @@ export function TaskSidebar({
               <span>Task</span>
             </p>
           </div>
-          {search}
         </div>
+        {search ? <div className="task-builder__search">{search}</div> : null}
         <div className="task-editor-wrapper">
           <TextEditor
             ref={taskEditorRef}
