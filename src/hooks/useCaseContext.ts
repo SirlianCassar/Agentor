@@ -15,13 +15,18 @@ export function useCaseContext() {
   const api = typeof window !== 'undefined' ? window.agentor : undefined
   const [context, setContext] = useState<CaseContext | null>(null)
   const [bridge, setBridge] = useState<BridgeStatus | null>(null)
+  // 'stored': the case kept from the last session; 'live': sent by Cairm+ since launch.
+  const [origin, setOrigin] = useState<'stored' | 'live'>('stored')
 
   useEffect(() => {
     if (!api?.getCaseContext) return
     let alive = true
     void api.getCaseContext().then((value) => alive && setContext(value as CaseContext | null))
     void api.getBridgeStatus?.().then((value) => alive && setBridge(value as BridgeStatus | null))
-    const offContext = api.onCaseContext?.((value) => setContext(value as CaseContext | null))
+    const offContext = api.onCaseContext?.((value) => {
+      setOrigin('live')
+      setContext(value as CaseContext | null)
+    })
     const offBridge = api.onBridgeStatus?.((value) => setBridge(value as BridgeStatus | null))
     return () => {
       alive = false
@@ -57,6 +62,7 @@ export function useCaseContext() {
   return {
     available: Boolean(api?.getCaseContext),
     context,
+    origin,
     bridge,
     setManual,
     confirm,
@@ -66,3 +72,5 @@ export function useCaseContext() {
     regenerateToken,
   }
 }
+
+export type CaseContextState = ReturnType<typeof useCaseContext>

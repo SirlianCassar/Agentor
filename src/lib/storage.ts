@@ -46,6 +46,13 @@ export async function loadData(): Promise<AppData> {
   return normalizeData(raw, defaultData)
 }
 
+// Data saved by another window (detached dashboard, procedure window).
+export function onExternalDataChange(callback: (data: AppData) => void) {
+  const bridge = getBridge()
+  if (!bridge?.onDataChanged) return () => {}
+  return bridge.onDataChanged((raw) => callback(normalizeData(raw as Partial<AppData>, defaultData)))
+}
+
 export async function saveData(data: AppData) {
   const bridge = getBridge()
   if (!bridge?.saveData) {

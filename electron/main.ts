@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
 import { autoUpdater } from 'electron-updater'
-import { readJsonObject, writeFileAtomic } from './dataFile'
+import { readJsonObject, writeFileAtomic, writeRetiredDataExport } from './dataFile'
 import { CaseContextStore } from './caseContextStore'
 import { startLocalBridge, type LocalBridge } from './localBridge'
 import {
@@ -49,6 +49,9 @@ type SavedWindowState = {
 type WindowState = {
   main?: SavedWindowState
   procedure?: SavedWindowState
+  // Dashboards detached from the main window, by kind, and those open at quit.
+  dashboards?: Record<string, SavedWindowState>
+  detached?: string[]
 }
 
 function copyFirstExistingFile(targetPath: string, sourcePaths: string[]) {
@@ -123,7 +126,10 @@ function persistWindowState(key: 'main' | 'procedure', window: BrowserWindow | n
 function readData() {
   const filePath = DATA_FILE()
   const parsed = readJsonObject(filePath)
-  if (parsed) return parsed
+  if (parsed) {
+    exportRetiredData(parsed)
+    return parsed
+  }
   if (fs.existsSync(filePath)) {
     const backupPath = filePath.replace(/\.json$/, `.unreadable-${Date.now()}.json`)
     try {
@@ -134,6 +140,19 @@ function readData() {
     }
   }
   return {}
+}
+
+const RETIRED_DATA_FILE = () => path.join(app.getPath('userData'), 'agentor-donnees-retirees.json')
+
+// One copy of the data no screen uses any more, before it can be dropped.
+function exportRetiredData(data: Record<string, unknown>) {
+  try {
+    if (writeRetiredDataExport(RETIRED_DATA_FILE(), data) === 'written') {
+      console.log('[storage] unused data copied to', RETIRED_DATA_FILE())
+    }
+  } catch (error) {
+    console.warn('[storage] could not copy unused data', error)
+  }
 }
 
 function writeData(data: unknown) {
@@ -401,7 +420,15 @@ function createWindow() {
   if (saved?.isMaximized) {
     win.maximize()
   }
-  win.on('close', () => persistWindowState('main', win))
+  win.on('close', () => {
+    persistWindowState('main', win)
+    // Closing the main window ends the session: detached dashboards close
+    // too and are remembered for the next launch.
+    quitting = true
+    for (const dashboardWin of dashboardWindows.values()) {
+      if (!dashboardWin.isDestroyed()) dashboardWin.close()
+    }
+  })
   win.on('closed', () => {
     win = null
   })
@@ -461,6 +488,71 @@ function openProcedureWindow() {
     procedureWin = null
   })
 
+  return true
+}
+
+// ── Dashboards detached from the main window ──────────────────────────────
+const DETACHABLE_DASHBOARDS = new Set(['case', 'reminders', 'news', 'calculator', 'portal', 'parts', 'decorations'])
+const dashboardWindows = new Map<string, BrowserWindow>()
+let quitting = false
+
+function announceDetachedDashboards() {
+  const kinds = [...dashboardWindows.keys()]
+  broadcast('dashboard:detached', kinds)
+  if (!quitting) {
+    windowState = { ...windowState, detached: kinds }
+    writeWindowState(windowState)
+  }
+}
+
+function openDashboardWindow(kind: string) {
+  const existing = dashboardWindows.get(kind)
+  if (existing && !existing.isDestroyed()) {
+    if (existing.isMinimized()) existing.restore()
+    existing.focus()
+    return true
+  }
+  const saved = windowState.dashboards?.[kind]
+  const bounds = saved?.bounds
+  const dashboardWin = new BrowserWindow({
+    ...(bounds
+      ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+      : { width: 460, height: 560 }),
+    minWidth: 280,
+    minHeight: 200,
+    title: 'Agentor',
+    backgroundColor: '#1c1d1f',
+    icon: path.join(process.env.VITE_PUBLIC, 'agentor', 'icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+    },
+  })
+  dashboardWin.setMenuBarVisibility(false)
+  dashboardWin.setAutoHideMenuBar(true)
+  if (saved?.isMaximized) dashboardWin.maximize()
+  const hash = `dashboard=${kind}`
+  if (VITE_DEV_SERVER_URL) {
+    dashboardWin.loadURL(`${VITE_DEV_SERVER_URL}#${hash}`)
+  } else {
+    dashboardWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash })
+  }
+  dashboardWin.webContents.on('did-finish-load', () => {
+    dashboardWin.webContents.send(AUTO_UPDATE_STATUS_CHANNEL, updateStatus)
+  })
+  dashboardWin.on('close', () => {
+    const state = {
+      bounds: dashboardWin.isMaximized() ? dashboardWin.getNormalBounds() : dashboardWin.getBounds(),
+      isMaximized: dashboardWin.isMaximized(),
+    }
+    windowState = { ...windowState, dashboards: { ...windowState.dashboards, [kind]: state } }
+    writeWindowState(windowState)
+  })
+  dashboardWin.on('closed', () => {
+    dashboardWindows.delete(kind)
+    announceDetachedDashboards()
+  })
+  dashboardWindows.set(kind, dashboardWin)
+  announceDetachedDashboards()
   return true
 }
 
@@ -552,11 +644,16 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(null)
   initCaseContext()
   createWindow()
+  // Dashboards that were detached when the app was last closed come back.
+  for (const kind of windowState.detached ?? []) {
+    if (DETACHABLE_DASHBOARDS.has(kind)) openDashboardWindow(kind)
+  }
   configureAutoUpdater()
   await checkForUpdates('startup')
 })
 
 app.on('before-quit', () => {
+  quitting = true
   void localBridge?.close()
 })
 
@@ -591,8 +688,15 @@ ipcMain.handle('bridge:regenerate-token', async () => {
 })
 
 ipcMain.handle('storage:load', () => readData())
-ipcMain.handle('storage:save', (_event, data) => {
+// Every window edits the same data: after a save, the other windows receive it
+// so a detached dashboard and the main window never overwrite each other.
+ipcMain.handle('storage:save', (event, data) => {
   writeData(data)
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed() && window.webContents.id !== event.sender.id) {
+      window.webContents.send('storage:changed', data)
+    }
+  }
   return true
 })
 ipcMain.handle('storage:export-json', async (_event, data) => {
@@ -649,6 +753,19 @@ ipcMain.handle('shell:open-external', async (_event, url) => {
   return true
 })
 ipcMain.handle('procedure:open', () => openProcedureWindow())
+ipcMain.handle('dashboard:detach', (_event, kind: unknown) =>
+  typeof kind === 'string' && DETACHABLE_DASHBOARDS.has(kind) ? openDashboardWindow(kind) : false,
+)
+ipcMain.handle('dashboard:list-detached', () => [...dashboardWindows.keys()])
+ipcMain.handle('dashboard:attach', (_event, kind: unknown) => {
+  if (typeof kind !== 'string') return false
+  const target = dashboardWindows.get(kind)
+  if (!target || target.isDestroyed()) return false
+  target.close()
+  win?.webContents.send('dashboard:attach-request', kind)
+  win?.focus()
+  return true
+})
 ipcMain.handle('updates:get-status', () => updateStatus)
 ipcMain.handle('updates:check-now', async () => {
   configureAutoUpdater()

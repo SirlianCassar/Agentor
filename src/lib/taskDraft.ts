@@ -410,5 +410,3 @@ export const getTemplateTaskSections = (
     : null
   return linkedTask ? normalizeTaskTemplateSections(linkedTask) : TASK_SECTION_IDS.map(() => '')
 }
-
-export const getTemplateEmailLines = (template: MailTemplate) => template.content.split(/\r?\n/)

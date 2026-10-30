@@ -56,3 +56,6 @@ export type AppIconName =
   | 'star'
   | 'library'
   | 'caretRight'
+  | 'detach'
+  | 'attach'
+  | 'translate'

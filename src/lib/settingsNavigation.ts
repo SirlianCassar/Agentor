@@ -4,39 +4,27 @@ export type SettingsTab =
   | 'categories'
   | 'snippets'
   | 'templates'
-  | 'tasks'
   | 'sTasks'
   | 'fTasks'
   | 'templateCategories'
   | 'troubleshootgun'
-  | 'taskCategories'
   | 'sTaskCategories'
   | 'fTaskCategories'
   | 'tags'
-  | 'products'
-  | 'calls'
   | 'callHistory'
   | 'callTemplate'
-  | 'procedure'
   | 'dashboard'
   | 'dashboardPortal'
-  | 'dashboardVersions'
-  | 'dashboardSoftwares'
-  | 'dashboardDriverPacks'
   | 'dashboardSpareParts'
   | 'dashboardNews'
   | 'updates'
-  | 'display'
-  | 'export'
-  | 'general'
-  | 'snippetSettings'
-  | 'history'
   | 'quickLinks'
   | 'procedureMailtos'
   | 'taskFormat'
   | 'preferences'
   | 'connections'
   | 'caseTags'
+  | 'productAliases'
 
 export type SettingsIconName = AppIconName
 
@@ -123,6 +111,7 @@ export const settingsNavigation: SettingsNavSection[] = [
     items: [
       { id: 'connections', label: 'Connexion Cairm+', description: 'Réception du dossier ouvert dans le CRM et jeton d’appairage.', icon: 'plug' },
       { id: 'caseTags', label: 'Tags du dossier', description: 'Tag rempli par chaque information du dossier actif, et remplissage au chargement.', icon: 'tag' },
+      { id: 'productAliases', label: 'Noms de produits', description: 'Nom utilisé dans les mails pour chaque nom de produit du CRM.', icon: 'box' },
       { id: 'tags', label: 'Tags proposés', description: 'Tags proposés pendant la saisie d’un mail ou d’une task.', icon: 'tag' },
     ],
   },
@@ -156,7 +145,8 @@ export const settingsRelatedTabs: Partial<Record<SettingsTab, SettingsTab[]>> = 
   preferences: ['updates'],
   updates: ['preferences'],
   connections: ['caseTags'],
-  caseTags: ['connections', 'tags'],
+  caseTags: ['connections', 'productAliases', 'tags'],
+  productAliases: ['caseTags'],
   tags: ['caseTags'],
 }
 
