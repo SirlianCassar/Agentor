@@ -2,6 +2,7 @@ import http from 'node:http'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { BridgeMessage } from '../../src/context/bridgeMessages'
 import { startLocalBridge, type LocalBridge } from '../localBridge'
+import { readBridgeConfig, CAIRM_PLUS_EXTENSION_ORIGIN } from '../bridgeConfig'
 
 const TOKEN = 'test-token-abcdefghijklmnop'
 const EXTENSION = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop'
@@ -16,7 +17,7 @@ const start = async () => {
   bridge = await startLocalBridge({
     port: 0,
     token: TOKEN,
-    allowedOrigins: [EXTENSION],
+    allowedOrigins: [EXTENSION, ...readBridgeConfig('/nonexistent-agentor-test-bridge.json').allowedOrigins],
     appVersion: 'test',
     onMessage: (message) => received.push(message),
   })
@@ -47,6 +48,17 @@ describe('local bridge', () => {
     expect(response.headers.get('access-control-allow-origin')).toBe(EXTENSION)
     expect(received).toHaveLength(1)
     expect(received[0].caseKey.id).toBe('11111111-2222-4333-8444-555555555555')
+  })
+
+  it('accepts the distinct Cairm+ 0.52 extension identity with the pairing token', async () => {
+    const { received, base } = await start()
+    const health = await fetch(`${base}/v1/health`, { headers: { Authorization: `Bearer ${TOKEN}` } })
+    expect(health.status).toBe(200)
+    const response = await post(`${base}/v1/case`, observed, { Origin: CAIRM_PLUS_EXTENSION_ORIGIN })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('access-control-allow-origin')).toBe(CAIRM_PLUS_EXTENSION_ORIGIN)
+    expect(received).toHaveLength(1)
+    expect((await post(`${base}/v1/case`, observed, { Origin: CAIRM_PLUS_EXTENSION_ORIGIN, Authorization: 'Bearer wrong' })).status).toBe(401)
   })
 
   it('rejects a missing or wrong token', async () => {

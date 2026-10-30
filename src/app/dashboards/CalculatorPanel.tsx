@@ -27,9 +27,6 @@ export interface CalculatorPanelProps {
   onCopy: (key: DashboardCalculatorCopyKey, value: number) => Promise<void>
 }
 
-// Fees offered in one click; any other can be typed.
-const feeSuggestions = ['Réparation', 'Frais de dossier', 'Retour']
-
 const priceFields: Array<{ field: DashboardCalculatorPriceField; label: string; placeholder: string }> = [
   { field: 'productPrice', label: 'Prix TTC', placeholder: '119,99' },
   { field: 'shippingPrice', label: 'Livraison', placeholder: '14,99' },
@@ -46,7 +43,6 @@ export function CalculatorPanel({
   onUpdateItem,
   onAdjustQuantity,
   onRemoveItem,
-  onAddFee,
   onUpdateFee,
   onRemoveFee,
   onCopy,
@@ -144,7 +140,7 @@ export function CalculatorPanel({
             </button>
           </section>
 
-          <section className="calc__section" aria-label="Frais">
+          {fees.length > 0 ? <section className="calc__section" aria-label="Frais">
             <div className="calc__section-title">Frais</div>
             {fees.map((fee, index) => (
               <div className="calc-fee" key={fee.id}>
@@ -175,18 +171,7 @@ export function CalculatorPanel({
                 </button>
               </div>
             ))}
-            <div className="calc__fee-actions">
-              <button className="btn btn--ghost btn--small btn--with-icon calc__add" type="button" onClick={() => onAddFee()}>
-                <ButtonIcon name="add" />
-                Ajouter des frais
-              </button>
-              {feeSuggestions.map((label) => (
-                <button key={label} type="button" className="calc__suggestion" onClick={() => onAddFee(label)}>
-                  + {label}
-                </button>
-              ))}
-            </div>
-          </section>
+          </section> : null}
         </div>
 
         <section className="calc__results" aria-label="Totaux">

@@ -82,7 +82,7 @@ export function ConnectionsSettings({
               <ol className="connection-steps">
                 <li>Active la connexion ci-dessus.</li>
                 <li>Copie le jeton.</li>
-                <li>Dans Edge, ouvre Cairm+ › Paramètres › Mode développeur (DEVMODE) › Connexion à Agentor 9000, colle le jeton, active l’envoi et clique sur « Tester la connexion ».</li>
+                <li>Dans Edge, ouvre Cairm+ › Paramètres › Mode développeur (DEVMODE) › Connexion à Agentor 9000, colle le jeton, active l’envoi, clique sur « Enregistrer », puis sur « Tester la connexion ». Recharge ensuite la page du dossier CRM.</li>
               </ol>
             </div>
           ) : (
