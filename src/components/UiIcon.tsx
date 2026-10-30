@@ -53,6 +53,9 @@ import { Timer } from '@phosphor-icons/react/Timer'
 import { Star } from '@phosphor-icons/react/Star'
 import { Books } from '@phosphor-icons/react/Books'
 import { CaretRight } from '@phosphor-icons/react/CaretRight'
+import { ArrowSquareOut } from '@phosphor-icons/react/ArrowSquareOut'
+import { ArrowSquareIn } from '@phosphor-icons/react/ArrowSquareIn'
+import { Translate } from '@phosphor-icons/react/Translate'
 
 const icons: Record<AppIconName, Icon> = {
   add: Plus,
@@ -112,6 +115,9 @@ const icons: Record<AppIconName, Icon> = {
   star: Star,
   library: Books,
   caretRight: CaretRight,
+  detach: ArrowSquareOut,
+  attach: ArrowSquareIn,
+  translate: Translate,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {

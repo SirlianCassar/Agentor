@@ -36,6 +36,12 @@ interface Window {
     copyText: (text: string, html?: string) => boolean
     openExternal: (url: string) => Promise<boolean>
     openProcedure: () => Promise<boolean>
+    onDataChanged?: (callback: (data: unknown) => void) => () => void
+    detachDashboard?: (kind: string) => Promise<boolean>
+    attachDashboard?: (kind: string) => Promise<boolean>
+    listDetachedDashboards?: () => Promise<string[]>
+    onDetachedDashboards?: (callback: (kinds: unknown) => void) => () => void
+    onAttachRequest?: (callback: (kind: unknown) => void) => () => void
     getCaseContext?: () => Promise<unknown>
     setCaseFieldManual?: (caseId: string, key: string, value: string) => Promise<boolean>
     confirmCaseField?: (caseId: string, key: string) => Promise<boolean>

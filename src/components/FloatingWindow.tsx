@@ -15,6 +15,8 @@ interface FloatingWindowProps {
   onResize: (width: number, height: number) => void
   onMinimize: () => void
   onClose: () => void
+  // Opens the dashboard in its own system window, outside the main one.
+  onDetach?: () => void
   children: ReactNode
 }
 
@@ -33,6 +35,7 @@ export function FloatingWindow({
   onResize,
   onMinimize,
   onClose,
+  onDetach,
   children,
 }: FloatingWindowProps) {
   const drag = useRef<Drag | null>(null)
@@ -89,6 +92,17 @@ export function FloatingWindow({
       >
         <UiIcon name={icon} className="floating-window__icon" />
         <span className="floating-window__title">{title}</span>
+        {onDetach ? (
+          <button
+            type="button"
+            className="floating-window__btn"
+            title="Détacher hors de la fenêtre principale"
+            aria-label={`Détacher ${title}`}
+            onClick={onDetach}
+          >
+            <UiIcon name="detach" />
+          </button>
+        ) : null}
         <button type="button" className="floating-window__btn" title="Réduire" aria-label={`Réduire ${title}`} onClick={onMinimize}>
           <UiIcon name="minimize" />
         </button>

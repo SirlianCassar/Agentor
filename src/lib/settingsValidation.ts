@@ -1,7 +1,5 @@
 import type {
   Category,
-  CustomerPortalCode,
-  CustomerPortalCodeLine,
   DashboardNewsItem,
   DashboardProduct,
   MailTemplate,
@@ -24,8 +22,6 @@ export type SettingsValidationScope =
   | 'dashboardNews'
 
 const isBlank = (value: unknown) => typeof value !== 'string' || !value.trim()
-
-export const hasIssues = (issues: string[]) => issues.length > 0
 
 export function getCategoryIssues(category: Category) {
   const issues: string[] = []
@@ -89,45 +85,6 @@ export function getProductCatalogItemIssues(product: ProductCatalogItem) {
     (sparePart) => isBlank(sparePart.name) || isBlank(sparePart.sku),
   )
   if (incompleteSpareParts.length) issues.push('SKU incomplet.')
-  return issues
-}
-
-export function getPortalCodeLineIssues(line: CustomerPortalCodeLine) {
-  const issues: string[] = []
-  const hasAnyModule = Boolean(
-    line.title?.trim() ||
-      line.code.trim() ||
-      line.quickLinkUrl?.trim() ||
-      line.quickCopyText?.trim() ||
-      line.quickMailtoTemplateId?.trim() ||
-      line.quickMailtoHref?.trim() ||
-      line.infoNote?.trim() ||
-      line.showDraft,
-  )
-  if (!hasAnyModule) issues.push('Etape vide.')
-  if (line.quickLinkUrl?.trim() && !/^https?:\/\//i.test(line.quickLinkUrl.trim())) {
-    issues.push('Lien rapide invalide.')
-  }
-  if (line.quickMailtoHref?.trim() && !/^mailto:/i.test(line.quickMailtoHref.trim())) {
-    issues.push('Mailto rapide invalide.')
-  }
-  return issues
-}
-
-export function getPortalProcedureIssues(procedure: CustomerPortalCode) {
-  const issues: string[] = []
-  if (isBlank(procedure.procedureName)) issues.push('Nom obligatoire.')
-  if (!procedure.codes.length) issues.push('Au moins une etape obligatoire.')
-  if (procedure.codes.some((line) => getPortalCodeLineIssues(line).length > 0)) {
-    issues.push('Etape principale incomplete.')
-  }
-  if (
-    procedure.hasVariant &&
-    (!(procedure.variantCodes ?? []).length ||
-      (procedure.variantCodes ?? []).some((line) => getPortalCodeLineIssues(line).length > 0))
-  ) {
-    issues.push('Version alternative incomplete.')
-  }
   return issues
 }
 

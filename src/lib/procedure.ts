@@ -1,39 +1,5 @@
-/* Procedure step parsing, draft sanitization, and portal-forward display. */
-import { normalizeTaskSectionId } from './taskDraft'
-import type { CustomerPortalCode, Procedure } from './types'
-
-export const PROCEDURE_CHECK_MARKER = '[ ]'
-export type ProcedureStepItem = {
-  id: string
-  text: string
-  isCheckable: boolean
-}
-
-export function parseProcedureStepItems(steps: string): ProcedureStepItem[] {
-  return steps
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.trim() !== '')
-    .map((line, index) => {
-      const trimmed = line.trimStart()
-      const isCheckable = trimmed.startsWith(PROCEDURE_CHECK_MARKER)
-      const text = isCheckable
-        ? trimmed.slice(PROCEDURE_CHECK_MARKER.length).trimStart()
-        : trimmed
-      return { id: `${index}-${text}`, text, isCheckable }
-    })
-}
-
-export const sanitizeProcedureDraft = (procedure: Procedure & { categoryId?: string }) => {
-  const { categoryId, ...rest } = procedure
-  void categoryId
-  return {
-    ...rest,
-    productName: rest.productName ?? '',
-    optionalNotes: rest.optionalNotes ?? '',
-    taskSectionId: normalizeTaskSectionId(rest.taskSectionId),
-  }
-}
+/* Portal procedure forward display. */
+import type { CustomerPortalCode } from './types'
 
 export const formatPortalForwardLabel = (
   procedure: CustomerPortalCode,

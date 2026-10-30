@@ -159,10 +159,6 @@ export function findTokenAt(value: string, position: number) {
   return parseTokens(value).find((token) => position >= token.start && position < token.end)
 }
 
-export function countTags(value: string) {
-  return parseTokens(value).filter((token) => token.type === 'tag').length
-}
-
 export function countTokens(value: string) {
   return parseTokens(value).length
 }

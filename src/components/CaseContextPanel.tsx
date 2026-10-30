@@ -139,7 +139,9 @@ export function CaseContextPanel({
           <button
             type="button"
             className="case-tile__value"
-            title={`Copier · ${state.label}${field ? ` · ${formatTime(field.updatedAt)}` : ''}`}
+            title={`Copier · ${state.label}${field ? ` · ${formatTime(field.updatedAt)}` : ''}${
+              field?.aliasOf ? ` · Nom CRM : ${field.aliasOf}` : ''
+            }`}
             onClick={() => onCopy(value)}
           >
             {value}
@@ -148,7 +150,9 @@ export function CaseContextPanel({
           <span className="case-tile__value case-tile__value--empty">Non renseigné</span>
         )}
         <div className="case-tile__foot">
-          <span className="case-tile__state">{state.label}</span>
+          <span className="case-tile__state">
+            {field?.aliasOf ? 'Nom raccourci' : state.label}
+          </span>
           <span className="case-tile__actions">
             {value && field?.status === 'auto' ? (
               <button

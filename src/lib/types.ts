@@ -1,3 +1,5 @@
+import type { TrashEntry } from './contents'
+
 export type Language = 'fr' | 'en'
 export type InsertMode = 'line' | 'cursor'
 export type SnippetCategoryDisplay = 'buttons' | 'dropdown'
@@ -55,6 +57,13 @@ export interface MailTemplate {
   taskCustom?: boolean
   taskImportMode?: 'none' | 'custom' | 'sections' | 'template'
   taskSections?: string[]
+  // Same mail in other languages; `language` and `content` stay the main version.
+  translations?: MailTemplateTranslation[]
+}
+
+export interface MailTemplateTranslation {
+  language: string
+  content: string
 }
 
 export interface TroubleshootgunFolder {
@@ -246,6 +255,14 @@ export interface AppSettings {
   caseTags?: Partial<Record<string, string>>
   // Fill the case tags when a template, task or snippet is loaded. On by default.
   caseAutoFill?: boolean
+  // CRM product name -> name used in the mails (see productAliases.ts).
+  productAliases?: Array<{ id: string; crm: string; alias: string }>
+  // The launcher's references open in the contextual panel.
+  referencesInPanel?: boolean
+  // Mail, task and notes in tabs instead of side by side.
+  writingTabs?: boolean
+  // « Affichage compact » tightens the spacing of its zones.
+  compactDensity?: boolean
 }
 
 export interface AppData {
@@ -261,4 +278,6 @@ export interface AppData {
   history: HistoryItem[]
   callHistory: HistoryItem[]
   settings: AppSettings
+  // Contents deleted from the Contents screen, until the trash is emptied.
+  trash?: TrashEntry[]
 }

@@ -52,6 +52,8 @@ export interface ContextField {
   source: ContextSource
   updatedAt: string
   candidates?: ContextCandidate[]
+  // Name received from the CRM when a product alias replaced it (display only).
+  aliasOf?: string
 }
 
 export interface ContextTask {
