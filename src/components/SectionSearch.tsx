@@ -35,7 +35,7 @@ export function SectionSearch({ categories = [], entries, productTerms, placehol
     return [...new Map(entries.map((entry) => {
       const id = entry.categoryId ?? entry.folderId ?? entry.kind
       const name = names.get(id) ?? entry.folderName ?? (entry.kind === 's-task' ? 'S-Task' : entry.kind === 'f-task' ? 'F-Task' : 'Sans catégorie')
-      return [id, { id, name }]
+      return [id, { id, name, count: entries.filter((item) => (item.categoryId ?? item.folderId ?? item.kind) === id).length }]
     })).values()]
   }, [categories, entries])
 
@@ -103,11 +103,11 @@ export function SectionSearch({ categories = [], entries, productTerms, placehol
       {shown ? (
         <div className="section-search__results" role="listbox" aria-label={label} onMouseDown={(event) => event.preventDefault()}>
           {showingCategories ? folders.map((folder, index) => (
-            <button key={folder.id} type="button" role="option" aria-selected={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} className={`section-search__item${index === activeIndex ? ' is-active' : ''}`} onClick={() => { setCategory(folder.id); setActiveIndex(0) }}>
-              <span>{folder.name}</span><UiIcon name="caretRight" />
+            <button key={folder.id} type="button" role="option" aria-selected={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} className={`section-search__item section-search__category${index === activeIndex ? ' is-active' : ''}`} onClick={() => { setCategory(folder.id); setActiveIndex(0) }}>
+              <UiIcon name="list" /><span className="section-search__category-name">{folder.name}</span><span className="section-search__count">{folder.count}</span><UiIcon name="caretRight" />
             </button>
           )) : <>
-          {!query.trim() ? <button type="button" className="section-search__item" onClick={() => { setCategory(null); setActiveIndex(0) }}>← Catégories</button> : null}
+          {!query.trim() ? <button type="button" className="section-search__item section-search__back" onClick={() => { setCategory(null); setActiveIndex(0) }}>← Catégories</button> : null}
           {results.length ? (
             results.map((entry, index) => (
               <button

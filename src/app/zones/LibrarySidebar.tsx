@@ -258,7 +258,7 @@ export function LibrarySidebar({
     if (searching) return []
     const inTab = entries.filter((entry) => tabOfKind(entry.kind) === tab)
     const narrowed = inTab.filter((entry) => {
-      if (filter === 'all') return true
+      if (tab === 'snippet' || filter === 'all') return true
       if (filter === 'uncategorized') return !categoryById.has(entry.categoryId ?? '')
       if (filter === 'favorites') return Boolean(entry.favorite)
       if (tab === 'task') return entry.kind === filter
@@ -291,6 +291,7 @@ export function LibrarySidebar({
 
   useEffect(() => setActiveIndex(0), [query, tab, filter, productFilterOn, scope])
   useEffect(() => setExpandedKinds([]), [query])
+  useEffect(() => { if (tab === 'snippet') { setQuery(''); setBrowsing(false) } }, [tab])
   useEffect(() => {
     if (!query.trim()) setScope('tab')
   }, [query])
@@ -326,7 +327,7 @@ export function LibrarySidebar({
   }
 
   const categoryChoices = tabFilters.filter((item) => item.id !== 'all' && item.id !== 'favorites')
-  const showingCategories = browsing && !searching && filter === 'all' && categoryChoices.length > 0
+  const showingCategories = tab !== 'snippet' && browsing && !searching && filter === 'all' && categoryChoices.length > 0
   const handleSearchKey = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault()
@@ -455,7 +456,7 @@ export function LibrarySidebar({
           ) : null}
         </span>
       </button>
-      {onEdit && entry.kind !== 'procedure' ? (
+      {onEdit && entry.kind !== 'procedure' && entry.kind !== 'snippet' ? (
         <button
           type="button"
           className="library-item__edit"
@@ -505,7 +506,7 @@ export function LibrarySidebar({
         </div>
       </div>
 
-      <div className="library__search">
+      {tab !== 'snippet' ? <div className="library__search">
         <UiIcon name="search" className="library__search-icon" />
         <input
           ref={inputRef}
@@ -526,6 +527,8 @@ export function LibrarySidebar({
         ) : null}
       </div>
 
+      : null}
+
       {hiddenPanelTitle && onShowPanel ? (
         <button type="button" className="library__panel-back" onClick={onShowPanel} title="Revenir au panneau">
           <UiIcon name="caretRight" />
@@ -533,7 +536,7 @@ export function LibrarySidebar({
         </button>
       ) : null}
 
-      {browsing && !searching && filter !== 'all' ? (
+      {tab !== 'snippet' && browsing && !searching && filter !== 'all' ? (
         <button type="button" className="library__scope-btn" onClick={() => setFilters((prev) => ({ ...prev, [tab]: 'all' }))}>
           ← Catégories
         </button>

@@ -2754,3 +2754,11 @@ button.case-tile__value:hover {
 
 .workspace-head__actions { flex: 1; min-width: 0; }
 .workspace-head .template-controls { flex: 1; min-width: 0; flex-wrap: wrap; }
+
+.section-search--mail { flex: 0 1 300px; width: 300px; min-width: min(220px, 100%); max-width: 320px; }
+.section-search--mail input { min-height: 36px; font-size: 13px; }
+.section-search__category { display: flex; flex-direction: row; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.section-search__category > svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .6; }
+.section-search__category-name { flex: 1; text-align: left; font-weight: 500; }
+.section-search__count { font-size: 11px; opacity: .65; padding: 2px 7px; border-radius: 10px; background: rgba(255,255,255,.06); }
+.section-search__back { color: var(--text-muted); font-size: 12px; border-bottom: 1px solid rgba(255,255,255,.08); }

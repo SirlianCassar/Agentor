@@ -2322,7 +2322,7 @@ function App() {
     [data.taskTemplates, data.templates, troubleshootgunFolders],
   )
   const mailSearchEntries = useMemo(
-    (): SearchEntry[] => sectionSearchEntries.filter((entry) => entry.kind === 'template' || entry.kind === 'troubleshootgun'),
+    (): SearchEntry[] => sectionSearchEntries.filter((entry) => entry.kind === 'template'),
     [sectionSearchEntries],
   )
   const taskSearchEntries = useMemo(
@@ -4296,17 +4296,10 @@ function App() {
         <SectionSearch
           className="section-search--mail" entries={mailSearchEntries} productTerms={workingProductTerms}
           categories={mailTemplateCategories}
-          placeholder="Rechercher un mail ou un Troubleshotgun" label="Rechercher dans les mails"
+          placeholder="Rechercher un modèle de mail" label="Rechercher dans les mails"
           onPick={(entry) => {
-            if (entry.kind === 'template') {
-              const template = data.templates.find((item) => item.id === entry.id)
-              if (template) openTemplatePreview(template)
-              return
-            }
-            const template = troubleshootgunFolders
-              .find((folder) => folder.id === entry.folderId)
-              ?.templates.find((item) => item.id === entry.id)
-            if (template) openTemplatePreview(template, entry.folderId)
+            const template = data.templates.find((item) => item.id === entry.id)
+            if (template) openTemplatePreview(template)
           }}
         />
       }

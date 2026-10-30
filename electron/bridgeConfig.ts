@@ -2,9 +2,10 @@ import { randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import { readJsonObject, writeFileAtomic } from './dataFile'
 
-// Cairm (and Cairm+, which keeps the same manifest key) has a fixed extension
-// id derived from that key. Other origins can be added in bridge.json.
+// Cairm+ has its own manifest key since 0.52.0. Keep the legacy Cairm
+// identity for older paired installations, and allow the distinct Plus build.
 export const CAIRM_EXTENSION_ORIGIN = 'chrome-extension://eamkmompphpkboifejhldgdpojeglpel'
+export const CAIRM_PLUS_EXTENSION_ORIGIN = 'chrome-extension://bchjjpoadifjmmofijgdfdladabgcpem'
 export const DEFAULT_BRIDGE_PORT = 32100
 
 export interface BridgeConfig {
@@ -31,7 +32,7 @@ export function readBridgeConfig(filePath: string): BridgeConfig {
     // Off until the user turns it on: nothing listens on the machine by default.
     enabled: raw.enabled === true,
     port: Number.isInteger(port) && port >= 1024 && port <= 65535 ? port : DEFAULT_BRIDGE_PORT,
-    allowedOrigins: [...new Set([CAIRM_EXTENSION_ORIGIN, ...origins])],
+    allowedOrigins: [...new Set([CAIRM_EXTENSION_ORIGIN, CAIRM_PLUS_EXTENSION_ORIGIN, ...origins])],
   }
 }
 
