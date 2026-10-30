@@ -2745,3 +2745,12 @@ button.case-tile__value:hover {
   background: #5fd38d;
   box-shadow: 0 0 6px rgba(95, 211, 141, 0.75);
 }
+
+/* Keep snippet titles legible regardless of their category tint. */
+.library-item--snippet .library-item__name,
+.library-item--tinted.library-item--snippet .library-item__name { color: #fff; }
+.section-search--mail { flex: 1 1 420px; width: 100%; max-width: none; min-width: min(320px, 100%); }
+.section-search--mail input { min-height: 42px; font-size: 14px; }
+
+.workspace-head__actions { flex: 1; min-width: 0; }
+.workspace-head .template-controls { flex: 1; min-width: 0; flex-wrap: wrap; }

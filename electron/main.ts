@@ -492,7 +492,7 @@ function openProcedureWindow() {
 }
 
 // ── Dashboards detached from the main window ──────────────────────────────
-const DETACHABLE_DASHBOARDS = new Set(['case', 'reminders', 'news', 'calculator', 'portal', 'parts', 'decorations'])
+const DETACHABLE_DASHBOARDS = new Set(['reminders', 'news', 'calculator', 'portal', 'parts', 'decorations'])
 // Tools that open in their own popup window, like the dashboards.
 const POPUP_TOOLS = new Set(['troubleshootgun', 'call'])
 const DETACHABLE_WINDOWS = new Set([...DETACHABLE_DASHBOARDS, ...POPUP_TOOLS])

@@ -10,6 +10,7 @@ import {
   createCaseTabsState,
   parseCaseTabs,
   planCaseArrival,
+  planCaseReception,
   rememberCaseContext,
   removeCaseTab,
   saveTabWorkspace,
@@ -31,6 +32,19 @@ const context = (id: string, number: string, customer = 'Client Fictif'): CaseCo
 const withMail = (email: string) => ({ ...createEmptyDraftBoxSlot(), email })
 
 describe('case tabs', () => {
+  it('retries a saved case when Cairm sends it live, without losing the draft', () => {
+    const state = createCaseTabsState()
+    const first = saveTabWorkspace(state, state.activeId, withMail('Mail en cours'))
+    const target = createCaseTab({ id: 'case-a', number: 'RQT-1' })
+    const restored = setActiveCaseTab(addCaseTab(first, target), first.activeId)
+    expect(planCaseReception(restored, 'case-a', false, 'stored')).toEqual({ kind: 'defer' })
+    const plan = planCaseReception(restored, 'case-a', false, 'live')
+    expect(plan).toEqual({ kind: 'switch', tabId: target.id })
+    const received = rememberCaseContext(restored, context('case-a', 'RQT-1'))
+    expect(caseForTab(received.tabs.find((tab) => tab.id === target.id), context('case-a', 'RQT-1'))?.fields.customerName?.value).toBe('Client Fictif')
+    expect(received.tabs[0].workspace.email).toBe('Mail en cours')
+  })
+
   it('starts with one empty tab without a case', () => {
     const state = createCaseTabsState()
     expect(state.tabs).toHaveLength(1)

@@ -1,8 +1,8 @@
 /* One search over everything the left library holds: snippets, mail templates,
    Troubleshotgun templates, S-Task and F-Task templates, portal procedures.
    Every word must appear, in any order, ignoring case and accents. Results
-   stay grouped by type; inside a group, items that name the case's product
-   come first, then items whose name matches, then the others. */
+   stay grouped by type. Product priority applies only to Troubleshotgun;
+   other sections rank title matches before content matches. */
 import type {
   CustomerPortalCode,
   MailTemplate,
@@ -177,7 +177,7 @@ export function searchLibrary(entries: SearchEntry[], query: string, options: Se
     const title = foldText(entry.title)
     const all = `${title}\n${foldText(`${entry.folderName ?? ''}\n${entry.body}`)}`
     if (!words.every((word) => all.includes(word))) return
-    const productMatch = matchesProduct(entry, terms)
+    const productMatch = entry.kind === 'troubleshootgun' && matchesProduct(entry, terms)
     if (!words.length && !productMatch) return
     let score = productMatch ? 100 : 0
     if (words.length && words.every((word) => title.includes(word))) score += 10

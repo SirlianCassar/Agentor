@@ -119,7 +119,6 @@ export function LibrarySidebar({
   taskKind,
   procedures,
   productNames,
-  productLabel,
   editButtonLabel,
   onOpenSettings,
   onSnippet,
@@ -143,7 +142,7 @@ export function LibrarySidebar({
     task: 'all',
     procedure: 'all',
   })
-  const [productOnly, setProductOnly] = useState(false)
+  const [browsing, setBrowsing] = useState(false)
   // The search looks in the open tab; « Partout » widens it to the whole library.
   const [scope, setScope] = useState<'tab' | 'all'>('tab')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -191,8 +190,7 @@ export function LibrarySidebar({
     [procedures, snippets, taskKind, taskTemplates, templates, troubleshootgunFolders],
   )
   const productTerms = useMemo(() => productSearchTerms(productNames), [productNames])
-  const hasProduct = productTerms.length > 0
-  const productFilterOn = productOnly && hasProduct
+  const productFilterOn = false
 
   const searching = query.trim().length > 0
   const allGroups = useMemo(
@@ -221,6 +219,10 @@ export function LibrarySidebar({
 
   // Snippets have no category selector: they are sorted by category instead.
   const tabFilters = useMemo((): Filter[] => {
+    if (tab === 'snippet') return [
+      ...snippetCategories.map((category) => ({ id: category.id, label: category.name, color: categoryColorById.get(category.id) })),
+      ...(snippets.some((snippet) => !snippetCategories.some((category) => category.id === snippet.categoryId)) ? [{ id: 'uncategorized', label: 'Sans catégorie' }] : []),
+    ]
     if (tab === 'template') {
       return [
         { id: 'all', label: 'Tous' },
@@ -243,7 +245,7 @@ export function LibrarySidebar({
       ]
     }
     return []
-  }, [mailTemplateCategories, tab, troubleshootgunFolders])
+  }, [mailTemplateCategories, snippetCategories, snippets, categoryColorById, tab, troubleshootgunFolders])
   const categoryOrder = useMemo(
     () => new Map(snippetCategories.map((category, index) => [category.id, index])),
     [snippetCategories],
@@ -257,12 +259,13 @@ export function LibrarySidebar({
     const inTab = entries.filter((entry) => tabOfKind(entry.kind) === tab)
     const narrowed = inTab.filter((entry) => {
       if (filter === 'all') return true
+      if (filter === 'uncategorized') return !categoryById.has(entry.categoryId ?? '')
       if (filter === 'favorites') return Boolean(entry.favorite)
       if (tab === 'task') return entry.kind === filter
       if (tab === 'troubleshootgun') return entry.folderId === filter
       return entry.categoryId === filter
     })
-    const withProduct = narrowed.map((entry) => ({ ...entry, productMatch: matchesProduct(entry, productTerms) }))
+    const withProduct = narrowed.map((entry) => ({ ...entry, productMatch: entry.kind === 'troubleshootgun' && matchesProduct(entry, productTerms) }))
     const kept = productFilterOn ? withProduct.filter((entry) => entry.productMatch) : withProduct
     if (tab === 'snippet') {
       // By category, in the settings' order; the case's product first inside a category.
@@ -278,7 +281,7 @@ export function LibrarySidebar({
     }
     // The case's product first, the library order otherwise.
     return [...kept.filter((entry) => entry.productMatch), ...kept.filter((entry) => !entry.productMatch)]
-  }, [categoryOrder, entries, filter, productFilterOn, productTerms, searching, tab])
+  }, [categoryById, categoryOrder, entries, filter, productFilterOn, productTerms, searching, tab])
 
   const visible = useMemo(
     () =>
@@ -322,13 +325,19 @@ export function LibrarySidebar({
     }
   }
 
+  const categoryChoices = tabFilters.filter((item) => item.id !== 'all' && item.id !== 'favorites')
+  const showingCategories = browsing && !searching && filter === 'all' && categoryChoices.length > 0
   const handleSearchKey = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setActiveIndex((index) => Math.min(visible.length - 1, index + 1))
+      setActiveIndex((index) => Math.max(0, Math.min((showingCategories ? categoryChoices.length : visible.length) - 1, index + 1)))
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
       setActiveIndex((index) => Math.max(0, index - 1))
+    } else if (event.key === 'Enter' && showingCategories) {
+      event.preventDefault()
+      const choice = categoryChoices[activeIndex]
+      if (choice) setFilters((prev) => ({ ...prev, [tab]: choice.id }))
     } else if (event.key === 'Enter') {
       const entry = visible[activeIndex]
       if (entry) {
@@ -336,7 +345,8 @@ export function LibrarySidebar({
         activate(entry)
       }
     } else if (event.key === 'Escape' && !query) {
-      inputRef.current?.blur()
+      if (filter !== 'all') setFilters((prev) => ({ ...prev, [tab]: 'all' }))
+      else inputRef.current?.blur()
     }
   }
 
@@ -500,6 +510,8 @@ export function LibrarySidebar({
         <input
           ref={inputRef}
           value={query}
+          onFocus={() => { setBrowsing(true); if (!query) setFilters((prev) => ({ ...prev, [tab]: 'all' })) }}
+          onClick={() => { if (!query) setFilters((prev) => ({ ...prev, [tab]: 'all' })); setBrowsing(true) }}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={handleSearchKey}
           placeholder={searchEverywhere ? 'Rechercher partout' : `Rechercher dans ${tabLabel} · Ctrl+K : partout`}
@@ -521,53 +533,11 @@ export function LibrarySidebar({
         </button>
       ) : null}
 
-      {searchEverywhere && searching ? null : (
-        <div className="library__tabs" role="tablist" aria-label="Types">
-          {libraryTabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={item.id === tab}
-              className={`library__tab${item.id === tab ? ' is-active' : ''}`}
-              title={item.label}
-              onClick={() => openTab(item.id)}
-            >
-              <UiIcon name={item.icon} />
-              <span className="library__tab-label">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="library__filters">
-        {searching
-          ? null
-          : tabFilters.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`library__chip${filter === item.id ? ' is-active' : ''}`}
-                aria-pressed={filter === item.id}
-                onClick={() => setFilters((prev) => ({ ...prev, [tab]: item.id }))}
-              >
-                {item.color ? <span className="library__chip-dot" style={{ background: item.color }} /> : null}
-                {item.label}
-              </button>
-            ))}
-        {hasProduct ? (
-          <button
-            type="button"
-            className={`library__chip library__chip--product${productFilterOn ? ' is-active' : ''}`}
-            aria-pressed={productFilterOn}
-            title="Ne garder que ce qui nomme le produit du dossier"
-            onClick={() => setProductOnly((value) => !value)}
-          >
-            <UiIcon name="caseFile" />
-            {productLabel}
-          </button>
-        ) : null}
-      </div>
+      {browsing && !searching && filter !== 'all' ? (
+        <button type="button" className="library__scope-btn" onClick={() => setFilters((prev) => ({ ...prev, [tab]: 'all' }))}>
+          ← Catégories
+        </button>
+      ) : null}
 
       {searching ? (
         <div className="library__scope">
@@ -595,7 +565,13 @@ export function LibrarySidebar({
       ) : null}
 
       <div className="library__list" id="library-results" role="listbox" aria-label="Résultats" ref={listRef}>
-        {searching ? (
+        {showingCategories ? (
+          categoryChoices.map((item, index) => (
+            <button key={item.id} type="button" role="option" aria-selected={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} className={`library-item${index === activeIndex ? ' is-active' : ''}`} onClick={() => setFilters((prev) => ({ ...prev, [tab]: item.id }))}>
+              <span className="library-item__name">{item.label}</span><UiIcon name="caretRight" />
+            </button>
+          ))
+        ) : searching ? (
           groups.length ? (
             groups.map((group) => {
               const items = group.items
@@ -645,7 +621,7 @@ export function LibrarySidebar({
           })
         ) : (
           <p className="library__empty">
-            {productFilterOn ? `Rien pour ${productLabel} ici.` : 'Rien dans cette liste.'}
+            {'Rien dans cette liste.'}
           </p>
         )}
       </div>

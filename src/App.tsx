@@ -18,7 +18,6 @@ import {
   mergeSubsetOrder,
   type LibraryFilter,
 } from './lib/library'
-import { CaseContextPanel } from './components/CaseContextPanel'
 import { useCaseContext } from './hooks/useCaseContext'
 import { fillTemplateFromContext } from './context/templateFill'
 import {
@@ -214,7 +213,7 @@ import {
   caseForTab,
   caseTabLabel,
   createCaseTab,
-  planCaseArrival,
+  planCaseReception,
   rememberCaseContext,
   removeCaseTab,
   saveTabWorkspace,
@@ -1103,7 +1102,7 @@ function App() {
   const [editTarget, setEditTarget] = useState<LibraryEditTarget | null>(null)
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1920 : window.innerWidth))
   const referencesInPanel = mainWindow && data.settings.referencesInPanel !== false
-  const panelItem = mainWindow && !panelHidden ? currentPanelItem(panelStack) : null
+  const panelItem = mainWindow && !panelHidden && currentPanelItem(panelStack) !== 'ref:case' ? currentPanelItem(panelStack) : null
   // Read at each render: the resize listener only makes sure there is one.
   const panelNarrow = (typeof window === 'undefined' ? viewportWidth : window.innerWidth) < PANEL_WIDE_MIN_WIDTH
   const showInPanel = useCallback((item: PanelItem) => {
@@ -2986,17 +2985,18 @@ function App() {
     if (!mainWindow || !loaded || !activeCase) return
     const caseId = activeCase.caseKey.id
     if (caseId === lastArrivedCaseIdRef.current) return
-    lastArrivedCaseIdRef.current = caseId
     const caseKey = { id: caseId, number: activeCase.caseKey.number }
-    const plan = planCaseArrival(caseTabs, caseId, !isWorkspaceFilled(snapshotWorkspace()))
+    const plan = planCaseReception(caseTabs, caseId, !isWorkspaceFilled(snapshotWorkspace()), caseContextState.origin)
     // The case kept from the last session only takes an empty tab; it never moves away from the tab in use.
-    if (caseContextState.origin === 'stored' && plan.kind !== 'bind') return
+    if (plan.kind === 'defer' || plan.kind === 'full') {
+      if (plan.kind === 'full') setToast(`${CASE_TABS_LIMIT} onglets ouverts : ferme un dossier terminé pour recevoir celui du CRM.`)
+      return
+    }
+    lastArrivedCaseIdRef.current = caseId
     if (plan.kind === 'switch') switchCaseTab(plan.tabId)
     else if (plan.kind === 'bind') setCaseTabs((prev) => rememberCaseContext(bindCaseTab(prev, plan.tabId, caseKey), activeCase))
     else if (plan.kind === 'create') {
       if (openCaseTab(caseKey)) setCaseTabs((prev) => rememberCaseContext(prev, activeCase))
-    } else if (plan.kind === 'full') {
-      setToast(`${caseKey.number ?? 'Nouveau dossier'} : ${CASE_TABS_LIMIT} onglets ouverts, ferme un dossier terminé.`)
     }
   }, [activeCase, caseContextState.origin, caseTabs, isWorkspaceFilled, loaded, mainWindow, openCaseTab, snapshotWorkspace, switchCaseTab])
 
@@ -4271,42 +4271,7 @@ function App() {
   }
 
   const renderDashboardWindowContent = (kind: DashboardWindowKind) => {
-    if (kind === 'case') {
-      return (
-        <CaseContextPanel
-          available={caseContextState.available}
-          context={workingCase}
-          bridge={caseContextState.bridge}
-          tags={caseTags}
-          imports={caseImport}
-          autoFill={caseAutoFill}
-          onSetManual={(key, value) => {
-            if (workingCase && caseContextState.context?.caseKey.id !== workingCase.caseKey.id) {
-              setToast('Ce dossier n’est plus celui ouvert dans le CRM : rouvre-le pour le corriger.')
-              return
-            }
-            void caseContextState.setManual(key, value)
-          }}
-          onConfirm={(key) => {
-            if (workingCase && caseContextState.context?.caseKey.id !== workingCase.caseKey.id) {
-              setToast('Ce dossier n’est plus celui ouvert dans le CRM : rouvre-le pour le confirmer.')
-              return
-            }
-            void caseContextState.confirm(key)
-          }}
-          onClear={() => void caseContextState.clear()}
-          onCopy={(value) => void handleCopyContextValue(value)}
-          onOpenSettings={() => {
-            if (detachedKind) {
-              setToast('Les réglages s’ouvrent depuis la fenêtre principale : Paramètres › Connexion Cairm+.')
-              return
-            }
-            openSettingsTab('connections')
-            setEditOpen(true)
-          }}
-        />
-      )
-    }
+    if (kind === 'case') return null
     if (kind === 'reminders') return renderDashboardRemindersBlock()
     if (kind === 'news') return renderDashboardNewsBlock()
     if (kind === 'calculator') return renderWorkspaceDashboardVatPanel('Price calculator')
@@ -4330,6 +4295,7 @@ function App() {
       search={
         <SectionSearch
           className="section-search--mail" entries={mailSearchEntries} productTerms={workingProductTerms}
+          categories={mailTemplateCategories}
           placeholder="Rechercher un mail ou un Troubleshotgun" label="Rechercher dans les mails"
           onPick={(entry) => {
             if (entry.kind === 'template') {
@@ -4352,6 +4318,7 @@ function App() {
       search={
         <SectionSearch
           className="section-search--task" entries={taskSearchEntries} productTerms={workingProductTerms}
+          categories={taskTemplateCategories}
           placeholder="Rechercher une S-Task ou F-Task" label="Rechercher dans les tâches"
           onPick={(entry) => {
             const task = data.taskTemplates.find((item) => item.id === entry.id)
@@ -4577,7 +4544,10 @@ function App() {
           selectedTroubleshootgunTemplateId={selectedTroubleshootgunTemplateId}
           setSelectedTroubleshootgunFolderId={setSelectedTroubleshootgunFolderId}
           setSelectedTroubleshootgunTemplateId={setSelectedTroubleshootgunTemplateId}
-          troubleshootgunFolders={troubleshootgunFolders}
+          troubleshootgunFolders={[...troubleshootgunFolders].sort((a, b) =>
+            Number(matchesProduct({ kind: 'troubleshootgun', id: b.id, title: b.name, body: '', preview: '' }, workingProductTerms)) -
+            Number(matchesProduct({ kind: 'troubleshootgun', id: a.id, title: a.name, body: '', preview: '' }, workingProductTerms))
+          )}
         />
       )
     }
@@ -4907,8 +4877,7 @@ function App() {
         onClose={closeCaseTab}
         onCopy={handleCopyContextValue}
         onToggleLock={(tabId) => setCaseTabs((prev) => toggleCaseTabLock(prev, tabId))}
-        onOpenCase={() => showDashboardWindow('case')}
-        onOpenSettings={() => openSettingsTab('connections')}
+                onOpenSettings={() => openSettingsTab('connections')}
       />
       <div className={`app-shell app-shell--with-case-bar${panelItem ? ' app-shell--with-panel' : ''}`}>
       <LibrarySidebar

@@ -73,17 +73,24 @@ describe('unified search', () => {
     expect(searchLibrary(entries, 'abc')[0].items[0].id).toBe('p-1')
   })
 
-  it('puts the items of the case product first, then name matches', () => {
+  it('keeps regular mail results ordered by name relevance without product suggestions', () => {
     const groups = searchLibrary(entries, 'firmware', { productTerms: productSearchTerms(['T598']) })
     const mails = groups.find((group) => group.kind === 'template')!
-    expect(mails.items.map((item) => item.id)).toEqual(['m-2', 'm-1', 'm-3'])
-    expect(mails.items[0].productMatch).toBe(true)
+    expect(mails.items.map((item) => item.id)).toEqual(['m-1', 'm-2', 'm-3'])
+    expect(mails.items.every((item) => !item.productMatch)).toBe(true)
     expect(mails.items[2].productMatch).toBe(false)
   })
 
-  it('lists only the product items when the query is empty, if asked', () => {
+  it('suggests only Troubleshotgun templates for the case product', () => {
     const groups = searchLibrary(entries, '', { productTerms: productSearchTerms(['T598']), productOnlyWhenEmpty: true })
-    expect(groups.flatMap((group) => group.items.map((item) => item.id))).toEqual(['m-2', 'tg-1', 't-1'])
+    expect(groups.flatMap((group) => group.items.map((item) => item.id))).toEqual(['tg-1'])
+  })
+
+  it('does not boost snippets for the case product', () => {
+    const results = searchLibrary(entries, 'volant', { productTerms: productSearchTerms(['volant']) })
+    const snippets = results.find((group) => group.kind === 'snippet')!
+    expect(snippets.items.length).toBeGreaterThan(0)
+    expect(snippets.items.every((item) => !item.productMatch)).toBe(true)
   })
 
   it('keeps a limited number of items per group but counts them all', () => {

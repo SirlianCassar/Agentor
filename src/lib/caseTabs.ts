@@ -124,6 +124,19 @@ export const planCaseArrival = (
   return { kind: 'create' }
 }
 
+// A saved context may fill an empty tab, but must not switch a restored
+// workspace. Defer it without marking it handled, so the same case arriving
+// live from Cairm can still activate its tab.
+export const planCaseReception = (
+  state: CaseTabsState,
+  caseId: string,
+  activeIsEmpty: boolean,
+  origin: 'stored' | 'live',
+): CaseArrival | { kind: 'defer' } => {
+  const plan = planCaseArrival(state, caseId, activeIsEmpty)
+  return origin === 'stored' && plan.kind !== 'bind' ? { kind: 'defer' } : plan
+}
+
 // The case a tab works on: the live case when it is the same one, else the
 // last values seen for it. A tab without a case has none.
 export const caseForTab = (tab: CaseTab | undefined, live: CaseContext | null): CaseContext | null => {

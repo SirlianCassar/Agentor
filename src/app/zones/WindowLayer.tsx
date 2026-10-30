@@ -17,7 +17,7 @@ export interface WindowLayerProps {
   canDetach: boolean
   getWindowViewport: () => { width: number; height: number; }
   handleDetachDashboard: (kind: DashboardWindowKind) => void
-  renderDashboardWindowContent: (kind: DashboardWindowKind) => JSX.Element
+  renderDashboardWindowContent: (kind: DashboardWindowKind) => JSX.Element | null
   setWindowLayout: Dispatch<SetStateAction<WindowLayout>>
   topWindowZ: number
   windowLayout: WindowLayout
@@ -35,7 +35,7 @@ export function WindowLayer({
 }: WindowLayerProps) {
   return (
     <div className="window-layer">
-      {windowLayout.windows.map((frame) => {
+      {windowLayout.windows.filter((frame) => frame.kind !== 'case').map((frame) => {
         const option = dashboardWindowOptions.find((item) => item.id === frame.kind)
         if (!option) return null
         return (
