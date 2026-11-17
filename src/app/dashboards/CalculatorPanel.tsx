@@ -1,7 +1,10 @@
-// Price calculator, top to bottom: one card per product, the extra fees added
-// when needed, then the totals with and without VAT.
+// Price calculator, top to bottom: one card per spare part (price, Standard
+// and Express shipping, import fee), the extra fees added when needed, then
+// the totals with and without VAT for each shipping option.
+import type { ClipboardEvent } from 'react'
 import { ButtonIcon, CopyIcon, DeleteIcon } from '../../components/AppIcons'
 import {
+  DASHBOARD_CALCULATOR_SHIPPING_OPTIONS,
   type DashboardCalculatorCopyKey,
   type DashboardCalculatorFee,
   type DashboardCalculatorItem,
@@ -25,12 +28,17 @@ export interface CalculatorPanelProps {
   onUpdateFee: (id: string, field: 'label' | 'amount', value: string) => void
   onRemoveFee: (id: string) => void
   onCopy: (key: DashboardCalculatorCopyKey, value: number) => Promise<void>
+  // Reads the clipboard and fills a part from a Cairm+ Portal copy.
+  onPasteFromPortal: () => void
+  // Text pasted into a part's field; true when it was a Portal copy and filled the part.
+  onPasteTextIntoItem: (text: string, id: string) => boolean
 }
 
-const priceFields: Array<{ field: DashboardCalculatorPriceField; label: string; placeholder: string }> = [
-  { field: 'productPrice', label: 'Prix TTC', placeholder: '119,99' },
-  { field: 'shippingPrice', label: 'Livraison', placeholder: '14,99' },
-  { field: 'importFee', label: 'Import', placeholder: '0,00' },
+const priceFields: Array<{ field: DashboardCalculatorPriceField; label: string; aria: string; placeholder: string }> = [
+  { field: 'productPrice', label: 'Prix TTC', aria: 'Prix de la pièce', placeholder: '19,99' },
+  { field: 'standardShipping', label: 'Standard', aria: 'Livraison standard', placeholder: '6,90' },
+  { field: 'expressShipping', label: 'Express', aria: 'Livraison express', placeholder: '19,90' },
+  { field: 'importFee', label: 'Import', aria: "Frais d'import", placeholder: '0,00' },
 ]
 
 export function CalculatorPanel({
@@ -46,6 +54,8 @@ export function CalculatorPanel({
   onUpdateFee,
   onRemoveFee,
   onCopy,
+  onPasteFromPortal,
+  onPasteTextIntoItem,
 }: CalculatorPanelProps) {
   const amount = (key: DashboardCalculatorCopyKey, value: number, label: string) => (
     <button
@@ -59,33 +69,60 @@ export function CalculatorPanel({
       <CopyIcon />
     </button>
   )
-  const resultRow = (label: string, ht: number, ttc: number, keys: [DashboardCalculatorCopyKey, DashboardCalculatorCopyKey], total = false) => (
+  const resultRow = (
+    label: string,
+    copyLabel: string,
+    ht: number,
+    ttc: number,
+    keys: [DashboardCalculatorCopyKey, DashboardCalculatorCopyKey],
+    total = false,
+  ) => (
     <div className={`calc-result${total ? ' calc-result--total' : ''}`}>
       <span className="calc-result__label">{label}</span>
       <span className="calc-result__cell">
         <small>HT</small>
-        {amount(keys[0], ht, `${label.toLowerCase()} HT`)}
+        {amount(keys[0], ht, `${copyLabel} HT`)}
       </span>
       <span className="calc-result__cell">
         <small>TTC</small>
-        {amount(keys[1], ttc, `${label.toLowerCase()} TTC`)}
+        {amount(keys[1], ttc, `${copyLabel} TTC`)}
       </span>
     </div>
   )
+  const pasteIntoItem = (id: string) => (event: ClipboardEvent<HTMLInputElement>) => {
+    const text = event.clipboardData.getData('text/plain')
+    if (text.includes('\n') && onPasteTextIntoItem(text, id)) event.preventDefault()
+  }
 
   return (
     <article className="workspace-dashboard__panel workspace-dashboard__panel--calculator">
       <div className="workspace-dashboard__panel-title">{title}</div>
       <div className="calc">
         <div className="calc__scroll">
-          <section className="calc__section" aria-label="Produits">
-            <div className="calc__section-title">Produits</div>
+          <section className="calc__section" aria-label="Pièces">
+            <div className="calc__section-head">
+              <span className="calc__section-title">Pièces</span>
+              <button
+                className="btn btn--ghost btn--small btn--with-icon calc__paste"
+                type="button"
+                title="Remplir une pièce avec le prix copié dans Portal (bouton copier de Cairm+)"
+                onClick={onPasteFromPortal}
+              >
+                <ButtonIcon name="portal" />
+                Coller depuis Portal
+              </button>
+            </div>
             {items.map((item, index) => {
               const quantity = getDashboardCalculatorQuantity(item.quantity)
+              const name = item.partName.trim()
+              const sku = item.sku.trim()
               return (
                 <div className="calc-card" key={item.id}>
                   <div className="calc-card__head">
-                    <span className="calc-card__index">Produit {index + 1}</span>
+                    <span className="calc-card__index" title={name || undefined}>
+                      <span className="calc-card__name">{name || `Pièce ${index + 1}`}</span>
+                      {sku ? <small className="calc-card__sku">{sku}</small> : null}
+                    </span>
                     <div className="calc-card__quantity" aria-label={`Quantité ligne ${index + 1}`}>
                       <button
                         type="button"
@@ -110,33 +147,36 @@ export function CalculatorPanel({
                     <button
                       className="calc-card__remove"
                       type="button"
-                      title="Supprimer ce produit"
-                      aria-label={`Supprimer le produit ${index + 1}`}
+                      title="Supprimer cette pièce"
+                      aria-label={`Supprimer la pièce ${index + 1}`}
                       onClick={() => onRemoveItem(item.id)}
                     >
                       <DeleteIcon />
                     </button>
                   </div>
-                  {priceFields.map(({ field, label, placeholder }) => (
-                    <label className="calc-field" key={field}>
-                      <span className="calc-field__label">{label}</span>
-                      <input
-                        className="input calc-field__input"
-                        value={item[field]}
-                        onChange={(event) => onUpdateItem(item.id, field, event.target.value)}
-                        placeholder={placeholder}
-                        inputMode="decimal"
-                        aria-label={`${field === 'importFee' ? "Frais d'import" : field === 'shippingPrice' ? 'Livraison' : 'Produit'} ligne ${index + 1}`}
-                      />
-                      <span className="calc-field__unit">€</span>
-                    </label>
-                  ))}
+                  <div className="calc-card__fields">
+                    {priceFields.map(({ field, label, aria, placeholder }) => (
+                      <label className="calc-field" key={field}>
+                        <span className="calc-field__label">{label}</span>
+                        <input
+                          className="input calc-field__input"
+                          value={item[field]}
+                          onChange={(event) => onUpdateItem(item.id, field, event.target.value)}
+                          onPaste={pasteIntoItem(item.id)}
+                          placeholder={placeholder}
+                          inputMode="decimal"
+                          aria-label={`${aria} ligne ${index + 1}`}
+                        />
+                        <span className="calc-field__unit">€</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )
             })}
             <button className="btn btn--ghost btn--small btn--with-icon calc__add" type="button" onClick={onAddItem}>
               <ButtonIcon name="add" />
-              Ajouter un produit
+              Ajouter une pièce
             </button>
           </section>
 
@@ -175,11 +215,48 @@ export function CalculatorPanel({
         </div>
 
         <section className="calc__results" aria-label="Totaux">
-          {resultRow('Produits', totals.productsHt, totals.productsTtc, ['productsHt', 'productsTtc'])}
-          {resultRow('Livraison', totals.shippingHt, totals.shippingTtc, ['shippingHt', 'shippingTtc'])}
-          {fees.length ? resultRow('Frais', totals.feesHt, totals.feesTtc, ['feesHt', 'feesTtc']) : null}
-          {resultRow('Total', totals.totalHt, totals.totalTtc, ['totalHt', 'totalTtc'], true)}
-          <p className="calc__rule">Livraison : la plus chère en entier, les suivantes à moitié prix.</p>
+          {resultRow('Pièces', 'pièces', totals.productsHt, totals.productsTtc, ['productsHt', 'productsTtc'])}
+          {fees.length ? resultRow('Frais', 'frais', totals.feesHt, totals.feesTtc, ['feesHt', 'feesTtc']) : null}
+          <div className="calc-options">
+            {DASHBOARD_CALCULATOR_SHIPPING_OPTIONS.map(({ option, label }) => {
+              const optionTotals = totals[option]
+              const lower = label.toLowerCase()
+              return (
+                <div className={`calc-option calc-option--${option}`} key={option} aria-label={`Livraison ${lower}`}>
+                  <div className="calc-option__title">
+                    <span>
+                      Livraison {lower}
+                      {totals.hasImportFee ? <em> · import inclus</em> : null}
+                    </span>
+                    {optionTotals.incomplete ? (
+                      <small className="calc-option__warning" title={`Une pièce n'a pas de prix de livraison ${lower}.`}>
+                        Prix manquant
+                      </small>
+                    ) : null}
+                  </div>
+                  {resultRow(
+                    'Livraison',
+                    `livraison ${lower}`,
+                    optionTotals.shippingHt,
+                    optionTotals.shippingTtc,
+                    [`${option}ShippingHt`, `${option}ShippingTtc`],
+                  )}
+                  {resultRow(
+                    'Total',
+                    `total ${lower}`,
+                    optionTotals.totalHt,
+                    optionTotals.totalTtc,
+                    [`${option}TotalHt`, `${option}TotalTtc`],
+                    true,
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <p className="calc__rule">
+            Livraison : la plus chère en entier, les suivantes à moitié prix
+            {totals.hasImportFee ? ", frais d'import inclus" : ''}.
+          </p>
         </section>
       </div>
     </article>

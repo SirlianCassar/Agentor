@@ -22,6 +22,7 @@ const api = {
     }
     return true
   },
+  readClipboardText: () => clipboard.readText(),
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   openProcedure: () => ipcRenderer.invoke('procedure:open'),
   onDataChanged: (callback: (data: unknown) => void) => subscribe('storage:changed', callback),

@@ -88,6 +88,25 @@ export async function importJson() {
   }
 }
 
+// Clipboard text, or null when it cannot be read.
+export async function readClipboardText(): Promise<string | null> {
+  if (window.agentor?.readClipboardText) {
+    try {
+      return window.agentor.readClipboardText()
+    } catch {
+      void window.agentor
+    }
+  }
+  if (navigator.clipboard?.readText) {
+    try {
+      return await navigator.clipboard.readText()
+    } catch {
+      void navigator.clipboard
+    }
+  }
+  return null
+}
+
 export async function copyText(text: string, html?: string) {
   if (window.agentor?.copyText) {
     try {
