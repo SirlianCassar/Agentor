@@ -26,14 +26,15 @@ describe('RQT references only', () => {
     expect(result.message.observations.find((item) => item.key === 'productName')?.value).toBe('T598')
     expect(fillTemplateFromContext('<DOSSIER>', createCaseContext(result.message.caseKey, at)).text).toBe('RQT-123456-ABCD')
   })
-  it('cleans CAS numbers in saved contexts and locked tabs', () => {
+  it('cleans CAS numbers in saved contexts and pinned tabs', () => {
     const saved = { ...createCaseContext(key, at), caseKey: key, fields: { caseNumber: {value:'CAS-987654',status:'auto' as const,source:'crm' as const,updatedAt:at} } }
     const clean = onlyRqtContext(saved)
     expect(clean.caseKey.number).toBeUndefined()
     expect(clean.fields.caseNumber).toBeUndefined()
     const tabs = parseCaseTabs({ activeId:'a', tabs:[{id:'a',caseKey:{id,number:'CAS-987654'},locked:true,context:saved}] })
-    expect(caseTabLabel(tabs.tabs[0],0)).toBe('RQT sans numéro')
-    expect(tabs.tabs[0].context?.fields.caseNumber).toBeUndefined()
+    const pinned = tabs.tabs.find((tab) => tab.id === 'a')!
+    expect(caseTabLabel(pinned,1)).toBe('RQT sans numéro')
+    expect(pinned.context?.fields.caseNumber).toBeUndefined()
   })
   it('does not overwrite a valid RQT with a later CAS observation', () => {
     const context = createCaseContext({...key,number:'RQT-123456-ABCD'},at)

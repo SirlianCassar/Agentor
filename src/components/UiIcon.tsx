@@ -58,6 +58,9 @@ import { CaretRight } from '@phosphor-icons/react/CaretRight'
 import { ArrowSquareOut } from '@phosphor-icons/react/ArrowSquareOut'
 import { ArrowSquareIn } from '@phosphor-icons/react/ArrowSquareIn'
 import { Translate } from '@phosphor-icons/react/Translate'
+import { PushPin } from '@phosphor-icons/react/PushPin'
+import { PushPinSlash } from '@phosphor-icons/react/PushPinSlash'
+import { CaretDown } from '@phosphor-icons/react/CaretDown'
 
 const icons: Record<AppIconName, Icon> = {
   add: Plus,
@@ -122,6 +125,9 @@ const icons: Record<AppIconName, Icon> = {
   translate: Translate,
   lock: LockSimple,
   unlock: LockSimpleOpen,
+  pin: PushPin,
+  unpin: PushPinSlash,
+  caretDown: CaretDown,
 }
 
 export const UiIcon = ({ name, className }: { name: AppIconName; className?: string }) => {

@@ -3,22 +3,29 @@ import type { CaseContext } from '../../context/caseContext'
 import {
   addCaseTab,
   bindCaseTab,
+  CASE_HISTORY_LIMIT,
   CASE_TABS_LIMIT,
+  canPinMain,
   caseForTab,
+  caseHistoryLabel,
   caseTabLabel,
   createCaseTab,
   createCaseTabsState,
+  mainCaseTab,
   parseCaseTabs,
+  pinMainCase,
   planCaseArrival,
   planCaseReception,
+  recallCaseHistory,
   rememberCaseContext,
-  removeCaseTab,
   saveTabWorkspace,
   serializeCaseTabs,
   setActiveCaseTab,
-  toggleCaseTabLock,
+  showCaseInMain,
+  unpinCaseTab,
+  type CaseTabsState,
 } from '../caseTabs'
-import { createEmptyDraftBoxSlot } from '../taskDraft'
+import { createEmptyDraftBoxSlot, type DraftBoxSlot } from '../taskDraft'
 
 const context = (id: string, number: string, customer = 'Client Fictif'): CaseContext =>
   ({
@@ -30,84 +37,137 @@ const context = (id: string, number: string, customer = 'Client Fictif'): CaseCo
   }) as unknown as CaseContext
 
 const withMail = (email: string) => ({ ...createEmptyDraftBoxSlot(), email })
+const isFilled = (slot: DraftBoxSlot) => Boolean(slot.email.trim())
+const main = (state: CaseTabsState) => mainCaseTab(state)
+const boundMain = (key: { id: string; number?: string }) => {
+  const state = createCaseTabsState()
+  return bindCaseTab(state, state.activeId, key)
+}
+const show = (state: CaseTabsState, id: string) => showCaseInMain(state, { id, number: `RQT-${id}` }, isFilled).state
 
 describe('case tabs', () => {
-  it('retries a saved case when Cairm sends it live, without losing the draft', () => {
-    const state = createCaseTabsState()
-    const first = saveTabWorkspace(state, state.activeId, withMail('Mail en cours'))
-    const target = createCaseTab({ id: 'case-a', number: 'RQT-1' })
-    const restored = setActiveCaseTab(addCaseTab(first, target), first.activeId)
-    expect(planCaseReception(restored, 'case-a', false, 'stored')).toEqual({ kind: 'defer' })
-    const plan = planCaseReception(restored, 'case-a', false, 'live')
-    expect(plan).toEqual({ kind: 'switch', tabId: target.id })
-    const received = rememberCaseContext(restored, context('case-a', 'RQT-1'))
-    expect(caseForTab(received.tabs.find((tab) => tab.id === target.id), context('case-a', 'RQT-1'))?.fields.customerName?.value).toBe('Client Fictif')
-    expect(received.tabs[0].workspace.email).toBe('Mail en cours')
-  })
-
-  it('starts with one empty tab without a case', () => {
+  it('starts with one empty main tab without a case', () => {
     const state = createCaseTabsState()
     expect(state.tabs).toHaveLength(1)
+    expect(state.tabs[0].main).toBe(true)
     expect(state.tabs[0].caseKey).toBeNull()
-    expect(caseTabLabel(state.tabs[0], 0)).toBe('Brouillon 1')
+    expect(caseTabLabel(state.tabs[0], 0)).toBe('Onglet principal')
+    expect(caseTabLabel(createCaseTab(), 1)).toBe('Brouillon 1')
   })
 
-  it('gives the empty active tab to the case that arrives', () => {
+  it('gives the empty main tab to the case that arrives', () => {
     const state = createCaseTabsState()
     expect(planCaseArrival(state, 'case-a', true)).toEqual({ kind: 'bind', tabId: state.activeId })
     const bound = bindCaseTab(state, state.activeId, { id: 'case-a', number: 'RQT-1' })
     expect(caseTabLabel(bound.tabs[0], 0)).toBe('RQT-1')
   })
 
-  it('opens a new tab when the active one holds a draft or another case', () => {
-    const state = createCaseTabsState()
-    expect(planCaseArrival(state, 'case-a', false)).toEqual({ kind: 'create' })
-    const bound = bindCaseTab(state, state.activeId, { id: 'case-a' })
-    expect(planCaseArrival(bound, 'case-b', true)).toEqual({ kind: 'create' })
+  it('changes the main tab to the new case and keeps the previous one in its history', () => {
+    let state = boundMain({ id: 'a' })
+    expect(planCaseArrival(state, 'b', true)).toEqual({ kind: 'main' })
+    state = saveTabWorkspace(state, state.activeId, withMail('Mail pour A'))
+    state = show(state, 'b')
+    expect(state.tabs).toHaveLength(1)
+    expect(main(state).caseKey?.id).toBe('b')
+    expect(main(state).workspace.email).toBe('')
+    expect(main(state).history?.map((entry) => entry.caseKey?.id)).toEqual(['a'])
+    // Coming back to A brings its draft back, B goes into the history.
+    state = show(state, 'a')
+    expect(main(state).workspace.email).toBe('Mail pour A')
+    expect(main(state).history?.map((entry) => entry.caseKey?.id)).toEqual(['b'])
   })
 
-  it('goes back to the tab of a case already open', () => {
+  it('keeps a draft without a case in the history, but not an empty one', () => {
     const start = createCaseTabsState()
-    let state = bindCaseTab(start, start.activeId, { id: 'x' })
-    const first = createCaseTab({ id: 'case-a' })
-    state = addCaseTab(state, first)
-    state = addCaseTab(state, createCaseTab({ id: 'case-b' }))
-    expect(planCaseArrival(state, 'case-a', true)).toEqual({ kind: 'switch', tabId: first.id })
-    expect(planCaseArrival(setActiveCaseTab(state, first.id), 'case-a', false)).toEqual({ kind: 'none' })
+    const draft = show(saveTabWorkspace(start, start.activeId, withMail('Note libre')), 'a')
+    expect(main(draft).history).toHaveLength(1)
+    expect(caseHistoryLabel(main(draft).history![0])).toBe('Brouillon sans dossier')
+    const back = recallCaseHistory(draft, 0, isFilled).state
+    expect(main(back).caseKey).toBeNull()
+    expect(main(back).workspace.email).toBe('Note libre')
+    expect(main(back).history?.[0].caseKey?.id).toBe('a')
+    expect(main(show(createCaseTabsState(), 'a')).history).toHaveLength(0)
   })
 
-  it('refuses a new tab when the limit is reached', () => {
+  it('remembers the last cases only, and pins a draft pushed out of the history', () => {
     let state = createCaseTabsState()
-    state = bindCaseTab(state, state.activeId, { id: 'case-0' })
-    for (let index = 1; index < CASE_TABS_LIMIT; index += 1) state = addCaseTab(state, createCaseTab({ id: `case-${index}` }))
-    expect(planCaseArrival(state, 'case-new', true)).toEqual({ kind: 'full' })
+    state = bindCaseTab(state, state.activeId, { id: 'c0' })
+    state = saveTabWorkspace(state, state.activeId, withMail('Brouillon du premier'))
+    for (let index = 1; index <= CASE_HISTORY_LIMIT; index += 1) state = show(state, `c${index}`)
+    expect(main(state).history).toHaveLength(CASE_HISTORY_LIMIT - 1)
+    expect(main(state).history?.map((entry) => entry.caseKey?.id)).toEqual(['c4', 'c3', 'c2', 'c1'])
+    // c0 had a draft: it is now a pinned tab instead of being lost.
+    expect(state.tabs).toHaveLength(2)
+    expect(state.tabs[1].caseKey?.id).toBe('c0')
+    expect(state.tabs[1].workspace.email).toBe('Brouillon du premier')
+    // c1 had none: pushed out quietly.
+    state = show(state, 'c6')
+    expect(state.tabs).toHaveLength(2)
   })
 
-  it('adds a tab next to the active one and activates it', () => {
-    const state = createCaseTabsState()
-    const second = createCaseTab()
-    const third = createCaseTab()
-    const next = addCaseTab(addCaseTab(state, second), third)
-    expect(next.tabs.map((tab) => tab.id)).toEqual([state.activeId, second.id, third.id])
-    const between = addCaseTab(setActiveCaseTab(next, state.activeId), createCaseTab())
-    expect(between.tabs[1].id).toBe(between.activeId)
+  it('recalls a case from the history by its position', () => {
+    let state = boundMain({ id: 'a' })
+    state = show(show(state, 'b'), 'c')
+    const recalled = recallCaseHistory(state, 1, isFilled).state
+    expect(main(recalled).caseKey?.id).toBe('a')
+    expect(main(recalled).history?.map((entry) => entry.caseKey?.id)).toEqual(['c', 'b'])
+    expect(recallCaseHistory(state, 9, isFilled).state).toBe(state)
   })
 
-  it('activates the neighbour when the active tab is closed, and never ends empty', () => {
-    const state = createCaseTabsState()
-    const second = createCaseTab()
-    const both = addCaseTab(state, second)
-    expect(removeCaseTab(both, second.id).activeId).toBe(state.activeId)
-    expect(removeCaseTab(setActiveCaseTab(both, state.activeId), state.activeId).activeId).toBe(second.id)
-    const last = removeCaseTab(state, state.activeId)
-    expect(last.tabs).toHaveLength(1)
-    expect(last.tabs[0].id).not.toBe(state.activeId)
+  it('pins the main case into a new tab and empties the main tab', () => {
+    let state = createCaseTabsState()
+    state = rememberCaseContext(bindCaseTab(state, state.activeId, { id: 'a', number: 'RQT-1' }), context('a', 'RQT-1'))
+    state = saveTabWorkspace(state, state.activeId, withMail('À garder'))
+    expect(canPinMain(state, isFilled)).toBe(true)
+    const pinned = pinMainCase(state)
+    expect(pinned.tabs).toHaveLength(2)
+    expect(pinned.activeId).toBe(pinned.tabs[1].id)
+    expect(pinned.tabs[1].caseKey?.id).toBe('a')
+    expect(pinned.tabs[1].workspace.email).toBe('À garder')
+    expect(pinned.tabs[1].context?.fields.customerName?.value).toBe('Client Fictif')
+    expect(main(pinned).caseKey).toBeNull()
+    expect(main(pinned).workspace.email).toBe('')
+    expect(canPinMain(pinned, isFilled)).toBe(false)
+    // The CRM opening the pinned case again goes to its tab, not to the main tab.
+    expect(planCaseArrival(setActiveCaseTab(pinned, main(pinned).id), 'a', true)).toEqual({ kind: 'switch', tabId: pinned.tabs[1].id })
+    // A new case takes the main tab and leaves the pinned one alone.
+    expect(planCaseArrival(pinned, 'b', true)).toEqual({ kind: 'bind', tabId: main(pinned).id })
   })
 
-  it('keeps the working set of the tab being left', () => {
+  it('goes back to the main tab when the CRM reopens its case from a pinned tab', () => {
+    let state = boundMain({ id: 'a' })
+    state = addCaseTab(state, createCaseTab({ id: 'b' }))
+    expect(planCaseArrival(state, 'a', false)).toEqual({ kind: 'switch', tabId: main(state).id })
+    expect(planCaseArrival(state, 'b', false)).toEqual({ kind: 'none' })
+  })
+
+  it('unpins a tab into the main history and never removes the main tab', () => {
+    let state = boundMain({ id: 'a' })
+    state = pinMainCase(saveTabWorkspace(state, state.activeId, withMail('Brouillon A')))
+    state = show(state, 'b')
+    const pinnedId = state.tabs[1].id
+    const unpinned = unpinCaseTab(setActiveCaseTab(state, pinnedId), pinnedId, isFilled).state
+    expect(unpinned.tabs).toHaveLength(1)
+    expect(unpinned.activeId).toBe(main(unpinned).id)
+    expect(main(unpinned).history?.[0].caseKey?.id).toBe('a')
+    expect(main(unpinned).history?.[0].workspace.email).toBe('Brouillon A')
+    expect(unpinCaseTab(unpinned, main(unpinned).id, isFilled).state).toBe(unpinned)
+  })
+
+  it('does not pin beyond the tab limit', () => {
+    let state = boundMain({ id: 'm' })
+    for (let index = 1; index < CASE_TABS_LIMIT; index += 1) state = addCaseTab(state, createCaseTab({ id: `p${index}` }))
+    state = setActiveCaseTab(state, main(state).id)
+    expect(canPinMain(state, isFilled)).toBe(false)
+    expect(pinMainCase(state)).toBe(state)
+  })
+
+  it('retries a saved case when Cairm sends it live, without losing the draft', () => {
     const state = createCaseTabsState()
-    const saved = saveTabWorkspace(state, state.activeId, withMail('Bonjour'))
-    expect(saved.tabs[0].workspace.email).toBe('Bonjour')
+    const first = saveTabWorkspace(state, state.activeId, withMail('Mail en cours'))
+    expect(planCaseReception(first, 'case-a', false, 'stored')).toEqual({ kind: 'defer' })
+    expect(planCaseReception(first, 'case-a', false, 'live')).toEqual({ kind: 'main' })
+    expect(planCaseReception(state, 'case-a', true, 'stored')).toEqual({ kind: 'bind', tabId: state.activeId })
   })
 
   it('uses the live case only for its own tab, else the last values seen', () => {
@@ -122,40 +182,58 @@ describe('case tabs', () => {
     expect(caseForTab({ ...tab, caseKey: null }, liveA)).toBeNull()
   })
 
-  it('saves the drafts and the case key but never the case values', () => {
-    let state = createCaseTabsState()
-    state = bindCaseTab(state, state.activeId, { id: 'case-a', number: 'RQT-1' })
-    state = rememberCaseContext(state, context('case-a', 'RQT-1', 'Nom Client Secret'))
-    state = saveTabWorkspace(state, state.activeId, withMail('Texte'))
-    const text = serializeCaseTabs(state)
-    expect(text).not.toContain('Nom Client Secret')
-    const back = parseCaseTabs(JSON.parse(text))
-    expect(back.activeId).toBe(state.activeId)
-    expect(back.tabs[0].caseKey).toEqual({ id: 'case-a', number: 'RQT-1' })
-    expect(back.tabs[0].workspace.email).toBe('Texte')
+  it('keeps the case values of history entries in memory', () => {
+    let state = boundMain({ id: 'a' })
+    state = show(state, 'b')
+    state = rememberCaseContext(state, context('a', 'RQT-7', 'Client A'))
+    expect(main(state).history?.[0].context?.fields.customerName?.value).toBe('Client A')
+    expect(main(state).history?.[0].caseKey?.number).toBe('RQT-7')
+    expect(main(show(state, 'a')).context?.fields.customerName?.value).toBe('Client A')
   })
 
-  it('keeps a locked tab: no closing, no other case, values saved', () => {
+  it('saves drafts, case keys and history, case values only for pinned tabs', () => {
     let state = createCaseTabsState()
-    state = bindCaseTab(state, state.activeId, { id: 'case-a', number: 'RQT-1' })
-    state = rememberCaseContext(state, context('case-a', 'RQT-1', 'Client Gardé'))
-    state = toggleCaseTabLock(state, state.activeId)
-    expect(state.tabs[0].locked).toBe(true)
-    expect(removeCaseTab(state, state.activeId)).toBe(state)
-    const back = parseCaseTabs(JSON.parse(serializeCaseTabs(state)))
-    expect(back.tabs[0].locked).toBe(true)
-    expect(back.tabs[0].context?.fields.customerName?.value).toBe('Client Gardé')
+    state = bindCaseTab(state, state.activeId, { id: 'a', number: 'RQT-1' })
+    state = rememberCaseContext(state, context('a', 'RQT-1', 'Nom Client Secret'))
+    state = saveTabWorkspace(state, state.activeId, withMail('Texte'))
+    state = rememberCaseContext(show(state, 'b'), context('b', 'RQT-2', 'Client Épinglé'))
+    state = pinMainCase(state)
+    const text = serializeCaseTabs(state)
+    expect(text).not.toContain('Nom Client Secret')
+    expect(text).toContain('Client Épinglé')
+    const back = parseCaseTabs(JSON.parse(text))
+    expect(back.activeId).toBe(state.activeId)
+    expect(main(back).history?.[0].caseKey).toEqual({ id: 'a', number: 'RQT-1' })
+    expect(main(back).history?.[0].workspace.email).toBe('Texte')
+    expect(main(back).history?.[0].context).toBeUndefined()
+    expect(back.tabs[1].context?.fields.customerName?.value).toBe('Client Épinglé')
     // A saved context that does not belong to the tab's case is ignored.
-    const wrong = JSON.parse(serializeCaseTabs(state))
-    wrong.tabs[0].context.caseKey.id = 'case-b'
-    expect(parseCaseTabs(wrong).tabs[0].context).toBeUndefined()
-    // An empty locked tab is not given to the next case.
-    let empty = toggleCaseTabLock(createCaseTabsState(), createCaseTabsState().activeId)
-    empty = toggleCaseTabLock(empty, empty.activeId)
-    expect(planCaseArrival(empty, 'case-c', true)).toEqual({ kind: 'create' })
-    const unlocked = toggleCaseTabLock(state, state.activeId)
-    expect(unlocked.tabs[0].locked).toBe(false)
-    expect(serializeCaseTabs(unlocked)).not.toContain('Client Gardé')
+    const wrong = JSON.parse(text)
+    wrong.tabs[1].context.caseKey.id = 'other'
+    expect(parseCaseTabs(wrong).tabs[1].context).toBeUndefined()
+  })
+
+  it('turns tabs saved before the main tab into a main tab and pinned tabs', () => {
+    const legacy = {
+      version: 1,
+      activeId: 'two',
+      tabs: [
+        { id: 'one', caseKey: { id: 'a', number: 'RQT-1' }, workspace: { email: 'A' }, locked: true, context: context('a', 'RQT-1', 'Gardé') },
+        { id: 'two', caseKey: { id: 'b' }, workspace: { email: 'B' } },
+        { id: 'three', caseKey: null, workspace: { email: 'C' } },
+      ],
+    }
+    const state = parseCaseTabs(legacy)
+    expect(state.tabs.map((tab) => tab.id)).toEqual(['two', 'one', 'three'])
+    expect(state.tabs[0].main).toBe(true)
+    expect(state.activeId).toBe('two')
+    expect(state.tabs[1].context?.fields.customerName?.value).toBe('Gardé')
+    // A locked active tab stays pinned; a new main tab is made.
+    const locked = parseCaseTabs({ ...legacy, activeId: 'one' })
+    expect(locked.tabs).toHaveLength(4)
+    expect(locked.tabs[0].main).toBe(true)
+    expect(locked.tabs[0].caseKey).toBeNull()
+    expect(locked.activeId).toBe('one')
   })
 
   it('names a tab by its RQT number only', () => {
@@ -166,11 +244,12 @@ describe('case tabs', () => {
   it('reads damaged saved tabs without failing', () => {
     expect(parseCaseTabs(null).tabs).toHaveLength(1)
     expect(parseCaseTabs({ tabs: 'x' }).tabs).toHaveLength(1)
-    const parsed = parseCaseTabs({ activeId: 'gone', tabs: [{ id: 'a', workspace: { email: 3, taskBoxes: [{ task: 'T' }] } }, { id: 'a' }, null] })
+    const parsed = parseCaseTabs({ version: 2, activeId: 'gone', tabs: [{ id: 'a', main: true, history: [null, { caseKey: { id: 'h' } }, { caseKey: { id: 'h' } }], workspace: { email: 3, taskBoxes: [{ task: 'T' }] } }, { id: 'a' }, null] })
     expect(parsed.tabs).toHaveLength(1)
     expect(parsed.activeId).toBe('a')
     expect(parsed.tabs[0].workspace.email).toBe('')
     expect(parsed.tabs[0].workspace.taskBoxes[0].task).toBe('T')
     expect(parsed.tabs[0].workspace.taskBoxes).toHaveLength(2)
+    expect(parsed.tabs[0].history?.map((entry) => entry.caseKey?.id)).toEqual(['h'])
   })
 })

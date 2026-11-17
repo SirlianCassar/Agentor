@@ -60,4 +60,7 @@ export type AppIconName =
   | 'attach'
   | 'lock'
   | 'unlock'
+  | 'pin'
+  | 'unpin'
+  | 'caretDown'
   | 'translate'

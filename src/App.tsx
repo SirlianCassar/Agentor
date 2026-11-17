@@ -210,16 +210,21 @@ import {
   addCaseTab,
   bindCaseTab,
   CASE_TABS_LIMIT,
+  canPinMain,
   caseForTab,
+  caseHistoryLabel,
   caseTabLabel,
   createCaseTab,
+  mainCaseTab,
+  pinMainCase,
   planCaseReception,
+  recallCaseHistory,
   rememberCaseContext,
-  removeCaseTab,
   saveTabWorkspace,
   setActiveCaseTab,
-  toggleCaseTabLock,
-  type CaseTabKey,
+  showCaseInMain,
+  unpinCaseTab,
+  type CaseHistoryEntry,
   type CaseTabsState,
 } from './lib/caseTabs'
 import { CaseBar } from './app/zones/CaseBar'
@@ -1113,7 +1118,6 @@ function App() {
     setPanelHidden(false)
     setPanelStack((prev) => showPanelItem(prev, item))
   }, [])
-  const [caseTabCloseArmed, setCaseTabCloseArmed] = useState<string | null>(null)
   const activeTab = activeCaseTab(caseTabs)
   // The case the drafts are filled with: in the new interface, the active tab's case.
   const tabCase = mainWindow ? caseForTab(activeTab, activeCase) : activeCase
@@ -2898,57 +2902,80 @@ function App() {
     [closeDraftBoxTooltip, updateEmailDraft, updateTaskDraft],
   )
 
+  // Tabs with the working set on screen saved into the active tab.
+  const liveCaseTabs = useCallback(
+    () => saveTabWorkspace(caseTabs, caseTabs.activeId, snapshotWorkspace()),
+    [caseTabs, snapshotWorkspace],
+  )
+
+  // Keeps a change made from the live tabs and puts on screen the working set
+  // of the tab shown afterwards, when it is another one.
+  const commitCaseTabs = useCallback(
+    (live: CaseTabsState, next: CaseTabsState, dropped: CaseHistoryEntry[] = []) => {
+      setCaseTabs(next)
+      const before = activeCaseTab(live)
+      const after = activeCaseTab(next)
+      if (after.id !== before.id || after.workspace !== before.workspace) restoreWorkspace(after.workspace)
+      if (dropped.length) {
+        setToast(
+          `${CASE_TABS_LIMIT} onglets ouverts, plus de place pour l’épingler : le brouillon de ${dropped.map(caseHistoryLabel).join(', ')} a quitté les derniers dossiers.`,
+        )
+      }
+    },
+    [restoreWorkspace],
+  )
+
   const switchCaseTab = useCallback(
     (tabId: string) => {
-      if (tabId === caseTabs.activeId) return
-      const target = caseTabs.tabs.find((tab) => tab.id === tabId)
-      if (!target) return
-      const current = snapshotWorkspace()
-      setCaseTabs((prev) => setActiveCaseTab(saveTabWorkspace(prev, prev.activeId, current), tabId))
-      setCaseTabCloseArmed(null)
-      restoreWorkspace(target.workspace)
+      if (tabId === caseTabs.activeId || !caseTabs.tabs.some((tab) => tab.id === tabId)) return
+      const live = liveCaseTabs()
+      commitCaseTabs(live, setActiveCaseTab(live, tabId))
     },
-    [caseTabs, restoreWorkspace, snapshotWorkspace],
+    [caseTabs, commitCaseTabs, liveCaseTabs],
   )
 
-  const openCaseTab = useCallback(
-    (caseKey: CaseTabKey | null) => {
-      if (caseTabs.tabs.length >= CASE_TABS_LIMIT) {
-        setToast(`${CASE_TABS_LIMIT} onglets au maximum : ferme un dossier terminé.`)
-        return false
-      }
-      const current = snapshotWorkspace()
-      const tab = createCaseTab(caseKey)
-      setCaseTabs((prev) => addCaseTab(saveTabWorkspace(prev, prev.activeId, current), tab))
-      setCaseTabCloseArmed(null)
-      restoreWorkspace(tab.workspace)
-      return true
-    },
-    [caseTabs.tabs.length, restoreWorkspace, snapshotWorkspace],
-  )
+  // « + » : a new pinned tab without a case.
+  const openCaseTab = useCallback(() => {
+    if (caseTabs.tabs.length >= CASE_TABS_LIMIT) {
+      setToast(`${CASE_TABS_LIMIT} onglets au maximum : désépingle un dossier terminé.`)
+      return
+    }
+    const live = liveCaseTabs()
+    commitCaseTabs(live, addCaseTab(live, createCaseTab(null)))
+  }, [caseTabs.tabs.length, commitCaseTabs, liveCaseTabs])
 
-  const closeCaseTab = useCallback(
+  // Sets the main tab's case aside in a new pinned tab.
+  const pinMainTab = useCallback(() => {
+    const live = liveCaseTabs()
+    if (!canPinMain(live, isWorkspaceFilled)) {
+      setToast(
+        live.tabs.length >= CASE_TABS_LIMIT
+          ? `${CASE_TABS_LIMIT} onglets au maximum : désépingle un dossier terminé.`
+          : 'Rien à épingler : l’onglet principal n’a ni dossier ni brouillon.',
+      )
+      return
+    }
+    commitCaseTabs(live, pinMainCase(live))
+  }, [commitCaseTabs, isWorkspaceFilled, liveCaseTabs])
+
+  // A pinned tab goes back into the main tab's last cases, with its draft.
+  const unpinTab = useCallback(
     (tabId: string) => {
-      const tab = caseTabs.tabs.find((item) => item.id === tabId)
-      if (!tab) return
-      if (tab.locked) {
-        setToast('Onglet verrouillé : déverrouille-le avec le cadenas pour le fermer.')
-        return
-      }
-      const isActive = tabId === caseTabs.activeId
-      const filled = isWorkspaceFilled(isActive ? snapshotWorkspace() : tab.workspace)
-      if (filled && caseTabCloseArmed !== tabId) {
-        setCaseTabCloseArmed(tabId)
-        window.setTimeout(() => setCaseTabCloseArmed((armed) => (armed === tabId ? null : armed)), 2500)
-        setToast('Cet onglet contient un brouillon : clique encore sur la croix pour le fermer.')
-        return
-      }
-      setCaseTabCloseArmed(null)
-      const next = removeCaseTab(caseTabs, tabId)
-      setCaseTabs(next)
-      if (next.activeId !== caseTabs.activeId) restoreWorkspace(activeCaseTab(next).workspace)
+      const live = liveCaseTabs()
+      const result = unpinCaseTab(live, tabId, isWorkspaceFilled)
+      commitCaseTabs(live, result.state, result.dropped)
     },
-    [caseTabCloseArmed, caseTabs, isWorkspaceFilled, restoreWorkspace, snapshotWorkspace],
+    [commitCaseTabs, isWorkspaceFilled, liveCaseTabs],
+  )
+
+  // Shows again one of the main tab's last cases.
+  const recallMainCase = useCallback(
+    (index: number) => {
+      const live = liveCaseTabs()
+      const result = recallCaseHistory(live, index, isWorkspaceFilled)
+      commitCaseTabs(live, result.state, result.dropped)
+    },
+    [commitCaseTabs, isWorkspaceFilled, liveCaseTabs],
   )
 
   useEffect(() => {
@@ -2990,19 +3017,23 @@ function App() {
     const caseId = activeCase.caseKey.id
     if (caseId === lastArrivedCaseIdRef.current) return
     const caseKey = { id: caseId, number: activeCase.caseKey.number }
-    const plan = planCaseReception(caseTabs, caseId, !isWorkspaceFilled(snapshotWorkspace()), caseContextState.origin)
-    // The case kept from the last session only takes an empty tab; it never moves away from the tab in use.
-    if (plan.kind === 'defer' || plan.kind === 'full') {
-      if (plan.kind === 'full') setToast(`${CASE_TABS_LIMIT} onglets ouverts : ferme un dossier terminé pour recevoir celui du CRM.`)
-      return
-    }
+    const main = mainCaseTab(caseTabs)
+    const mainIsEmpty = !isWorkspaceFilled(main.id === caseTabs.activeId ? snapshotWorkspace() : main.workspace)
+    const plan = planCaseReception(caseTabs, caseId, mainIsEmpty, caseContextState.origin)
+    // The case kept from the last session only takes an empty main tab; it never moves away from the tab in use.
+    if (plan.kind === 'defer') return
     lastArrivedCaseIdRef.current = caseId
     if (plan.kind === 'switch') switchCaseTab(plan.tabId)
-    else if (plan.kind === 'bind') setCaseTabs((prev) => rememberCaseContext(bindCaseTab(prev, plan.tabId, caseKey), activeCase))
-    else if (plan.kind === 'create') {
-      if (openCaseTab(caseKey)) setCaseTabs((prev) => rememberCaseContext(prev, activeCase))
+    else if (plan.kind === 'bind') {
+      const live = liveCaseTabs()
+      commitCaseTabs(live, rememberCaseContext(setActiveCaseTab(bindCaseTab(live, plan.tabId, caseKey), plan.tabId), activeCase))
+    } else if (plan.kind === 'main') {
+      // The main tab changes to the new case; the previous one joins its last cases.
+      const live = liveCaseTabs()
+      const result = showCaseInMain(live, caseKey, isWorkspaceFilled)
+      commitCaseTabs(live, rememberCaseContext(result.state, activeCase), result.dropped)
     }
-  }, [activeCase, caseContextState.origin, caseTabs, isWorkspaceFilled, loaded, mainWindow, openCaseTab, snapshotWorkspace, switchCaseTab])
+  }, [activeCase, caseContextState.origin, caseTabs, commitCaseTabs, isWorkspaceFilled, liveCaseTabs, loaded, mainWindow, snapshotWorkspace, switchCaseTab])
 
   const updateCallDraft = useCallback((next: string, cursor?: number) => {
     if (cursor !== undefined) {
@@ -4873,12 +4904,33 @@ function App() {
               .join(' · '),
             filled: isActive ? isWorkspaceFilled(snapshotWorkspace()) : isWorkspaceFilled(tab.workspace),
             bound: Boolean(tab.caseKey),
-            locked: tab.locked === true,
+            main: tab.main === true,
           }
         })}
         activeId={caseTabs.activeId}
-        closeArmedId={caseTabCloseArmed}
         canAdd={caseTabs.tabs.length < CASE_TABS_LIMIT}
+        canPin={canPinMain(liveCaseTabs(), isWorkspaceFilled)}
+        history={(() => {
+          const main = mainCaseTab(caseTabs)
+          const time = (value: string) => {
+            const date = new Date(value)
+            return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+          }
+          return [
+            {
+              index: null,
+              label: caseTabLabel(main, 0),
+              detail: '',
+              filled: isWorkspaceFilled(main.id === caseTabs.activeId ? snapshotWorkspace() : main.workspace),
+            },
+            ...(main.history ?? []).map((entry, index) => ({
+              index,
+              label: caseHistoryLabel(entry),
+              detail: [caseForTab(entry, activeCase)?.fields.customerName?.value, time(entry.viewedAt)].filter(Boolean).join(' · '),
+              filled: isWorkspaceFilled(entry.workspace),
+            })),
+          ]
+        })()}
         caseContext={workingCase}
         boundNumber={activeTab?.caseKey ? activeTab.caseKey.number ?? 'RQT sans numéro' : null}
         available={caseContextState.available}
@@ -4886,11 +4938,12 @@ function App() {
         tags={caseTags}
         imports={caseImport}
         onSelect={switchCaseTab}
-        onAdd={() => void openCaseTab(null)}
-        onClose={closeCaseTab}
+        onAdd={openCaseTab}
+        onPin={pinMainTab}
+        onUnpin={unpinTab}
+        onRecall={recallMainCase}
         onCopy={handleCopyContextValue}
-        onToggleLock={(tabId) => setCaseTabs((prev) => toggleCaseTabLock(prev, tabId))}
-                onOpenSettings={() => openSettingsTab('connections')}
+        onOpenSettings={() => openSettingsTab('connections')}
       />
       <div className={`app-shell app-shell--with-case-bar${panelItem ? ' app-shell--with-panel' : ''}`}>
       <LibrarySidebar

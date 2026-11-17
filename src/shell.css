@@ -748,7 +748,9 @@ button.case-tile__value:hover {
   color: var(--bg);
 }
 
-.case-tab__lock {
+.case-tab__pin,
+.case-tab__unpin,
+.case-tab__history {
   display: grid;
   place-items: center;
   width: 22px;
@@ -756,27 +758,98 @@ button.case-tile__value:hover {
   border: 0;
   background: transparent;
   color: var(--muted);
-  opacity: 0.55;
   cursor: pointer;
 }
 
-.case-tab__lock svg {
+.case-tab__history {
+  width: 18px;
+}
+
+.case-tab__pin svg,
+.case-tab__unpin svg,
+.case-tab__history svg {
   width: 12px;
   height: 12px;
 }
 
-.case-tab__lock:hover {
+.case-tab__pin:hover:not(:disabled),
+.case-tab__unpin:hover,
+.case-tab__history:hover,
+.case-tab__history.is-open {
   color: var(--text);
-  opacity: 1;
 }
 
-.case-tab__lock.is-on {
-  color: var(--state-check);
-  opacity: 1;
+.case-tab__pin:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
-.case-tab.is-locked {
+/* The main tab follows the CRM; it holds the menu of its last cases. */
+.case-tab--main {
+  position: relative;
+  max-width: 240px;
+}
+
+.case-tab.is-pinned {
   border-color: rgba(240, 194, 95, 0.45);
+}
+
+.case-tab.is-pinned .case-tab__icon {
+  color: var(--state-check);
+}
+
+.case-history {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: -1px;
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  padding: var(--space-1);
+  border: 1px solid var(--border-active);
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.case-history__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.case-history__item:hover {
+  background: var(--accent-glow);
+  color: var(--text);
+}
+
+.case-history__item.is-current {
+  color: var(--text);
+  font-weight: 600;
+  cursor: default;
+}
+
+.case-history__label {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-history__detail {
+  overflow: hidden;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.92em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .case-bar__add {
