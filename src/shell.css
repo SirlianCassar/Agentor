@@ -2428,8 +2428,34 @@ button.case-tile__value:hover {
 }
 
 .calc-card__index {
+  display: flex;
   flex: 1 1 auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
   font-weight: 600;
+}
+
+.calc-card__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calc-card__sku {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: calc(10.5px * var(--text-scale));
+  font-weight: 400;
+}
+
+/* Two columns: price and import, Standard and Express. */
+.calc-card__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1) var(--space-3);
 }
 
 .calc-card__quantity {
@@ -2483,7 +2509,7 @@ button.case-tile__value:hover {
 
 .calc-field {
   display: grid;
-  grid-template-columns: 90px minmax(0, 1fr) 14px;
+  grid-template-columns: 58px minmax(0, 1fr) 14px;
   align-items: center;
   gap: var(--space-2);
 }
@@ -2541,6 +2567,69 @@ button.case-tile__value:hover {
 
 .calc__add {
   align-self: flex-start;
+}
+
+.calc__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Standard and Express side by side, stacked when the panel is narrow. */
+.calc-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.calc-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-1) 0 0;
+  border-top: 1px dashed var(--border);
+}
+
+.calc-option__title em {
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.calc-option__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  color: var(--text-secondary);
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.calc-option--express .calc-option__title span {
+  color: var(--accent-light);
+}
+
+.calc-option .calc-result {
+  padding-block: 2px;
+}
+
+.calc-option .calc-result--total {
+  margin-top: 2px;
+}
+
+.calc-option__warning {
+  color: var(--danger);
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .calc__results {

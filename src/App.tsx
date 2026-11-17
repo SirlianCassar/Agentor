@@ -49,6 +49,7 @@ import {
   openExternal,
   saveData,
   copyText,
+  readClipboardText,
 } from './lib/storage'
 import {
   settingsNavigation,
@@ -133,6 +134,8 @@ import {
   createDashboardCalculatorFee,
   createDashboardCalculatorItem,
   getDashboardCalculatorQuantity,
+  isDashboardCalculatorItemBlank,
+  parsePortalSparePartCopy,
   type DashboardCalculatorCopyKey,
   type DashboardCalculatorFee,
   type DashboardCalculatorItem,
@@ -3435,6 +3438,45 @@ function App() {
     )
   }
 
+  // Fills a part from a Cairm+ Portal copy. With no target, the last part is
+  // filled when it is still blank, otherwise a new part is added. Returns
+  // false when the text is not a Portal copy.
+  const fillDashboardCalculatorFromPortal = (text: string, targetId?: string) => {
+    const copy = parsePortalSparePartCopy(text)
+    if (!copy) return false
+    setDashboardCalculatorItems((prev) => {
+      const filled = (item: DashboardCalculatorItem): DashboardCalculatorItem => ({
+        ...item,
+        partName: copy.partName,
+        sku: copy.sku,
+        productPrice: copy.productPrice,
+        standardShipping: copy.standardShipping,
+        expressShipping: copy.expressShipping,
+      })
+      const last = prev[prev.length - 1]
+      const id = targetId || (last && isDashboardCalculatorItemBlank(last) ? last.id : '')
+      if (id && prev.some((item) => item.id === id)) {
+        return prev.map((item) => (item.id === id ? filled(item) : item))
+      }
+      return [...prev, filled(createDashboardCalculatorItem())]
+    })
+    if (copy.currency && copy.currency !== '€' && copy.currency.toUpperCase() !== 'EUR') {
+      setToast(`Pièce collée : les prix Portal sont en ${copy.currency}, pas en euros.`)
+    }
+    return true
+  }
+
+  const pasteDashboardCalculatorFromPortal = async () => {
+    const text = await readClipboardText()
+    if (text === null) {
+      setToast('Lecture du presse-papiers impossible.')
+      return
+    }
+    if (!fillDashboardCalculatorFromPortal(text)) {
+      setToast('Le presse-papiers ne contient pas de pièce copiée depuis Portal.')
+    }
+  }
+
   const removeDashboardCalculatorItem = (id: string) => {
     setDashboardCalculatorItems((prev) => prev.filter((item) => item.id !== id))
   }
@@ -4697,6 +4739,8 @@ function App() {
       onAdjustQuantity={adjustDashboardCalculatorQuantity} onRemoveItem={removeDashboardCalculatorItem}
       onAddFee={addDashboardCalculatorFee} onUpdateFee={updateDashboardCalculatorFee}
       onRemoveFee={removeDashboardCalculatorFee} onCopy={handleCopyDashboardAmount}
+      onPasteFromPortal={() => void pasteDashboardCalculatorFromPortal()}
+      onPasteTextIntoItem={fillDashboardCalculatorFromPortal}
     />
   )
 

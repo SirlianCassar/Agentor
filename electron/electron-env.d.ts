@@ -34,6 +34,7 @@ interface Window {
     exportHistory: (text: string) => Promise<{ canceled: boolean }>
     importJson: () => Promise<{ canceled: boolean; data?: unknown; error?: string }>
     copyText: (text: string, html?: string) => boolean
+    readClipboardText?: () => string
     openExternal: (url: string) => Promise<boolean>
     openProcedure: () => Promise<boolean>
     onDataChanged?: (callback: (data: unknown) => void) => () => void

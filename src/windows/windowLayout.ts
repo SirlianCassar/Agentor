@@ -56,7 +56,7 @@ const defaultSizes: Record<DashboardWindowKind, { width: number; height: number 
   case: { width: 420, height: 560 },
   reminders: { width: 360, height: 360 },
   news: { width: 420, height: 420 },
-  calculator: { width: 420, height: 460 },
+  calculator: { width: 440, height: 620 },
   portal: { width: 640, height: 520 },
   parts: { width: 620, height: 500 },
   decorations: { width: 420, height: 380 },
