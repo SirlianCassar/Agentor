@@ -106,7 +106,8 @@ export function onlyRqtContext(context: CaseContext): CaseContext {
   const fields = { ...context.fields }
   if (field && value) fields.caseNumber = { ...field, value, candidates: field.candidates?.filter((candidate) => normalizeRqtNumber(candidate.value)).map((candidate) => ({ ...candidate, value: normalizeRqtNumber(candidate.value)! })) }
   else delete fields.caseNumber
-  const { number: _old, ...key } = context.caseKey
+  const key: CaseKey = { ...context.caseKey }
+  delete key.number
   return { ...context, caseKey: { ...key, ...(number ? { number } : {}) }, fields }
 }
 

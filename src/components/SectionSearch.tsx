@@ -84,7 +84,7 @@ export function SectionSearch({ categories = [], entries, productTerms, placehol
           setOpen(true)
         }}
         onFocus={() => { setOpen(true); if (!query) { setCategory(null); setActiveIndex(0) } }}
-        onClick={() => { if (!query) { setCategory(null); setActiveIndex(0) }; setOpen(true) }}
+        onClick={() => { if (!query) { setCategory(null); setActiveIndex(0) } setOpen(true) }}
         onBlur={() => setOpen(false)}
         onKeyDown={handleKey}
       />
