@@ -195,9 +195,43 @@ Aucun mail n'est créé dans la timeline.
 Le `description` renvoyé est le HTML d'un mail Dynamics, alors qu'Agentor
 travaille en texte à tags : mélanger les deux casserait à la fois les tags et le
 choix ligne par ligne de l'aperçu. La conversion se fait donc à la frontière,
-dans l'extension (`agentorBridgeHtmlToText`, par `DOMParser` — rien du CRM n'est
+dans l'extension (`agentorBridgeParseBody`, par `DOMParser` — rien du CRM n'est
 exécuté), et la mise en page devient des retours à la ligne. Le mail d'Agentor
 reste du texte, de bout en bout.
+
+### La mise en forme n'est pas jetée pour autant
+
+Le texte seul ne suffisait pas : le gras, les listes et les liens d'un modèle
+sont le travail de celui qui l'a écrit, et un agent qui doit les refaire à la
+main dans Dynamics n'a rien gagné. Le HTML voyage donc **à côté** du texte,
+découpé en blocs — un bloc par ligne du texte, dans le même ordre, un `<br>`
+coupant son bloc en deux. Un bloc qui tient plusieurs lignes ne peut pas être
+découpé sans deviner où chaque balise ouvre et ferme : ses lignes partent en
+texte, `html: null`, et ne perdent que leur mise en forme.
+
+Au moment de poser le mail, `buildCrmTemplateHtml` marque les trous **deux
+fois**, sur le texte et sur le balisage, avec la même carte et la même fonction.
+Ou les deux lectures trouvent les mêmes trous — et c'est le balisage, valeurs en
+place, qui est donné au CRM — ou elles divergent et le texte simple est envoyé.
+Un corps qui a perdu son gras est une gêne ; un corps qui a perdu un prix est
+une mauvaise réponse à un client. La raison du refus est nommée
+(`text-differs`, `holes-differ`, `no-blocks`) et le message d'Agentor dit
+laquelle des deux a été posée.
+
+Deux garde-fous : une valeur est toujours échappée avant d'entrer dans le
+balisage — une valeur est du texte, jamais du balisage — et un tag renommé en
+nom de balise HTML (`<B>`) n'est pas substitué, sinon il mangerait le gras. Un
+tag de dossier écrit en clair dans le corps d'un modèle du CRM est rempli dans
+les deux lectures ; c'est rare, le CRM fusionnant lui-même ses propres champs.
+
+Côté extension, le balisage n'est pas écrit tel quel : il a quitté le CRM, est
+passé par Agentor et revient, donc ce n'est plus quelque chose que l'extension a
+lu elle-même. `agentorBridgeSanitizeHtml` le reconstruit depuis une liste
+permise (texte, emphase, listes, tableaux, liens) ; un script, un cadre, un
+attribut d'événement ou un lien `javascript:` n'a rien à faire dans un corps de
+mail et n'est pas écrit. Il n'est posé que dans un champ en texte riche, et si
+l'écriture ne prend pas, le texte simple est réécrit par-dessus plutôt que de
+laisser un corps à moitié écrit.
 
 Conséquence : **Agentor n'analyse jamais le XML des templates.** Le champ `body`
 est une feuille XSL, `presentationxml` porte les champs de fusion
@@ -279,6 +313,28 @@ le formulaire de mail Dynamics sans l'envoyer.
 
 Le modèle fusionné n'est jamais sauvegardé : il vit le temps du brouillon. Les
 corps restent dans le CRM, où d'autres les modifient.
+
+### La marque du dossier
+
+Une famille ne se résout qu'avec une marque, et **un produit du CRM porte son
+modèle, pas sa marque** : « T598 », « DJControl Inpulse ». Lire la marque sur le
+nom du produit la laissait donc ouverte sur presque tous les dossiers, et aucun
+modèle ne pouvait être instancié — la bibliothèque affichait « Marque du dossier
+inconnue — à choisir », puis refusait d'ouvrir quoi que ce soit : l'agent était
+invité à choisir sans rien à choisir.
+
+Deux réponses, pas une :
+
+- **une marque par défaut**, dans Paramètres › Modèles du CRM, Thrustmaster au
+  départ. Elle ne sert que lorsque le dossier ne nomme pas la marque, et
+  l'aperçu l'annonce (« · marque par défaut ») : le repli n'est jamais muet. Ce
+  n'est pas une déduction sur le nom du modèle — une mauvaise marque envoie au
+  client le mail d'une autre société ;
+- **les variantes choisissables**. Une famille que le dossier ne résout pas
+  n'est plus une ligne qui refuse : elle s'ouvre en ses variantes, une ligne
+  chacune dans la même recherche (`variant:<famille>:<id>`), avec sa marque, sa
+  langue et sa zone. La clé de famille voyage avec la variante, donc les `***`
+  de cette famille deviennent des tags comme d'habitude.
 
 ### Langue du client
 
@@ -375,4 +431,13 @@ la recherche de mails, pas ici.
   essayée sur le vrai formulaire Dynamics : si un champ n'est pas trouvé,
   l'agent reçoit `field-not-found` et peut copier-coller. Essayer sur une
   requête réelle, et ajuster les libellés si besoin.
+- L'écriture du balisage dans le corps du mail Dynamics. Le corps est un champ
+  en texte riche ; s'il se révèle être un `iframe` d'une autre origine, il n'est
+  pas atteignable et le texte simple reste la seule option — le message
+  d'Agentor dit laquelle des deux a été posée, donc un essai sur une requête
+  réelle suffit à le savoir.
+- Le découpage en blocs sur les modèles réels : un modèle dont les lignes ne se
+  relisent pas une à une tombe en texte simple (`text-differs`). Si cela arrive
+  souvent, c'est le découpage de `agentorBridgeParseBody` qu'il faut revoir, pas
+  le repli.
 - Le nom exact du champ de langue sur `incident` (avéré sur `contact`).

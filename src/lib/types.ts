@@ -266,6 +266,10 @@ export interface AppSettings {
   // Which `***` of a CRM template family takes which value, by family key
   // (see crmTemplateHoles.ts). Added to the families shipped with the app.
   crmTemplateHoles?: Record<string, Array<{ marker?: string; line?: string; source: string }>>
+  // Brand of the CRM templates when the case does not name one, which is the
+  // usual case: a CRM product is named after its model. 'TM' or 'HR'; empty
+  // leaves the brand open and the agent picks the variant.
+  crmTemplateBrand?: string
 }
 
 export interface AppData {

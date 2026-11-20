@@ -34,12 +34,33 @@ describe('CRM templates as library items', () => {
     })
   })
 
-  it('says why a family cannot be resolved instead of choosing one', () => {
-    // A product named after its model alone leaves the brand open.
+  it('offers the variants when the case does not decide, instead of a dead end', () => {
+    // A product named after its model leaves the brand open, and no default is set.
     const { entries } = buildCrmSearchEntries(index, { productName: 'T598', country: 'France' })
+    expect(entries.find((entry) => entry.title === '14 Day RMA')).toBeUndefined()
+    const variants = entries.filter((entry) => entry.title.startsWith('14 Day RMA ·'))
+    expect(variants.map((entry) => entry.id)).toEqual([
+      'variant:14-day-rma:b1',
+      'variant:14-day-rma:b2',
+    ])
+    expect(variants[0].preview).toBe('Marque du dossier inconnue — variante choisie à la main')
+    expect(variants[0].title).toBe('14 Day RMA · TM FR · EU')
+  })
+
+  it('resolves the family on the default brand, and says the brand came from there', () => {
+    const { entries } = buildCrmSearchEntries(index, {
+      productName: 'T598',
+      country: 'France',
+      customerLanguage: 'Français',
+      defaultBrand: 'TM',
+    })
     const rma = entries.find((entry) => entry.title === '14 Day RMA')
-    expect(rma?.preview).toBe('Marque du dossier inconnue — à choisir')
-    expect(rma?.language).toBeUndefined()
+    expect(rma).toMatchObject({ id: 'family:14-day-rma', preview: 'TM FR - 14 Day RMA - EU · marque par défaut' })
+  })
+
+  it('ignores a default brand nobody can read', () => {
+    const { entries } = buildCrmSearchEntries(index, { productName: 'T598', defaultBrand: 'nonsense' })
+    expect(entries.some((entry) => entry.id === 'family:14-day-rma')).toBe(false)
   })
 
   it('keeps the logistics prefix and the unclassified titles choosable', () => {
@@ -61,7 +82,13 @@ describe('CRM templates as library items', () => {
   it('reads back what an entry stands for', () => {
     expect(readCrmLibraryId('family:14-day-rma')).toEqual({ kind: 'family', familyKey: '14-day-rma' })
     expect(readCrmLibraryId('template:a1')).toEqual({ kind: 'template', templateId: 'a1' })
+    expect(readCrmLibraryId('variant:14-day-rma:b1')).toEqual({
+      kind: 'variant',
+      familyKey: '14-day-rma',
+      templateId: 'b1',
+    })
     expect(readCrmLibraryId('family:')).toBeNull()
+    expect(readCrmLibraryId('variant:14-day-rma:')).toBeNull()
     expect(readCrmLibraryId('a1')).toBeNull()
   })
 

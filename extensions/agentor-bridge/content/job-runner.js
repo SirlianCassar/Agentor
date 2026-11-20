@@ -46,12 +46,19 @@ async function agentorBridgeRunJob(job) {
       // The labels the Dynamics mail form uses, in the languages the agents
       // run it in. A field that is not found is reported, never guessed at.
       { name: "subject", value: job.payload.subject, labels: ["subject", "objet", "betreff", "asunto", "oggetto"] },
-      { name: "body", value: job.payload.body, labels: ["message", "corps", "body", "cuerpo", "corpo"] }
+      {
+        name: "body",
+        value: job.payload.body,
+        // The formatting of the template, when Agentor could keep it: written only in a rich
+        // text body, sanitized first, and the flat text is the fallback.
+        html: job.payload.bodyHtml || null,
+        labels: ["message", "corps", "body", "cuerpo", "corpo"]
+      }
     ].filter((field) => field.value);
     if (!fields.length) return { ok: false, reason: "nothing-to-write" };
     const outcome = agentorBridgeFillFields(fields);
     if (!outcome.applied.length) return { ok: false, reason: `field-not-found:${outcome.missing.join(",")}` };
-    return { ok: true, data: { applied: outcome.applied } };
+    return { ok: true, data: { applied: outcome.applied, formatted: outcome.formatted } };
   }
 
   // A kind this version does not know: Agentor is newer than the extension.

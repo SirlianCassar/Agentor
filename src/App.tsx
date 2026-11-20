@@ -22,7 +22,7 @@ import { useCaseContext } from './hooks/useCaseContext'
 import { useCrmTemplates } from './hooks/useCrmTemplates'
 import { useBridgeJobs } from './hooks/useBridgeJobs'
 import { DEFAULT_CRM_TEMPLATE_HOLES, normalizeCrmTemplateHoles } from './lib/crmTemplateHoles'
-import { buildMailSlots, fillMailSlots } from './lib/mailSlots'
+import { buildMailSlots, fillMailSlots, MAIL_SLOT_TAGS } from './lib/mailSlots'
 import {
   buildCrmSearchEntries,
   CRM_LIBRARY_FOLDER_ID,
@@ -31,6 +31,8 @@ import {
   crmTemplateAsMailTemplate,
   readCrmLibraryId,
 } from './lib/crmTemplateLibrary'
+import { buildCrmTemplateHtml } from './lib/crmTemplateHtml'
+import type { TemplateBlock } from './context/bridgeJobs'
 import { fillTemplateFromContext } from './context/templateFill'
 import {
   getTemplateVersion,
@@ -364,6 +366,10 @@ function App() {
   // The CRM template merged for the open case. Held for the length of the
   // draft, never saved: the bodies live in the CRM, where others edit them.
   const [crmPreviewTemplate, setCrmPreviewTemplate] = useState<MailTemplate | null>(null)
+  /* The merged body as the CRM wrote it, line by line with its markup, and the family it came
+     from. Kept beside the preview for the length of the draft, never stored: it is what lets the
+     mail go back into Dynamics with the bold, the lists and the links the template had. */
+  const [crmPreviewSource, setCrmPreviewSource] = useState<{ blocks: TemplateBlock[]; familyKey?: string }>({ blocks: [] })
   const currentTemplatePreview = templatePreview
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
@@ -1111,6 +1117,11 @@ function App() {
     () => ({ ...DEFAULT_CRM_TEMPLATE_HOLES, ...normalizeCrmTemplateHoles(data.settings.crmTemplateHoles) }),
     [data.settings.crmTemplateHoles],
   )
+  /* A CRM product is named after its model, so the case almost never names the
+     brand: without a stated default, no family resolved and the import refused.
+     Thrustmaster by default — it is the brand of nearly every case here — and
+     the preview says when the brand comes from here rather than from the case. */
+  const crmTemplateBrand = data.settings.crmTemplateBrand ?? 'TM'
   const caseTags = useMemo(() => resolveCaseTags(data.settings.caseTags), [data.settings.caseTags])
   const caseAutoFill = data.settings.caseAutoFill !== false
   const productAliases = useMemo(
@@ -2369,8 +2380,9 @@ function App() {
         productName: workingProductCrmName || workingProductName,
         country: workingCase?.fields.country?.value,
         customerLanguage: workingCase?.fields.customerLanguage?.value,
+        defaultBrand: crmTemplateBrand,
       }),
-    [crmTemplates.index, workingCase, workingProductCrmName, workingProductName],
+    [crmTemplateBrand, crmTemplates.index, workingCase, workingProductCrmName, workingProductName],
   )
   const mailSearchEntries = useMemo(
     (): SearchEntry[] => [
@@ -3242,7 +3254,8 @@ function App() {
   const openCrmTemplate = async (entry: SearchEntry) => {
     const pick = readCrmLibraryId(entry.id)
     if (!pick) return
-    const suggestion = pick.kind === 'family' ? crmLibrary.suggestions.get(pick.familyKey) : undefined
+    const familyKey = pick.kind === 'template' ? undefined : pick.familyKey
+    const suggestion = familyKey ? crmLibrary.suggestions.get(familyKey) : undefined
     const templateId = pick.kind === 'family' ? suggestion?.templateId : pick.templateId
     if (!templateId) {
       // Nothing is chosen in the dark: the reason is shown, the family stays.
@@ -3253,7 +3266,7 @@ function App() {
     const result = await bridgeJobs.submit({
       kind: 'template.instantiate',
       templateId,
-      ...(pick.kind === 'family' ? { familyKey: pick.familyKey } : {}),
+      ...(familyKey ? { familyKey } : {}),
     })
     if (!result.ok) {
       setToast(bridgeJobs.reasonLabel(result.reason))
@@ -3272,6 +3285,7 @@ function App() {
       crmHoleMap,
     )
     setCrmPreviewTemplate(template)
+    setCrmPreviewSource({ blocks: merged.blocks, ...(merged.familyKey ? { familyKey: merged.familyKey } : {}) })
     openTemplatePreview(template, CRM_LIBRARY_FOLDER_ID)
     if (remaining) {
       setToast(`${remaining} emplacement${remaining > 1 ? 's' : ''} *** à compléter à la main.`)
@@ -3296,15 +3310,31 @@ function App() {
   const composeCrmTemplateInCrm = async () => {
     if (!crmPreviewTemplate) return
     const body = fillLoadedText(crmPreviewTemplate.content)
+    // The markup of the template, holes filled the same way as the text. Null when the two
+    // readings disagree: the text alone then, rather than a body missing a value.
+    const formatted = buildCrmTemplateHtml(
+      crmPreviewSource.blocks,
+      crmPreviewSource.blocks.map((block) => block.text).join('\n'),
+      crmPreviewSource.familyKey,
+      crmHoleMap,
+      fillLoadedText,
+      [...Object.values(caseTags), ...Object.values(MAIL_SLOT_TAGS)],
+    )
     const result = await bridgeJobs.submit({
       kind: 'mail.compose',
       subject: crmPreviewTemplate.description ?? '',
       body,
+      ...(formatted.html ? { bodyHtml: formatted.html } : {}),
     })
+    if (!result.ok) {
+      setToast(bridgeJobs.reasonLabel(result.reason))
+      return
+    }
+    const kept = result.outcome.kind === 'mail.compose' && result.outcome.compose.formatted.includes('body')
     setToast(
-      result.ok
-        ? 'Mail posé dans le formulaire du CRM. À relire avant envoi.'
-        : bridgeJobs.reasonLabel(result.reason),
+      kept
+        ? 'Mail posé dans le formulaire du CRM, mise en forme du modèle gardée. À relire avant envoi.'
+        : 'Mail posé dans le formulaire du CRM, en texte simple. À relire avant envoi.',
     )
   }
 
@@ -5489,6 +5519,8 @@ function App() {
               <CrmTemplatesSettings
                 templates={crmTemplates}
                 setToast={setToast}
+                defaultBrand={crmTemplateBrand}
+                updateSettings={updateSettings}
                 onHarvest={bridgeJobs.available ? () => void harvestCrmTemplates() : undefined}
               />
             ) : null}

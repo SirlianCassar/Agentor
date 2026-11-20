@@ -102,16 +102,65 @@ function agentorBridgeNativeSetter(element) {
   return Object.getOwnPropertyDescriptor(prototype, "value")?.set;
 }
 
+/* Markup that may be written into the page, and nothing else.
+
+   The HTML of a mail body left the CRM, went through Agentor and comes back: it is no longer
+   something this extension has read itself, so it is parsed and rebuilt from an allowed list
+   rather than trusted. What a mail needs is text, emphasis, lists, tables and links; a script,
+   a frame, an event handler or a `javascript:` link has no reason to be in a mail body and is
+   dropped without being written. */
+const AGENTOR_BRIDGE_HTML_TAGS = new Set([
+  "a", "b", "blockquote", "br", "caption", "col", "colgroup", "div", "em", "h1", "h2", "h3",
+  "h4", "h5", "h6", "hr", "i", "li", "ol", "p", "pre", "s", "small", "span", "strong", "sub",
+  "sup", "table", "tbody", "td", "tfoot", "th", "thead", "tr", "u", "ul"
+]);
+const AGENTOR_BRIDGE_HTML_ATTRS = new Set([
+  "align", "colspan", "dir", "height", "rowspan", "span", "style", "title", "valign", "width"
+]);
+const AGENTOR_BRIDGE_SAFE_URL = /^(?:https?:|mailto:|tel:)/i;
+
+function agentorBridgeSanitizeNode(node) {
+  for (const child of Array.from(node.children)) {
+    if (!AGENTOR_BRIDGE_HTML_TAGS.has(child.tagName.toLowerCase())) {
+      // The element goes, its text stays: a mail must not lose a sentence to a wrapper.
+      child.replaceWith(...Array.from(child.childNodes));
+      continue;
+    }
+    for (const attribute of Array.from(child.attributes)) {
+      const name = attribute.name.toLowerCase();
+      if (name === "href" || name === "src") {
+        if (!AGENTOR_BRIDGE_SAFE_URL.test(attribute.value.trim())) child.removeAttribute(attribute.name);
+        continue;
+      }
+      if (!AGENTOR_BRIDGE_HTML_ATTRS.has(name)) child.removeAttribute(attribute.name);
+    }
+    agentorBridgeSanitizeNode(child);
+  }
+}
+
+/** The given HTML, rebuilt from what a mail body is allowed to hold. */
+function agentorBridgeSanitizeHtml(html) {
+  const parsed = new DOMParser().parseFromString(String(html || ""), "text/html");
+  for (const node of parsed.querySelectorAll("script, style, iframe, frame, object, embed, link, meta, form, input, button")) {
+    node.remove();
+  }
+  agentorBridgeSanitizeNode(parsed.body);
+  return parsed.body.innerHTML;
+}
+
 /** Writes a value and tells the page about it. Returns false when it did not take. */
-function agentorBridgeWriteField(element, value) {
+function agentorBridgeWriteField(element, value, html) {
   const text = String(value == null ? "" : value);
   try {
     element.focus({ preventScroll: true });
   } catch (_error) {
     // A field that refuses focus can still be written.
   }
+  // Only a rich text field can hold markup; anywhere else the text is what is written.
+  const writeHtml = Boolean(html) && element.isContentEditable;
   if (element.isContentEditable) {
-    element.textContent = text;
+    if (writeHtml) element.innerHTML = agentorBridgeSanitizeHtml(html);
+    else element.textContent = text;
   } else {
     const setter = agentorBridgeNativeSetter(element);
     if (!setter) return false;
@@ -120,6 +169,11 @@ function agentorBridgeWriteField(element, value) {
   element.dispatchEvent(new Event("input", { bubbles: true }));
   element.dispatchEvent(new Event("change", { bubbles: true }));
   const written = element.isContentEditable ? element.textContent : element.value;
+  // The markup changes the spacing, so a rich write is checked on the words it left behind.
+  if (writeHtml) {
+    const words = (value) => String(value || "").replace(/\s+/g, " ").trim();
+    return words(written).length > 0 && words(written) === words(text);
+  }
   return String(written || "").trim() === text.trim();
 }
 
@@ -127,13 +181,26 @@ function agentorBridgeWriteField(element, value) {
 function agentorBridgeFillFields(fields, root = document) {
   const applied = [];
   const missing = [];
+  // The fields written with their own markup rather than as flat text.
+  const formatted = [];
   for (const field of fields) {
     const element = agentorBridgeFindField(field, root);
-    if (!element || !agentorBridgeWriteField(element, field.value)) {
+    if (!element) {
       missing.push(field.name);
       continue;
     }
+    const rich = Boolean(field.html) && element.isContentEditable;
+    if (!agentorBridgeWriteField(element, field.value, field.html)) {
+      // The markup did not take: the text alone is better than a half-written body.
+      if (!rich || !agentorBridgeWriteField(element, field.value, null)) {
+        missing.push(field.name);
+        continue;
+      }
+      applied.push(field.name);
+      continue;
+    }
     applied.push(field.name);
+    if (rich) formatted.push(field.name);
   }
-  return { applied, missing };
+  return { applied, missing, formatted };
 }

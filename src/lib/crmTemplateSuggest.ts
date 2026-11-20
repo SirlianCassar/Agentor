@@ -7,7 +7,6 @@ import {
   resolveCrmTemplateVariant,
   type CrmTemplateBrand,
   type CrmTemplateIndex,
-  type CrmTemplateLanguage,
   type CrmTemplateTarget,
   type CrmTemplateZone,
 } from './crmTemplates'
@@ -46,8 +45,12 @@ export function resolveCrmTemplateZone(country: unknown): CrmTemplateZone | null
   return ZONE_BY_COUNTRY[normalize(country)] ?? 'WW'
 }
 
-// Only an explicit brand word decides. A product named after its model alone
-// leaves the brand open, and the agent picks.
+/* Only an explicit brand word decides from the case. A CRM product is named
+   after its model — "T598", "DJControl Inpulse" — and almost never carries its
+   brand, so reading the product name alone left the brand open on nearly every
+   case and no template could be instantiated. The fallback is a setting the
+   agent states once (`defaultBrand`), not a guess on the model name: a wrong
+   brand sends the customer another company's mail. */
 export function resolveCrmTemplateBrand(productName: unknown): CrmTemplateBrand | null {
   if (typeof productName !== 'string') return null
   const text = normalize(productName)
@@ -61,11 +64,23 @@ export interface CrmTemplateCaseFields {
   productName?: string | null
   country?: string | null
   customerLanguage?: string | null
+  // Used when the case does not name a brand. Read from the settings, so it is
+  // whatever was saved there: anything unreadable leaves the brand open.
+  defaultBrand?: string | null
 }
 
-export function resolveCrmTemplateTarget(fields: CrmTemplateCaseFields): CrmTemplateTarget {
+export interface CrmTemplateResolvedTarget extends CrmTemplateTarget {
+  // True when the brand comes from the setting rather than from the case: the
+  // preview says so, so the fallback is never silent.
+  brandFromDefault: boolean
+}
+
+export function resolveCrmTemplateTarget(fields: CrmTemplateCaseFields): CrmTemplateResolvedTarget {
+  const fromCase = resolveCrmTemplateBrand(fields.productName)
+  const fallback = normalizeCrmTemplateBrand(fields.defaultBrand ?? '')
   return {
-    brand: resolveCrmTemplateBrand(fields.productName),
+    brand: fromCase ?? fallback,
+    brandFromDefault: !fromCase && Boolean(fallback),
     language: normalizeCrmTemplateLanguage(fields.customerLanguage ?? null),
     zone: resolveCrmTemplateZone(fields.country),
   }
@@ -84,11 +99,7 @@ export interface CrmTemplateSuggestion {
 }
 
 export interface CrmTemplateSuggestions {
-  target: {
-    brand: CrmTemplateBrand | null
-    language: CrmTemplateLanguage | null
-    zone: CrmTemplateZone | null
-  }
+  target: CrmTemplateResolvedTarget
   families: CrmTemplateSuggestion[]
 }
 

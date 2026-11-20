@@ -1,11 +1,17 @@
 // Settings › Modèles du CRM: the harvested index, folded into families.
 import { useMemo, useState } from 'react'
-import type { CrmTemplateFamily } from '../../lib/crmTemplates'
+import { CRM_TEMPLATE_BRANDS, type CrmTemplateFamily } from '../../lib/crmTemplates'
 import type { useCrmTemplates } from '../../hooks/useCrmTemplates'
+import type { AppSettings } from '../../lib/types'
+
+const BRAND_LABELS: Record<string, string> = { TM: 'Thrustmaster', HR: 'Hercules / DJUCED' }
 
 export interface CrmTemplatesSettingsProps {
   templates: ReturnType<typeof useCrmTemplates>
   setToast: (message: string) => void
+  // Brand used when the case does not name one, and how to change it.
+  defaultBrand: string
+  updateSettings: (patch: Partial<AppSettings>) => void
   // Asks for the index now, instead of waiting for the next case push.
   // Absent outside the installed app, where there is no bridge.
   onHarvest?: () => void
@@ -23,7 +29,7 @@ const variantSummary = (family: CrmTemplateFamily) => {
   return { languages, brands, zones }
 }
 
-export function CrmTemplatesSettings({ templates, setToast, onHarvest }: CrmTemplatesSettingsProps) {
+export function CrmTemplatesSettings({ templates, setToast, defaultBrand, updateSettings, onHarvest }: CrmTemplatesSettingsProps) {
   const { available, state, index, clear } = templates
   const [filter, setFilter] = useState('')
 
@@ -72,8 +78,35 @@ export function CrmTemplatesSettings({ templates, setToast, onHarvest }: CrmTemp
 
   const total = state.entries.length
 
+  const brandCard = (
+    <section className="list-card list-card--form">
+      <div className="list-card__header">
+        <div className="list-card__title">Marque par défaut</div>
+      </div>
+      <div className="list-card__body">
+        <p className="settings-option__desc">
+          Un produit du CRM porte son modèle, pas sa marque : « T598 », « DJControl Inpulse ». Sans cette marque,
+          aucune famille ne peut être résolue et chaque modèle doit être choisi à la main. Elle n’est utilisée que
+          lorsque le dossier ne la nomme pas, et l’aperçu le dit alors.
+        </p>
+        <select
+          className="text-input"
+          aria-label="Marque par défaut des modèles du CRM"
+          value={defaultBrand}
+          onChange={(event) => updateSettings({ crmTemplateBrand: event.target.value })}
+        >
+          <option value="">Aucune — choisir la variante à la main</option>
+          {CRM_TEMPLATE_BRANDS.map((brand) => (
+            <option key={brand} value={brand}>{BRAND_LABELS[brand] ?? brand}</option>
+          ))}
+        </select>
+      </div>
+    </section>
+  )
+
   return (
     <div className="settings-page settings-page--narrow">
+      {brandCard}
       <section className="list-card">
         <div className="list-card__header">
           <div className="list-card__title">

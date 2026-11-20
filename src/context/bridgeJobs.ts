@@ -19,6 +19,10 @@ export type BridgeJobKind = (typeof BRIDGE_JOB_KINDS)[number]
 
 const MAX_SUBJECT_LENGTH = 400
 const MAX_BODY_LENGTH = 100_000
+// A mail is a page of text: a hundred lines of markup is already generous, and the markup of one
+// line is bounded by the body itself.
+const MAX_BLOCKS = 400
+const MAX_BLOCK_HTML_LENGTH = 20_000
 
 /** Asks the CRM to merge a template with the open case. Nothing is saved there. */
 export interface TemplateInstantiateJob {
@@ -38,6 +42,9 @@ export interface MailComposeJob {
   kind: 'mail.compose'
   subject: string
   body: string
+  // The same body with the formatting of the CRM template, when it could be kept. Written only
+  // in a rich text field, sanitized by the extension; the text above is the fallback.
+  bodyHtml?: string
 }
 
 export type BridgeJobRequest = TemplateInstantiateJob | TemplateHarvestJob | MailComposeJob
@@ -52,15 +59,27 @@ export interface BridgeJob {
   request: BridgeJobRequest
 }
 
+/* One line of the merged body with its own markup. The CRM template's formatting is the work of
+   whoever wrote it; an agent who has to put the bold, the lists and the links back by hand has
+   gained nothing. `html` is null for a line whose markup cannot be isolated — it then travels as
+   text, which costs its formatting and nothing else. */
+export interface TemplateBlock {
+  text: string
+  html: string | null
+}
+
 export interface InstantiatedTemplate {
   subject: string
   body: string
+  blocks: TemplateBlock[]
   familyKey?: string
 }
 
 export interface MailComposeOutcome {
   // The fields actually written, by name, so the agent is told what was filled.
   applied: string[]
+  // Those written with the template's own markup rather than as flat text.
+  formatted: string[]
 }
 
 export type BridgeJobOutcome =
@@ -105,11 +124,12 @@ export function parseBridgeJobResult(kind: BridgeJobKind, raw: unknown): BridgeJ
     // An empty body is a failed merge, not a result: the CRM always returns one.
     if (subject === null || !body || !body.trim()) return { ok: false, error: 'invalid-template' }
     const familyKey = data && typeof data.familyKey === 'string' ? data.familyKey.slice(0, 120) : undefined
+    const blocks = parseTemplateBlocks(data?.blocks)
     return {
       ok: true,
       result: {
         ok: true,
-        outcome: { kind, template: { subject, body, ...(familyKey ? { familyKey } : {}) } },
+        outcome: { kind, template: { subject, body, blocks, ...(familyKey ? { familyKey } : {}) } },
       },
     }
   }
@@ -121,11 +141,30 @@ export function parseBridgeJobResult(kind: BridgeJobKind, raw: unknown): BridgeJ
   }
 
   const data = isRecord(raw.data) ? raw.data : null
-  const applied = Array.isArray(data?.applied)
-    ? data.applied.filter((value): value is string => typeof value === 'string').slice(0, 20)
-    : []
+  const names = (value: unknown) =>
+    Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string').slice(0, 20) : []
+  const applied = names(data?.applied)
   if (!applied.length) return { ok: false, error: 'invalid-compose' }
-  return { ok: true, result: { ok: true, outcome: { kind: 'mail.compose', compose: { applied } } } }
+  const formatted = names(data?.formatted)
+  return {
+    ok: true,
+    result: { ok: true, outcome: { kind: 'mail.compose', compose: { applied, formatted } } },
+  }
+}
+
+/* The lines of the merged body with their markup. Anything unreadable is dropped rather than
+   repaired: a block whose text is missing cannot be paired with a line of the body, and a body
+   without blocks simply loses its formatting. */
+function parseTemplateBlocks(raw: unknown): TemplateBlock[] {
+  if (!Array.isArray(raw)) return []
+  const blocks: TemplateBlock[] = []
+  for (const item of raw.slice(0, MAX_BLOCKS)) {
+    if (!isRecord(item)) continue
+    if (typeof item.text !== 'string' || item.text.length > MAX_BODY_LENGTH) continue
+    const html = text(item.html, MAX_BLOCK_HTML_LENGTH)
+    blocks.push({ text: item.text, html })
+  }
+  return blocks
 }
 
 /** What the extension reads from `GET /v1/jobs`: the job, trimmed to the wire. */
@@ -144,7 +183,13 @@ function payloadOf(request: BridgeJobRequest) {
   if (request.kind === 'template.instantiate') {
     return { templateId: request.templateId, ...(request.familyKey ? { familyKey: request.familyKey } : {}) }
   }
-  if (request.kind === 'mail.compose') return { subject: request.subject, body: request.body }
+  if (request.kind === 'mail.compose') {
+    return {
+      subject: request.subject,
+      body: request.body,
+      ...(request.bodyHtml ? { bodyHtml: request.bodyHtml } : {}),
+    }
+  }
   return {}
 }
 

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Agentor Bridge",
   "description": "Sends the open Dynamics 365 case to Agentor and applies the data Agentor returns to the procedure forms.",
-  "version": "2.0.52",
+  "version": "2.0.53",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs7/52bSXZVSkrausuPmqJIKIwkhqVyolALUaDiERWqYwBGB+etbztc9Lm+ntRa09qPX0yZfBqqaBvh3xaO11ot0xhACYF0PJZMfJjnEArE7bGhYyq4VY7A7M9/qw4Vt+rLWaIW12EnymSWMni8rDoVyiQOlWzosAVi4v3na0tMldj99FmO8VPr3Kh0zJZht1dPIHiFRsFPzq2wwf+dv1BEwF1Qrrj0cxR+JoGyuwDEH3bfCT6a24Eb4uyJnTXz+PbgCpwBc5SmwnGnyLEuqSWRI0PO+OJnHs7YU8CiMbofGQAA16GOM0L1BMlJzq/Bom/G6JnMJM9aFbxe3pRfRmWwIDAQAB",
   "action": {
     "default_title": "Agentor Bridge",

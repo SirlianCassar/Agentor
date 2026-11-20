@@ -40,26 +40,64 @@ async function agentorBridgeFetchJson(path, body) {
   }
 }
 
-// The merged body comes back as the HTML of a Dynamics mail, while Agentor
-// works in plain text with <TAG> markers — mixing the two would break both the
-// tags and the line-by-line choice in the preview. So the text is taken here,
-// where a parser is at hand, and the layout is kept as line breaks.
-//
-// DOMParser is used rather than innerHTML: nothing from the CRM is ever run.
-function agentorBridgeHtmlToText(html) {
-  const text = String(html || "");
-  if (!/<[a-z!/]/i.test(text)) return text.trim();
-  const parsed = new DOMParser().parseFromString(text, "text/html");
-  for (const node of parsed.querySelectorAll("style, script")) node.remove();
-  for (const node of parsed.querySelectorAll("br")) node.replaceWith(parsed.createTextNode("\n"));
-  for (const node of parsed.querySelectorAll("p, div, tr, li, h1, h2, h3, h4, h5, h6, table")) {
-    node.appendChild(parsed.createTextNode("\n"));
-  }
-  return (parsed.body.textContent || "")
+/* The merged body comes back as the HTML of a Dynamics mail, while Agentor works in plain text
+   with <TAG> markers — mixing the two would break both the tags and the line-by-line choice in
+   the preview. So the text is taken here, where a parser is at hand, and the layout is kept as
+   line breaks.
+
+   The HTML is not thrown away though: the formatting of the template is the work of whoever
+   wrote it, and an agent who has to put the bold, the lists and the links back by hand has
+   gained nothing. It travels alongside, cut into blocks — one block per line of the text, in
+   the same order — so Agentor can fill the `***` of a line and still hand the CRM that line's
+   own markup.
+
+   DOMParser is used rather than innerHTML: nothing from the CRM is ever run. */
+const AGENTOR_BRIDGE_BLOCK_SELECTOR = "p, div, li, tr, h1, h2, h3, h4, h5, h6, blockquote, pre";
+
+function agentorBridgeCleanBodyText(value) {
+  return String(value || "")
     .replace(/\u00a0/g, " ")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function agentorBridgeParseBody(html) {
+  const raw = String(html || "");
+  if (!/<[a-z!/]/i.test(raw)) {
+    const text = raw.trim();
+    return { text, blocks: text ? [{ text, html: text }] : [] };
+  }
+  const parsed = new DOMParser().parseFromString(raw, "text/html");
+  for (const node of parsed.querySelectorAll("style, script")) node.remove();
+  // A line break ends a line as surely as a paragraph does: the blocks follow the lines of the
+  // text, so a <br> splits its block in two.
+  for (const node of parsed.querySelectorAll("br")) node.replaceWith(parsed.createTextNode("\n"));
+
+  // The deepest blocks only: a <div> wrapping the whole mail is not a line.
+  const leaves = Array.from(parsed.querySelectorAll(AGENTOR_BRIDGE_BLOCK_SELECTOR))
+    .filter((node) => !node.querySelector(AGENTOR_BRIDGE_BLOCK_SELECTOR));
+  const sources = leaves.length ? leaves : [parsed.body];
+  const blocks = [];
+  for (const node of sources) {
+    const lines = String(node.textContent || "").split("\n");
+    if (lines.length > 1) {
+      // Several lines in one block: their shared markup cannot be split without guessing where
+      // each tag opens and closes, so those lines travel as text and keep their values.
+      for (const line of lines) blocks.push({ text: agentorBridgeCleanBodyText(line), html: null });
+      continue;
+    }
+    blocks.push({ text: agentorBridgeCleanBodyText(node.textContent), html: node.outerHTML || null });
+  }
+  return {
+    text: agentorBridgeCleanBodyText(blocks.map((block) => block.text).join("\n")),
+    // Blank lines carry no markup worth keeping and would not survive the text/HTML pairing.
+    blocks: blocks.filter((block, index) => block.text || (index > 0 && index < blocks.length - 1))
+  };
+}
+
+function agentorBridgeHtmlToText(html) {
+  return agentorBridgeParseBody(html).text;
 }
 
 // Asks the CRM to merge a template with a case. The server does the merge, so
@@ -73,9 +111,11 @@ async function agentorBridgeInstantiateTemplate(templateId, caseId) {
   });
   const record = Array.isArray(payload.value) ? payload.value[0] : null;
   if (!record) throw new Error("empty-template");
+  const parsed = agentorBridgeParseBody(record.description);
   return {
     subject: agentorBridgeText(record.subject),
-    body: agentorBridgeHtmlToText(record.description)
+    body: parsed.text,
+    blocks: parsed.blocks
   };
 }
 
