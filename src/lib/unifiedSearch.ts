@@ -12,12 +12,30 @@ import type {
   TroubleshootgunFolder,
 } from './types'
 
-export type SearchKind = 'template' | 'troubleshootgun' | 'snippet' | 's-task' | 'f-task' | 'procedure'
+export type SearchKind =
+  | 'template'
+  // A family of CRM templates: the body is merged by the CRM when it is asked
+  // for, so the entry carries the resolved variant instead of a stored text.
+  | 'crm'
+  | 'troubleshootgun'
+  | 'snippet'
+  | 's-task'
+  | 'f-task'
+  | 'procedure'
 
-export const searchKindOrder: SearchKind[] = ['template', 'troubleshootgun', 'snippet', 's-task', 'f-task', 'procedure']
+export const searchKindOrder: SearchKind[] = [
+  'template',
+  'crm',
+  'troubleshootgun',
+  'snippet',
+  's-task',
+  'f-task',
+  'procedure',
+]
 
 export const searchKindLabels: Record<SearchKind, string> = {
   template: 'Mails',
+  crm: 'Modèles du CRM',
   troubleshootgun: 'Troubleshotgun',
   snippet: 'Snippets',
   's-task': 'S-Task',

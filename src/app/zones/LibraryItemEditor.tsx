@@ -5,7 +5,9 @@ import { TextEditor } from '../../components/TextEditor'
 import type { SearchKind } from '../../lib/unifiedSearch'
 
 export interface LibraryEditTarget {
-  kind: Exclude<SearchKind, 'procedure'>
+  // A CRM template is not edited here: its body lives in the CRM, where other
+  // people change it.
+  kind: Exclude<SearchKind, 'procedure' | 'crm'>
   id: string
   folderId?: string
 }

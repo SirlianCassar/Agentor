@@ -1,6 +1,7 @@
-/* Validation of the messages Cairm+ sends to Agentor 9000 over the local bridge.
+/* Validation of the messages Agentor Bridge sends to Agentor over the local bridge.
    Contract: Shared/integrations/bridge-protocol.md. Anything unexpected is
    rejected rather than repaired. */
+import type { CrmTemplateIndexEntry } from '../lib/crmTemplates'
 import {
   isContextFieldKey,
   normalizeCaseId,
@@ -14,7 +15,18 @@ import {
 export const BRIDGE_PROTOCOL_VERSION = 1
 const MAX_OBSERVATIONS = 50
 const MAX_VALUE_LENGTH = 2000
+const MAX_TEMPLATE_ENTRIES = 5000
+const MAX_TITLE_LENGTH = 300
 const SOURCES: ContextSource[] = ['crm', 'portal', 'sharepoint', 'network', 'user']
+
+// The index of the CRM e-mail templates, harvested by the extension. Titles
+// only: the bodies stay in the CRM, where they are edited. It travels as the
+// result of a `template.harvest` job, not as a message of its own.
+export interface TemplateIndex {
+  org: string
+  fetchedAt: string
+  entries: CrmTemplateIndexEntry[]
+}
 
 export type BridgeMessage =
   | {
@@ -68,6 +80,39 @@ function parseTask(raw: unknown): ContextTask | null | undefined {
     source: 'crm',
     fetchedAt: raw.fetchedAt,
   }
+}
+
+function parseTemplateEntry(raw: unknown): CrmTemplateIndexEntry | null {
+  if (!isRecord(raw)) return null
+  const id = typeof raw.id === 'string' ? raw.id.replace(/[{}]/g, '').trim().toLowerCase() : ''
+  if (!/^[0-9a-f-]{36}$/.test(id)) return null
+  const title = typeof raw.title === 'string' ? raw.title.trim().slice(0, MAX_TITLE_LENGTH) : ''
+  if (!title) return null
+  const languageCode = Number(raw.languageCode)
+  if (!Number.isInteger(languageCode)) return null
+  const modifiedOn = isIsoDate(raw.modifiedOn) ? raw.modifiedOn : undefined
+  return { id, title, languageCode, ...(modifiedOn ? { modifiedOn } : {}) }
+}
+
+export type TemplateIndexParseResult = { ok: true; index: TemplateIndex } | { ok: false; error: string }
+
+/** Reads a harvested index: org, date and titles. Validated like any message. */
+export function parseTemplateIndex(raw: unknown): TemplateIndexParseResult {
+  if (!isRecord(raw)) return { ok: false, error: 'invalid-body' }
+  if (!isIsoDate(raw.fetchedAt)) return { ok: false, error: 'invalid-fetched-at' }
+  const org = typeof raw.org === 'string' && raw.org.startsWith('https://') ? raw.org : ''
+  if (!org) return { ok: false, error: 'invalid-org' }
+  if (!Array.isArray(raw.entries) || raw.entries.length > MAX_TEMPLATE_ENTRIES) {
+    return { ok: false, error: 'invalid-entries' }
+  }
+  const entries: CrmTemplateIndexEntry[] = []
+  for (const item of raw.entries) {
+    const entry = parseTemplateEntry(item)
+    // One unreadable row never costs the whole harvest.
+    if (entry) entries.push(entry)
+  }
+  if (!entries.length) return { ok: false, error: 'invalid-entries' }
+  return { ok: true, index: { org, fetchedAt: raw.fetchedAt, entries } }
 }
 
 export function parseBridgeMessage(raw: unknown): BridgeParseResult {

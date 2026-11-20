@@ -46,6 +46,12 @@ const api = {
   clearCaseContext: () => ipcRenderer.invoke('case-context:clear'),
   onCaseContext: (callback: (context: unknown) => void) =>
     subscribe('case-context:changed', callback),
+  // Protocol 2: a job for Agentor Bridge, answered once a browser tab ran it.
+  submitBridgeJob: (request: unknown) => ipcRenderer.invoke('bridge-jobs:submit', request),
+  getCrmTemplates: () => ipcRenderer.invoke('crm-templates:get'),
+  clearCrmTemplates: () => ipcRenderer.invoke('crm-templates:clear'),
+  onCrmTemplates: (callback: (state: unknown) => void) =>
+    subscribe('crm-templates:changed', callback),
   getBridgeStatus: () => ipcRenderer.invoke('bridge:get-status'),
   getBridgeToken: () => ipcRenderer.invoke('bridge:get-token'),
   setBridgeEnabled: (enabled: boolean) => ipcRenderer.invoke('bridge:set-enabled', enabled),

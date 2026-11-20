@@ -2,10 +2,12 @@ import { randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import { readJsonObject, writeFileAtomic } from './dataFile'
 
-// Cairm+ has its own manifest key since 0.52.0. Keep the legacy Cairm
-// identity for older paired installations, and allow the distinct Plus build.
-export const CAIRM_EXTENSION_ORIGIN = 'chrome-extension://eamkmompphpkboifejhldgdpojeglpel'
-export const CAIRM_PLUS_EXTENSION_ORIGIN = 'chrome-extension://bchjjpoadifjmmofijgdfdladabgcpem'
+// Agentor Bridge carries the identity of the former Cairm + build, so machines
+// paired before the split keep working. The plain Cairm identity is still
+// accepted for installations paired before 0.52.0; it no longer talks to the
+// bridge and can be dropped once no such installation is left.
+export const AGENTOR_BRIDGE_EXTENSION_ORIGIN = 'chrome-extension://bchjjpoadifjmmofijgdfdladabgcpem'
+export const LEGACY_CAIRM_EXTENSION_ORIGIN = 'chrome-extension://eamkmompphpkboifejhldgdpojeglpel'
 export const DEFAULT_BRIDGE_PORT = 32100
 
 export interface BridgeConfig {
@@ -32,7 +34,7 @@ export function readBridgeConfig(filePath: string): BridgeConfig {
     // Off until the user turns it on: nothing listens on the machine by default.
     enabled: raw.enabled === true,
     port: Number.isInteger(port) && port >= 1024 && port <= 65535 ? port : DEFAULT_BRIDGE_PORT,
-    allowedOrigins: [...new Set([CAIRM_EXTENSION_ORIGIN, CAIRM_PLUS_EXTENSION_ORIGIN, ...origins])],
+    allowedOrigins: [...new Set([AGENTOR_BRIDGE_EXTENSION_ORIGIN, LEGACY_CAIRM_EXTENSION_ORIGIN, ...origins])],
   }
 }
 

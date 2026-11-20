@@ -51,9 +51,9 @@ function stateOf(field: ContextField | undefined) {
 }
 
 const bridgeLabel = (bridge: BridgeStatus | null) => {
-  if (bridge?.state === 'listening') return 'Cairm+ connecté'
-  if (bridge?.state === 'error') return `Connexion Cairm+ impossible : ${bridge.error ?? 'erreur inconnue'}`
-  return 'Connexion Cairm+ désactivée'
+  if (bridge?.state === 'listening') return 'Agentor Bridge connecté'
+  if (bridge?.state === 'error') return `Connexion Agentor Bridge impossible : ${bridge.error ?? 'erreur inconnue'}`
+  return 'Connexion Agentor Bridge désactivée'
 }
 
 interface CaseContextPanelProps {
@@ -101,7 +101,7 @@ export function CaseContextPanel({
             ? 'Le dossier actif n’est disponible que dans l’application installée.'
             : bridge?.state === 'listening'
               ? 'Aucun dossier pour l’instant. Ouvre une requête dans le CRM.'
-              : 'Active la connexion Cairm+ pour recevoir le dossier ouvert dans le CRM.'}
+              : 'Active la connexion Agentor Bridge pour recevoir le dossier ouvert dans le CRM.'}
         </p>
         {available && bridge?.state !== 'listening' ? (
           <button type="button" className="btn btn--small" onClick={onOpenSettings}>
@@ -208,7 +208,7 @@ export function CaseContextPanel({
             onClick={onOpenSettings}
           >
             <span className="case-panel__dot" aria-hidden="true" />
-            <span>Cairm+</span>
+            <span>Agentor Bridge</span>
           </button>
           <span className="case-panel__meta" title="Dernière mise à jour">
             {formatTime(context.updatedAt)}

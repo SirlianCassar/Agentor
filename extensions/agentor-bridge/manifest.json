@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Agentor Bridge",
+  "description": "Sends the open Dynamics 365 case to Agentor and applies the data Agentor returns to the procedure forms.",
+  "version": "2.0.51",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs7/52bSXZVSkrausuPmqJIKIwkhqVyolALUaDiERWqYwBGB+etbztc9Lm+ntRa09qPX0yZfBqqaBvh3xaO11ot0xhACYF0PJZMfJjnEArE7bGhYyq4VY7A7M9/qw4Vt+rLWaIW12EnymSWMni8rDoVyiQOlWzosAVi4v3na0tMldj99FmO8VPr3Kh0zJZht1dPIHiFRsFPzq2wwf+dv1BEwF1Qrrj0cxR+JoGyuwDEH3bfCT6a24Eb4uyJnTXz+PbgCpwBc5SmwnGnyLEuqSWRI0PO+OJnHs7YU8CiMbofGQAA16GOM0L1BMlJzq/Bom/G6JnMJM9aFbxe3pRfRmWwIDAQAB",
+  "action": {
+    "default_title": "Agentor Bridge",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.crm4.dynamics.com/*",
+    "https://portalwd.guillemot.fr/*",
+    "https://portal.guillemot.fr/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.crm4.dynamics.com/*"
+      ],
+      "js": [
+        "content/shared.js",
+        "content/dataverse.js",
+        "content/form-fill.js",
+        "content/case-observer.js",
+        "content/job-runner.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "icons": {
+    "16": "assets/icons/bridge-16.png",
+    "32": "assets/icons/bridge-32.png",
+    "48": "assets/icons/bridge-48.png",
+    "128": "assets/icons/bridge-128.png"
+  }
+}

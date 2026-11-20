@@ -1,4 +1,4 @@
-// Settings › Données importées: what Agentor keeps from the case Cairm+ sends.
+// Settings › Données importées: what Agentor keeps from the case Agentor Bridge sends.
 import {
   CASE_IMPORT_KEYS,
   DEFAULT_CASE_IMPORT_OFF,
@@ -22,6 +22,7 @@ const hints: Partial<Record<CaseImportKey, string>> = {
   customerName: 'Nom et prénom du client.',
   customerFull: 'Nom, adresse, téléphone et email, mis en forme comme le bouton de copie client de Cairm. Copiés par la case Client.',
   productFull: 'SN et DoP, mis en forme comme le bouton de copie produit de Cairm.',
+  customerLanguage: 'Langue déclarée sur le dossier. Sert à choisir la déclinaison d’un modèle du CRM.',
   lastTask: 'Sujet et texte de la dernière tâche du dossier.',
 }
 
@@ -35,7 +36,7 @@ export function CaseImportSettings({ receivedCase, imports, caseTags, updateSett
     <div className="settings-page settings-page--narrow">
       <section className="list-card list-card--form">
         <div className="list-card__header">
-          <div className="list-card__title">Ce qu’Agentor garde du dossier envoyé par Cairm+</div>
+          <div className="list-card__title">Ce qu’Agentor garde du dossier envoyé par Agentor Bridge</div>
           <button
             type="button"
             className="btn btn--ghost btn--small"

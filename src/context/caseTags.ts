@@ -1,6 +1,12 @@
 /* Tag attached to each piece of information of the active case. The defaults
    follow the tags already used in Agentor (<CLIENT>, <PRODUIT>, <SERIAL>,
-   <DOSSIER>); each one can be renamed in the settings. */
+   <DOSSIER>); each one can be renamed in the settings.
+
+   One naming, in French and in UPPER_SNAKE, for all of them: a template is
+   written by hand and a tag that reads <CUSTOMERFULL> among <CLIENT> and
+   <DATE_ACHAT> is a tag nobody remembers. The full blocks are the French name
+   of the field plus _FULL, as the agent names them: <CLIENT_FULL>,
+   <PRODUIT_FULL>. */
 import { CONTEXT_FIELD_KEYS, contextFieldLabels, type ContextFieldKey } from './caseContext'
 
 export type CaseTagKey = ContextFieldKey | 'lastTask'
@@ -17,14 +23,15 @@ export const DEFAULT_CASE_TAGS: Record<CaseTagKey, string> = {
   caseTitle: '<TITRE>',
   caseCreatedOn: '<DATE_DOSSIER>',
   productName: '<PRODUIT>',
-  productFull: '<PRODUCTFULL>',
+  productFull: '<PRODUIT_FULL>',
   productType: '<TYPE_PRODUIT>',
   serialNumber: '<SERIAL>',
   purchaseDate: '<DATE_ACHAT>',
   productionDate: '<DATE_PRODUCTION>',
   customerName: '<CLIENT>',
-  customerFull: '<CUSTOMERFULL>',
+  customerFull: '<CLIENT_FULL>',
   country: '<PAYS>',
+  customerLanguage: '<LANGUE>',
   lastTask: '<DERNIERE_TACHE>',
 }
 

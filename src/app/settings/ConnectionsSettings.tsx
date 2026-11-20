@@ -1,4 +1,4 @@
-// Settings › Connexion Cairm+.
+// Settings › Connexion Agentor Bridge.
 import type { Dispatch, SetStateAction } from 'react'
 import { ButtonIcon } from '../../components/AppIcons'
 import type { CaseContextState } from '../../hooks/useCaseContext'
@@ -18,7 +18,7 @@ export function ConnectionsSettings({
     <div className="settings-page settings-page--narrow">
       <section className="list-card list-card--form">
         <div className="list-card__header">
-          <div className="list-card__title">Connexion Cairm+</div>
+          <div className="list-card__title">Connexion Agentor Bridge</div>
           <span className={`connection-state connection-state--${caseContextState.bridge?.state ?? 'off'}`}>
             {caseContextState.bridge?.state === 'listening'
               ? `Active sur le port ${caseContextState.bridge.port}`
@@ -37,7 +37,7 @@ export function ConnectionsSettings({
                     Agentor écoute uniquement sur cet ordinateur (127.0.0.1). Rien n’est écrit dans le CRM.
                   </div>
                 </div>
-                <label className="settings-toggle" aria-label="Connexion Cairm+">
+                <label className="settings-toggle" aria-label="Connexion Agentor Bridge">
               <input
                 type="checkbox"
                 checked={Boolean(caseContextState.bridge?.enabled)}
@@ -52,7 +52,7 @@ export function ConnectionsSettings({
                 <div className="settings-option__info">
                   <div className="settings-option__title">Jeton d’appairage</div>
                   <div className="settings-option__desc">
-                    À coller dans Cairm+ › Paramètres › Mode développeur (DEVMODE) › Connexion à Agentor 9000. Il n’est jamais affiché ni enregistré en clair.
+                    À coller dans les réglages de l’extension Agentor Bridge. Il n’est jamais affiché ni enregistré en clair.
                   </div>
                 </div>
                 <div className="settings-option__actions">
@@ -68,10 +68,10 @@ export function ConnectionsSettings({
                   <button
                     type="button"
                     className="btn btn--ghost btn--small"
-                    title="L’ancien jeton ne fonctionnera plus : il faudra le recoller dans Cairm+."
+                    title="L’ancien jeton ne fonctionnera plus : il faudra le recoller dans Agentor Bridge."
                     onClick={() => {
                       void caseContextState.regenerateToken().then((token) =>
-                        setToast(token ? 'Nouveau jeton créé. Recolle-le dans Cairm+.' : 'Impossible de créer un jeton.'),
+                        setToast(token ? 'Nouveau jeton créé. Recolle-le dans Agentor Bridge.' : 'Impossible de créer un jeton.'),
                       )
                     }}
                   >
@@ -82,7 +82,7 @@ export function ConnectionsSettings({
               <ol className="connection-steps">
                 <li>Active la connexion ci-dessus.</li>
                 <li>Copie le jeton.</li>
-                <li>Dans Edge, ouvre Cairm+ › Paramètres › Mode développeur (DEVMODE) › Connexion à Agentor 9000, colle le jeton, active l’envoi, clique sur « Enregistrer », puis sur « Tester la connexion ». Recharge ensuite la page du dossier CRM.</li>
+                <li>Dans Edge, ouvre les réglages de l’extension Agentor Bridge, colle le jeton, active l’envoi, clique sur « Enregistrer », puis sur « Tester la connexion ». Recharge ensuite la page du dossier CRM.</li>
               </ol>
             </div>
           ) : (

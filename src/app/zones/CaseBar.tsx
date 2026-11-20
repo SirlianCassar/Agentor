@@ -53,6 +53,9 @@ export interface CaseBarProps {
   // Resolves to true once the value is in the clipboard.
   onCopy: (value: string) => Promise<boolean>
   onOpenSettings: () => void
+  // The gear of the whole application, at the top right of the window.
+  settingsLabel: string
+  onOpenAppSettings: () => void
 }
 
 // The values kept in the bar, in this order. The client copies its name and
@@ -67,10 +70,10 @@ const chipLabels: Partial<Record<ContextFieldKey, string>> = {
 const COPIED_MS = 1400
 
 const bridgeText = (available: boolean, bridge: BridgeStatus | null) => {
-  if (!available) return 'Cairm+ indisponible'
-  if (bridge?.state === 'listening') return 'Cairm+ connecté'
-  if (bridge?.state === 'error') return 'Cairm+ en erreur'
-  return 'Cairm+ désactivé'
+  if (!available) return 'Agentor Bridge indisponible'
+  if (bridge?.state === 'listening') return 'Agentor Bridge connecté'
+  if (bridge?.state === 'error') return 'Agentor Bridge en erreur'
+  return 'Agentor Bridge désactivé'
 }
 
 export function CaseBar({
@@ -92,6 +95,8 @@ export function CaseBar({
   onRecall,
   onCopy,
   onOpenSettings,
+  settingsLabel,
+  onOpenAppSettings,
 }: CaseBarProps) {
   const shownKeys = chipKeys.filter((key) => isFieldImported(imports, key))
   // The value just copied shows « Copié » for a moment.
@@ -223,11 +228,20 @@ export function CaseBar({
         <button
           type="button"
           className={`case-bar__bridge case-bar__bridge--${available ? bridge?.state ?? 'off' : 'off'}`}
-          title={`${bridgeText(available, bridge)}. Réglages dans Paramètres › Connexion Cairm+.`}
+          title={`${bridgeText(available, bridge)}. Réglages dans Paramètres › Connexion Agentor Bridge.`}
           onClick={onOpenSettings}
         >
           <span className="case-bar__bridge-dot" aria-hidden="true" />
           <span>{bridgeText(available, bridge)}</span>
+        </button>
+        <button
+          type="button"
+          className="case-bar__settings"
+          title={settingsLabel}
+          aria-label={settingsLabel}
+          onClick={onOpenAppSettings}
+        >
+          <UiIcon name="settings" />
         </button>
       </div>
 

@@ -268,7 +268,7 @@ export const planCaseArrival = (state: CaseTabsState, caseId: string, mainIsEmpt
 
 // A saved context may fill an empty main tab, but must not change a restored
 // workspace. Defer it without marking it handled, so the same case arriving
-// live from Cairm can still be shown.
+// live from Agentor Bridge can still be shown.
 export const planCaseReception = (
   state: CaseTabsState,
   caseId: string,

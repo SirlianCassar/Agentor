@@ -1,7 +1,13 @@
 // Constants, local types and small helpers shared by the main window and its zones.
 import { categoryColors } from '../lib/utils'
 import type { AppIconName } from '../lib/iconTypes'
-import type { DashboardProductCategory, ProductCatalogItem } from '../lib/types'
+import { CRM_LIBRARY_FOLDER_ID } from '../lib/crmTemplateLibrary'
+import type {
+  DashboardProductCategory,
+  MailTemplate,
+  ProductCatalogItem,
+  TroubleshootgunFolder,
+} from '../lib/types'
 import { emptyLayout, parseLayout, type DashboardWindowKind, type WindowLayout } from '../windows/windowLayout'
 import { createCaseTabsState, parseCaseTabs, serializeCaseTabs, type CaseTabsState } from '../lib/caseTabs'
 
@@ -34,6 +40,31 @@ export type TemplatePreviewState = {
   selectedEmailLines: boolean[]
   selectedTaskSections: boolean[]
   importTask: boolean
+}
+
+export interface PreviewTemplateSources {
+  templates: MailTemplate[]
+  troubleshootgunFolders: TroubleshootgunFolder[]
+  // The CRM template merged for this case: held for the length of the draft,
+  // never saved, since its body lives in the CRM.
+  crmTemplate?: MailTemplate | null
+}
+
+/** The template a preview stands for, wherever it comes from. */
+export function resolvePreviewTemplate(
+  preview: TemplatePreviewState | null | undefined,
+  sources: PreviewTemplateSources,
+): MailTemplate | undefined {
+  if (!preview) return undefined
+  if (preview.folderId === CRM_LIBRARY_FOLDER_ID) {
+    return sources.crmTemplate?.id === preview.templateId ? sources.crmTemplate : undefined
+  }
+  if (preview.folderId) {
+    return sources.troubleshootgunFolders
+      .find((folder) => folder.id === preview.folderId)
+      ?.templates.find((item) => item.id === preview.templateId)
+  }
+  return sources.templates.find((item) => item.id === preview.templateId)
 }
 
 export type WorkspaceDashboardPage =

@@ -16,8 +16,6 @@ export interface LibrarySidebarProps {
   // Product of the tab's case: its name in the mails and its CRM name.
   productNames: string[]
   productLabel: string | null
-  editButtonLabel: string
-  onOpenSettings: () => void
   onSnippet: (snippet: Snippet) => void
   onTemplate: (template: MailTemplate, folderId?: string) => void
   onTask: (task: TaskTemplate) => void
@@ -33,8 +31,8 @@ export interface LibrarySidebarProps {
   onEdit?: (entry: import('../../lib/unifiedSearch').SearchEntry) => void
 }
 
-export function LibrarySidebar({ snippets, snippetCategories, categoryColorById, editButtonLabel,
-  onOpenSettings, onSnippet, showSnippetTooltip, hideSnippetTooltip, underPanel = false,
+export function LibrarySidebar({ snippets, snippetCategories, categoryColorById,
+  onSnippet, showSnippetTooltip, hideSnippetTooltip, underPanel = false,
   hiddenPanelTitle, onShowPanel }: LibrarySidebarProps) {
   const groups = useMemo(() => {
     const categories = snippetCategories.map((category) => ({
@@ -45,9 +43,8 @@ export function LibrarySidebar({ snippets, snippetCategories, categoryColorById,
   }, [snippets, snippetCategories])
   return (
     <aside className={`sidebar library${underPanel ? ' library--under-panel' : ''}`} aria-label="Snippets">
-      <div className="sidebar-top library__top">
+      <div className="library__top">
         <span className="library__heading">Snippets</span>
-        <button type="button" className="sidebar-icon-btn" title={editButtonLabel} aria-label={editButtonLabel} onClick={onOpenSettings}><UiIcon name="settings" /></button>
       </div>
         {hiddenPanelTitle && onShowPanel ? <button type="button" className="library__panel-back" onClick={onShowPanel}><UiIcon name="caretRight" /><span>{hiddenPanelTitle}</span></button> : null}
         <div className="library__list">

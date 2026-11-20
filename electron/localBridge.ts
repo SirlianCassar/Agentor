@@ -1,8 +1,9 @@
 import http from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
 import { parseBridgeMessage, type BridgeMessage } from '../src/context/bridgeMessages'
+import { BRIDGE_JOB_PROTOCOL_VERSION } from '../src/context/bridgeJobs'
 
-// Local bridge for Cairm+. Listens on the loopback interface only, answers only
+// Local bridge for Agentor Bridge. Listens on the loopback interface only, answers only
 // to requests carrying the pairing token, and rejects foreign Host headers so a
 // web page cannot reach it through DNS rebinding.
 export interface LocalBridgeOptions {
@@ -11,6 +12,11 @@ export interface LocalBridgeOptions {
   allowedOrigins: string[]
   appVersion: string
   onMessage: (message: BridgeMessage) => void
+  // Protocol 2. Jobs wait here until a browser tab comes for them; the answer
+  // to a case push says how many wait, so no extra rhythm is needed.
+  takeJobs?: (abilities?: readonly string[]) => unknown[]
+  pendingJobs?: () => number
+  settleJob?: (id: string, raw: unknown) => { ok: true } | { ok: false; error: string }
 }
 
 export interface LocalBridge {
@@ -19,6 +25,10 @@ export interface LocalBridge {
 }
 
 const MAX_BODY_BYTES = 64 * 1024
+// A job result carries the harvested index: a few hundred kilobytes of titles,
+// where a case is a handful.
+const MAX_RESULT_BODY_BYTES = 4 * 1024 * 1024
+const JOB_RESULT_PATH = /^\/v1\/jobs\/([0-9a-f-]{36})\/result$/
 
 const sameSecret = (expected: string, received: string) => {
   const a = Buffer.from(expected)
@@ -65,9 +75,25 @@ export function startLocalBridge(options: LocalBridgeOptions): Promise<LocalBrid
 
     const url = new URL(request.url ?? '/', `http://${request.headers.host}`)
     if (request.method === 'GET' && url.pathname === '/v1/health') {
-      return send(200, { ok: true, app: 'agentor', version: options.appVersion, protocol: 1 })
+      return send(200, {
+        ok: true,
+        app: 'agentor',
+        version: options.appVersion,
+        protocol: 1,
+        protocols: [1, BRIDGE_JOB_PROTOCOL_VERSION],
+      })
     }
-    if (request.method !== 'POST' || url.pathname !== '/v1/case') return send(404, { ok: false, error: 'route' })
+    // Handing out the waiting jobs. A tab asks on the rhythm it already polls
+    // the case with; an empty list is the normal answer.
+    if (request.method === 'GET' && url.pathname === '/v1/jobs') {
+      const can = url.searchParams.get('can')
+      const abilities = can === null ? undefined : can.split(',').map((kind) => kind.trim()).filter(Boolean)
+      return send(200, { ok: true, jobs: options.takeJobs?.(abilities) ?? [] })
+    }
+
+    const resultMatch = JOB_RESULT_PATH.exec(url.pathname)
+    const limit = url.pathname === '/v1/case' ? MAX_BODY_BYTES : resultMatch ? MAX_RESULT_BODY_BYTES : 0
+    if (request.method !== 'POST' || !limit) return send(404, { ok: false, error: 'route' })
     if (!String(request.headers['content-type'] ?? '').startsWith('application/json')) {
       return send(415, { ok: false, error: 'content-type' })
     }
@@ -78,7 +104,7 @@ export function startLocalBridge(options: LocalBridgeOptions): Promise<LocalBrid
     request.on('data', (chunk: Buffer) => {
       if (aborted) return
       size += chunk.length
-      if (size > MAX_BODY_BYTES) {
+      if (size > limit) {
         aborted = true
         send(413, { ok: false, error: 'too-large' })
         request.destroy()
@@ -94,6 +120,14 @@ export function startLocalBridge(options: LocalBridgeOptions): Promise<LocalBrid
       } catch {
         return send(400, { ok: false, error: 'invalid-json' })
       }
+      if (resultMatch) {
+        const settled = options.settleJob?.(resultMatch[1], raw) ?? { ok: false, error: 'no-queue' }
+        if (!settled.ok) {
+          return send(settled.error === 'unknown-job' ? 404 : 422, { ok: false, error: settled.error })
+        }
+        return send(200, { ok: true })
+      }
+
       const parsed = parseBridgeMessage(raw)
       if (!parsed.ok) return send(422, { ok: false, error: parsed.error })
       try {
@@ -102,7 +136,12 @@ export function startLocalBridge(options: LocalBridgeOptions): Promise<LocalBrid
         console.error('[bridge] message handler failed', error)
         return send(500, { ok: false, error: 'handler' })
       }
-      return send(200, { ok: true, caseId: parsed.message.caseKey.id })
+      return send(200, {
+        ok: true,
+        caseId: parsed.message.caseKey.id,
+        // How many jobs wait: the tab fetches them on its next tick.
+        jobs: options.pendingJobs?.() ?? 0,
+      })
     })
   })
 

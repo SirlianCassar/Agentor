@@ -1,4 +1,4 @@
-/* Agentor 9000 shell: dashboard launcher, floating windows, active case panel. */
+/* Agentor shell: dashboard launcher, floating windows, active case panel. */
 
 /* One state code for the whole app: grey read, green confirmed, violet edited
    (or in progress), amber to check. */
@@ -705,15 +705,13 @@ button.case-tile__value:hover {
   color: var(--accent-light);
 }
 
+/* The RQT number keeps the font of the interface: the monospace made it thin and pale next to
+   its own tab title, and the number is what the agent looks for first. */
 .case-tab__label {
   overflow: hidden;
-  font-family: var(--font-mono);
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.case-tab--draft .case-tab__label {
-  font-family: inherit;
 }
 
 .case-tab__dot {
@@ -890,6 +888,29 @@ button.case-tile__value:hover {
   font: inherit;
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* The gear of the application, at the top right of the window: it used to sit in the header of
+   the snippets column, where it looked like a setting of the snippets. */
+.case-bar__settings {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 30px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.case-bar__settings:hover {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.case-bar__settings svg {
+  width: 15px;
+  height: 15px;
 }
 
 .case-bar__bridge:hover {
@@ -1178,8 +1199,13 @@ button.case-tile__value:hover {
   margin-top: auto;
 }
 
+/* Nothing but the name of the column: the row is as short as the label. */
 .library__top {
-  gap: var(--space-2);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 0;
+  margin-bottom: calc(-1 * var(--space-1));
 }
 
 .library__fold {
@@ -1204,8 +1230,8 @@ button.case-tile__value:hover {
 
 .library__heading {
   flex: 1;
-  color: var(--text-secondary);
-  font-size: calc(11px * var(--text-scale));
+  color: var(--muted);
+  font-size: calc(10px * var(--text-scale));
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2083,7 +2109,7 @@ button.case-tile__value:hover {
   background: var(--accent-glow) !important;
 }
 
-/* Settings › Données importées: one line per piece of information from Cairm+. */
+/* Settings › Données importées: one line per piece of information from Agentor Bridge. */
 .case-import__intro {
   margin: 0 0 var(--space-3);
 }

@@ -16,7 +16,10 @@ import path from 'node:path'
 import { autoUpdater } from 'electron-updater'
 import { readJsonObject, writeFileAtomic, writeRetiredDataExport } from './dataFile'
 import { CaseContextStore } from './caseContextStore'
+import { CrmTemplateStore } from './crmTemplateStore'
 import { startLocalBridge, type LocalBridge } from './localBridge'
+import { JobQueue } from './jobQueue'
+import { isBridgeJobKind, type BridgeJobRequest, type BridgeJobResult } from '../src/context/bridgeJobs'
 import {
   createPairingToken,
   loadPairingToken,
@@ -576,11 +579,13 @@ app.on('activate', () => {
   }
 })
 
-// ── Active case context and Cairm+ bridge ─────────────────────────────────
+// ── Active case context and Agentor Bridge bridge ─────────────────────────────────
 const CASE_CONTEXT_FILE = () => path.join(app.getPath('userData'), 'case-context.json')
+const CRM_TEMPLATES_FILE = () => path.join(app.getPath('userData'), 'crm-templates.json')
 const BRIDGE_CONFIG_FILE = () => path.join(app.getPath('userData'), 'bridge.json')
 const BRIDGE_TOKEN_FILE = () => path.join(app.getPath('userData'), 'bridge-token.bin')
 const CASE_CONTEXT_CHANNEL = 'case-context:changed'
+const CRM_TEMPLATES_CHANNEL = 'crm-templates:changed'
 const BRIDGE_STATUS_CHANNEL = 'bridge:status'
 
 type BridgeStatus = BridgeConfig & {
@@ -590,7 +595,13 @@ type BridgeStatus = BridgeConfig & {
 }
 
 let caseContextStore: CaseContextStore | null = null
+let crmTemplateStore: CrmTemplateStore | null = null
 let localBridge: LocalBridge | null = null
+const jobQueue = new JobQueue()
+// A harvest that failed is not retried on the next case push: the index is a
+// week old at worst, and a CRM that answers badly would be asked every poll.
+const HARVEST_RETRY_MS = 10 * 60 * 1000
+let harvestRetryAt = 0
 let bridgeToken = ''
 let bridgeTokenPersisted = false
 let bridgeStatus: BridgeStatus | null = null
@@ -606,12 +617,48 @@ function setBridgeStatus(status: BridgeStatus) {
   broadcast(BRIDGE_STATUS_CHANNEL, status)
 }
 
+/* Asks for the index of the CRM template titles when Agentor has none or one
+   older than a week. Nothing is read from the CRM on a rhythm of the
+   extension's own: a case push is what gives the queue its chance. */
+function requestTemplateHarvest() {
+  const templates = crmTemplateStore
+  if (!templates || !templates.wanted() || Date.now() < harvestRetryAt) return
+  if (jobQueue.has('template.harvest')) return
+  void jobQueue.submit({ kind: 'template.harvest' }).then((result) => {
+    if (result.ok && result.outcome.kind === 'template.harvest') {
+      harvestRetryAt = 0
+      templates.handleIndex(result.outcome.index)
+      return
+    }
+    if (!result.ok && result.reason !== 'already-queued') harvestRetryAt = Date.now() + HARVEST_RETRY_MS
+  })
+}
+
+/** The job a window asked for, read defensively like anything off the wire. */
+function readJobRequest(raw: unknown): BridgeJobRequest | null {
+  const value = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null
+  if (!value || !isBridgeJobKind(value.kind)) return null
+  if (value.kind === 'template.harvest') return { kind: 'template.harvest' }
+  if (value.kind === 'template.instantiate') {
+    const templateId = String(value.templateId ?? '').replace(/[{}]/g, '').trim().toLowerCase()
+    if (!/^[0-9a-f-]{36}$/.test(templateId)) return null
+    const familyKey = typeof value.familyKey === 'string' ? value.familyKey.slice(0, 120) : undefined
+    return { kind: 'template.instantiate', templateId, ...(familyKey ? { familyKey } : {}) }
+  }
+  const subject = typeof value.subject === 'string' ? value.subject.slice(0, 400) : ''
+  const body = typeof value.body === 'string' ? value.body.slice(0, 100_000) : ''
+  if (!body.trim()) return null
+  return { kind: 'mail.compose', subject, body }
+}
+
 async function applyBridgeConfig(config: BridgeConfig) {
   if (localBridge) {
     await localBridge.close()
     localBridge = null
   }
   if (!config.enabled || !caseContextStore) {
+    // Nobody will come for the waiting jobs: each caller is told why.
+    jobQueue.clear()
     setBridgeStatus({ ...config, state: 'off', tokenPersisted: bridgeTokenPersisted })
     return
   }
@@ -622,7 +669,13 @@ async function applyBridgeConfig(config: BridgeConfig) {
       token: bridgeToken,
       allowedOrigins: config.allowedOrigins,
       appVersion: app.getVersion(),
-      onMessage: (message) => store.handleBridgeMessage(message),
+      onMessage: (message) => {
+        store.handleBridgeMessage(message)
+        if (message.type === 'case.observed') requestTemplateHarvest()
+      },
+      takeJobs: (abilities) => jobQueue.take(abilities),
+      pendingJobs: () => jobQueue.pendingCount(),
+      settleJob: (id, raw) => jobQueue.settle(id, raw),
     })
     setBridgeStatus({ ...config, state: 'listening', tokenPersisted: bridgeTokenPersisted })
   } catch (error) {
@@ -640,6 +693,8 @@ const readCaseImportSetting = (data: unknown) =>
 
 function initCaseContext() {
   caseContextStore = new CaseContextStore(CASE_CONTEXT_FILE())
+  crmTemplateStore = new CrmTemplateStore(CRM_TEMPLATES_FILE())
+  crmTemplateStore.subscribe((state) => broadcast(CRM_TEMPLATES_CHANNEL, state))
   caseContextStore.setImports(readCaseImportSetting(readJsonObject(DATA_FILE())))
   caseContextStore.subscribe((context) => broadcast(CASE_CONTEXT_CHANNEL, context))
   const pairing = loadPairingToken(BRIDGE_TOKEN_FILE(), safeStorage)
@@ -680,6 +735,24 @@ ipcMain.handle('case-context:confirm', (_event, caseId: unknown, key: unknown) =
 })
 ipcMain.handle('case-context:clear', () => {
   caseContextStore?.clear()
+  return true
+})
+ipcMain.handle('bridge-jobs:submit', async (_event, raw: unknown): Promise<BridgeJobResult> => {
+  if (bridgeStatus?.state !== 'listening') {
+    return { ok: false, reason: bridgeStatus?.state === 'error' ? 'bridge-error' : 'bridge-off' }
+  }
+  const request = readJobRequest(raw)
+  if (!request) return { ok: false, reason: 'invalid-request' }
+  const result = await jobQueue.submit(request, caseContextStore?.get()?.caseKey)
+  // A harvest asked for by hand lands in the store like the automatic one.
+  if (result.ok && result.outcome.kind === 'template.harvest') {
+    crmTemplateStore?.handleIndex(result.outcome.index)
+  }
+  return result
+})
+ipcMain.handle('crm-templates:get', () => crmTemplateStore?.get() ?? null)
+ipcMain.handle('crm-templates:clear', () => {
+  crmTemplateStore?.clear()
   return true
 })
 ipcMain.handle('bridge:get-status', () => bridgeStatus)

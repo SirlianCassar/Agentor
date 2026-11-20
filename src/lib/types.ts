@@ -261,8 +261,11 @@ export interface AppSettings {
   referencesInPanel?: boolean
   // Dashboards, Troubleshotgun and the call open in their own window. On by default.
   separateWindows?: boolean
-  // Case values kept from what Cairm+ sends, by field (see caseContext.ts).
+  // Case values kept from what Agentor Bridge sends, by field (see caseContext.ts).
   caseImport?: Partial<Record<string, boolean>>
+  // Which `***` of a CRM template family takes which value, by family key
+  // (see crmTemplateHoles.ts). Added to the families shipped with the app.
+  crmTemplateHoles?: Record<string, Array<{ marker?: string; line?: string; source: string }>>
 }
 
 export interface AppData {

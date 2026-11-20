@@ -19,6 +19,7 @@ export const CONTEXT_FIELD_KEYS = [
   'customerName',
   'customerFull',
   'country',
+  'customerLanguage',
 ] as const
 export type ContextFieldKey = (typeof CONTEXT_FIELD_KEYS)[number]
 
@@ -35,6 +36,7 @@ export const contextFieldLabels: Record<ContextFieldKey, string> = {
   customerName: 'Client',
   customerFull: 'Client complet (copie Cairm)',
   country: 'Pays',
+  customerLanguage: 'Langue du client',
 }
 
 export interface CaseKey {
@@ -221,7 +223,7 @@ export function getUnconfirmedFields(context: CaseContext, keys: ContextFieldKey
   })
 }
 
-// What Agentor keeps from what Cairm+ sends (Paramètres › Données importées).
+// What Agentor keeps from what Agentor Bridge sends (Paramètres › Données importées).
 // The RQT number identifies the case and is always kept. Off by default: the
 // values Sirlian asked to leave out of the case bar and the case window.
 export type CaseImportKey = Exclude<ContextFieldKey, 'caseNumber'> | 'lastTask'
@@ -234,6 +236,7 @@ export const CASE_IMPORT_KEYS: CaseImportKey[] = [
   'customerName',
   'customerFull',
   'country',
+  'customerLanguage',
   'caseCreatedOn',
   'productType',
   'productionDate',

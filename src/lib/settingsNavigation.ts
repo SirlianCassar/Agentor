@@ -26,6 +26,7 @@ export type SettingsTab =
   | 'connections'
   | 'caseTags'
   | 'caseImport'
+  | 'crmTemplates'
   | 'productAliases'
 
 export type SettingsIconName = AppIconName
@@ -112,8 +113,9 @@ export const settingsNavigation: SettingsNavSection[] = [
     label: 'Dossier et tags',
     icon: 'plug',
     items: [
-      { id: 'connections', label: 'Connexion Cairm+', description: 'Réception du dossier ouvert dans le CRM et jeton d’appairage.', icon: 'plug' },
-      { id: 'caseImport', label: 'Données importées', description: 'Informations du dossier gardées parmi celles envoyées par Cairm+.', icon: 'importData' },
+      { id: 'connections', label: 'Connexion Agentor Bridge', description: 'Réception du dossier ouvert dans le CRM et jeton d’appairage.', icon: 'plug' },
+      { id: 'caseImport', label: 'Données importées', description: 'Informations du dossier gardées parmi celles envoyées par Agentor Bridge.', icon: 'importData' },
+      { id: 'crmTemplates', label: 'Modèles du CRM', description: 'Index des modèles de mail moissonné dans le CRM, rangé par famille.', icon: 'importData' },
       { id: 'caseTags', label: 'Tags du dossier', description: 'Tag rempli par chaque information du dossier actif, et remplissage automatique.', icon: 'tag' },
       { id: 'productAliases', label: 'Noms de produits', description: 'Nom utilisé dans les mails pour chaque nom de produit du CRM.', icon: 'box' },
       { id: 'tags', label: 'Tags proposés', description: 'Tags proposés pendant la saisie d’un mail ou d’une task.', icon: 'tag' },

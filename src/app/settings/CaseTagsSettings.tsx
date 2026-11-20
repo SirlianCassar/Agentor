@@ -27,7 +27,7 @@ export function CaseTagsSettings({
   data,
   updateSettings,
 }: CaseTagsSettingsProps) {
-  // Only the information imported from Cairm+ can fill a tag.
+  // Only the information imported from Agentor Bridge can fill a tag.
   const shownKeys = CASE_TAG_KEYS.filter((key) => (key === 'lastTask' ? imports.lastTask : isFieldImported(imports, key)))
   return (
     <div className="settings-page settings-page--narrow">

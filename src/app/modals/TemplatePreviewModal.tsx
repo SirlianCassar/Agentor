@@ -2,9 +2,9 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { getTaskSectionLabel, getTemplateTaskSections, TASK_SECTION_IDS } from '../../lib/taskDraft'
 import { getTemplateVersion, getTemplateVersions, templateLanguageLabel } from '../../lib/templateLanguages'
-import type { AppData, TroubleshootgunFolder } from '../../lib/types'
+import type { AppData, MailTemplate, TroubleshootgunFolder } from '../../lib/types'
 import { highlightText } from '../../lib/utils'
-import { type TemplatePreviewState, writeStoredTemplateLanguage } from '../appShared'
+import { resolvePreviewTemplate, type TemplatePreviewState, writeStoredTemplateLanguage } from '../appShared'
 
 export interface TemplatePreviewModalProps {
   data: AppData
@@ -15,6 +15,10 @@ export interface TemplatePreviewModalProps {
   troubleshootgunFolders: TroubleshootgunFolder[]
   // Shown in the contextual panel; a mail already started gets the template at the cursor.
   mailHasContent?: boolean
+  // The merged CRM template, when that is what is being previewed.
+  crmTemplate?: MailTemplate | null
+  // Writes it in the Dynamics mail form. Absent outside the installed app.
+  onComposeInCrm?: () => void
 }
 
 export function TemplatePreviewModal({
@@ -25,11 +29,16 @@ export function TemplatePreviewModal({
   templatePreview,
   troubleshootgunFolders,
   mailHasContent = false,
+  crmTemplate = null,
+  onComposeInCrm,
 }: TemplatePreviewModalProps) {
-  const template = templatePreview.folderId
-    ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((item) => item.id === templatePreview.templateId)
-    : data.templates.find((item) => item.id === templatePreview.templateId)
+  const template = resolvePreviewTemplate(templatePreview, {
+    templates: data.templates,
+    troubleshootgunFolders,
+    crmTemplate,
+  })
   if (!template) return null
+  const isCrmTemplate = template === crmTemplate
   const versions = getTemplateVersions(template)
   const emailLines = getTemplateVersion(template, templatePreview.language).content.split(/\r?\n/)
   const taskSections = getTemplateTaskSections(template, data.taskTemplates)
@@ -37,9 +46,11 @@ export function TemplatePreviewModal({
     template.taskImportMode === 'custom' ||
     template.taskImportMode === 'sections' ||
     (template.taskCustom ?? (!!template.taskText && !template.taskTemplateId))
-  const subtitle = templateUsesCustomTask
-    ? 'Le contenu sera ajouté aux sections choisies.'
-    : 'La task complète sera importée.'
+  const subtitle = isCrmTemplate
+    ? 'Corps fusionné par le CRM. Les emplacements restants sont à compléter.'
+    : templateUsesCustomTask
+      ? 'Le contenu sera ajouté aux sections choisies.'
+      : 'La task complète sera importée.'
   const content = (
       <div
         className="modal troubleshootgun-preview-modal troubleshootgun-preview-modal--panel"
@@ -183,6 +194,16 @@ export function TemplatePreviewModal({
             {mailHasContent ? (
               <button className="ghost" type="button" onClick={() => importTemplatePreview('replace')}>
                 Remplacer le mail
+              </button>
+            ) : null}
+            {isCrmTemplate && onComposeInCrm ? (
+              <button
+                className="ghost"
+                type="button"
+                title="Écrit l’objet et le corps dans le formulaire de mail du CRM, sans l’envoyer"
+                onClick={onComposeInCrm}
+              >
+                Poser dans le CRM
               </button>
             ) : null}
             <button

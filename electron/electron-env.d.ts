@@ -50,6 +50,10 @@ interface Window {
     confirmCaseField?: (caseId: string, key: string) => Promise<boolean>
     clearCaseContext?: () => Promise<boolean>
     onCaseContext?: (callback: (context: unknown) => void) => () => void
+    submitBridgeJob?: (request: unknown) => Promise<unknown>
+    getCrmTemplates?: () => Promise<unknown>
+    clearCrmTemplates?: () => Promise<boolean>
+    onCrmTemplates?: (callback: (state: unknown) => void) => () => void
     getBridgeStatus?: () => Promise<unknown>
     getBridgeToken?: () => Promise<string>
     setBridgeEnabled?: (enabled: boolean) => Promise<unknown>

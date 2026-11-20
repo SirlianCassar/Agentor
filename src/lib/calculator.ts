@@ -155,7 +155,7 @@ export interface PortalSparePartCopy {
   currency: string
 }
 
-// Reads what Cairm+'s copy button on Portal's spare-parts table puts in the
+// Reads what Cairm's copy button on Portal's spare-parts table puts in the
 // clipboard:
 //   PART : <name>
 //   SKU : <sku>

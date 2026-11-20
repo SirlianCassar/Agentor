@@ -16,7 +16,7 @@ export function useCaseContext() {
   const api = typeof window !== 'undefined' ? window.agentor : undefined
   const [context, setContext] = useState<CaseContext | null>(null)
   const [bridge, setBridge] = useState<BridgeStatus | null>(null)
-  // 'stored': the case kept from the last session; 'live': sent by Cairm+ since launch.
+  // 'stored': the case kept from the last session; 'live': sent by Agentor Bridge since launch.
   const [origin, setOrigin] = useState<'stored' | 'live'>('stored')
 
   useEffect(() => {

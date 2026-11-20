@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Agentor Bridge</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <h1>Agentor Bridge</h1>
+      <p>Relie le CRM Dynamics à Agentor sur ce poste. Rien ne sort de la machine : l’extension parle à Agentor sur 127.0.0.1, avec un jeton d’appairage.</p>
+    </header>
+
+    <form id="bridgeForm" class="card">
+      <h2>Connexion</h2>
+      <p class="card-desc">Agentor doit être ouvert, avec le pont activé dans ses paramètres.</p>
+
+      <div class="row">
+        <div>
+          <div class="row-title">Envoyer le dossier ouvert</div>
+          <div class="row-desc">Numéro, titre, date de création, produit, numéro de série, date d’achat, client, pays et dernière tâche. Rien n’est écrit dans le CRM.</div>
+        </div>
+        <label class="switch"><input id="bridgeEnabled" type="checkbox" aria-label="Envoyer le dossier ouvert"><span class="track"></span></label>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="row-title">Jeton d’appairage</div>
+          <div class="row-desc">À copier depuis Agentor › Paramètres › Connexions. Il reste sur ce poste et n’est jamais synchronisé.</div>
+        </div>
+        <input id="bridgeToken" class="text-input" type="password" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="row-title">Port</div>
+          <div class="row-desc">Le même que dans Agentor. 32100 par défaut.</div>
+        </div>
+        <input id="bridgePort" class="text-input port-input" type="number" min="1024" max="65535" value="32100">
+      </div>
+
+      <div class="row row-actions">
+        <p id="bridgeStatus" class="status" role="status" aria-live="polite"></p>
+        <div class="actions">
+          <button type="submit" class="button">Enregistrer</button>
+          <button id="bridgeTest" type="button" class="button">Tester la connexion</button>
+        </div>
+      </div>
+    </form>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

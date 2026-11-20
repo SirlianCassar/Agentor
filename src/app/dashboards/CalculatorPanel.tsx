@@ -28,7 +28,7 @@ export interface CalculatorPanelProps {
   onUpdateFee: (id: string, field: 'label' | 'amount', value: string) => void
   onRemoveFee: (id: string) => void
   onCopy: (key: DashboardCalculatorCopyKey, value: number) => Promise<void>
-  // Reads the clipboard and fills a part from a Cairm+ Portal copy.
+  // Reads the clipboard and fills a part from a Cairm Portal copy.
   onPasteFromPortal: () => void
   // Text pasted into a part's field; true when it was a Portal copy and filled the part.
   onPasteTextIntoItem: (text: string, id: string) => boolean
@@ -105,7 +105,7 @@ export function CalculatorPanel({
               <button
                 className="btn btn--ghost btn--small btn--with-icon calc__paste"
                 type="button"
-                title="Remplir une pièce avec le prix copié dans Portal (bouton copier de Cairm+)"
+                title="Remplir une pièce avec le prix copié dans Portal (bouton copier de Cairm)"
                 onClick={onPasteFromPortal}
               >
                 <ButtonIcon name="portal" />

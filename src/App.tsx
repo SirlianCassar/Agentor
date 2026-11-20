@@ -19,6 +19,18 @@ import {
   type LibraryFilter,
 } from './lib/library'
 import { useCaseContext } from './hooks/useCaseContext'
+import { useCrmTemplates } from './hooks/useCrmTemplates'
+import { useBridgeJobs } from './hooks/useBridgeJobs'
+import { DEFAULT_CRM_TEMPLATE_HOLES, normalizeCrmTemplateHoles } from './lib/crmTemplateHoles'
+import { buildMailSlots, fillMailSlots } from './lib/mailSlots'
+import {
+  buildCrmSearchEntries,
+  CRM_LIBRARY_FOLDER_ID,
+  crmLanguageToAppLanguage,
+  crmSuggestionNote,
+  crmTemplateAsMailTemplate,
+  readCrmLibraryId,
+} from './lib/crmTemplateLibrary'
 import { fillTemplateFromContext } from './context/templateFill'
 import {
   getTemplateVersion,
@@ -271,6 +283,7 @@ import { CaseTagsSettings } from './app/settings/CaseTagsSettings'
 import { CaseImportSettings } from './app/settings/CaseImportSettings'
 import { ProductAliasesSettings } from './app/settings/ProductAliasesSettings'
 import { ConnectionsSettings } from './app/settings/ConnectionsSettings'
+import { CrmTemplatesSettings } from './app/settings/CrmTemplatesSettings'
 import { TaskFormatSettings } from './app/settings/TaskFormatSettings'
 import { TaskTemplatesSettings } from './app/settings/TaskTemplatesSettings'
 import { TaskCategoriesSettings } from './app/settings/TaskCategoriesSettings'
@@ -293,6 +306,7 @@ import './settings.css'
 
 import {
   readStoredCaseTabs,
+  resolvePreviewTemplate,
   writeStoredCaseTabs,
   PROCEDURE_CHANNEL,
   APP_VERSION_LABEL,
@@ -347,6 +361,9 @@ function App() {
   const externalDataRef = useRef<AppData | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [templatePreview, setTemplatePreview] = useState<TemplatePreviewState | null>(null)
+  // The CRM template merged for the open case. Held for the length of the
+  // draft, never saved: the bodies live in the CRM, where others edit them.
+  const [crmPreviewTemplate, setCrmPreviewTemplate] = useState<MailTemplate | null>(null)
   const currentTemplatePreview = templatePreview
   const [dashboardProductQuery, setDashboardProductQuery] = useState('')
   const [dashboardSparePartQuery, setDashboardSparePartQuery] = useState('')
@@ -1086,6 +1103,14 @@ function App() {
     [appZoom],
   )
   const caseContextState = useCaseContext()
+  const crmTemplates = useCrmTemplates()
+  const bridgeJobs = useBridgeJobs()
+  // Which `***` of a CRM template takes which value: the families shipped with
+  // the app, plus those added in the saved settings.
+  const crmHoleMap = useMemo(
+    () => ({ ...DEFAULT_CRM_TEMPLATE_HOLES, ...normalizeCrmTemplateHoles(data.settings.crmTemplateHoles) }),
+    [data.settings.crmTemplateHoles],
+  )
   const caseTags = useMemo(() => resolveCaseTags(data.settings.caseTags), [data.settings.caseTags])
   const caseAutoFill = data.settings.caseAutoFill !== false
   const productAliases = useMemo(
@@ -1097,7 +1122,7 @@ function App() {
     () => applyProductAliases(caseContextState.context, productAliases),
     [caseContextState.context, productAliases],
   )
-  // What the user keeps from Cairm+ (Paramètres › Données importées).
+  // What the user keeps from Agentor Bridge (Paramètres › Données importées).
   const caseImport = useMemo(() => resolveCaseImport(data.settings.caseImport), [data.settings.caseImport])
   // Main window: a case bar and one tab per case (see lib/caseTabs.ts). The
   // detached and procedure windows show a single dashboard page.
@@ -1136,10 +1161,13 @@ function App() {
   // case tags with a known value are replaced, the others stay visible.
   const fillLoadedText = useCallback(
     (text: string) => {
-      if (!caseAutoFill || !workingCase || !text) return text
-      return fillTemplateFromContext(text, workingCase, caseTags).text
+      if (!text) return text
+      const filled = caseAutoFill && workingCase ? fillTemplateFromContext(text, workingCase, caseTags).text : text
+      // The calculator's values are tags too: a `***` of a CRM template turned
+      // into <PRIX_UNITAIRE> is filled like <CLIENT>.
+      return fillMailSlots(filled, buildMailSlots(dashboardCalculatorItems)).text
     },
-    [workingCase, caseAutoFill, caseTags],
+    [workingCase, caseAutoFill, caseTags, dashboardCalculatorItems],
   )
   const previewOpen = templatePreview !== null
   useEffect(() => {
@@ -2332,9 +2360,24 @@ function App() {
       }),
     [data.taskTemplates, data.templates, troubleshootgunFolders],
   )
+  // The CRM families, resolved for the open case: same search, same preview as
+  // the mail templates. The brand is read on the CRM product name, before the
+  // alias list shortens it.
+  const crmLibrary = useMemo(
+    () =>
+      buildCrmSearchEntries(crmTemplates.index, {
+        productName: workingProductCrmName || workingProductName,
+        country: workingCase?.fields.country?.value,
+        customerLanguage: workingCase?.fields.customerLanguage?.value,
+      }),
+    [crmTemplates.index, workingCase, workingProductCrmName, workingProductName],
+  )
   const mailSearchEntries = useMemo(
-    (): SearchEntry[] => sectionSearchEntries.filter((entry) => entry.kind === 'template'),
-    [sectionSearchEntries],
+    (): SearchEntry[] => [
+      ...sectionSearchEntries.filter((entry) => entry.kind === 'template'),
+      ...crmLibrary.entries,
+    ],
+    [crmLibrary.entries, sectionSearchEntries],
   )
   const taskSearchEntries = useMemo(
     (): SearchEntry[] => sectionSearchEntries.filter((entry) => entry.kind === 's-task' || entry.kind === 'f-task'),
@@ -3193,6 +3236,78 @@ function App() {
     if (mainWindow) showInPanel('preview')
   }
 
+  /* A CRM template is asked for, never stored: the CRM merges it with the open
+     case and returns a body, whose `***` become Agentor tags. What comes back
+     is previewed exactly like a mail template of the library. */
+  const openCrmTemplate = async (entry: SearchEntry) => {
+    const pick = readCrmLibraryId(entry.id)
+    if (!pick) return
+    const suggestion = pick.kind === 'family' ? crmLibrary.suggestions.get(pick.familyKey) : undefined
+    const templateId = pick.kind === 'family' ? suggestion?.templateId : pick.templateId
+    if (!templateId) {
+      // Nothing is chosen in the dark: the reason is shown, the family stays.
+      setToast(suggestion ? crmSuggestionNote(suggestion) : 'Famille de modèles inconnue.')
+      return
+    }
+    setToast('Fusion du modèle par le CRM…')
+    const result = await bridgeJobs.submit({
+      kind: 'template.instantiate',
+      templateId,
+      ...(pick.kind === 'family' ? { familyKey: pick.familyKey } : {}),
+    })
+    if (!result.ok) {
+      setToast(bridgeJobs.reasonLabel(result.reason))
+      return
+    }
+    if (result.outcome.kind !== 'template.instantiate') return
+    const merged = result.outcome.template
+    const { template, remaining } = crmTemplateAsMailTemplate(
+      {
+        familyKey: merged.familyKey,
+        title: suggestion?.label ?? entry.title,
+        subject: merged.subject,
+        body: merged.body,
+      },
+      crmLanguageToAppLanguage(entry.language),
+      crmHoleMap,
+    )
+    setCrmPreviewTemplate(template)
+    openTemplatePreview(template, CRM_LIBRARY_FOLDER_ID)
+    if (remaining) {
+      setToast(`${remaining} emplacement${remaining > 1 ? 's' : ''} *** à compléter à la main.`)
+    }
+  }
+
+  /* Asks the open CRM tab for the titles of the case templates, now. The same
+     job runs on its own when Agentor has no index or one older than a week. */
+  const harvestCrmTemplates = async () => {
+    setToast('Lecture des titres des modèles dans le CRM…')
+    const result = await bridgeJobs.submit({ kind: 'template.harvest' })
+    if (!result.ok) {
+      setToast(bridgeJobs.reasonLabel(result.reason))
+      return
+    }
+    if (result.outcome.kind !== 'template.harvest') return
+    setToast(`${result.outcome.index.entries.length} modèles moissonnés.`)
+  }
+
+  /* Writes the previewed mail in the Dynamics mail form, tags filled. The send
+     button is never touched: the rereading stays human. */
+  const composeCrmTemplateInCrm = async () => {
+    if (!crmPreviewTemplate) return
+    const body = fillLoadedText(crmPreviewTemplate.content)
+    const result = await bridgeJobs.submit({
+      kind: 'mail.compose',
+      subject: crmPreviewTemplate.description ?? '',
+      body,
+    })
+    setToast(
+      result.ok
+        ? 'Mail posé dans le formulaire du CRM. À relire avant envoi.'
+        : bridgeJobs.reasonLabel(result.reason),
+    )
+  }
+
   const openTroubleshootgun = () => {
     if (separateWindows) {
       void window.agentor?.detachDashboard?.('troubleshootgun')
@@ -3235,9 +3350,11 @@ function App() {
     templatePreview: TemplatePreviewState | null = currentTemplatePreview,
   ) => {
     if (!templatePreview) return
-    const template = templatePreview.folderId
-      ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((item) => item.id === templatePreview.templateId)
-      : data.templates.find((item) => item.id === templatePreview.templateId)
+    const template = resolvePreviewTemplate(templatePreview, {
+      templates: data.templates,
+      troubleshootgunFolders,
+      crmTemplate: crmPreviewTemplate,
+    })
     if (!template) return
 
     const emailLines = fillLoadedText(
@@ -3438,7 +3555,7 @@ function App() {
     )
   }
 
-  // Fills a part from a Cairm+ Portal copy. With no target, the last part is
+  // Fills a part from a Cairm Portal copy. With no target, the last part is
   // filled when it is still blank, otherwise a new part is added. Returns
   // false when the text is not a Portal copy.
   const fillDashboardCalculatorFromPortal = (text: string, targetId?: string) => {
@@ -4299,7 +4416,7 @@ function App() {
       return
     }
     const didCopy = await copyText(token)
-    setToast(didCopy ? 'Jeton copié. Colle-le dans la page Agentor de Cairm+.' : 'Copie impossible.')
+    setToast(didCopy ? 'Jeton copié. Colle-le dans les réglages d’Agentor Bridge.' : 'Copie impossible.')
   }
 
   const updateProductAliases = (next: ProductAlias[]) => updateSettings({ productAliases: next })
@@ -4373,8 +4490,12 @@ function App() {
         <SectionSearch
           className="section-search--mail" entries={mailSearchEntries} productTerms={workingProductTerms}
           categories={mailTemplateCategories}
-          placeholder="Rechercher un modèle de mail" label="Rechercher dans les mails"
+          placeholder="Rechercher un modèle de mail ou du CRM" label="Rechercher dans les mails"
           onPick={(entry) => {
+            if (entry.kind === 'crm') {
+              void openCrmTemplate(entry)
+              return
+            }
             const template = data.templates.find((item) => item.id === entry.id)
             if (template) openTemplatePreview(template)
           }}
@@ -4420,9 +4541,11 @@ function App() {
     if (item === 'call') return { id: item, title: 'Appel téléphonique', icon: 'phone' }
     if (item === 'edit') return { id: item, title: `Modifier · ${editedItem()?.name ?? ''}`, icon: 'edit' }
     if (item === 'troubleshootgun') return { id: item, title: 'Troubleshotgun', icon: 'target' }
-    const template = templatePreview?.folderId
-      ? troubleshootgunFolders.find((folder) => folder.id === templatePreview.folderId)?.templates.find((entry) => entry.id === templatePreview.templateId)
-      : data.templates.find((entry) => entry.id === templatePreview?.templateId)
+    const template = resolvePreviewTemplate(templatePreview, {
+      templates: data.templates,
+      troubleshootgunFolders,
+      crmTemplate: crmPreviewTemplate,
+    })
     return { id: item, title: template?.name ?? 'Aperçu du template', icon: 'template' }
   }
 
@@ -4603,6 +4726,8 @@ function App() {
           setTemplatePreview={setTemplatePreview} taskSectionNames={taskSectionNames}
           templatePreview={templatePreview} troubleshootgunFolders={troubleshootgunFolders}
           mailHasContent={Boolean(data.emailDraft.replace(/\u200b/g, '').trim())}
+          crmTemplate={crmPreviewTemplate}
+          onComposeInCrm={bridgeJobs.available ? () => void composeCrmTemplateInCrm() : undefined}
         />
       ) : null
     }
@@ -4988,6 +5113,8 @@ function App() {
         onRecall={recallMainCase}
         onCopy={handleCopyContextValue}
         onOpenSettings={() => openSettingsTab('connections')}
+        settingsLabel={editButtonLabel}
+        onOpenAppSettings={() => setEditOpen(true)}
       />
       <div className={`app-shell app-shell--with-case-bar${panelItem ? ' app-shell--with-panel' : ''}`}>
       <LibrarySidebar
@@ -4996,7 +5123,6 @@ function App() {
         troubleshootgunFolders={troubleshootgunFolders} taskTemplates={data.taskTemplates}
         taskKind={normalizeTaskTemplateKind} procedures={dashboardPortalProcedures}
         productNames={workingProductNames} productLabel={workingProductName || null}
-        editButtonLabel={editButtonLabel} onOpenSettings={() => setEditOpen(true)}
         onSnippet={insertSnippet} onTemplate={openTemplatePreview} onTask={applyTaskTemplate}
         onProcedure={(procedureId) => {
           setActiveDashboardPortalProcedureId(procedureId)
@@ -5012,7 +5138,8 @@ function App() {
         hiddenPanelTitle={panelHidden && panelStack.length ? panelEntry(panelStack[panelStack.length - 1]).title : null}
         onShowPanel={() => setPanelHidden(false)}
         onEdit={(entry) => {
-          if (entry.kind === 'procedure') return
+          // A procedure is edited in its own screen, a CRM template in the CRM.
+          if (entry.kind === 'procedure' || entry.kind === 'crm') return
           setEditTarget({ kind: entry.kind, id: entry.id, folderId: entry.folderId })
           showInPanel('edit')
         }}
@@ -5355,6 +5482,14 @@ function App() {
                 knownTags={contentsKnownTags}
                 makeId={(type) => createId(contentIdPrefix[type])}
                 onOpenSettings={(type) => openSettingsTab(contentSettingsTab[type])}
+              />
+            ) : null}
+
+            {editTab === 'crmTemplates' ? (
+              <CrmTemplatesSettings
+                templates={crmTemplates}
+                setToast={setToast}
+                onHarvest={bridgeJobs.available ? () => void harvestCrmTemplates() : undefined}
               />
             ) : null}
 
